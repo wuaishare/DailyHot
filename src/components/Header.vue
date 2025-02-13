@@ -5,7 +5,7 @@
         <img src="/ico/favicon.png" alt="logo" />
         <div class="name">
           <n-text>今日热榜</n-text>
-          <n-text :depth="3">汇聚全网热点，热门尽览无余</n-text>
+          <n-text :depth="3">汇聚全网热点，热门尽览无余_吾爱分享网</n-text>
         </div>
       </div>
       <div class="current-time" v-if="store.timeData">
