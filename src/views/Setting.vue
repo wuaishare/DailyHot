@@ -51,6 +51,17 @@
       </div>
     </n-card>
     <n-card class="set-item">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">导航栏默认折叠</n-text>
+          <n-text class="tip" :depth="3">
+            默认显示极简导航，鼠标悬停或点击后展开完整内容
+          </n-text>
+        </div>
+        <n-switch v-model:value="headerCollapsed" :round="false" />
+      </div>
+    </n-card>
+    <n-card class="set-item">
       <div class="top" style="flex-direction: column; align-items: flex-start">
         <div class="name">
           <n-text class="text">列表文本大小</n-text>
@@ -157,6 +168,7 @@ const {
   newsArr,
   linkOpenType,
   headerFixed,
+  headerCollapsed,
   listFontSize,
 } = storeToRefs(store);
 

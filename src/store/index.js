@@ -158,6 +158,8 @@ export const mainStore = defineStore("mainData", {
       linkOpenType: "open",
       // 页头固定
       headerFixed: true,
+      // 页头默认折叠
+      headerCollapsed: true,
       // 时间数据
       timeData: null,
       // 字体大小
@@ -208,6 +210,7 @@ export const mainStore = defineStore("mainData", {
         "newsArr",
         "linkOpenType",
         "headerFixed",
+        "headerCollapsed",
         "listFontSize",
       ],
     },
