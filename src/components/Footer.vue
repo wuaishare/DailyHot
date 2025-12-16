@@ -9,6 +9,14 @@
         @click="jumpLink(packageJson.github)"
       />
     </div>
+    <div class="quick-links">
+      <template v-for="(link, index) in footerLinks" :key="link.label">
+        <n-text class="link" :depth="3" @click="jumpLink(link.href)">
+          {{ link.label }}
+        </n-text>
+        <span v-if="index !== footerLinks.length - 1" class="separator">|</span>
+      </template>
+    </div>
     <n-text
       v-if="icp"
       :depth="3"
@@ -23,6 +31,25 @@
 import packageJson from "@/../package.json";
 
 const icp = ref(import.meta.env.VITE_ICP ? import.meta.env.VITE_ICP : null);
+
+const footerLinks = [
+  {
+    label: "网页自动刷新（油猴脚本）",
+    href: "https://greasyfork.org/zh-CN/scripts/541188-%E8%87%AA%E5%8A%A8%E5%88%B7%E6%96%B0%E9%A1%B5%E9%9D%A2-%E9%AB%98%E7%BA%A7%E5%A2%9E%E5%BC%BA%E7%89%88",
+  },
+  {
+    label: "原Git项目",
+    href: "https://github.com/imsyy/DailyHot",
+  },
+  {
+    label: "吾爱分享社区",
+    href: "https://sns.wuaishare.cn/",
+  },
+  {
+    label: "精品阅读站",
+    href: "https://v.wuaishare.cn/",
+  },
+];
 
 // 链接跳转
 const jumpLink = (url) => {
@@ -47,6 +74,23 @@ footer {
         content: "@ Copyright By";
         margin: 0 6px;
       }
+    }
+  }
+  .quick-links {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+    .link {
+      cursor: pointer;
+      transition: all 0.3s;
+      &:hover {
+        color: var(--n-code-text-color);
+      }
+    }
+    .separator {
+      color: var(--n-code-text-color);
     }
   }
   .author {
