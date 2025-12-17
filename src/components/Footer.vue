@@ -8,6 +8,9 @@
         v-html="packageJson.author"
         @click="jumpLink(packageJson.github)"
       />
+      <n-text class="author-link" :depth="3" @click="jumpLink(originRepo.href)">
+        （{{ originRepo.label }}）
+      </n-text>
     </div>
     <div class="quick-links">
       <template v-for="(link, index) in footerLinks" :key="link.label">
@@ -38,10 +41,6 @@ const footerLinks = [
     href: "https://greasyfork.org/zh-CN/scripts/541188",
   },
   {
-    label: "原Git项目",
-    href: "https://github.com/imsyy/DailyHot",
-  },
-  {
     label: "吾爱分享社区",
     href: "https://sns.wuaishare.cn/",
   },
@@ -50,6 +49,11 @@ const footerLinks = [
     href: "https://v.wuaishare.cn/",
   },
 ];
+
+const originRepo = {
+  label: "原Git项目",
+  href: "https://github.com/imsyy/DailyHot",
+};
 
 // 链接跳转
 const jumpLink = (url) => {
@@ -94,6 +98,13 @@ footer {
     }
   }
   .author {
+    cursor: pointer;
+    transition: all 0.3s;
+    &:hover {
+      color: var(--n-code-text-color);
+    }
+  }
+  .author-link {
     cursor: pointer;
     transition: all 0.3s;
     &:hover {
