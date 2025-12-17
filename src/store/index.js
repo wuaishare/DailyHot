@@ -162,6 +162,9 @@ export const mainStore = defineStore("mainData", {
       headerCollapsed: true,
       // 紧凑模式
       compactMode: false,
+      // 自动刷新
+      autoRefreshEnabled: false,
+      autoRefreshInterval: 1800,
       // 时间数据
       timeData: null,
       // 字体大小
@@ -214,6 +217,8 @@ export const mainStore = defineStore("mainData", {
         "headerFixed",
         "headerCollapsed",
         "compactMode",
+        "autoRefreshEnabled",
+        "autoRefreshInterval",
         "listFontSize",
       ],
     },

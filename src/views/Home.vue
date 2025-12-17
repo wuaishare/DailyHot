@@ -45,6 +45,7 @@ const reset = () => {
     negativeText: "取消",
     onPositiveClick: () => {
       if ($timeInterval) clearInterval($timeInterval);
+      if (typeof $autoRefreshTimer !== "undefined") clearInterval($autoRefreshTimer);
       localStorage.clear();
       location.reload();
     },

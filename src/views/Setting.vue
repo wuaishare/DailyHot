@@ -149,6 +149,29 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
+          <n-text class="text">自动刷新</n-text>
+          <n-text class="tip" :depth="3">
+            定时刷新页面，默认 1800 秒，可自行修改（最小 60 秒），关闭时不生效
+          </n-text>
+        </div>
+        <div class="auto-refresh">
+          <n-input-number
+            v-model:value="autoRefreshInterval"
+            :disabled="!autoRefreshEnabled"
+            :min="60"
+            :step="60"
+            size="small"
+            placeholder="刷新间隔"
+          >
+            <template #suffix>秒</template>
+          </n-input-number>
+          <n-switch v-model:value="autoRefreshEnabled" :round="false" />
+        </div>
+      </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top">
+        <div class="name">
           <n-text class="text">重置所有数据</n-text>
           <n-text class="tip" :depth="3">
             重置所有数据，你的自定义设置都将会丢失
@@ -182,6 +205,8 @@ const {
   headerCollapsed,
   compactMode,
   listFontSize,
+  autoRefreshEnabled,
+  autoRefreshInterval,
 } = storeToRefs(store);
 
 // 深浅模式
@@ -232,6 +257,7 @@ const saveSoreData = (name = null, open = false) => {
 // 重置数据
 const reset = () => {
   if (typeof $timeInterval !== "undefined") clearInterval($timeInterval);
+  if (typeof $autoRefreshTimer !== "undefined") clearInterval($autoRefreshTimer);
   localStorage.clear();
   location.reload();
 };
@@ -275,6 +301,16 @@ const reset = () => {
 
       .set {
         max-width: 200px;
+      }
+
+      .auto-refresh {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        :deep(.n-input-number) {
+          width: 160px;
+        }
       }
     }
 

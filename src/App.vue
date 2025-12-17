@@ -36,11 +36,14 @@ import { mainStore } from "@/store";
 import Provider from "@/components/Provider.vue";
 import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
+import { useRouter } from "vue-router";
 
 const store = mainStore();
+const router = useRouter();
 
 const headerExpanded = ref(!store.headerCollapsed);
 const collapseTimer = ref(null);
+const autoRefreshTimer = ref(null);
 
 // 回顶按钮显隐
 const backTopChange = (val) => {
@@ -88,12 +91,38 @@ const handleOutsideClick = (e) => {
   }
 };
 
+const clearAutoRefresh = () => {
+  if (autoRefreshTimer.value) {
+    clearInterval(autoRefreshTimer.value);
+    autoRefreshTimer.value = null;
+  }
+  window.$autoRefreshTimer = null;
+};
+
+const setupAutoRefresh = () => {
+  clearAutoRefresh();
+  if (!store.autoRefreshEnabled) return;
+  const intervalSeconds = Number(store.autoRefreshInterval);
+  if (!intervalSeconds || intervalSeconds <= 0) return;
+  window.$autoRefreshTimer = autoRefreshTimer.value = setInterval(() => {
+    router.go(0);
+  }, intervalSeconds * 1000);
+};
+
 // 默认折叠设置变化时同步状态
 watch(
   () => store.headerCollapsed,
   (val) => {
     headerExpanded.value = !val;
   }
+);
+
+watch(
+  () => [store.autoRefreshEnabled, store.autoRefreshInterval],
+  () => {
+    setupAutoRefresh();
+  },
+  { immediate: true }
 );
 
 onMounted(() => {
@@ -109,6 +138,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearTimeout(collapseTimer.value);
   document.removeEventListener("click", handleOutsideClick);
+  clearAutoRefresh();
 });
 </script>
 
