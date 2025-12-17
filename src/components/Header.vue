@@ -25,15 +25,86 @@
       </div>
       <div class="controls">
         <n-space justify="end">
-          <n-popover v-if="showRefresh">
+          <n-popover
+            v-if="showRefresh"
+            trigger="hover"
+            placement="bottom"
+            :show-arrow="false"
+            style="max-width: 320px"
+          >
             <template #trigger>
-              <n-button secondary strong round @click="router.go(0)">
+              <n-button secondary strong round>
                 <template #icon>
                   <n-icon :component="Refresh" />
                 </template>
+                <span v-if="countdownText" class="countdown">{{ countdownText }}</span>
               </n-button>
             </template>
-            刷新页面
+            <div class="refresh-panel" @click.stop>
+              <div class="panel-header">
+                <n-text>刷新控制</n-text>
+                <n-text depth="3" v-if="countdownText">下次：{{ countdownText }}</n-text>
+              </div>
+              <n-button block type="primary" dashed @click="manualRefresh">
+                <template #icon>
+                  <n-icon :component="Refresh" />
+                </template>
+                立即刷新
+              </n-button>
+              <div class="auto-row">
+                <n-space align="center" justify="space-between">
+                  <n-space align="center">
+                    <n-switch
+                      size="small"
+                      v-model:value="autoEnabled"
+                      @update:value="toggleAutoRefresh"
+                    />
+                    <n-text>自动刷新</n-text>
+                  </n-space>
+                  <n-button text size="small" @click="togglePause" :disabled="!store.autoRefreshEnabled">
+                    {{ store.autoRefreshPaused ? "继续" : "暂停" }}
+                  </n-button>
+                </n-space>
+                <div class="time-inputs">
+                  <div class="time-item">
+                    <n-input-number
+                      size="small"
+                      v-model:value="timeForm.hour"
+                      :min="0"
+                      :max="23"
+                      button-placement="both"
+                      @update:value="applyAutoInterval"
+                    />
+                    <span>时</span>
+                  </div>
+                  <div class="time-item">
+                    <n-input-number
+                      size="small"
+                      v-model:value="timeForm.minute"
+                      :min="0"
+                      :max="59"
+                      button-placement="both"
+                      @update:value="applyAutoInterval"
+                    />
+                    <span>分</span>
+                  </div>
+                  <div class="time-item">
+                    <n-input-number
+                      size="small"
+                      v-model:value="timeForm.second"
+                      :min="0"
+                      :max="59"
+                      button-placement="both"
+                      @update:value="applyAutoInterval"
+                    />
+                    <span>秒</span>
+                  </div>
+                </div>
+                <n-text depth="3" class="tip">
+                  默认 0时30分0秒，最少 60 秒。开启后图标右侧显示倒计时。
+                </n-text>
+              </div>
+            </div>
           </n-popover>
           <n-popover>
             <template #trigger>
@@ -104,6 +175,14 @@ const router = useRouter();
 const store = mainStore();
 const timeInterval = ref(null);
 const showRefresh = ref(false);
+const countdownText = ref("");
+const countdownTimer = ref(null);
+const autoEnabled = ref(store.autoRefreshEnabled);
+const timeForm = reactive({
+  hour: 0,
+  minute: 30,
+  second: 0,
+});
 
 // 移动端时间模块
 const timeRender = () => {
@@ -187,13 +266,124 @@ const menuOptions = [
 // 移动端下拉菜单点击事件
 const menuOptionsSelect = (val) => {
   if (val === "refresh") {
-    router.go(0);
+    manualRefresh();
   } else if (val === "changeTheme") {
     store.setSiteTheme(store.siteTheme === "light" ? "dark" : "light");
   } else if (val === "setting") {
     router.push("/setting");
   }
 };
+
+const manualRefresh = () => {
+  router.go(0);
+  if (typeof window !== "undefined" && store.autoRefreshEnabled && !store.autoRefreshPaused) {
+    const seconds = Number(store.autoRefreshInterval);
+    if (seconds > 0) {
+      window.$nextAutoRefreshAt = Date.now() + seconds * 1000;
+    }
+  }
+};
+
+const toggleAutoRefresh = (val) => {
+  store.autoRefreshEnabled = val;
+  if (!val) {
+    store.autoRefreshPaused = false;
+  }
+};
+
+const togglePause = () => {
+  if (!store.autoRefreshEnabled) return;
+  store.autoRefreshPaused = !store.autoRefreshPaused;
+};
+
+const secondsToTime = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.max(seconds % 60, 0);
+  return { h, m, s };
+};
+
+const timeToSeconds = (time) => {
+  const h = Number(time.hour) || 0;
+  const m = Number(time.minute) || 0;
+  const s = Number(time.second) || 0;
+  return h * 3600 + m * 60 + s;
+};
+
+const syncTimeForm = () => {
+  const { h, m, s } = secondsToTime(Number(store.autoRefreshInterval));
+  timeForm.hour = h;
+  timeForm.minute = m;
+  timeForm.second = s;
+};
+
+const applyAutoInterval = () => {
+  const seconds = timeToSeconds(timeForm);
+  if (seconds < 60) {
+    $message.warning("自动刷新最少 60 秒");
+    return;
+  }
+  store.autoRefreshInterval = seconds;
+  if (typeof window !== "undefined" && store.autoRefreshEnabled && !store.autoRefreshPaused) {
+    window.$nextAutoRefreshAt = Date.now() + seconds * 1000;
+  }
+};
+
+const formatCountdown = (remainMs) => {
+  const totalSeconds = Math.max(Math.floor(remainMs / 1000), 0);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${h}时${m}分${s}秒`;
+};
+
+const updateCountdown = () => {
+  if (
+    typeof window === "undefined" ||
+    !store.autoRefreshEnabled ||
+    store.autoRefreshPaused
+  ) {
+    countdownText.value = "";
+    return;
+  }
+  const target = window.$nextAutoRefreshAt;
+  const intervalSeconds = Number(store.autoRefreshInterval);
+  if (!target && intervalSeconds > 0) {
+    window.$nextAutoRefreshAt = Date.now() + intervalSeconds * 1000;
+  }
+  const nextTime = window.$nextAutoRefreshAt;
+  if (!nextTime) {
+    countdownText.value = "";
+    return;
+  }
+  const remain = nextTime - Date.now();
+  if (remain <= 0) {
+    countdownText.value = "刷新中...";
+    return;
+  }
+  countdownText.value = formatCountdown(remain);
+};
+
+const setupCountdown = () => {
+  clearInterval(countdownTimer.value);
+  if (typeof window === "undefined") return;
+  countdownTimer.value = setInterval(updateCountdown, 1000);
+  updateCountdown();
+};
+
+watch(
+  () => [
+    store.autoRefreshEnabled,
+    store.autoRefreshPaused,
+    store.autoRefreshInterval,
+  ],
+  () => {
+    autoEnabled.value = store.autoRefreshEnabled;
+    syncTimeForm();
+    setupCountdown();
+  },
+  { immediate: true }
+);
 
 // 监听路由参数变化
 watch(
@@ -209,10 +399,13 @@ onMounted(() => {
     store.timeData = getCurrentTime();
   }, 1000);
   showRefresh.value = router.currentRoute.value?.path === "/" ? true : false;
+  syncTimeForm();
+  setupCountdown();
 });
 
 onBeforeUnmount(() => {
   clearInterval(timeInterval.value);
+  clearInterval(countdownTimer.value);
 });
 </script>
 
@@ -297,6 +490,42 @@ onBeforeUnmount(() => {
   .controls {
     display: flex;
     justify-content: flex-end;
+    .countdown {
+      margin-left: 8px;
+      font-size: 12px;
+    }
+    .refresh-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 260px;
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .auto-row {
+        padding: 4px 0;
+        border-top: 1px solid var(--n-border-color);
+      }
+      .time-inputs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        .time-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          span {
+            font-size: 12px;
+          }
+        }
+      }
+      .tip {
+        font-size: 12px;
+      }
+    }
   }
 
   .mobile {

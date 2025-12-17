@@ -103,12 +103,24 @@ const clearAutoRefresh = () => {
 
 const setupAutoRefresh = () => {
   clearAutoRefresh();
-  if (!store.autoRefreshEnabled) return;
+  if (!store.autoRefreshEnabled || store.autoRefreshPaused) {
+    if (typeof window !== "undefined") {
+      window.$nextAutoRefreshAt = null;
+    }
+    return;
+  }
   const intervalSeconds = Number(store.autoRefreshInterval);
-  if (!intervalSeconds || intervalSeconds <= 0) return;
+  if (!intervalSeconds || intervalSeconds <= 0) {
+    if (typeof window !== "undefined") {
+      window.$nextAutoRefreshAt = null;
+    }
+    return;
+  }
   if (typeof window !== "undefined") {
+    window.$nextAutoRefreshAt = Date.now() + intervalSeconds * 1000;
     window.$autoRefreshTimer = autoRefreshTimer.value = setInterval(() => {
       router.go(0);
+      window.$nextAutoRefreshAt = Date.now() + intervalSeconds * 1000;
     }, intervalSeconds * 1000);
   }
 };
@@ -122,7 +134,7 @@ watch(
 );
 
 watch(
-  () => [store.autoRefreshEnabled, store.autoRefreshInterval],
+  () => [store.autoRefreshEnabled, store.autoRefreshInterval, store.autoRefreshPaused],
   () => {
     setupAutoRefresh();
   },

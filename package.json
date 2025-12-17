@@ -32,6 +32,6 @@
     "unplugin-vue-components": "^0.22.12",
     "vite": "^4.5.5",
     "vite-plugin-pwa": "^0.14.7",
-    "vite-plugin-prerender": "^1.0.9"
+    "vite-plugin-prerender": "^1.0.8"
   }
 }

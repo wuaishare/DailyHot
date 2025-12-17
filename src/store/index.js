@@ -164,6 +164,7 @@ export const mainStore = defineStore("mainData", {
       compactMode: false,
       // 自动刷新
       autoRefreshEnabled: false,
+      autoRefreshPaused: false,
       autoRefreshInterval: 1800,
       // 时间数据
       timeData: null,
@@ -228,6 +229,7 @@ export const mainStore = defineStore("mainData", {
         "headerCollapsed",
         "compactMode",
         "autoRefreshEnabled",
+        "autoRefreshPaused",
         "autoRefreshInterval",
         "listFontSize",
       ],
