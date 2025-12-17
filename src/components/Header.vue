@@ -1,5 +1,5 @@
 <template>
-  <n-card :bordered="false" class="header" content-style="padding: 0">
+  <n-card :bordered="false" class="app-header" content-style="padding: 0">
     <section>
       <div class="logo" @click="router.push('/')">
         <img src="/ico/favicon.png" alt="logo" />
@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
-.header {
+.app-header {
   position: relative;
   display: flex;
   flex-direction: row;

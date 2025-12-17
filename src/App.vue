@@ -77,7 +77,7 @@ const handleOutsideClick = (e) => {
   if (!store.headerCollapsed) return;
   const path = e.composedPath ? e.composedPath() : [];
   const clickInsideHeader = path.some(
-    (el) => el?.classList && el.classList.contains("header")
+    (el) => el?.classList && el.classList.contains("app-header")
   );
   const clickOverlay = path.some(
     (el) =>
@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
   position: relative;
 
   &.fixed {
-    :deep(.header) {
+    :deep(.app-header) {
       width: 100%;
       margin: 0;
       position: absolute;
