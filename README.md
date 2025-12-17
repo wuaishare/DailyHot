@@ -29,7 +29,7 @@ pnpm build
 
 ## 环境变量
 
-- `VITE_SITE_URL`：站点线上域名（用于生成 `sitemap.xml`/`robots.txt` 与 canonical）。
+- `VITE_SITE_URL`：站点线上域名（用于生成 `sitemap.xml`/`robots.txt` 与 canonical），注意用完整域名（含 'https://'），不要带末尾 '/'。
 
 ## Vercel 部署
 
