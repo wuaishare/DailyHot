@@ -35,7 +35,7 @@ const icp = ref(import.meta.env.VITE_ICP ? import.meta.env.VITE_ICP : null);
 const footerLinks = [
   {
     label: "网页自动刷新（油猴脚本）",
-    href: "https://greasyfork.org/zh-CN/scripts/541188-%E8%87%AA%E5%8A%A8%E5%88%B7%E6%96%B0%E9%A1%B5%E9%9D%A2-%E9%AB%98%E7%BA%A7%E5%A2%9E%E5%BC%BA%E7%89%88",
+    href: "https://greasyfork.org/zh-CN/scripts/541188",
   },
   {
     label: "原Git项目",
