@@ -8,12 +8,11 @@
         v-html="packageJson.author"
         @click="jumpLink(packageJson.github)"
       />
-      <n-text :depth="3">. </n-text>
-      <n-text :depth="3">Powered by </n-text>
+      <n-text>. Powered by </n-text>
       <n-text class="author-link" :depth="3" @click="jumpLink(originRepo.href)">
         {{ originRepo.label }}
       </n-text>
-      <n-text :depth="3">. </n-text>
+      <n-text>. </n-text>
     </div>
     <div class="quick-links">
       <template v-for="(link, index) in footerLinks" :key="link.label">
