@@ -183,6 +183,7 @@ onBeforeUnmount(() => {
     max-width: 1800px;
     margin: 0 auto;
     min-height: calc(100vh - 238px);
+    transition: padding 0.25s ease;
   }
 }
 
@@ -190,7 +191,7 @@ onBeforeUnmount(() => {
   &.fixed {
     &.header-expanded {
       main {
-        padding: 88px 3vw 0 3vw;
+        padding: 98px 3vw 0 3vw;
       }
     }
 
