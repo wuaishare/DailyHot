@@ -82,6 +82,7 @@ const themeOverrides = {
 
 // 挂载 naive 组件的方法
 const setupNaiveTools = () => {
+  if (typeof window === "undefined") return;
   window.$loadingBar = useLoadingBar(); // 进度条
   window.$notification = useNotification(); // 通知
   window.$message = useMessage(); // 信息

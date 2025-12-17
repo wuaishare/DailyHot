@@ -69,8 +69,8 @@ const footerLinks = [
 ];
 
 const originRepo = {
-  label: "DailyHot",
-  href: "https://github.com/imsyy/DailyHot",
+  label: "DailyHot(二次开发版)",
+  href: "https://github.com/wuaishare/DailyHot/tree/live",
 };
 </script>
 

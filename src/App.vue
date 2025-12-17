@@ -96,7 +96,9 @@ const clearAutoRefresh = () => {
     clearInterval(autoRefreshTimer.value);
     autoRefreshTimer.value = null;
   }
-  window.$autoRefreshTimer = null;
+  if (typeof window !== "undefined") {
+    window.$autoRefreshTimer = null;
+  }
 };
 
 const setupAutoRefresh = () => {
@@ -104,9 +106,11 @@ const setupAutoRefresh = () => {
   if (!store.autoRefreshEnabled) return;
   const intervalSeconds = Number(store.autoRefreshInterval);
   if (!intervalSeconds || intervalSeconds <= 0) return;
-  window.$autoRefreshTimer = autoRefreshTimer.value = setInterval(() => {
-    router.go(0);
-  }, intervalSeconds * 1000);
+  if (typeof window !== "undefined") {
+    window.$autoRefreshTimer = autoRefreshTimer.value = setInterval(() => {
+      router.go(0);
+    }, intervalSeconds * 1000);
+  }
 };
 
 // 默认折叠设置变化时同步状态
@@ -127,17 +131,24 @@ watch(
 
 onMounted(() => {
   store.checkNewsUpdate();
-  document.addEventListener("click", handleOutsideClick);
+  if (typeof document !== "undefined") {
+    document.addEventListener("click", handleOutsideClick);
+  }
   nextTick(() => {
     if (store.newsArr.length === 0) {
       store.newsArr = store.defaultNewsArr;
+    }
+    if (typeof document !== "undefined") {
+      document.dispatchEvent(new Event("prerender-ready"));
     }
   });
 });
 
 onBeforeUnmount(() => {
   clearTimeout(collapseTimer.value);
-  document.removeEventListener("click", handleOutsideClick);
+  if (typeof document !== "undefined") {
+    document.removeEventListener("click", handleOutsideClick);
+  }
   clearAutoRefresh();
 });
 </script>

@@ -9,11 +9,15 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach(() => {
-  $loadingBar.start();
+  if (typeof window !== "undefined" && window.$loadingBar) {
+    window.$loadingBar.start();
+  }
 });
 
 router.afterEach((to) => {
-  $loadingBar.finish();
+  if (typeof window !== "undefined" && window.$loadingBar) {
+    window.$loadingBar.finish();
+  }
   applySeoMeta(to);
 });
 

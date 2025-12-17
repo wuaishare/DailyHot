@@ -132,6 +132,9 @@ import { getHotLists } from "@/api";
 
 const router = useRouter();
 const store = mainStore();
+const isClient = typeof window !== "undefined";
+const isPrerender =
+  isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 
 const updateTime = ref(null);
 const listType = ref(
@@ -143,13 +146,23 @@ const pageNumber = ref(
     : 1
 );
 const listData = ref(null);
-const isDesktop = ref(window.innerWidth > 680);
+const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
+  if (isPrerender) {
+    const label = store.newsArr.find((item) => item.name === name)?.label || "热门榜单";
+    listData.value = {
+      title: `${label}热榜`,
+      subtitle: "实时热榜 | 预渲染占位",
+      data: [],
+    };
+    updateTime.value = formatTime(new Date().toISOString());
+    return;
+  }
   listData.value = null;
   const item = store.newsArr.find((item) => item.name == name)
   getHotLists(item.name, isNew, item.params).then((res) => {
@@ -163,6 +176,7 @@ const getHotListsData = async (name, isNew = false) => {
 };
 
 const updateIsDesktop = () => {
+  if (!isClient) return;
   isDesktop.value = window.innerWidth > 680;
 };
 
@@ -223,12 +237,16 @@ watch(
 
 onMounted(() => {
   updateIsDesktop();
-  window.addEventListener("resize", updateIsDesktop);
+  if (isClient) {
+    window.addEventListener("resize", updateIsDesktop);
+  }
   getHotListsData(listType.value);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", updateIsDesktop);
+  if (isClient) {
+    window.removeEventListener("resize", updateIsDesktop);
+  }
 });
 </script>
 

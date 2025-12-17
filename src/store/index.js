@@ -181,8 +181,18 @@ export const mainStore = defineStore("mainData", {
       this.siteTheme = val;
       this.siteThemeAuto = false;
     },
+    // 初始化默认榜单（SSR/预渲染也能有基础数据）
+    ensureNewsList() {
+      if (!this.newsArr || this.newsArr.length === 0) {
+        this.newsArr = this.defaultNewsArr;
+      }
+    },
     // 检查更新
     checkNewsUpdate() {
+      if (typeof localStorage === "undefined") {
+        this.ensureNewsList();
+        return false;
+      }
       const mainData = JSON.parse(localStorage.getItem("mainData"));
       let updatedNum = 0;
       if (!mainData) return false;

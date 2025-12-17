@@ -147,6 +147,9 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 const store = mainStore();
+const isClient = typeof window !== "undefined";
+const isPrerender =
+  isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 const props = defineProps({
   // 热榜数据
   hotData: {
@@ -160,7 +163,9 @@ const updateTime = ref(null);
 
 // 刷新按钮数据
 const lastClickTime = ref(
-  localStorage.getItem(`${props.hotData.name}Btn`) || 0
+  typeof localStorage !== "undefined"
+    ? localStorage.getItem(`${props.hotData.name}Btn`) || 0
+    : 0
 );
 
 // 热榜数据
@@ -168,17 +173,19 @@ const hotListData = ref(null);
 const scrollbarRef = ref(null);
 const listLoading = ref(false);
 const loadingError = ref(false);
-const isDesktop = ref(window.innerWidth > 680);
+const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
 
 const updateIsDesktop = () => {
+  if (!isClient) return;
   isDesktop.value = window.innerWidth > 680;
 };
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
+  if (isPrerender) return;
   try {
     // hotListData.value = null;
     loadingError.value = false;
@@ -204,6 +211,7 @@ const getHotListsData = async (name, isNew = false) => {
 
 // 获取最新数据
 const getNewData = () => {
+  if (isPrerender) return;
   const now = Date.now();
   if (now - lastClickTime.value > 60000) {
     // 点击事件
@@ -211,7 +219,9 @@ const getNewData = () => {
     getHotListsData(props.hotData.name, true);
     // 更新最后一次点击时间
     lastClickTime.value = now;
-    localStorage.setItem(`${props.hotData.name}Btn`, now);
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(`${props.hotData.name}Btn`, now);
+    }
   } else {
     // 不执行点击事件
     $message.info("请稍后再刷新");
@@ -241,6 +251,7 @@ const toList = () => {
 
 // 判断列表是否显示
 const checkListShow = () => {
+  if (isPrerender || !isClient || typeof document === "undefined") return;
   const typeName = props.hotData.name;
   const listId = "hot-list-" + typeName;
   const listDom = document.getElementById(listId);
@@ -268,12 +279,16 @@ watch(
 
 onMounted(() => {
   updateIsDesktop();
-  window.addEventListener("resize", updateIsDesktop);
+  if (isClient) {
+    window.addEventListener("resize", updateIsDesktop);
+  }
   checkListShow();
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", updateIsDesktop);
+  if (isClient) {
+    window.removeEventListener("resize", updateIsDesktop);
+  }
 });
 </script>
 

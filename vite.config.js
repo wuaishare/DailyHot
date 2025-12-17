@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 import { VitePWA } from "vite-plugin-pwa";
+import prerender from "vite-plugin-prerender";
 import vue from "@vitejs/plugin-vue";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
@@ -65,6 +66,18 @@ export default defineConfig(({ mode }) => {
               type: "image/png",
             },
           ],
+        },
+      }),
+      // 预渲染首页与榜单页，降低 SPA 空白首屏的抓取风险
+      prerender({
+        staticDir: fileURLToPath(new URL("./dist", import.meta.url)),
+        routes: ["/", "/list"],
+        rendererOptions: {
+          headless: true,
+          renderAfterDocumentEvent: "prerender-ready",
+          inject: {
+            prerender: true,
+          },
         },
       }),
     ],

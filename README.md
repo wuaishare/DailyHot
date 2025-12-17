@@ -25,6 +25,7 @@ pnpm dev
 
 // 打包
 pnpm build
+// 构建时会预渲染 首页 / 榜单页，并生成 sitemap.xml 与 robots.txt
 ```
 
 ## 环境变量
