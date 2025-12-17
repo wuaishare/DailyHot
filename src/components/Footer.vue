@@ -5,11 +5,11 @@
       <n-text
         class="author"
         :depth="3"
-        v-html="packageJson.author"
+        v-html="packageJson.author + '.'"
         @click="jumpLink(packageJson.github)"
       />
       <n-text class="author-link" :depth="3" @click="jumpLink(originRepo.href)">
-        （{{ originRepo.label }}）
+        Powered by {{ originRepo.label }}.
       </n-text>
     </div>
     <div class="quick-links">
@@ -51,7 +51,7 @@ const footerLinks = [
 ];
 
 const originRepo = {
-  label: "原Git项目",
+  label: "DailyHot",
   href: "https://github.com/imsyy/DailyHot",
 };
 
@@ -75,7 +75,7 @@ footer {
     margin-bottom: 4px;
     .description {
       &::after {
-        content: "@ Copyright By";
+        content: "Copyright @";
         margin: 0 6px;
       }
     }
