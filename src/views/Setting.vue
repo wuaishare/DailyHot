@@ -62,6 +62,17 @@
       </div>
     </n-card>
     <n-card class="set-item">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">紧凑模式</n-text>
+          <n-text class="tip" :depth="3">
+            减少页面内边距，显示更多榜单内容
+          </n-text>
+        </div>
+        <n-switch v-model:value="compactMode" :round="false" />
+      </div>
+    </n-card>
+    <n-card class="set-item">
       <div class="top" style="flex-direction: column; align-items: flex-start">
         <div class="name">
           <n-text class="text">列表文本大小</n-text>
@@ -169,6 +180,7 @@ const {
   linkOpenType,
   headerFixed,
   headerCollapsed,
+  compactMode,
   listFontSize,
 } = storeToRefs(store);
 

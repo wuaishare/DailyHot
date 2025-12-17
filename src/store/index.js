@@ -160,6 +160,8 @@ export const mainStore = defineStore("mainData", {
       headerFixed: true,
       // 页头默认折叠
       headerCollapsed: true,
+      // 紧凑模式
+      compactMode: false,
       // 时间数据
       timeData: null,
       // 字体大小
@@ -211,6 +213,7 @@ export const mainStore = defineStore("mainData", {
         "linkOpenType",
         "headerFixed",
         "headerCollapsed",
+        "compactMode",
         "listFontSize",
       ],
     },

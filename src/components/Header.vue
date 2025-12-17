@@ -233,8 +233,8 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
 
   &.collapsed {
-    padding: 8px 5vw;
-    min-height: 48px;
+    padding: 0 5vw;
+    min-height: 39px;
     cursor: pointer;
     box-shadow: none;
     section {
@@ -326,7 +326,7 @@ onBeforeUnmount(() => {
         font-size: 14px;
       }
       .date {
-        font-size: 11px;
+        display: none;
       }
     }
     :deep(.controls .n-button),

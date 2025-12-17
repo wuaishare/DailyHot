@@ -6,6 +6,7 @@
       class="app-layout"
       :class="[
         store.headerFixed ? 'fixed' : null,
+        store.compactMode ? 'compact' : null,
         headerExpanded ? 'header-expanded' : 'header-collapsed',
       ]"
     >
@@ -16,14 +17,6 @@
         @mouseleave="handleHeaderLeave"
         @click="handleHeaderClick"
       />
-      <button
-        class="header-toggle"
-        type="button"
-        :data-collapsed="!headerExpanded"
-        @click="toggleHeader"
-      >
-        {{ headerExpanded ? "收起导航" : "展开导航" }}
-      </button>
       <main>
         <router-view v-slot="{ Component }">
           <keep-alive>
@@ -76,21 +69,12 @@ const handleHeaderClick = () => {
   }
 };
 
-// 手动展开或收起
-const toggleHeader = () => {
-  clearTimeout(collapseTimer.value);
-  headerExpanded.value = !headerExpanded.value;
-};
-
 // 点击页眉外区域时折叠
 const handleOutsideClick = (e) => {
   if (!store.headerCollapsed) return;
   const path = e.composedPath ? e.composedPath() : [];
   const clickInsideHeader = path.some(
     (el) => el?.classList && el.classList.contains("header")
-  );
-  const clickToggle = path.some(
-    (el) => el?.classList && el.classList.contains("header-toggle")
   );
   const clickOverlay = path.some(
     (el) =>
@@ -99,7 +83,7 @@ const handleOutsideClick = (e) => {
         el.classList.contains("n-dropdown") ||
         el.classList.contains("n-popconfirm"))
   );
-  if (!clickInsideHeader && !clickToggle && !clickOverlay) {
+  if (!clickInsideHeader && !clickOverlay) {
     headerExpanded.value = false;
   }
 };
@@ -172,35 +156,70 @@ onBeforeUnmount(() => {
   }
 }
 
-.header-toggle {
-  position: fixed;
-  right: 5vw;
-  top: 12px;
-  z-index: 5;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--n-border-color);
-  background-color: var(--n-color);
-  color: var(--n-text-color);
-  font-size: 12px;
-  cursor: pointer;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  transition: all 0.2s ease;
+.app-layout.compact {
+  &.fixed {
+    &.header-expanded {
+      main {
+        padding: 88px 3vw 0 3vw;
+      }
+    }
 
-  &[data-collapsed="true"] {
-    opacity: 0.9;
+    &.header-collapsed {
+      main {
+        padding: 56px 3vw 0 3vw;
+      }
+    }
   }
 
-  &:hover {
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+  main {
+    padding: 14px 3vw 0;
+    max-width: 1900px;
   }
-}
 
-@media (max-width: 640px) {
-  .header-toggle {
-    top: 10px;
-    right: 16px;
-    padding: 6px 10px;
+  // 列表与卡片内容收紧
+  :deep(.list .type) {
+    margin-bottom: 8px;
+  }
+
+  :deep(.list .card) {
+    margin-top: 12px;
+    border-radius: 6px;
+  }
+
+  :deep(.list .card .n-card__content) {
+    padding: 12px 16px;
+  }
+
+  :deep(.list .card .header) {
+    height: 52px;
+    grid-template-columns: 1fr 1.2fr 1fr;
+  }
+
+  :deep(.list .card .name .title) {
+    font-size: 18px;
+  }
+
+  :deep(.list .card .name .subtitle) {
+    font-size: 12px;
+  }
+
+  :deep(.list .card .all .n-list-item) {
+    padding: 12px 12px;
+  }
+
+  :deep(.list .card .all .message) {
+    margin-top: 8px;
+  }
+
+  :deep(.list .card .all .pagination) {
+    margin: 12px 0;
+  }
+
+  // 页脚紧凑化
+  :deep(footer) {
+    padding: 0 3vw;
+    margin-top: 12px;
+    height: 80px;
   }
 }
 
