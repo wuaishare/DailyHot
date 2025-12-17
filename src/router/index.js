@@ -1,8 +1,9 @@
-import { createRouter, createWebHashHistory } from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 import routes from "@/router/routes";
+import { applySeoMeta } from "@/utils/seo";
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 });
 
@@ -11,8 +12,9 @@ router.beforeEach(() => {
   $loadingBar.start();
 });
 
-router.afterEach(() => {
+router.afterEach((to) => {
   $loadingBar.finish();
+  applySeoMeta(to);
 });
 
 export default router;
