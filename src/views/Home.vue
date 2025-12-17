@@ -6,8 +6,8 @@
     <n-grid
       v-if="store.newsArr[0] && store.newsArr.filter((item) => item.show)[0]"
       cols="1 560:2 800:3 1100:4 1500:5"
-      :x-gap="24"
-      :y-gap="24"
+      :x-gap="store.compactMode ? 14 : 24"
+      :y-gap="store.compactMode ? 14 : 24"
     >
       <n-grid-item
         class="news-card"

@@ -240,9 +240,9 @@ const reset = () => {
 <style lang="scss" scoped>
 .setting {
   .title {
-    margin-top: 30px;
+    margin-top: 20px;
     margin-bottom: 20px;
-    font-size: 40px;
+    font-size: 31px;
     font-weight: bold;
   }
 

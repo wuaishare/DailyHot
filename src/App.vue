@@ -221,6 +221,11 @@ onBeforeUnmount(() => {
     margin-top: 12px;
     height: 80px;
   }
+
+  // 设置页网格间距收紧
+  :deep(.mews-group) {
+    gap: 14px;
+  }
 }
 
 // 路由跳转动画
