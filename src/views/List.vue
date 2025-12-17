@@ -62,14 +62,13 @@
         </template>
         <template v-else>
           <div class="all">
-            <n-list hoverable clickable style="width: 100%">
+            <n-list hoverable style="width: 100%">
               <n-list-item
                 v-for="(item, index) in listData.data.slice(
                   pageNumber * 20 - 20,
                   pageNumber * 20
                 )"
                 :key="item"
-                @click="jumpLink(item)"
               >
                 <template #prefix>
                   <n-text
@@ -88,7 +87,12 @@
                     {{ index + 1 + (pageNumber - 1) * 20 }}
                   </n-text>
                 </template>
-                <div class="text">
+                <n-a
+                  class="text"
+                  :href="getItemLink(item)"
+                  :target="linkTarget"
+                  rel="noopener noreferrer nofollow"
+                >
                   <n-text class="title" v-html="item.title" />
                   <n-text
                     v-if="item.desc"
@@ -96,7 +100,7 @@
                     :depth="3"
                     v-html="item.desc"
                   />
-                </div>
+                </n-a>
                 <div class="message">
                   <div class="hot" v-if="item.hot">
                     <n-icon :depth="3" :component="Fire" />
@@ -139,6 +143,10 @@ const pageNumber = ref(
     : 1
 );
 const listData = ref(null);
+const isDesktop = ref(window.innerWidth > 680);
+const linkTarget = computed(() =>
+  store.linkOpenType === "open" ? "_blank" : "_self"
+);
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
@@ -154,15 +162,15 @@ const getHotListsData = async (name, isNew = false) => {
   });
 };
 
-// 链接跳转
-const jumpLink = (data) => {
-  if (!data.url || !data.mobileUrl) return $message.error("链接不存在");
-  const url = window.innerWidth > 680 ? data.url : data.mobileUrl;
-  if (store.linkOpenType === "open") {
-    window.open(url, "_blank");
-  } else if (store.linkOpenType === "href") {
-    window.location.href = url;
-  }
+const updateIsDesktop = () => {
+  isDesktop.value = window.innerWidth > 680;
+};
+
+const getItemLink = (data) => {
+  if (!data?.url && !data?.mobileUrl) return "";
+  if (!data?.url) return data.mobileUrl;
+  if (!data?.mobileUrl) return data.url;
+  return isDesktop.value ? data.url : data.mobileUrl;
 };
 
 // 切换类别
@@ -214,7 +222,13 @@ watch(
 );
 
 onMounted(() => {
+  updateIsDesktop();
+  window.addEventListener("resize", updateIsDesktop);
   getHotListsData(listType.value);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateIsDesktop);
 });
 </script>
 
@@ -351,6 +365,8 @@ onMounted(() => {
       .text {
         display: flex;
         flex-direction: column;
+        text-decoration: none;
+        color: inherit;
         .title {
           font-size: 16px;
           margin-bottom: 4px;

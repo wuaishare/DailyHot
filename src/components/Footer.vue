@@ -2,32 +2,48 @@
   <footer>
     <div class="copyright">
       <n-text class="description" v-html="packageJson.description" />
-      <n-text
+      <n-a
         class="author"
         :depth="3"
+        :href="packageJson.github"
+        target="_blank"
+        rel="noopener noreferrer"
         v-html="packageJson.author"
-        @click="jumpLink(packageJson.github)"
       />
       <n-text>. Powered by </n-text>
-      <n-text class="author-link" :depth="3" @click="jumpLink(originRepo.href)">
+      <n-a
+        class="author-link"
+        :depth="3"
+        :href="originRepo.href"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {{ originRepo.label }}
-      </n-text>
+      </n-a>
       <n-text>. </n-text>
     </div>
     <div class="quick-links">
       <template v-for="(link, index) in footerLinks" :key="link.label">
-        <n-text class="link" :depth="3" @click="jumpLink(link.href)">
+        <n-a
+          class="link"
+          :depth="3"
+          :href="link.href"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           {{ link.label }}
-        </n-text>
+        </n-a>
         <span v-if="index !== footerLinks.length - 1" class="separator">|</span>
       </template>
     </div>
-    <n-text
+    <n-a
       v-if="icp"
       :depth="3"
       class="icp"
       v-html="icp"
-      @click="jumpLink('https://beian.miit.gov.cn/')"
+      href="https://beian.miit.gov.cn/"
+      target="_blank"
+      rel="noopener noreferrer"
     />
   </footer>
 </template>
@@ -55,11 +71,6 @@ const footerLinks = [
 const originRepo = {
   label: "DailyHot",
   href: "https://github.com/imsyy/DailyHot",
-};
-
-// 链接跳转
-const jumpLink = (url) => {
-  window.open(url);
 };
 </script>
 
@@ -91,6 +102,8 @@ footer {
     .link {
       cursor: pointer;
       transition: all 0.3s;
+      text-decoration: none;
+      color: inherit;
       &:hover {
         color: var(--n-code-text-color);
       }
@@ -102,6 +115,8 @@ footer {
   .author {
     cursor: pointer;
     transition: all 0.3s;
+    text-decoration: none;
+    color: inherit;
     &:hover {
       color: var(--n-code-text-color);
     }
@@ -109,6 +124,8 @@ footer {
   .author-link {
     cursor: pointer;
     transition: all 0.3s;
+    text-decoration: none;
+    color: inherit;
     &:hover {
       color: var(--n-code-text-color);
     }
@@ -117,6 +134,8 @@ footer {
     font-size: 13px;
     cursor: pointer;
     transition: all 0.3s;
+    text-decoration: none;
+    color: inherit;
     &:hover {
       color: var(--n-code-text-color);
     }

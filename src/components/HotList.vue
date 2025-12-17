@@ -70,13 +70,16 @@
               :depth="2"
               >{{ index + 1 }}</n-text
             >
-            <n-text
+            <n-a
               :style="{ fontSize: store.listFontSize + 'px' }"
               class="text"
-              @click.stop="jumpLink(item)"
+              :href="getItemLink(item)"
+              :target="linkTarget"
+              rel="noopener noreferrer nofollow"
+              @click.stop
             >
               {{ item.title }}
-            </n-text>
+            </n-a>
           </div>
         </div>
       </Transition>
@@ -165,6 +168,14 @@ const hotListData = ref(null);
 const scrollbarRef = ref(null);
 const listLoading = ref(false);
 const loadingError = ref(false);
+const isDesktop = ref(window.innerWidth > 680);
+const linkTarget = computed(() =>
+  store.linkOpenType === "open" ? "_blank" : "_self"
+);
+
+const updateIsDesktop = () => {
+  isDesktop.value = window.innerWidth > 680;
+};
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
@@ -207,15 +218,11 @@ const getNewData = () => {
   }
 };
 
-// 链接跳转
-const jumpLink = (data) => {
-  if (!data.url || !data.mobileUrl) return $message.error("链接不存在");
-  const url = window.innerWidth > 680 ? data.url : data.mobileUrl;
-  if (store.linkOpenType === "open") {
-    window.open(url, "_blank");
-  } else if (store.linkOpenType === "href") {
-    window.location.href = url;
-  }
+const getItemLink = (data) => {
+  if (!data?.url && !data?.mobileUrl) return "";
+  if (!data?.url) return data.mobileUrl;
+  if (!data?.mobileUrl) return data.url;
+  return isDesktop.value ? data.url : data.mobileUrl;
 };
 
 // 前往全部列表
@@ -260,7 +267,13 @@ watch(
 );
 
 onMounted(() => {
+  updateIsDesktop();
+  window.addEventListener("resize", updateIsDesktop);
   checkListShow();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateIsDesktop);
 });
 </script>
 
@@ -382,6 +395,8 @@ onMounted(() => {
         display: inline-block;
         width: 100%;
         transition: all 0.3s;
+        text-decoration: none;
+        color: inherit;
 
         @media (min-width: 768px) {
           &:hover {
