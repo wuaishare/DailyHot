@@ -378,14 +378,24 @@ const themeAutoOpen = (val) => {
   }
 };
 
+// 归一化顺序，保证 order 与当前展示一致
+const normalizeOrder = () => {
+  newsArr.value = newsArr.value.map((item, idx) => ({
+    ...item,
+    order: idx,
+  }));
+};
+
 // 恢复默认排序
 const restoreDefault = () => {
   newsArr.value = newsArr.value.sort((a, b) => a.order - b.order);
+  normalizeOrder();
   $message.success("恢复默认榜单排序成功");
 };
 
 // 将排序结果写入
 const saveSoreData = (name = null, open = false) => {
+  normalizeOrder();
   $message.success(
     name ? `${name}榜单已${open ? "开启" : "关闭"}` : "榜单排序成功"
   );
