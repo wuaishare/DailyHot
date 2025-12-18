@@ -388,8 +388,10 @@ const normalizeOrder = () => {
 
 // 恢复默认排序
 const restoreDefault = () => {
-  newsArr.value = newsArr.value.sort((a, b) => a.order - b.order);
-  normalizeOrder();
+  newsArr.value = store.defaultNewsArr
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((item, idx) => ({ ...item, order: idx }));
   $message.success("恢复默认榜单排序成功");
 };
 
