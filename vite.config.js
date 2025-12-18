@@ -8,6 +8,7 @@ import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 
 export default defineConfig(({ mode }) => {
+  const enablePrerender = process.env.PRERENDER === "true";
   return {
     base: loadEnv(mode, process.cwd())["VITE_DIR"],
     plugins: [
@@ -68,18 +69,22 @@ export default defineConfig(({ mode }) => {
           ],
         },
       }),
-      // 预渲染首页与榜单页，降低 SPA 空白首屏的抓取风险
-      prerender({
-        staticDir: fileURLToPath(new URL("./dist", import.meta.url)),
-        routes: ["/", "/list"],
-        rendererOptions: {
-          headless: true,
-          renderAfterDocumentEvent: "prerender-ready",
-          inject: {
-            prerender: true,
-          },
-        },
-      }),
+      // 预渲染首页与榜单页，降低 SPA 空白首屏的抓取风险（默认关闭，CI 可用 PRERENDER=true 开启）
+      ...(enablePrerender
+        ? [
+            prerender({
+              staticDir: fileURLToPath(new URL("./dist", import.meta.url)),
+              routes: ["/", "/list"],
+              rendererOptions: {
+                headless: true,
+                renderAfterDocumentEvent: "prerender-ready",
+                inject: {
+                  prerender: true,
+                },
+              },
+            }),
+          ]
+        : []),
     ],
     resolve: {
       alias: {
