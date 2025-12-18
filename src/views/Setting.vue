@@ -108,7 +108,7 @@
         <div class="name">
           <n-text class="text">榜单排序</n-text>
           <n-text class="tip" :depth="3">
-            拖拽以排序，开关用以控制在页面中的显示状态
+            拖拽以排序，开关用以控制在页面中的显示状态，可分配分类
           </n-text>
         </div>
         <n-popconfirm @positive-click="restoreDefault">
@@ -142,6 +142,14 @@
                 不可用
               </n-tag>
             </div>
+            <n-select
+              size="small"
+              class="category-select"
+              :options="categoryOptions"
+              v-model:value="element.category"
+              placeholder="分类"
+              :disabled="!categoryEnabled"
+            />
             <n-switch
               class="switch"
               :round="false"
@@ -151,6 +159,65 @@
           </n-card>
         </template>
       </draggable>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top" style="align-items: flex-start">
+        <div class="name">
+          <n-text class="text">分类开关</n-text>
+          <n-text class="tip" :depth="3">
+            开启后顶部导航和列表将按分类筛选热榜
+          </n-text>
+        </div>
+        <n-space vertical align="end">
+          <n-switch v-model:value="categoryEnabled" :round="false" />
+        </n-space>
+      </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top" style="align-items: flex-start">
+        <div class="name">
+          <n-text class="text">分类管理</n-text>
+          <n-text class="tip" :depth="3">
+            默认分类不可删除，最多保留 10 个分类
+          </n-text>
+        </div>
+        <div class="categories">
+          <div class="add">
+            <n-input
+              v-model:value="newCategory"
+              size="small"
+              placeholder="新分类名称"
+              style="width: 180px"
+            />
+            <n-button size="small" type="primary" @click="handleAddCategory">
+              新增
+            </n-button>
+          </div>
+          <div class="list">
+            <div
+              class="cat-item"
+              v-for="cat in store.categories.sort((a, b) => a.order - b.order)"
+              :key="cat.id"
+            >
+              <n-input
+                size="small"
+                :disabled="cat.builtin"
+                v-model:value="cat.name"
+                @change="(val) => handleRenameCategory(cat.id, val)"
+              />
+              <n-button
+                size="small"
+                type="error"
+                ghost
+                :disabled="cat.builtin"
+                @click="store.removeCategory(cat.id)"
+              >
+                删除
+              </n-button>
+            </div>
+          </div>
+        </div>
+      </div>
     </n-card>
     <n-h6 prefix="bar"> 杂项设置 </n-h6>
     <n-card class="set-item">
@@ -218,6 +285,17 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
+          <n-text class="text">清除缓存</n-text>
+          <n-text class="tip" :depth="3">
+            当前缓存版本：{{ cacheVersion }}，点击立即清除并刷新
+          </n-text>
+        </div>
+        <n-button @click="clearCache" type="warning" ghost> 清除缓存 </n-button>
+      </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top">
+        <div class="name">
           <n-text class="text">重置所有数据</n-text>
           <n-text class="tip" :depth="3">
             重置所有数据，你的自定义设置都将会丢失
@@ -254,7 +332,19 @@ const {
   autoRefreshEnabled,
   autoRefreshInterval,
   showImages,
+  categoryEnabled,
+  activeCategory,
 } = storeToRefs(store);
+const categories = computed(() =>
+  store.categories.slice().sort((a, b) => a.order - b.order)
+);
+const categoryOptions = computed(() =>
+  categories.value.map((c) => ({ label: c.name, value: c.name }))
+);
+const newCategory = ref("");
+const cacheVersion = ref(
+  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev"
+);
 
 // 深浅模式
 const themeOptions = ref([
@@ -345,10 +435,40 @@ const applyAutoInterval = () => {
   autoRefreshInterval.value = seconds;
 };
 
+const clearCache = () => {
+  if (typeof localStorage !== "undefined") {
+    localStorage.clear();
+    localStorage.setItem("CACHE_VERSION", cacheVersion.value);
+  }
+  location.reload();
+};
+
+const handleAddCategory = () => {
+  if (!newCategory.value) return;
+  const ok = store.addCategory(newCategory.value.trim());
+  if (ok) {
+    newCategory.value = "";
+  }
+};
+
+const handleRenameCategory = (id, val) => {
+  store.renameCategory(id, val);
+};
+
 watch(
   () => autoRefreshInterval.value,
   () => {
     syncAutoTime();
+  },
+  { immediate: true }
+);
+
+watch(
+  () => categoryEnabled.value,
+  (val) => {
+    if (!val) {
+      activeCategory.value = "全部";
+    }
   },
   { immediate: true }
 );
@@ -394,6 +514,10 @@ watch(
         max-width: 200px;
       }
 
+      .category-select {
+        min-width: 140px;
+      }
+
       .auto-refresh {
         display: flex;
         align-items: center;
@@ -418,6 +542,32 @@ watch(
             :deep(.n-input-number) {
               width: 120px;
             }
+          }
+        }
+      }
+
+      .categories {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+
+        .add {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+
+          .cat-item {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            max-width: 320px;
           }
         }
       }

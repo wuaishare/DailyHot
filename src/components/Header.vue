@@ -8,20 +8,30 @@
           <n-text :depth="3">汇聚全网热点，热门尽览无余_吾爱分享网</n-text>
         </div>
       </div>
-      <div class="current-time" v-if="store.timeData">
-        <n-text class="time">{{ store.timeData.time.text }}</n-text>
-        <n-text class="date" :depth="3">
-          {{
-            store.timeData.lunar.GanZhiYear +
-            "年 " +
-            store.timeData.lunar.text +
-            " " +
-            store.timeData.time.weekday
-          }}
-        </n-text>
+      <div v-if="!store.categoryEnabled">
+        <div class="current-time" v-if="store.timeData">
+          <n-text class="time">{{ store.timeData.time.text }}</n-text>
+          <n-text class="date" :depth="3">
+            {{
+              store.timeData.lunar.GanZhiYear +
+              "年 " +
+              store.timeData.lunar.text +
+              " " +
+              store.timeData.time.weekday
+            }}
+          </n-text>
+        </div>
+        <div class="current-time" v-else>
+          <n-text class="time">时间获取中</n-text>
+        </div>
       </div>
-      <div class="current-time" v-else>
-        <n-text class="time">时间获取中</n-text>
+      <div v-else class="category-select">
+        <n-select
+          v-model:value="activeCategoryLocal"
+          :options="categoryOptions"
+          size="large"
+          placeholder="选择分类"
+        />
       </div>
       <div class="controls">
         <n-space justify="end">
@@ -182,6 +192,21 @@ const timeForm = reactive({
   hour: 0,
   minute: 30,
   second: 0,
+});
+const activeCategoryLocal = computed({
+  get() {
+    return store.activeCategory;
+  },
+  set(val) {
+    store.setActiveCategory(val);
+  },
+});
+const categoryOptions = computed(() => {
+  const base = store.categories
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((c) => ({ label: c.name, value: c.name }));
+  return [{ label: "全部", value: "全部" }, ...base];
 });
 
 // 移动端时间模块
@@ -531,6 +556,15 @@ onBeforeUnmount(() => {
       .tip {
         font-size: 12px;
       }
+    }
+  }
+
+  .category-select {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+    :deep(.n-select) {
+      min-width: 240px;
     }
   }
 

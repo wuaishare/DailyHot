@@ -9,6 +9,20 @@ import { mainStore } from "@/store";
 // 全局样式
 import "@/style/global.scss";
 
+const CACHE_VERSION =
+  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev";
+
+const ensureCacheVersion = () => {
+  if (typeof localStorage === "undefined") return;
+  const saved = localStorage.getItem("CACHE_VERSION");
+  if (saved !== CACHE_VERSION) {
+    localStorage.clear();
+    localStorage.setItem("CACHE_VERSION", CACHE_VERSION);
+  }
+};
+
+ensureCacheVersion();
+
 const app = createApp(App);
 
 const pinia = createPinia();

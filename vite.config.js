@@ -9,8 +9,18 @@ import Components from "unplugin-vue-components/vite";
 
 export default defineConfig(({ mode }) => {
   const enablePrerender = process.env.PRERENDER === "true";
+  const buildId =
+    process.env.VERCEL_GIT_COMMIT_SHA ||
+    process.env.GITHUB_SHA ||
+    process.env.COMMIT_REF ||
+    process.env.VERCEL_DEPLOYMENT_ID ||
+    process.env.npm_package_version ||
+    Date.now().toString();
   return {
     base: loadEnv(mode, process.cwd())["VITE_DIR"],
+    define: {
+      __APP_VERSION__: JSON.stringify(buildId),
+    },
     plugins: [
       vue(),
       AutoImport({

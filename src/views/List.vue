@@ -1,11 +1,11 @@
 <template>
   <div class="list">
-    <n-space class="type" v-if="store.newsArr[0]">
+    <n-space class="type" v-if="availableNews.length">
       <n-tag
         round
         size="large"
         class="tag"
-        v-for="item in store.newsArr.filter((item) => item.show)"
+        v-for="item in availableNews"
         :key="item"
         :type="item.name === listType ? 'primary' : 'default'"
         @click="changeType(item.name)"
@@ -154,8 +154,19 @@ const isPrerender =
 const coverErrorMap = reactive({});
 
 const updateTime = ref(null);
+const availableNews = computed(() => {
+  const categoryOn = store.categoryEnabled;
+  const currentCat = store.activeCategory;
+  return store.newsArr
+    .filter((item) => item.show)
+    .filter((item) => !store.unavailableSources.includes(item.name))
+    .filter((item) =>
+      categoryOn && currentCat !== "全部" ? item.category === currentCat : true
+    )
+    .sort((a, b) => a.order - b.order);
+});
 const listType = ref(
-  router.currentRoute.value.query.type || store.newsArr[0].name
+  router.currentRoute.value.query.type || availableNews.value[0]?.name
 );
 const pageNumber = ref(
   router.currentRoute.value.query.page
@@ -171,6 +182,7 @@ const showImages = computed(() => store.showImages);
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
+  if (!name) return;
   if (isPrerender) {
     const label = store.newsArr.find((item) => item.name === name)?.label || "热门榜单";
     listData.value = {
@@ -182,7 +194,8 @@ const getHotListsData = async (name, isNew = false) => {
     return;
   }
   listData.value = null;
-  const item = store.newsArr.find((item) => item.name == name)
+  const item = store.newsArr.find((item) => item.name == name);
+  if (!item) return;
   getHotLists(item.name, isNew, item.params).then((res) => {
     console.log(res);
     if (res.code === 200) {
@@ -209,6 +222,7 @@ const getItemLink = (data) => {
 
 // 切换类别
 const changeType = (type) => {
+  if (!type) return;
   router.push({
     path: "/list",
     query: {
@@ -253,6 +267,17 @@ watch(
       getHotListsData(listType.value);
     }
   }
+);
+
+watch(
+  () => [availableNews.value, store.activeCategory],
+  () => {
+    const exists = availableNews.value.find((i) => i.name === listType.value);
+    if (!exists && availableNews.value[0]) {
+      changeType(availableNews.value[0].name);
+    }
+  },
+  { deep: true }
 );
 
 onMounted(() => {

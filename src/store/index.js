@@ -6,343 +6,386 @@ export const mainStore = defineStore("mainData", {
       // 系统主题
       siteTheme: "light",
       siteThemeAuto: true,
-      // 新闻类别
+      // 新闻类别（已分好类）
       defaultNewsArr: [
         {
-          label: "哔哩哔哩",
-          name: "bilibili",
+          label: "百度",
+          name: "baidu",
           order: 0,
           show: true,
+          category: "综合",
         },
         {
           label: "微博",
           name: "weibo",
           order: 1,
           show: true,
+          category: "综合",
         },
         {
           label: "抖音",
           name: "douyin",
           order: 2,
           show: true,
+          category: "综合",
         },
         {
           label: "知乎",
           name: "zhihu",
           order: 3,
           show: true,
-        },
-        {
-          label: "36氪",
-          name: "36kr",
-          order: 4,
-          show: true,
-        },
-        {
-          label: "百度",
-          name: "baidu",
-          order: 5,
-          show: true,
-        },
-        {
-          label: "少数派",
-          name: "sspai",
-          order: 6,
-          show: true,
-        },
-        {
-          label: "IT之家",
-          name: "ithome",
-          order: 7,
-          show: true,
+          category: "综合",
         },
         {
           label: "澎湃新闻",
           name: "thepaper",
-          order: 8,
+          order: 4,
           show: true,
+          category: "综合",
         },
         {
           label: "今日头条",
           name: "toutiao",
-          order: 9,
+          order: 5,
           show: true,
-        },
-        {
-          label: "百度贴吧",
-          name: "tieba",
-          order: 10,
-          show: true,
-        },
-        {
-          label: "稀土掘金",
-          name: "juejin",
-          order: 11,
-          show: true,
+          category: "综合",
         },
         {
           label: "腾讯新闻",
           name: "qq-news",
-          order: 12,
+          order: 6,
           show: true,
-        },
-        {
-          label: "豆瓣电影",
-          name: "douban-movie",
-          order: 13,
-          show: true,
-        },
-        {
-          label: "原神",
-          name: "genshin",
-          order: 14,
-          show: true,
-        },
-        {
-          label: "崩坏：星穹铁道",
-          name: "starrail",
-          order: 16,
-          show: true,
-        },
-        {
-          label: "LOL",
-          name: "lol",
-          order: 15,
-          show: true,
+          category: "综合",
         },
         {
           label: "网易新闻",
           name: "netease-news",
-          order: 17,
+          order: 7,
           show: true,
-        },
-        {
-          label: "微信读书",
-          name: "weread",
-          order: 18,
-          show: true,
-        },
-        {
-          label: "豆瓣讨论小组",
-          name: "douban-group",
-          order: 19,
-          show: true,
-        },
-        {
-          label: "NGA",
-          name: "ngabbs",
-          order: 20,
-          show: true,
-        },
-        {
-          label: "HelloGitHub",
-          name: "hellogithub",
-          order: 21,
-          show: true,
-        },
-        {
-          label: "简书",
-          name: "jianshu",
-          order: 22,
-          show: true,
+          category: "综合",
         },
         {
           label: "知乎日报",
           name: "zhihu-daily",
-          order: 23,
+          order: 8,
           show: true,
+          category: "综合",
         },
         {
-          label: "51CTO",
-          name: "51cto",
-          order: 24,
+          label: "中央气象台",
+          name: "weatheralarm",
+          order: 9,
           show: true,
-        },
-        {
-          label: "吾爱破解",
-          name: "52pojie",
-          order: 25,
-          show: true,
-        },
-        {
-          label: "AcFun",
-          name: "acfun",
-          order: 26,
-          show: true,
-        },
-        {
-          label: "酷安",
-          name: "coolapk",
-          order: 27,
-          show: true,
-        },
-        {
-          label: "CSDN",
-          name: "csdn",
-          order: 28,
-          show: true,
-        },
-        {
-          label: "数字尾巴",
-          name: "dgtle",
-          order: 29,
-          show: true,
-        },
-        {
-          label: "中国地震台",
-          name: "earthquake",
-          order: 30,
-          show: true,
-        },
-        {
-          label: "游戏葡萄",
-          name: "gameres",
-          order: 31,
-          show: true,
-        },
-        {
-          label: "极客公园",
-          name: "geekpark",
-          order: 32,
-          show: true,
-        },
-        {
-          label: "GitHub 趋势",
-          name: "github",
-          order: 33,
-          show: true,
-        },
-        {
-          label: "果壳",
-          name: "guokr",
-          order: 34,
-          show: true,
-        },
-        {
-          label: "Hacker News",
-          name: "hackernews",
-          order: 35,
-          show: true,
+          category: "生活",
         },
         {
           label: "历史上的今天",
           name: "history",
-          order: 36,
+          order: 10,
           show: true,
+          category: "综合",
         },
         {
-          label: "崩坏3",
-          name: "honkai",
-          order: 37,
+          label: "纽约时报",
+          name: "nytimes",
+          order: 11,
           show: true,
+          category: "综合",
+        },
+        {
+          label: "36氪",
+          name: "36kr",
+          order: 12,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "IT之家",
+          name: "ithome",
+          order: 13,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "稀土掘金",
+          name: "juejin",
+          order: 14,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "51CTO",
+          name: "51cto",
+          order: 15,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "CSDN",
+          name: "csdn",
+          order: 16,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "数字尾巴",
+          name: "dgtle",
+          order: 17,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "爱范儿",
+          name: "ifanr",
+          order: 18,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "HelloGitHub",
+          name: "hellogithub",
+          order: 19,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "极客公园",
+          name: "geekpark",
+          order: 20,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "GitHub 趋势",
+          name: "github",
+          order: 21,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "果壳",
+          name: "guokr",
+          order: 22,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "Product Hunt",
+          name: "producthunt",
+          order: 23,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "Hacker News",
+          name: "hackernews",
+          order: 24,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "IT之家「喜加一」",
+          name: "ithome-xijiayi",
+          order: 25,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "酷安",
+          name: "coolapk",
+          order: 26,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "少数派",
+          name: "sspai",
+          order: 27,
+          show: true,
+          category: "科技",
+        },
+        {
+          label: "什么值得买",
+          name: "smzdm",
+          order: 28,
+          show: true,
+          category: "生活",
+        },
+        {
+          label: "哔哩哔哩",
+          name: "bilibili",
+          order: 29,
+          show: true,
+          category: "社区",
+        },
+        {
+          label: "百度贴吧",
+          name: "tieba",
+          order: 30,
+          show: true,
+          category: "社区",
+        },
+        {
+          label: "AcFun",
+          name: "acfun",
+          order: 31,
+          show: true,
+          category: "社区",
+        },
+        {
+          label: "NGA",
+          name: "ngabbs",
+          order: 32,
+          show: true,
+          category: "社区",
+        },
+        {
+          label: "吾爱破解",
+          name: "52pojie",
+          order: 33,
+          show: true,
+          category: "社区",
         },
         {
           label: "全球主机交流",
           name: "hostloc",
-          order: 38,
+          order: 34,
           show: true,
+          category: "社区",
         },
         {
           label: "虎扑",
           name: "hupu",
+          order: 35,
+          show: true,
+          category: "社区",
+        },
+        {
+          label: "V2EX",
+          name: "v2ex",
+          order: 36,
+          show: true,
+          category: "社区",
+        },
+        {
+          label: "水木社区",
+          name: "newsmth",
+          order: 37,
+          show: true,
+          category: "社区",
+        },
+        {
+          label: "Nodeseek",
+          name: "nodeseek",
+          order: 38,
+          show: true,
+          category: "社区",
+        },
+        {
+          label: "LinuxDo",
+          name: "linuxdo",
           order: 39,
           show: true,
+          category: "社区",
         },
         {
           label: "虎嗅",
           name: "huxiu",
           order: 40,
           show: true,
-        },
-        {
-          label: "爱范儿",
-          name: "ifanr",
-          order: 41,
-          show: true,
-        },
-        {
-          label: "IT之家「喜加一」",
-          name: "ithome-xijiayi",
-          order: 42,
-          show: true,
-        },
-        {
-          label: "快手",
-          name: "kuaishou",
-          order: 43,
-          show: true,
-        },
-        {
-          label: "LinuxDo",
-          name: "linuxdo",
-          order: 44,
-          show: true,
+          category: "社区",
         },
         {
           label: "米游社",
           name: "miyoushe",
+          order: 41,
+          show: true,
+          category: "社区",
+        },
+        {
+          label: "快手",
+          name: "kuaishou",
+          order: 42,
+          show: true,
+          category: "综合",
+        },
+        {
+          label: "原神",
+          name: "genshin",
+          order: 43,
+          show: true,
+          category: "游戏",
+        },
+        {
+          label: "崩坏：星穹铁道",
+          name: "starrail",
+          order: 44,
+          show: true,
+          category: "游戏",
+        },
+        {
+          label: "崩坏3",
+          name: "honkai",
           order: 45,
           show: true,
+          category: "游戏",
         },
+        { label: "LOL", name: "lol", order: 46, show: true, category: "游戏" },
         {
-          label: "水木社区",
-          name: "newsmth",
-          order: 46,
-          show: true,
-        },
-        {
-          label: "Nodeseek",
-          name: "nodeseek",
+          label: "游戏葡萄",
+          name: "gameres",
           order: 47,
           show: true,
-        },
-        {
-          label: "纽约时报",
-          name: "nytimes",
-          order: 48,
-          show: true,
-        },
-        {
-          label: "Product Hunt",
-          name: "producthunt",
-          order: 49,
-          show: true,
-        },
-        {
-          label: "新浪新闻",
-          name: "sina-news",
-          order: 50,
-          show: true,
-        },
-        {
-          label: "新浪热榜",
-          name: "sina",
-          order: 51,
-          show: true,
-        },
-        {
-          label: "什么值得买",
-          name: "smzdm",
-          order: 52,
-          show: true,
-        },
-        {
-          label: "V2EX",
-          name: "v2ex",
-          order: 53,
-          show: true,
-        },
-        {
-          label: "中央气象台",
-          name: "weatheralarm",
-          order: 54,
-          show: true,
+          category: "游戏",
         },
         {
           label: "游研社",
           name: "yystv",
-          order: 55,
+          order: 48,
           show: true,
+          category: "游戏",
+        },
+        {
+          label: "豆瓣电影",
+          name: "douban-movie",
+          order: 49,
+          show: true,
+          category: "生活",
+        },
+        {
+          label: "微信读书",
+          name: "weread",
+          order: 50,
+          show: true,
+          category: "生活",
+        },
+        {
+          label: "豆瓣讨论小组",
+          name: "douban-group",
+          order: 51,
+          show: true,
+          category: "生活",
+        },
+        {
+          label: "简书",
+          name: "jianshu",
+          order: 52,
+          show: true,
+          category: "生活",
+        },
+        {
+          label: "新浪新闻",
+          name: "sina-news",
+          order: 53,
+          show: true,
+          category: "生活",
+        },
+        {
+          label: "新浪热榜",
+          name: "sina",
+          order: 54,
+          show: true,
+          category: "生活",
         },
       ],
       newsArr: [],
@@ -360,6 +403,16 @@ export const mainStore = defineStore("mainData", {
       autoRefreshInterval: 1800,
       // 是否显示封面图片
       showImages: false,
+      // 分类
+      categoryEnabled: false,
+      activeCategory: "全部",
+      categories: [
+        { id: "general", name: "综合", order: 0, builtin: true },
+        { id: "tech", name: "科技", order: 1, builtin: true },
+        { id: "life", name: "生活", order: 2, builtin: true },
+        { id: "games", name: "游戏", order: 3, builtin: true },
+        { id: "community", name: "社区", order: 4, builtin: true },
+      ],
       // 失效的榜单源（临时标记，不持久化）
       unavailableSources: [],
       // 时间数据
@@ -370,6 +423,56 @@ export const mainStore = defineStore("mainData", {
   },
   getters: {},
   actions: {
+    ensureCategoriesForNews(list) {
+      const fallback = "综合";
+      return list.map((item) => ({
+        ...item,
+        category: item.category || fallback,
+      }));
+    },
+    addCategory(name) {
+      if (!name) return false;
+      const limit = 10;
+      const exists = this.categories.some(
+        (cat) => cat.name === name || cat.id === name
+      );
+      if (exists) return false;
+      if (this.categories.length >= limit) {
+        $message?.warning?.(`最多创建 ${limit} 个分类`);
+        return false;
+      }
+      this.categories.push({
+        id: `${Date.now()}`,
+        name,
+        order: this.categories.length,
+        builtin: false,
+      });
+      return true;
+    },
+    removeCategory(id) {
+      const cat = this.categories.find((c) => c.id === id);
+      if (!cat || cat.builtin) return;
+      this.categories = this.categories.filter((c) => c.id !== id);
+      this.newsArr = this.newsArr.map((item) =>
+        item.category === cat.name ? { ...item, category: "综合" } : item
+      );
+      if (this.activeCategory === cat.name) {
+        this.activeCategory = "全部";
+      }
+    },
+    renameCategory(id, newName) {
+      if (!newName) return;
+      const cat = this.categories.find((c) => c.id === id);
+      if (!cat || cat.builtin) return;
+      const oldName = cat.name;
+      cat.name = newName;
+      this.newsArr = this.newsArr.map((item) =>
+        item.category === oldName ? { ...item, category: newName } : item
+      );
+    },
+    setActiveCategory(name) {
+      this.activeCategory = name;
+    },
     // 更改系统主题
     setSiteTheme(val) {
       $message.info(`已切换至${val === "dark" ? "深色模式" : "浅色模式"}`, {
@@ -393,12 +496,17 @@ export const mainStore = defineStore("mainData", {
     },
     // 初始化默认榜单（SSR/预渲染也能有基础数据）
     ensureNewsList() {
+      this.defaultNewsArr = this.ensureCategoriesForNews(this.defaultNewsArr);
       if (!this.newsArr || this.newsArr.length === 0) {
         this.newsArr = this.defaultNewsArr;
+      } else {
+        this.newsArr = this.ensureCategoriesForNews(this.newsArr);
       }
     },
     // 检查更新
     checkNewsUpdate() {
+      this.defaultNewsArr = this.ensureCategoriesForNews(this.defaultNewsArr);
+      this.newsArr = this.ensureCategoriesForNews(this.newsArr);
       if (typeof localStorage === "undefined") {
         this.ensureNewsList();
         return false;
@@ -441,6 +549,9 @@ export const mainStore = defineStore("mainData", {
         "autoRefreshPaused",
         "autoRefreshInterval",
         "showImages",
+        "categoryEnabled",
+        "activeCategory",
+        "categories",
         "listFontSize",
       ],
     },

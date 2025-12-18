@@ -165,6 +165,7 @@ const isClient = typeof window !== "undefined";
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
+const cacheVersion = "2024-12-18-1";
 const props = defineProps({
   // 热榜数据
   hotData: {
