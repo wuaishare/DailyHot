@@ -189,7 +189,7 @@ export const mainStore = defineStore("mainData", {
           show: true,
         },
         {
-          label: "地震速报",
+          label: "中国地震台",
           name: "earthquake",
           order: 30,
           show: true,
