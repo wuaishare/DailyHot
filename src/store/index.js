@@ -358,6 +358,10 @@ export const mainStore = defineStore("mainData", {
       autoRefreshEnabled: false,
       autoRefreshPaused: false,
       autoRefreshInterval: 1800,
+      // 是否显示封面图片
+      showImages: false,
+      // 失效的榜单源（临时标记，不持久化）
+      unavailableSources: [],
       // 时间数据
       timeData: null,
       // 字体大小
@@ -373,6 +377,19 @@ export const mainStore = defineStore("mainData", {
       });
       this.siteTheme = val;
       this.siteThemeAuto = false;
+    },
+    // 标记榜单状态
+    markUnavailable(name) {
+      if (!name) return;
+      if (!this.unavailableSources.includes(name)) {
+        this.unavailableSources.push(name);
+      }
+    },
+    markAvailable(name) {
+      if (!name) return;
+      this.unavailableSources = this.unavailableSources.filter(
+        (item) => item !== name
+      );
     },
     // 初始化默认榜单（SSR/预渲染也能有基础数据）
     ensureNewsList() {
@@ -423,6 +440,7 @@ export const mainStore = defineStore("mainData", {
         "autoRefreshEnabled",
         "autoRefreshPaused",
         "autoRefreshInterval",
+        "showImages",
         "listFontSize",
       ],
     },

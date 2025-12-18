@@ -94,13 +94,6 @@
                   rel="noopener noreferrer nofollow"
                 >
                   <div class="content">
-                    <img
-                      v-if="item.cover"
-                      class="cover"
-                      :src="item.cover"
-                      :alt="item.title"
-                      loading="lazy"
-                    />
                     <div class="copy">
                       <n-text class="title" v-html="item.title" />
                       <n-text
@@ -108,6 +101,18 @@
                         class="desc"
                         :depth="3"
                         v-html="item.desc"
+                      />
+                    </div>
+                    <div
+                      class="cover-wrapper"
+                      v-if="showImages && item.cover && !coverErrorMap[item.cover]"
+                    >
+                      <img
+                        class="cover"
+                        :src="item.cover"
+                        :alt="item.title"
+                        loading="lazy"
+                        @error="coverErrorMap[item.cover] = true"
                       />
                     </div>
                   </div>
@@ -146,6 +151,7 @@ const store = mainStore();
 const isClient = typeof window !== "undefined";
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
+const coverErrorMap = reactive({});
 
 const updateTime = ref(null);
 const listType = ref(
@@ -161,6 +167,7 @@ const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
+const showImages = computed(() => store.showImages);
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
@@ -179,8 +186,10 @@ const getHotListsData = async (name, isNew = false) => {
   getHotLists(item.name, isNew, item.params).then((res) => {
     console.log(res);
     if (res.code === 200) {
+      store.markAvailable(item.name);
       listData.value = res;
     } else {
+      store.markUnavailable(item.name);
       $message.error(res.message);
     }
   });
@@ -398,15 +407,9 @@ onBeforeUnmount(() => {
         color: inherit;
         .content {
           display: flex;
-          gap: 12px;
+          flex-direction: column;
+          gap: 8px;
           width: 100%;
-        }
-        .cover {
-          width: 72px;
-          height: 72px;
-          object-fit: cover;
-          border-radius: 10px;
-          flex-shrink: 0;
         }
         .copy {
           display: flex;
@@ -422,6 +425,24 @@ onBeforeUnmount(() => {
             -webkit-box-orient: vertical;
             -webkit-line-clamp: 5;
           }
+        }
+        .cover-wrapper {
+          max-height: 0;
+          overflow: hidden;
+          opacity: 0;
+          transition: all 0.25s ease;
+
+          .cover {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            display: block;
+          }
+        }
+        &:hover .cover-wrapper {
+          max-height: 220px;
+          opacity: 1;
         }
       }
       .message {
@@ -446,10 +467,6 @@ onBeforeUnmount(() => {
           padding: 12px 10px;
           .n-list-item__prefix {
             margin-right: 12px;
-          }
-          .cover {
-            width: 56px;
-            height: 56px;
           }
         }
       }

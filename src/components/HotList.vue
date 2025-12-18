@@ -78,14 +78,19 @@
               rel="noopener noreferrer nofollow"
               @click.stop
             >
-              <img
-                v-if="item.cover"
-                class="cover"
-                :src="item.cover"
-                :alt="item.title"
-                loading="lazy"
-              />
               <span class="title-text">{{ item.title }}</span>
+              <div
+                class="cover-wrapper"
+                v-if="showImages && item.cover && !coverErrorMap[item.cover]"
+              >
+                <img
+                  class="cover"
+                  :src="item.cover"
+                  :alt="item.title"
+                  loading="lazy"
+                  @error="coverErrorMap[item.cover] = true"
+                />
+              </div>
             </n-a>
           </div>
         </div>
@@ -157,6 +162,7 @@ const store = mainStore();
 const isClient = typeof window !== "undefined";
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
+const coverErrorMap = reactive({});
 const props = defineProps({
   // 热榜数据
   hotData: {
@@ -184,6 +190,7 @@ const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
+const showImages = computed(() => store.showImages);
 
 const updateIsDesktop = () => {
   if (!isClient) return;
@@ -194,12 +201,12 @@ const updateIsDesktop = () => {
 const getHotListsData = async (name, isNew = false) => {
   if (isPrerender) return;
   try {
-    // hotListData.value = null;
     loadingError.value = false;
     const item = store.newsArr.find((item) => item.name == name);
     const result = await getHotLists(item.name, isNew, item.params);
     // console.log(result);
     if (result.code === 200) {
+      store.markAvailable(item.name);
       listLoading.value = false;
       hotListData.value = result;
       // 滚动至顶部
@@ -207,10 +214,12 @@ const getHotListsData = async (name, isNew = false) => {
         scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
       }
     } else {
+      store.markUnavailable(item.name);
       loadingError.value = true;
       $message.error(result.title + result.message);
     }
   } catch (error) {
+    store.markUnavailable(name);
     loadingError.value = true;
     $message.error("热榜加载失败，请重试");
   }
@@ -314,8 +323,8 @@ onBeforeUnmount(() => {
       align-items: center;
       .n-avatar {
         background-color: transparent;
-        width: 20px;
-        height: 20px;
+        width: 25px;
+        height: 25px;
         margin-right: 8px;
       }
     }
@@ -451,12 +460,27 @@ onBeforeUnmount(() => {
           transition: all 0.3s;
         }
 
-        .cover {
-          width: 36px;
-          height: 36px;
-          object-fit: cover;
-          border-radius: 6px;
-          flex-shrink: 0;
+        .cover-wrapper {
+          display: block;
+          max-height: 0;
+          overflow: hidden;
+          opacity: 0;
+          transition: all 0.25s ease;
+          width: 100%;
+
+          .cover {
+            margin-top: 6px;
+            width: 100%;
+            max-height: 160px;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+          }
+        }
+
+        &:hover .cover-wrapper {
+          max-height: 180px;
+          opacity: 1;
         }
       }
     }

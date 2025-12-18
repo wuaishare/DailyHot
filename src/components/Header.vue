@@ -52,54 +52,54 @@
                 立即刷新
               </n-button>
               <div class="auto-row">
-                <n-space align="center" justify="space-between">
-                  <n-space align="center">
-                    <n-switch
-                      size="small"
-                      v-model:value="autoEnabled"
-                      @update:value="toggleAutoRefresh"
-                    />
-                    <n-text>自动刷新</n-text>
-                  </n-space>
-                  <n-button text size="small" @click="togglePause" :disabled="!store.autoRefreshEnabled">
-                    {{ store.autoRefreshPaused ? "继续" : "暂停" }}
-                  </n-button>
+              <n-space align="center" justify="space-between">
+                <n-space align="center">
+                  <n-switch
+                    size="small"
+                    v-model:value="autoEnabled"
+                    @update:value="toggleAutoRefresh"
+                  />
+                  <n-text>自动刷新</n-text>
                 </n-space>
-                <div class="time-inputs">
-                  <div class="time-item">
-                    <n-input-number
-                      size="small"
-                      v-model:value="timeForm.hour"
-                      :min="0"
-                      :max="23"
-                      button-placement="both"
-                      @update:value="applyAutoInterval"
-                    />
-                    <span class="unit">时</span>
-                  </div>
-                  <div class="time-item">
-                    <n-input-number
-                      size="small"
-                      v-model:value="timeForm.minute"
-                      :min="0"
-                      :max="59"
-                      button-placement="both"
-                      @update:value="applyAutoInterval"
-                    />
-                    <span class="unit">分</span>
-                  </div>
-                  <div class="time-item">
-                    <n-input-number
-                      size="small"
-                      v-model:value="timeForm.second"
-                      :min="0"
-                      :max="59"
-                      button-placement="both"
-                      @update:value="applyAutoInterval"
-                    />
-                    <span class="unit">秒</span>
-                  </div>
+                <n-button text size="small" @click="togglePause" :disabled="!store.autoRefreshEnabled">
+                  {{ store.autoRefreshPaused ? "继续" : "暂停" }}
+                </n-button>
+              </n-space>
+              <div class="time-inputs">
+                <div class="time-item">
+                  <n-input-number
+                    size="small"
+                    v-model:value="timeForm.hour"
+                    :min="0"
+                    :max="23"
+                    button-placement="both"
+                    @update:value="applyAutoInterval"
+                  />
+                  <span class="unit">时</span>
                 </div>
+                <div class="time-item">
+                  <n-input-number
+                    size="small"
+                    v-model:value="timeForm.minute"
+                    :min="0"
+                    :max="59"
+                    button-placement="both"
+                    @update:value="applyAutoInterval"
+                  />
+                  <span class="unit">分</span>
+                </div>
+                <div class="time-item">
+                  <n-input-number
+                    size="small"
+                    v-model:value="timeForm.second"
+                    :min="0"
+                    :max="59"
+                    button-placement="both"
+                    @update:value="applyAutoInterval"
+                  />
+                  <span class="unit">秒</span>
+                </div>
+              </div>
                 <n-text depth="3" class="tip">
                   默认 0时30分0秒，最少 60 秒。开启后图标右侧显示倒计时。
                 </n-text>
@@ -510,14 +510,14 @@ onBeforeUnmount(() => {
         border-top: 1px solid var(--n-border-color);
       }
       .time-inputs {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 10px;
         .time-item {
           display: flex;
-          flex-direction: column;
           align-items: center;
-          gap: 4px;
+          gap: 6px;
+          min-width: 120px;
           .unit {
             font-size: 12px;
             line-height: 1;

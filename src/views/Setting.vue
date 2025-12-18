@@ -134,6 +134,13 @@
             <div class="desc" :style="{ opacity: element.show ? null : 0.6 }">
               <img class="logo" :src="`/logo/${element.name}.png`" alt="logo" />
               <n-text class="news-name" v-html="element.label" />
+              <n-tag
+                size="small"
+                type="warning"
+                v-if="store.unavailableSources.includes(element.name)"
+              >
+                不可用
+              </n-tag>
             </div>
             <n-switch
               class="switch"
@@ -166,7 +173,7 @@
                 button-placement="both"
                 @update:value="applyAutoInterval"
               />
-              <span>时</span>
+              <span class="unit">时</span>
             </div>
             <div class="time-item">
               <n-input-number
@@ -178,7 +185,7 @@
                 button-placement="both"
                 @update:value="applyAutoInterval"
               />
-              <span>分</span>
+              <span class="unit">分</span>
             </div>
             <div class="time-item">
               <n-input-number
@@ -190,11 +197,22 @@
                 button-placement="both"
                 @update:value="applyAutoInterval"
               />
-              <span>秒</span>
+              <span class="unit">秒</span>
             </div>
           </div>
           <n-switch v-model:value="autoRefreshEnabled" :round="false" />
         </div>
+      </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">显示封面图片</n-text>
+          <n-text class="tip" :depth="3">
+            开启后在首页卡片和列表中显示封面图片（有防盗链的将自动隐藏）
+          </n-text>
+        </div>
+        <n-switch v-model:value="showImages" :round="false" />
       </div>
     </n-card>
     <n-card class="set-item">
@@ -235,6 +253,7 @@ const {
   listFontSize,
   autoRefreshEnabled,
   autoRefreshInterval,
+  showImages,
 } = storeToRefs(store);
 
 // 深浅模式
@@ -381,15 +400,16 @@ watch(
         gap: 12px;
 
         .time-inputs {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 8px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px 12px;
+          align-items: center;
 
           .time-item {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
+            min-width: 150px;
 
             span {
               font-size: 12px;
