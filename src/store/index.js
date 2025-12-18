@@ -416,9 +416,9 @@ export const mainStore = defineStore("mainData", {
       categories: [
         { id: "general", name: "综合", order: 0, builtin: true },
         { id: "tech", name: "科技", order: 1, builtin: true },
-        { id: "life", name: "生活", order: 2, builtin: true },
+        { id: "community", name: "社区", order: 2, builtin: true },
         { id: "games", name: "游戏", order: 3, builtin: true },
-        { id: "community", name: "社区", order: 4, builtin: true },
+        { id: "life", name: "生活", order: 4, builtin: true },
       ],
       // 失效的榜单源（临时标记，不持久化）
       unavailableSources: [],
