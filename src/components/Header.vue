@@ -600,7 +600,8 @@ onBeforeUnmount(() => {
       justify-content: center;
       width: 100%;
       .cat-btn {
-        font-weight: 600;
+        font-weight: 700;
+        font-size: 15px;
       }
     }
   }
@@ -638,6 +639,11 @@ onBeforeUnmount(() => {
     :deep(.controls .n-button),
     :deep(.mobile .n-button) {
       transform: scale(0.88);
+    }
+    .category-select {
+      .category-nav .cat-btn {
+        font-size: 16px;
+      }
     }
   }
 
