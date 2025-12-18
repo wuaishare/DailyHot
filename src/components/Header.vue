@@ -601,7 +601,7 @@ onBeforeUnmount(() => {
       width: 100%;
       .cat-btn {
         font-weight: 700;
-        font-size: 17px;
+        font-size: 18px;
       }
     }
   }
@@ -642,7 +642,7 @@ onBeforeUnmount(() => {
     }
     .category-select {
       .category-nav .cat-btn {
-        font-size: 15px;
+        font-size: 16px;
       }
     }
   }
