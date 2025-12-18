@@ -402,13 +402,14 @@ onBeforeUnmount(() => {
       }
       .text {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         text-decoration: none;
         color: inherit;
         .content {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
+          display: grid;
+          grid-template-columns: 1fr 160px;
+          gap: 12px;
+          align-items: center;
           width: 100%;
         }
         .copy {
@@ -427,22 +428,16 @@ onBeforeUnmount(() => {
           }
         }
         .cover-wrapper {
-          max-height: 0;
+          max-height: none;
+          opacity: 1;
           overflow: hidden;
-          opacity: 0;
-          transition: all 0.25s ease;
-
           .cover {
-            width: 100%;
-            max-height: 200px;
+            width: 160px;
+            height: 96px;
             object-fit: cover;
             border-radius: 12px;
             display: block;
           }
-        }
-        &:hover .cover-wrapper {
-          max-height: 220px;
-          opacity: 1;
         }
       }
       .message {
@@ -467,6 +462,13 @@ onBeforeUnmount(() => {
           padding: 12px 10px;
           .n-list-item__prefix {
             margin-right: 12px;
+          }
+          .content {
+            grid-template-columns: 1fr;
+          }
+          .cover {
+            width: 100%;
+            height: auto;
           }
         }
       }

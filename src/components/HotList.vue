@@ -56,42 +56,44 @@
             v-for="(item, index) in hotListData.data.slice(0, 15)"
             :key="item"
           >
-            <n-text
-              class="num"
-              :class="
-                index === 0
-                  ? 'one'
-                  : index === 1
-                  ? 'two'
-                  : index === 2
-                  ? 'three'
-                  : null
-              "
-              :depth="2"
-              >{{ index + 1 }}</n-text
-            >
-            <n-a
-              :style="{ fontSize: store.listFontSize + 'px' }"
-              class="text"
-              :href="getItemLink(item)"
-              :target="linkTarget"
-              rel="noopener noreferrer nofollow"
-              @click.stop
-            >
-              <span class="title-text">{{ item.title }}</span>
-              <div
-                class="cover-wrapper"
-                v-if="showImages && item.cover && !coverErrorMap[item.cover]"
+            <div class="line">
+              <n-text
+                class="num"
+                :class="
+                  index === 0
+                    ? 'one'
+                    : index === 1
+                    ? 'two'
+                    : index === 2
+                    ? 'three'
+                    : null
+                "
+                :depth="2"
+                >{{ index + 1 }}</n-text
               >
-                <img
-                  class="cover"
-                  :src="item.cover"
-                  :alt="item.title"
-                  loading="lazy"
-                  @error="coverErrorMap[item.cover] = true"
-                />
-              </div>
-            </n-a>
+              <n-a
+                :style="{ fontSize: store.listFontSize + 'px' }"
+                class="text"
+                :href="getItemLink(item)"
+                :target="linkTarget"
+                rel="noopener noreferrer nofollow"
+                @click.stop
+              >
+                <span class="title-text">{{ item.title }}</span>
+              </n-a>
+            </div>
+            <div
+              class="cover-wrapper"
+              v-if="showImages && item.cover && !coverErrorMap[item.cover]"
+            >
+              <img
+                class="cover"
+                :src="item.cover"
+                :alt="item.title"
+                loading="lazy"
+                @error="coverErrorMap[item.cover] = true"
+              />
+            </div>
           </div>
         </div>
       </Transition>
@@ -376,7 +378,7 @@ onBeforeUnmount(() => {
 
     .item {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       margin-bottom: 6px;
       padding-bottom: 2px;
       min-height: 30px;
@@ -386,6 +388,13 @@ onBeforeUnmount(() => {
 
       &:nth-last-of-type(1) {
         margin-bottom: 0;
+      }
+
+      .line {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 8px;
       }
 
       .num {
@@ -423,11 +432,10 @@ onBeforeUnmount(() => {
 
       .text {
         position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
+        display: inline-flex;
+        align-items: center;
         width: 100%;
-        gap: 4px;
+        gap: 6px;
         transition: all 0.3s;
         text-decoration: none;
         color: inherit;
@@ -460,29 +468,29 @@ onBeforeUnmount(() => {
           border-radius: 8px;
           transition: all 0.3s;
         }
+      }
 
-        .cover-wrapper {
-          display: block;
-          max-height: 0;
-          overflow: hidden;
-          opacity: 0;
-          transition: all 0.25s ease;
+      .cover-wrapper {
+        display: block;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: all 0.25s ease;
+        width: 100%;
+
+        .cover {
+          margin-top: 6px;
           width: 100%;
-
-          .cover {
-            margin-top: 6px;
-            width: 100%;
-            max-height: 160px;
-            object-fit: cover;
-            border-radius: 8px;
-            display: block;
-          }
+          max-height: 160px;
+          object-fit: cover;
+          border-radius: 8px;
+          display: block;
         }
+      }
 
-        &:hover .cover-wrapper {
-          max-height: 180px;
-          opacity: 1;
-        }
+      &:hover .cover-wrapper {
+        max-height: 180px;
+        opacity: 1;
       }
     }
   }

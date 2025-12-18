@@ -333,7 +333,7 @@ export const mainStore = defineStore("mainData", {
           show: true,
         },
         {
-          label: "气象预警",
+          label: "中央气象台",
           name: "weatheralarm",
           order: 54,
           show: true,
