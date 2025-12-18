@@ -509,21 +509,24 @@ onBeforeUnmount(() => {
         padding: 4px 0;
         border-top: 1px solid var(--n-border-color);
       }
-      .time-inputs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px 10px;
-        .time-item {
+        .time-inputs {
           display: flex;
-          align-items: center;
-          gap: 6px;
-          min-width: 120px;
-          .unit {
-            font-size: 12px;
-            line-height: 1;
+          flex-direction: column;
+          gap: 8px;
+          width: 100%;
+          .time-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            .unit {
+              font-size: 12px;
+              line-height: 1;
+            }
+            :deep(.n-input-number) {
+              width: 120px;
+            }
           }
         }
-      }
       .tip {
         font-size: 12px;
       }

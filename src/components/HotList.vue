@@ -423,10 +423,11 @@ onBeforeUnmount(() => {
 
       .text {
         position: relative;
-        display: inline-flex;
-        align-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
         width: 100%;
-        gap: 8px;
+        gap: 4px;
         transition: all 0.3s;
         text-decoration: none;
         color: inherit;

@@ -402,7 +402,7 @@ onBeforeUnmount(() => {
       }
       .text {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         text-decoration: none;
         color: inherit;
         .content {
