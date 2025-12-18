@@ -106,63 +106,6 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">榜单排序</n-text>
-          <n-text class="tip" :depth="3">
-            拖拽以排序，开关用以控制在页面中的显示状态，可分配分类
-          </n-text>
-        </div>
-        <n-popconfirm @positive-click="restoreDefault">
-          <template #trigger>
-            <n-button class="control" size="small"> 恢复默认 </n-button>
-          </template>
-          确认将排序恢复到默认状态？
-        </n-popconfirm>
-      </div>
-      <draggable
-        :list="newsArr"
-        :animation="200"
-        class="mews-group"
-        item-key="order"
-        @end="saveSoreData()"
-      >
-        <template #item="{ element }">
-          <n-card
-            class="item"
-            embedded
-            :content-style="{ display: 'flex', alignItems: 'center' }"
-          >
-            <div class="desc" :style="{ opacity: element.show ? null : 0.6 }">
-              <img class="logo" :src="`/logo/${element.name}.png`" alt="logo" />
-              <n-text class="news-name" v-html="element.label" />
-              <n-tag
-                size="small"
-                type="warning"
-                v-if="store.unavailableSources.includes(element.name)"
-              >
-                不可用
-              </n-tag>
-            </div>
-            <n-select
-              size="small"
-              class="category-select"
-              :options="categoryOptions"
-              v-model:value="element.category"
-              placeholder="分类"
-              :disabled="!categoryEnabled"
-            />
-            <n-switch
-              class="switch"
-              :round="false"
-              v-model:value="element.show"
-              @update:value="saveSoreData(element.label, element.show)"
-            />
-          </n-card>
-        </template>
-      </draggable>
-    </n-card>
-    <n-card class="set-item">
-      <div class="top" style="align-items: flex-start">
-        <div class="name">
           <n-text class="text">分类开关</n-text>
           <n-text class="tip" :depth="3">
             开启后顶部导航和列表将按分类筛选热榜
@@ -218,6 +161,63 @@
           </div>
         </div>
       </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">榜单排序</n-text>
+          <n-text class="tip" :depth="3">
+            拖拽以排序，开关用以控制在页面中的显示状态，可分配分类
+          </n-text>
+        </div>
+        <n-popconfirm @positive-click="restoreDefault">
+          <template #trigger>
+            <n-button class="control" size="small"> 恢复默认 </n-button>
+          </template>
+          确认将排序恢复到默认状态？
+        </n-popconfirm>
+      </div>
+      <draggable
+        :list="newsArr"
+        :animation="200"
+        class="mews-group"
+        item-key="order"
+        @end="saveSoreData()"
+      >
+        <template #item="{ element }">
+          <n-card
+            class="item"
+            embedded
+            :content-style="{ display: 'flex', alignItems: 'center' }"
+          >
+            <div class="desc" :style="{ opacity: element.show ? null : 0.6 }">
+              <img class="logo" :src="logoSrc(element.name)" alt="logo" />
+              <n-text class="news-name" v-html="element.label" />
+              <n-tag
+                size="small"
+                type="warning"
+                v-if="store.unavailableSources.includes(element.name)"
+              >
+                不可用
+              </n-tag>
+            </div>
+            <n-select
+              size="small"
+              class="category-select"
+              :options="categoryOptions"
+              v-model:value="element.category"
+              placeholder="分类"
+              :disabled="!categoryEnabled"
+            />
+            <n-switch
+              class="switch"
+              :round="false"
+              v-model:value="element.show"
+              @update:value="saveSoreData(element.label, element.show)"
+            />
+          </n-card>
+        </template>
+      </draggable>
     </n-card>
     <n-h6 prefix="bar"> 杂项设置 </n-h6>
     <n-card class="set-item">
@@ -315,6 +315,7 @@
 <script setup>
 import { storeToRefs } from "pinia";
 import { mainStore } from "@/store";
+import { clearAppCaches, getCacheVersion } from "@/utils/cache";
 import { useOsTheme } from "naive-ui";
 import draggable from "vuedraggable";
 
@@ -342,9 +343,8 @@ const categoryOptions = computed(() =>
   categories.value.map((c) => ({ label: c.name, value: c.name }))
 );
 const newCategory = ref("");
-const cacheVersion = ref(
-  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev"
-);
+const cacheVersion = ref(getCacheVersion());
+const logoSrc = (name) => `/logo/${name}.png?v=${cacheVersion.value}`;
 
 // 深浅模式
 const themeOptions = ref([
@@ -435,11 +435,8 @@ const applyAutoInterval = () => {
   autoRefreshInterval.value = seconds;
 };
 
-const clearCache = () => {
-  if (typeof localStorage !== "undefined") {
-    localStorage.clear();
-    localStorage.setItem("CACHE_VERSION", cacheVersion.value);
-  }
+const clearCache = async () => {
+  await clearAppCaches();
   location.reload();
 };
 

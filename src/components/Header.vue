@@ -26,7 +26,24 @@
         </div>
       </div>
       <div v-else class="category-select">
+        <div v-if="!isSmallScreen" class="category-nav">
+          <n-space align="center" justify="center" wrap>
+            <n-button
+              v-for="cat in categoryNavOptions"
+              :key="cat.value"
+              size="small"
+              text
+              strong
+              :type="cat.value === activeCategoryLocal ? 'primary' : 'default'"
+              class="cat-btn"
+              @click="activeCategoryLocal = cat.value"
+            >
+              {{ cat.label }}
+            </n-button>
+          </n-space>
+        </div>
         <n-select
+          v-else
           v-model:value="activeCategoryLocal"
           :options="categoryOptions"
           size="large"
@@ -193,6 +210,7 @@ const timeForm = reactive({
   minute: 30,
   second: 0,
 });
+const isSmallScreen = ref(false);
 const activeCategoryLocal = computed({
   get() {
     return store.activeCategory;
@@ -208,6 +226,7 @@ const categoryOptions = computed(() => {
     .map((c) => ({ label: c.name, value: c.name }));
   return [{ label: "全部", value: "全部" }, ...base];
 });
+const categoryNavOptions = computed(() => categoryOptions.value);
 
 // 移动端时间模块
 const timeRender = () => {
@@ -396,6 +415,11 @@ const setupCountdown = () => {
   updateCountdown();
 };
 
+const updateScreen = () => {
+  if (typeof window === "undefined") return;
+  isSmallScreen.value = window.innerWidth <= 960;
+};
+
 watch(
   () => [
     store.autoRefreshEnabled,
@@ -426,11 +450,16 @@ onMounted(() => {
   showRefresh.value = router.currentRoute.value?.path === "/" ? true : false;
   syncTimeForm();
   setupCountdown();
+  updateScreen();
+  window.addEventListener("resize", updateScreen);
 });
 
 onBeforeUnmount(() => {
   clearInterval(timeInterval.value);
   clearInterval(countdownTimer.value);
+  if (typeof window !== "undefined") {
+    window.removeEventListener("resize", updateScreen);
+  }
 });
 </script>
 
@@ -565,6 +594,14 @@ onBeforeUnmount(() => {
     padding: 8px 0;
     :deep(.n-select) {
       min-width: 240px;
+    }
+    .category-nav {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      .cat-btn {
+        font-weight: 600;
+      }
     }
   }
 

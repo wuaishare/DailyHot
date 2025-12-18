@@ -12,7 +12,7 @@
       >
         {{ item.label }}
         <template #avatar>
-          <img :src="`/logo/${item.name}.png`" alt="logo" class="logo" />
+          <img :src="logoSrc(item.name)" alt="logo" class="logo" />
         </template>
       </n-tag>
     </n-space>
@@ -27,7 +27,7 @@
           <template v-else>
             <div class="header">
               <div class="logo">
-                <img :src="`/logo/${listType}.png`" alt="logo" />
+                <img :src="logoSrc(listType)" alt="logo" />
               </div>
               <div class="name">
                 <n-text class="title">{{ listData.title }}</n-text>
@@ -142,6 +142,7 @@
 <script setup>
 import { Fire } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
+import { getCacheVersion } from "@/utils/cache";
 import { useRouter } from "vue-router";
 import { formatTime } from "@/utils/getTime";
 import { getHotLists } from "@/api";
@@ -149,6 +150,7 @@ import { getHotLists } from "@/api";
 const router = useRouter();
 const store = mainStore();
 const isClient = typeof window !== "undefined";
+const cacheVersion = getCacheVersion();
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
@@ -179,6 +181,7 @@ const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
 const showImages = computed(() => store.showImages);
+const logoSrc = (name) => `/logo/${name}.png?v=${cacheVersion}`;
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {

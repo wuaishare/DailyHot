@@ -13,7 +13,7 @@
         <div class="name">
           <n-avatar
             class="ico"
-            :src="`/logo/${hotData.name}.png`"
+            :src="`/logo/${hotData.name}.png?v=${cacheVersion}`"
             fallback-src="/ico/icon_error.png"
           />
           <n-text class="name-text">{{ hotData.label }}</n-text>
@@ -156,6 +156,7 @@
 import { Refresh, More } from "@icon-park/vue-next";
 import { getHotLists } from "@/api";
 import { formatTime } from "@/utils/getTime";
+import { getCacheVersion } from "@/utils/cache";
 import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
 
@@ -165,7 +166,7 @@ const isClient = typeof window !== "undefined";
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
-const cacheVersion = "2024-12-18-1";
+const cacheVersion = getCacheVersion();
 const props = defineProps({
   // 热榜数据
   hotData: {
