@@ -93,13 +93,24 @@
                   :target="linkTarget"
                   rel="noopener noreferrer nofollow"
                 >
-                  <n-text class="title" v-html="item.title" />
-                  <n-text
-                    v-if="item.desc"
-                    class="desc"
-                    :depth="3"
-                    v-html="item.desc"
-                  />
+                  <div class="content">
+                    <img
+                      v-if="item.cover"
+                      class="cover"
+                      :src="item.cover"
+                      :alt="item.title"
+                      loading="lazy"
+                    />
+                    <div class="copy">
+                      <n-text class="title" v-html="item.title" />
+                      <n-text
+                        v-if="item.desc"
+                        class="desc"
+                        :depth="3"
+                        v-html="item.desc"
+                      />
+                    </div>
+                  </div>
                 </n-a>
                 <div class="message">
                   <div class="hot" v-if="item.hot">
@@ -382,19 +393,35 @@ onBeforeUnmount(() => {
       }
       .text {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         text-decoration: none;
         color: inherit;
-        .title {
-          font-size: 16px;
-          margin-bottom: 4px;
+        .content {
+          display: flex;
+          gap: 12px;
+          width: 100%;
         }
-        .desc {
-          overflow: hidden;
-          font-size: 14px;
-          display: -webkit-inline-box;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 5;
+        .cover {
+          width: 72px;
+          height: 72px;
+          object-fit: cover;
+          border-radius: 10px;
+          flex-shrink: 0;
+        }
+        .copy {
+          display: flex;
+          flex-direction: column;
+          .title {
+            font-size: 16px;
+            margin-bottom: 4px;
+          }
+          .desc {
+            overflow: hidden;
+            font-size: 14px;
+            display: -webkit-inline-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 5;
+          }
         }
       }
       .message {
@@ -419,6 +446,10 @@ onBeforeUnmount(() => {
           padding: 12px 10px;
           .n-list-item__prefix {
             margin-right: 12px;
+          }
+          .cover {
+            width: 56px;
+            height: 56px;
           }
         }
       }

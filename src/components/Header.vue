@@ -75,7 +75,7 @@
                       button-placement="both"
                       @update:value="applyAutoInterval"
                     />
-                    <span>时</span>
+                    <span class="unit">时</span>
                   </div>
                   <div class="time-item">
                     <n-input-number
@@ -86,7 +86,7 @@
                       button-placement="both"
                       @update:value="applyAutoInterval"
                     />
-                    <span>分</span>
+                    <span class="unit">分</span>
                   </div>
                   <div class="time-item">
                     <n-input-number
@@ -97,7 +97,7 @@
                       button-placement="both"
                       @update:value="applyAutoInterval"
                     />
-                    <span>秒</span>
+                    <span class="unit">秒</span>
                   </div>
                 </div>
                 <n-text depth="3" class="tip">
@@ -491,7 +491,7 @@ onBeforeUnmount(() => {
     display: flex;
     justify-content: flex-end;
     .countdown {
-      margin-left: 8px;
+      margin-left: 3px;
       font-size: 12px;
     }
     .refresh-panel {
@@ -515,10 +515,12 @@ onBeforeUnmount(() => {
         gap: 6px;
         .time-item {
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 6px;
-          span {
+          gap: 4px;
+          .unit {
             font-size: 12px;
+            line-height: 1;
           }
         }
       }

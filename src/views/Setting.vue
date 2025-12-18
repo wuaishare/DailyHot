@@ -151,20 +151,48 @@
         <div class="name">
           <n-text class="text">自动刷新</n-text>
           <n-text class="tip" :depth="3">
-            定时刷新页面，默认 1800 秒，可自行修改（最小 60 秒），关闭时不生效
+            定时刷新页面，默认 0 时 30 分 0 秒（最小 60 秒），关闭时不生效
           </n-text>
         </div>
         <div class="auto-refresh">
-          <n-input-number
-            v-model:value="autoRefreshInterval"
-            :disabled="!autoRefreshEnabled"
-            :min="60"
-            :step="60"
-            size="small"
-            placeholder="刷新间隔"
-          >
-            <template #suffix>秒</template>
-          </n-input-number>
+          <div class="time-inputs">
+            <div class="time-item">
+              <n-input-number
+                size="small"
+                v-model:value="autoTime.hour"
+                :min="0"
+                :max="23"
+                :disabled="!autoRefreshEnabled"
+                button-placement="both"
+                @update:value="applyAutoInterval"
+              />
+              <span>时</span>
+            </div>
+            <div class="time-item">
+              <n-input-number
+                size="small"
+                v-model:value="autoTime.minute"
+                :min="0"
+                :max="59"
+                :disabled="!autoRefreshEnabled"
+                button-placement="both"
+                @update:value="applyAutoInterval"
+              />
+              <span>分</span>
+            </div>
+            <div class="time-item">
+              <n-input-number
+                size="small"
+                v-model:value="autoTime.second"
+                :min="0"
+                :max="59"
+                :disabled="!autoRefreshEnabled"
+                button-placement="both"
+                @update:value="applyAutoInterval"
+              />
+              <span>秒</span>
+            </div>
+          </div>
           <n-switch v-model:value="autoRefreshEnabled" :round="false" />
         </div>
       </div>
@@ -261,6 +289,50 @@ const reset = () => {
   localStorage.clear();
   location.reload();
 };
+
+const autoTime = reactive({
+  hour: 0,
+  minute: 30,
+  second: 0,
+});
+
+const secondsToTime = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.max(seconds % 60, 0);
+  return { h, m, s };
+};
+
+const timeToSeconds = (time) => {
+  const h = Number(time.hour) || 0;
+  const m = Number(time.minute) || 0;
+  const s = Number(time.second) || 0;
+  return h * 3600 + m * 60 + s;
+};
+
+const syncAutoTime = () => {
+  const { h, m, s } = secondsToTime(Number(autoRefreshInterval.value));
+  autoTime.hour = h;
+  autoTime.minute = m;
+  autoTime.second = s;
+};
+
+const applyAutoInterval = () => {
+  const seconds = timeToSeconds(autoTime);
+  if (seconds < 60) {
+    $message.warning("自动刷新最少 60 秒");
+    return;
+  }
+  autoRefreshInterval.value = seconds;
+};
+
+watch(
+  () => autoRefreshInterval.value,
+  () => {
+    syncAutoTime();
+  },
+  { immediate: true }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -308,8 +380,25 @@ const reset = () => {
         align-items: center;
         gap: 12px;
 
-        :deep(.n-input-number) {
-          width: 160px;
+        .time-inputs {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+
+          .time-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+
+            span {
+              font-size: 12px;
+            }
+
+            :deep(.n-input-number) {
+              width: 120px;
+            }
+          }
         }
       }
     }

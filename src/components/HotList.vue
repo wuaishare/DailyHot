@@ -78,7 +78,14 @@
               rel="noopener noreferrer nofollow"
               @click.stop
             >
-              {{ item.title }}
+              <img
+                v-if="item.cover"
+                class="cover"
+                :src="item.cover"
+                :alt="item.title"
+                loading="lazy"
+              />
+              <span class="title-text">{{ item.title }}</span>
             </n-a>
           </div>
         </div>
@@ -407,8 +414,10 @@ onBeforeUnmount(() => {
 
       .text {
         position: relative;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
         width: 100%;
+        gap: 8px;
         transition: all 0.3s;
         text-decoration: none;
         color: inherit;
@@ -440,6 +449,14 @@ onBeforeUnmount(() => {
           bottom: -2px;
           border-radius: 8px;
           transition: all 0.3s;
+        }
+
+        .cover {
+          width: 36px;
+          height: 36px;
+          object-fit: cover;
+          border-radius: 6px;
+          flex-shrink: 0;
         }
       }
     }
