@@ -154,7 +154,7 @@
 
 <script setup>
 import { Refresh, More } from "@icon-park/vue-next";
-import { getHotLists } from "@/api";
+import { getHotListsWithFallback } from "@/api";
 import { formatTime } from "@/utils/getTime";
 import { getCacheVersion } from "@/utils/cache";
 import { mainStore } from "@/store";
@@ -208,7 +208,13 @@ const getHotListsData = async (name, isNew = false) => {
     loadingError.value = false;
     const item = store.newsArr.find((item) => item.name == name);
     const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
-    const result = await getHotLists(item.name, isNew, item.params, { useApi2 });
+    const { result, usedFallback, fallbackSuccess } =
+      await getHotListsWithFallback(item.name, isNew, item.params, {
+        useApi2,
+      });
+    if (usedFallback && fallbackSuccess && !useApi2) {
+      store.setSourceApi2(item.name, true);
+    }
     // console.log(result);
     if (result.code === 200) {
       store.markAvailable(item.name);

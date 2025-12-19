@@ -145,7 +145,7 @@ import { mainStore } from "@/store";
 import { getCacheVersion } from "@/utils/cache";
 import { useRouter } from "vue-router";
 import { formatTime } from "@/utils/getTime";
-import { getHotLists } from "@/api";
+import { getHotListsWithFallback } from "@/api";
 
 const router = useRouter();
 const store = mainStore();
@@ -200,16 +200,24 @@ const getHotListsData = async (name, isNew = false) => {
   const item = store.newsArr.find((item) => item.name == name);
   if (!item) return;
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
-  getHotLists(item.name, isNew, item.params, { useApi2 }).then((res) => {
-    console.log(res);
-    if (res.code === 200) {
-      store.markAvailable(item.name);
-      listData.value = res;
-    } else {
+  getHotListsWithFallback(item.name, isNew, item.params, { useApi2 })
+    .then(({ result, usedFallback, fallbackSuccess }) => {
+      console.log(result);
+      if (usedFallback && fallbackSuccess && !useApi2) {
+        store.setSourceApi2(item.name, true);
+      }
+      if (result.code === 200) {
+        store.markAvailable(item.name);
+        listData.value = result;
+      } else {
+        store.markUnavailable(item.name);
+        $message.error(result.message);
+      }
+    })
+    .catch(() => {
       store.markUnavailable(item.name);
-      $message.error(res.message);
-    }
-  });
+      $message.error("热榜加载失败，请重试");
+    });
 };
 
 const updateIsDesktop = () => {

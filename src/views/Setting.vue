@@ -170,7 +170,7 @@
             拖拽以排序，开关用以控制在页面中的显示状态，可分配分类
           </n-text>
         </div>
-        <n-space>
+        <n-space wrap>
           <n-popconfirm @positive-click="restoreDefaultOrder">
             <template #trigger>
               <n-button class="control" size="small"> 恢复默认排序 </n-button>

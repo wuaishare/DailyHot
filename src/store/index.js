@@ -501,6 +501,14 @@ export const mainStore = defineStore("mainData", {
         (item) => item !== name
       );
     },
+    setSourceApi2(name, value = true) {
+      if (!name) return;
+      const target = this.newsArr.find((item) => item.name === name);
+      if (!target) return;
+      if (target.useApi2 !== value) {
+        target.useApi2 = value;
+      }
+    },
     // 初始化默认榜单（SSR/预渲染也能有基础数据）
     ensureNewsList() {
       this.defaultNewsArr = this.ensureCategoriesForNews(this.defaultNewsArr);
