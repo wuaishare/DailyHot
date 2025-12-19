@@ -207,7 +207,8 @@ const getHotListsData = async (name, isNew = false) => {
   try {
     loadingError.value = false;
     const item = store.newsArr.find((item) => item.name == name);
-    const result = await getHotLists(item.name, isNew, item.params);
+    const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
+    const result = await getHotLists(item.name, isNew, item.params, { useApi2 });
     // console.log(result);
     if (result.code === 200) {
       store.markAvailable(item.name);

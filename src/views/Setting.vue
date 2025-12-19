@@ -170,12 +170,26 @@
             拖拽以排序，开关用以控制在页面中的显示状态，可分配分类
           </n-text>
         </div>
-        <n-popconfirm @positive-click="restoreDefault">
-          <template #trigger>
-            <n-button class="control" size="small"> 恢复默认 </n-button>
-          </template>
-          确认将排序恢复到默认状态？
-        </n-popconfirm>
+        <n-space>
+          <n-popconfirm @positive-click="restoreDefaultOrder">
+            <template #trigger>
+              <n-button class="control" size="small"> 恢复默认排序 </n-button>
+            </template>
+            确认将排序恢复到默认状态？
+          </n-popconfirm>
+          <n-popconfirm @positive-click="restoreDefaultCategory">
+            <template #trigger>
+              <n-button class="control" size="small"> 恢复默认分类 </n-button>
+            </template>
+            确认将分类恢复到默认状态？
+          </n-popconfirm>
+          <n-popconfirm @positive-click="restoreDefaultStatus">
+            <template #trigger>
+              <n-button class="control" size="small"> 恢复默认状态 </n-button>
+            </template>
+            确认将显示状态恢复到默认状态？
+          </n-popconfirm>
+        </n-space>
       </div>
       <draggable
         :list="newsArr"
@@ -296,6 +310,27 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
+          <n-text class="text">设置导入导出</n-text>
+          <n-text class="tip" :depth="3">
+            导出为 JSON 文件，导入会覆盖当前设置
+          </n-text>
+        </div>
+        <n-space>
+          <n-button size="small" @click="exportSettings"> 导出设置 </n-button>
+          <n-button size="small" @click="triggerImport"> 导入设置 </n-button>
+        </n-space>
+        <input
+          ref="importFileRef"
+          type="file"
+          accept="application/json,.json"
+          style="display: none"
+          @change="handleImportFile"
+        />
+      </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top">
+        <div class="name">
           <n-text class="text">重置所有数据</n-text>
           <n-text class="tip" :depth="3">
             重置所有数据，你的自定义设置都将会丢失
@@ -345,6 +380,24 @@ const categoryOptions = computed(() =>
 const newCategory = ref("");
 const cacheVersion = ref(getCacheVersion());
 const logoSrc = (name) => `/logo/${name}.png?v=${cacheVersion.value}`;
+const importFileRef = ref(null);
+const persistedKeys = [
+  "siteTheme",
+  "siteThemeAuto",
+  "newsArr",
+  "linkOpenType",
+  "headerFixed",
+  "headerCollapsed",
+  "compactMode",
+  "autoRefreshEnabled",
+  "autoRefreshPaused",
+  "autoRefreshInterval",
+  "showImages",
+  "categoryEnabled",
+  "activeCategory",
+  "categories",
+  "listFontSize",
+];
 
 // 深浅模式
 const themeOptions = ref([
@@ -386,13 +439,51 @@ const normalizeOrder = () => {
   }));
 };
 
-// 恢复默认排序
-const restoreDefault = () => {
-  newsArr.value = store.defaultNewsArr
+const restoreDefaultOrder = () => {
+  const defaultOrder = store.defaultNewsArr
     .slice()
-    .sort((a, b) => a.order - b.order)
-    .map((item, idx) => ({ ...item, order: idx }));
+    .sort((a, b) => a.order - b.order);
+  const defaultNames = new Set(defaultOrder.map((item) => item.name));
+  const currentByName = new Map(
+    newsArr.value.map((item) => [item.name, item])
+  );
+  const restored = defaultOrder.map((item, idx) => {
+    const current = currentByName.get(item.name) || item;
+    return { ...current, order: idx };
+  });
+  const extra = newsArr.value.filter((item) => !defaultNames.has(item.name));
+  const extraWithOrder = extra.map((item, idx) => ({
+    ...item,
+    order: restored.length + idx,
+  }));
+  newsArr.value = restored.concat(extraWithOrder);
   $message.success("恢复默认榜单排序成功");
+};
+
+const restoreDefaultCategory = () => {
+  const defaultCategoryMap = new Map(
+    store.defaultNewsArr.map((item) => [item.name, item.category])
+  );
+  newsArr.value = newsArr.value.map((item) => ({
+    ...item,
+    category:
+      defaultCategoryMap.get(item.name) || item.category || "综合",
+  }));
+  $message.success("恢复默认榜单分类成功");
+};
+
+const restoreDefaultStatus = () => {
+  const defaultStatusMap = new Map(
+    store.defaultNewsArr.map((item) => [item.name, item.show])
+  );
+  newsArr.value = newsArr.value.map((item) => ({
+    ...item,
+    show:
+      typeof defaultStatusMap.get(item.name) === "boolean"
+        ? defaultStatusMap.get(item.name)
+        : item.show,
+  }));
+  $message.success("恢复默认榜单状态成功");
 };
 
 // 将排序结果写入
@@ -450,6 +541,80 @@ const applyAutoInterval = () => {
 const clearCache = async () => {
   await clearAppCaches();
   location.reload();
+};
+
+const exportSettings = () => {
+  if (typeof localStorage === "undefined") return;
+  const stored = localStorage.getItem("mainData");
+  if (!stored) {
+    $message.warning("暂无可导出的设置");
+    return;
+  }
+  let parsed = null;
+  try {
+    parsed = JSON.parse(stored);
+  } catch (error) {
+    $message.error("导出失败，设置数据异常");
+    return;
+  }
+  const payload = {
+    version: 1,
+    createdAt: new Date().toISOString(),
+    data: parsed,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  link.href = url;
+  link.download = `dailyhot-settings-${timestamp}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  $message.success("设置导出成功");
+};
+
+const triggerImport = () => {
+  if (importFileRef.value) {
+    importFileRef.value.click();
+  }
+};
+
+const handleImportFile = async (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  if (!file) return;
+  let parsed = null;
+  try {
+    const content = await file.text();
+    parsed = JSON.parse(content);
+  } catch (error) {
+    $message.error("导入失败，文件格式不正确");
+    return;
+  }
+  const data = parsed?.data || parsed;
+  if (!data || typeof data !== "object") {
+    $message.error("导入失败，设置数据异常");
+    return;
+  }
+  const patch = {};
+  persistedKeys.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      patch[key] = data[key];
+    }
+  });
+  if (!Object.keys(patch).length) {
+    $message.warning("未找到可导入的设置");
+    return;
+  }
+  store.$patch(patch);
+  store.ensureNewsList();
+  await nextTick();
+  store.checkNewsUpdate();
+  $message.success("设置导入成功");
 };
 
 const handleAddCategory = () => {

@@ -7,10 +7,14 @@ import axios from "@/api/request";
  * @param {object} params 请求参数
  * @returns
  */
-export const getHotLists = (type, isNew = false, params) => {
+export const getHotLists = (type, isNew = false, params, options = {}) => {
+  const useApi2 = options?.useApi2;
+  const apiBase = import.meta.env.VITE_GLOBAL_API;
+  const apiBase2 = import.meta.env.VITE_GLOBAL_API2;
   return axios({
     method: "GET",
     url: `/${type}`,
+    baseURL: useApi2 ? apiBase2 || apiBase : undefined,
     params: {
       cache: !isNew,
       ...params,

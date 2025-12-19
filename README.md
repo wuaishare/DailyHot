@@ -30,6 +30,8 @@ pnpm build
 
 ## 环境变量
 
+- `VITE_GLOBAL_API`：热榜 API 地址。
+- `VITE_GLOBAL_API2`：备用热榜 API 地址（可选）。
 - `VITE_SITE_URL`：站点线上域名（用于生成 `sitemap.xml`/`robots.txt` 与 canonical），注意用完整域名（含 'https://'），不要带末尾 '/'。
 - `PRERENDER`：是否开启预渲染（默认关闭；本地需要预渲染时设置 `PRERENDER=true pnpm build`，Vercel 等 CI 若缺少 chromium 依赖请保持默认）。
 
