@@ -408,7 +408,11 @@ onBeforeUnmount(() => {
     .all {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
+      width: 100%;
+      :deep(.n-list) {
+        width: 100%;
+      }
       .num {
         width: 24px;
         height: 24px;
@@ -477,6 +481,29 @@ onBeforeUnmount(() => {
           }
         }
       }
+      @media (min-width: 1200px) {
+        :deep(.n-list) {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px 16px;
+        }
+        :deep(.n-list-item) {
+          border: none;
+          border-radius: 10px;
+          box-shadow: inset 0 0 0 1px var(--n-border-color);
+        }
+        .text {
+          .content {
+            grid-template-columns: 1fr 140px;
+          }
+          .cover-wrapper {
+            .cover {
+              width: 140px;
+              height: 84px;
+            }
+          }
+        }
+      }
       .message {
         display: flex;
         align-items: center;
@@ -493,6 +520,7 @@ onBeforeUnmount(() => {
       }
       .pagination {
         margin: 20px 0;
+        align-self: center;
       }
       @media (max-width: 740px) {
         :deep(.n-list-item) {
