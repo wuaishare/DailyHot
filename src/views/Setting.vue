@@ -301,7 +301,15 @@
         <div class="name">
           <n-text class="text">清除缓存</n-text>
           <n-text class="tip" :depth="3">
-            当前缓存版本：{{ cacheVersion }}，点击立即清除并刷新
+            当前缓存版本：{{ cacheVersion }}（由吾爱分享二次开发
+            <n-a
+              href="https://www.wuaishare.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              https://www.wuaishare.cn/
+            </n-a>
+            ），点击立即清除并刷新
           </n-text>
         </div>
         <n-button @click="clearCache" type="warning" ghost> 清除缓存 </n-button>

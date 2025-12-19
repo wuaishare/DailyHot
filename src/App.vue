@@ -44,6 +44,10 @@ const router = useRouter();
 const headerExpanded = ref(!store.headerCollapsed);
 const collapseTimer = ref(null);
 const autoRefreshTimer = ref(null);
+const autoRefreshPausedByRoute = ref(false);
+const isSettingRoute = computed(
+  () => router.currentRoute.value?.name === "setting"
+);
 
 // 回顶按钮显隐
 const backTopChange = (val) => {
@@ -137,6 +141,24 @@ watch(
   () => [store.autoRefreshEnabled, store.autoRefreshInterval, store.autoRefreshPaused],
   () => {
     setupAutoRefresh();
+  },
+  { immediate: true }
+);
+
+watch(
+  () => [isSettingRoute.value, store.autoRefreshEnabled],
+  () => {
+    if (isSettingRoute.value) {
+      if (store.autoRefreshEnabled && !store.autoRefreshPaused) {
+        store.autoRefreshPaused = true;
+        autoRefreshPausedByRoute.value = true;
+      }
+      return;
+    }
+    if (autoRefreshPausedByRoute.value) {
+      store.autoRefreshPaused = false;
+      autoRefreshPausedByRoute.value = false;
+    }
   },
   { immediate: true }
 );

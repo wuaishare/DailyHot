@@ -26,7 +26,12 @@
         </div>
       </div>
       <div v-else class="category-select">
-        <div v-if="!isSmallScreen" class="category-nav">
+        <div v-if="isSettingPage" class="category-back">
+          <n-button size="small" type="primary" strong @click="router.push('/')">
+            返回首页
+          </n-button>
+        </div>
+        <div v-else-if="!isSmallScreen" class="category-nav">
           <n-space align="center" justify="center" wrap>
             <n-button
               v-for="cat in categoryNavOptions"
@@ -211,6 +216,9 @@ const timeForm = reactive({
   second: 0,
 });
 const isSmallScreen = ref(false);
+const isSettingPage = computed(
+  () => router.currentRoute.value?.name === "setting"
+);
 const activeCategoryLocal = computed({
   get() {
     return store.activeCategory;
@@ -594,6 +602,11 @@ onBeforeUnmount(() => {
     padding: 8px 0;
     :deep(.n-select) {
       min-width: 240px;
+    }
+    .category-back {
+      display: flex;
+      justify-content: center;
+      width: 100%;
     }
     .category-nav {
       display: flex;

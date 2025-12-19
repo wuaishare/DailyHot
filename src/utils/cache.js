@@ -1,5 +1,4 @@
-const CACHE_VERSION =
-  typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev";
+const CACHE_VERSION = "1.3.0";
 
 export const getCacheVersion = () => CACHE_VERSION;
 
