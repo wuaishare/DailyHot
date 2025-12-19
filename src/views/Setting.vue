@@ -116,7 +116,7 @@
         </n-space>
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card class="set-item full">
       <div class="top" style="align-items: flex-start">
         <div class="name">
           <n-text class="text">分类管理</n-text>
@@ -162,7 +162,7 @@
         </div>
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card class="set-item full">
       <div class="top">
         <div class="name">
           <n-text class="text">榜单排序</n-text>
@@ -658,28 +658,44 @@ watch(
 
 <style lang="scss" scoped>
 .setting {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+
   .title {
     margin-top: 20px;
     margin-bottom: 20px;
     font-size: 31px;
     font-weight: bold;
+    grid-column: 1 / -1;
   }
 
   .n-h {
     padding-left: 16px;
     font-size: 20px;
     margin-left: 4px;
+    grid-column: 1 / -1;
   }
 
   .set-item {
     width: 100%;
     border-radius: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 0;
+
+    &.full {
+      grid-column: 1 / -1;
+    }
 
     .top {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px 12px;
 
       .name {
         font-size: 18px;
