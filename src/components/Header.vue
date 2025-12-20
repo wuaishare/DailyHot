@@ -237,14 +237,33 @@ const activeCategoryLocal = computed({
     store.setActiveCategory(val);
   },
 });
+const availableCategorySet = computed(() => {
+  const availableNews = store.newsArr
+    .filter((item) => item.show)
+    .filter((item) => !store.unavailableSources.includes(item.name));
+  return new Set(availableNews.map((item) => item.category || "综合"));
+});
 const categoryOptions = computed(() => {
   const base = store.categories
     .slice()
     .sort((a, b) => a.order - b.order)
+    .filter((cat) => availableCategorySet.value.has(cat.name))
     .map((c) => ({ label: c.name, value: c.name }));
   return [{ label: "全部", value: "全部" }, ...base];
 });
 const categoryNavOptions = computed(() => categoryOptions.value);
+
+watchEffect(() => {
+  if (!store.categoryEnabled) return;
+  const values = categoryOptions.value.map((opt) => opt.value);
+  if (!values.length) return;
+  if (!values.includes(store.activeCategory)) {
+    const next = values[0] || "全部";
+    if (store.activeCategory !== next) {
+      store.setActiveCategory(next);
+    }
+  }
+});
 
 // 移动端时间模块
 const timeRender = () => {
