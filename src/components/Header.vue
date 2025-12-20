@@ -181,17 +181,17 @@
           @clickoutside="closeMobileMenu"
           @select="menuOptionsSelect"
         >
-          <n-button
-            secondary
-            strong
-            round
+          <div
+            class="mobile-trigger"
             @click.stop="toggleMobileMenu"
             @touchstart.stop.prevent="toggleMobileMenu"
           >
-            <template #icon>
-              <n-icon :component="HamburgerButton" />
-            </template>
-          </n-button>
+            <n-button secondary strong round>
+              <template #icon>
+                <n-icon :component="HamburgerButton" />
+              </template>
+            </n-button>
+          </div>
         </n-dropdown>
       </div>
     </section>
@@ -639,6 +639,9 @@ onBeforeUnmount(() => {
 
   .mobile {
     display: none;
+    .mobile-trigger {
+      display: inline-flex;
+    }
   }
 
   &.collapsed {
