@@ -175,11 +175,13 @@
         <n-dropdown
           :options="menuOptions"
           size="large"
-          trigger="click"
+          trigger="manual"
+          :show="mobileMenuOpen"
           placement="bottom-end"
+          @clickoutside="closeMobileMenu"
           @select="menuOptionsSelect"
         >
-          <n-button secondary strong round>
+          <n-button secondary strong round @click.stop="toggleMobileMenu">
             <template #icon>
               <n-icon :component="HamburgerButton" />
             </template>
@@ -210,6 +212,7 @@ const showRefresh = ref(false);
 const countdownText = ref("");
 const countdownTimer = ref(null);
 const autoEnabled = ref(store.autoRefreshEnabled);
+const mobileMenuOpen = ref(false);
 const timeForm = reactive({
   hour: 0,
   minute: 30,
@@ -324,6 +327,15 @@ const menuOptionsSelect = (val) => {
   } else if (val === "setting") {
     router.push("/setting");
   }
+  mobileMenuOpen.value = false;
+};
+
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value;
+};
+
+const closeMobileMenu = () => {
+  mobileMenuOpen.value = false;
 };
 
 const manualRefresh = () => {
