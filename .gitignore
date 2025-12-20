@@ -28,3 +28,6 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+public/sitemap.xml
+public/robots.txt
+.env

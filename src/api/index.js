@@ -1,5 +1,7 @@
 import axios from "@/api/request";
 
+const DEFAULT_FALLBACK_DELAY_MS = 1200;
+
 /**
  * 获取热榜分类数据
  * @param {string} type 热榜分类名称
@@ -12,6 +14,7 @@ export const getHotLists = (type, isNew = false, params, options = {}) => {
   const useApi2 = options?.useApi2;
   const apiBase = import.meta.env.VITE_GLOBAL_API;
   const apiBase2 = import.meta.env.VITE_GLOBAL_API2;
+  const timeout = options?.timeout;
   return axios({
     method: "GET",
     url: `/${type}`,
@@ -20,6 +23,7 @@ export const getHotLists = (type, isNew = false, params, options = {}) => {
       cache: !isNew,
       ...params,
     },
+    ...(timeout ? { timeout } : {}),
   });
 };
 
@@ -39,28 +43,100 @@ export const getHotListsWithFallback = async (
 ) => {
   const hasApi2 = Boolean(import.meta.env.VITE_GLOBAL_API2);
   const preferApi2 = Boolean(options?.useApi2);
-  const run = (useApi2) => getHotLists(type, isNew, params, { useApi2 });
+  const timeout = options?.timeout;
+  const fallbackDelay = options?.fallbackDelay ?? DEFAULT_FALLBACK_DELAY_MS;
+  const run = (useApi2) =>
+    getHotLists(type, isNew, params, { useApi2, timeout });
 
   if (preferApi2 || !hasApi2) {
     const result = await run(preferApi2);
     return { result, usedApi2: preferApi2, usedFallback: false };
   }
 
-  let primaryResult = null;
-  try {
-    primaryResult = await run(false);
-    if (primaryResult?.code === 200) {
-      return { result: primaryResult, usedApi2: false, usedFallback: false };
-    }
-  } catch (error) {
-    primaryResult = null;
-  }
+  const createAttempt = (useApi2) =>
+    run(useApi2).then((result) => {
+      if (result?.code === 200) {
+        return { result, usedApi2 };
+      }
+      const error = new Error(result?.message || "request failed");
+      error.result = result;
+      error.usedApi2 = useApi2;
+      throw error;
+    });
 
-  const fallbackResult = await run(true);
-  return {
-    result: fallbackResult,
-    usedApi2: true,
-    usedFallback: true,
-    fallbackSuccess: fallbackResult?.code === 200,
-  };
+  return new Promise((resolve) => {
+    let finished = false;
+    let fallbackStarted = false;
+    const errors = [];
+
+    const finish = (payload) => {
+      if (finished) return;
+      finished = true;
+      resolve(payload);
+    };
+
+    const buildFailure = (primaryError, fallbackError) => {
+      const chosenError = primaryError || fallbackError || {};
+      const result =
+        chosenError.result || {
+          code: 500,
+          title: "请求失败",
+          message: "请稍后再试",
+        };
+      return {
+        result,
+        usedApi2: Boolean(fallbackError),
+        usedFallback: true,
+        fallbackSuccess: false,
+      };
+    };
+
+    const recordError = (error) => {
+      errors.push(error);
+      const primaryError = errors.find((item) => item?.usedApi2 === false);
+      const fallbackError = errors.find((item) => item?.usedApi2 === true);
+      if (primaryError && fallbackError) {
+        finish(buildFailure(primaryError, fallbackError));
+      }
+    };
+
+    const startFallback = () => {
+      if (fallbackStarted) return;
+      fallbackStarted = true;
+      createAttempt(true)
+        .then((success) => {
+          finish({
+            result: success.result,
+            usedApi2: true,
+            usedFallback: true,
+            fallbackSuccess: true,
+          });
+        })
+        .catch((error) => {
+          recordError(error);
+        });
+    };
+
+    const fallbackTimer = setTimeout(() => {
+      if (!finished) {
+        startFallback();
+      }
+    }, fallbackDelay);
+
+    createAttempt(false)
+      .then((success) => {
+        clearTimeout(fallbackTimer);
+        finish({
+          result: success.result,
+          usedApi2: false,
+          usedFallback: false,
+          fallbackSuccess: false,
+        });
+      })
+      .catch((error) => {
+        clearTimeout(fallbackTimer);
+        recordError(error);
+        startFallback();
+      });
+  });
 };
