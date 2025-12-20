@@ -50,6 +50,7 @@
 
 <script setup>
 import packageJson from "@/../package.json";
+import { getCacheVersion } from "@/utils/cache";
 
 const icp = ref(import.meta.env.VITE_ICP ? import.meta.env.VITE_ICP : null);
 
@@ -68,8 +69,10 @@ const footerLinks = [
   },
 ];
 
+const appVersion = getCacheVersion();
+
 const originRepo = {
-  label: "DailyHot(二次开发版)",
+  label: `DailyHot(二次开发版 v${appVersion})`,
   href: "https://github.com/wuaishare/DailyHot/tree/live",
 };
 </script>
