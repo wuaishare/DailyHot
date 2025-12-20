@@ -210,6 +210,7 @@ import { getCurrentTime } from "@/utils/getTime.js";
 import { mainStore } from "@/store";
 import { NText, NIcon } from "naive-ui";
 import { useRouter } from "vue-router";
+import { h } from "vue";
 
 const router = useRouter();
 const store = mainStore();
