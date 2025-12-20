@@ -21,6 +21,10 @@ export const ensureCacheVersion = async () => {
   try {
     if (typeof localStorage === "undefined") return;
     const saved = localStorage.getItem("CACHE_VERSION");
+    if (!saved) {
+      localStorage.setItem("CACHE_VERSION", CACHE_VERSION);
+      return;
+    }
     if (saved !== CACHE_VERSION) {
       await clearAppCaches();
       localStorage.setItem("CACHE_VERSION", CACHE_VERSION);
