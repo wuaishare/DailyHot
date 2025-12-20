@@ -181,7 +181,13 @@
           @clickoutside="closeMobileMenu"
           @select="menuOptionsSelect"
         >
-          <n-button secondary strong round @click.stop="toggleMobileMenu">
+          <n-button
+            secondary
+            strong
+            round
+            @click.stop="toggleMobileMenu"
+            @touchstart.stop.prevent="toggleMobileMenu"
+          >
             <template #icon>
               <n-icon :component="HamburgerButton" />
             </template>
