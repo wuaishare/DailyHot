@@ -16,6 +16,19 @@
         </template>
       </n-tag>
     </n-space>
+    <n-space class="subtype" v-if="activeTypeOptions.length">
+      <n-tag
+        round
+        size="small"
+        class="tag"
+        v-for="item in activeTypeOptions"
+        :key="item.value"
+        :type="item.value === listSubType ? 'primary' : 'default'"
+        @click="changeSubType(item.value)"
+      >
+        {{ item.label }}
+      </n-tag>
+    </n-space>
     <n-card class="card">
       <template #header>
         <Transition name="fade" mode="out-in">
@@ -170,6 +183,18 @@ const availableNews = computed(() => {
 const listType = ref(
   router.currentRoute.value.query.type || availableNews.value[0]?.name
 );
+const sourceTypeOptions = {
+  baidu: [
+    { label: "热搜", value: "realtime" },
+    { label: "小说", value: "novel" },
+    { label: "电影", value: "movie" },
+    { label: "电视剧", value: "teleplay" },
+    { label: "汽车", value: "car" },
+    { label: "游戏", value: "game" },
+  ],
+};
+const listSubType = ref(null);
+const activeTypeOptions = computed(() => sourceTypeOptions[listType.value] || []);
 const pageNumber = ref(
   router.currentRoute.value.query.page
     ? Number(router.currentRoute.value.query.page)
@@ -182,6 +207,16 @@ const linkTarget = computed(() =>
 );
 const showImages = computed(() => store.showImages);
 const logoSrc = (name) => `/logo/${name}.png?v=${cacheVersion}`;
+
+const resolveSubType = (route) => {
+  const options = sourceTypeOptions[listType.value] || [];
+  if (!options.length) return null;
+  const candidate = route?.query?.subtype;
+  if (candidate && options.some((opt) => opt.value === candidate)) {
+    return candidate;
+  }
+  return options[0].value;
+};
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
@@ -200,7 +235,11 @@ const getHotListsData = async (name, isNew = false) => {
   const item = store.newsArr.find((item) => item.name == name);
   if (!item) return;
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
-  getHotListsWithFallback(item.name, isNew, item.params, { useApi2 })
+  const params = {
+    ...(item.params || {}),
+    ...(listSubType.value ? { type: listSubType.value } : {}),
+  };
+  getHotListsWithFallback(item.name, isNew, params, { useApi2 })
     .then(({ result, usedFallback, fallbackSuccess }) => {
       console.log(result);
       if (usedFallback && fallbackSuccess && !useApi2) {
@@ -244,6 +283,18 @@ const changeType = (type) => {
   });
 };
 
+const changeSubType = (subtype) => {
+  if (!subtype || subtype === listSubType.value) return;
+  router.push({
+    path: "/list",
+    query: {
+      type: listType.value,
+      subtype,
+      page: 1,
+    },
+  });
+};
+
 // 实时改变更新时间
 watch(
   () => store.timeData,
@@ -276,6 +327,7 @@ watch(
     if (val.name === "list") {
       listType.value = val.query.type;
       pageNumber.value = Number(val.query.page);
+      listSubType.value = resolveSubType(val);
       getHotListsData(listType.value);
     }
   }
@@ -297,6 +349,7 @@ onMounted(() => {
   if (isClient) {
     window.addEventListener("resize", updateIsDesktop);
   }
+  listSubType.value = resolveSubType(router.currentRoute.value);
   getHotListsData(listType.value);
 });
 
@@ -318,6 +371,13 @@ onBeforeUnmount(() => {
         width: 22px;
         margin-left: 6px;
       }
+    }
+  }
+  .subtype {
+    width: 100%;
+    margin-top: 8px;
+    .tag {
+      cursor: pointer;
     }
   }
   .card {
