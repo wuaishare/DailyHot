@@ -230,6 +230,8 @@ const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
+const previewMaxWidth = 260;
+const previewMaxHeight = 260;
 const showImages = computed(() => store.showImages);
 const subtypeGroups = computed(() => getSourceSubtypeGroups(props.hotData.name));
 const subtypeOptions = computed(() => getSourceSubtypeOptions(props.hotData.name));
@@ -326,13 +328,55 @@ const showPreview = (item, event) => {
   if (!showImages.value || !item?.cover || coverErrorMap[item.cover]) return;
   if (!isClient || !event?.currentTarget) return;
   const rect = event.currentTarget.getBoundingClientRect();
-  const maxPreviewWidth = 260;
-  const left = Math.min(
-    window.innerWidth - maxPreviewWidth - 12,
-    Math.max(12, rect.left + 32)
-  );
-  const maxTop = Math.max(12, window.innerHeight - 340);
-  const top = Math.min(maxTop, Math.max(12, rect.bottom + 6));
+  const cardRect = event.currentTarget
+    .closest(".hot-list")
+    ?.getBoundingClientRect();
+  const padding = 12;
+  const gap = 10;
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+  const clampLeft = (value) =>
+    clamp(value, padding, window.innerWidth - previewMaxWidth - padding);
+  const clampTop = (value) =>
+    clamp(value, padding, window.innerHeight - previewMaxHeight - padding);
+  const placeRight =
+    cardRect &&
+    window.innerWidth - cardRect.right >= previewMaxWidth + gap + padding;
+  const placeLeft =
+    cardRect && cardRect.left >= previewMaxWidth + gap + padding;
+  const placeBelow =
+    cardRect &&
+    window.innerHeight - cardRect.bottom >= previewMaxHeight + gap + padding;
+  const placeAbove =
+    cardRect && cardRect.top >= previewMaxHeight + gap + padding;
+  let left = clampLeft(rect.left + 32);
+  let top = clampTop(rect.top - 8);
+
+  if (placeRight) {
+    left = cardRect.right + gap;
+  } else if (placeLeft) {
+    left = cardRect.left - previewMaxWidth - gap;
+  } else if (placeBelow) {
+    top = cardRect.bottom + gap;
+  } else if (placeAbove) {
+    top = cardRect.top - previewMaxHeight - gap;
+  } else {
+    hidePreview();
+    return;
+  }
+
+  left = clampLeft(left);
+  top = clampTop(top);
+
+  const overlapsCardText =
+    cardRect &&
+    left < cardRect.right &&
+    left + previewMaxWidth > cardRect.left &&
+    top < cardRect.bottom &&
+    top + previewMaxHeight > cardRect.top;
+  if (overlapsCardText && !placeBelow && !placeAbove) {
+    hidePreview();
+    return;
+  }
 
   previewItem.value = item;
   previewStyle.value = {
@@ -639,7 +683,7 @@ onBeforeUnmount(() => {
     width: auto;
     height: auto;
     max-width: 260px;
-    max-height: 320px;
+    max-height: 260px;
     object-fit: contain;
     object-position: center;
     border: 1px solid rgba(127, 127, 127, 0.2);

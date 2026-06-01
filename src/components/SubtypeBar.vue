@@ -41,6 +41,7 @@
               <div
                 v-if="(group.items || []).length > 1 && openGroupKey === getGroupKey(group)"
                 class="subtype-menu"
+                :class="{ 'is-dark': isDarkTheme }"
                 :style="menuStyle"
                 @mouseenter="keepMenuOpen"
                 @mouseleave="scheduleCloseGroup"
@@ -95,6 +96,7 @@ import {
   ref,
   watch,
 } from "vue";
+import { mainStore } from "@/store";
 
 const props = defineProps({
   groups: {
@@ -108,6 +110,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["change"]);
+const store = mainStore();
 
 const openGroupKey = ref(null);
 const menuStyle = ref({});
@@ -129,6 +132,7 @@ const useGroupTabs = computed(
     props.groups.length > 1 &&
     props.groups.some((group) => group.label || (group.items || []).length > 1)
 );
+const isDarkTheme = computed(() => store.siteTheme === "dark");
 
 const getGroupKey = (group) =>
   group.key || group.label || group.items?.[0]?.value || "group";
@@ -446,6 +450,10 @@ onBeforeUnmount(() => {
 }
 
 .subtype-menu {
+  --subtype-menu-bg: var(--n-card-color, #fff);
+  --subtype-menu-border: var(--n-border-color, rgba(0, 0, 0, 0.08));
+  --subtype-menu-text: var(--n-text-color, #1f2329);
+
   position: fixed;
   z-index: 3001;
   display: flex;
@@ -455,19 +463,34 @@ onBeforeUnmount(() => {
   min-width: 120px;
   padding: 8px;
   overflow: auto;
-  border: 1px solid var(--n-border-color);
+  border: 1px solid var(--subtype-menu-border);
   border-radius: 12px;
-  background: var(--n-card-color, var(--n-color, #fff));
+  background: var(--subtype-menu-bg);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
   scrollbar-width: none;
 
   &::-webkit-scrollbar {
     display: none;
   }
+
+  &.is-dark {
+    --subtype-menu-bg: #18181c;
+    --subtype-menu-border: rgba(255, 255, 255, 0.1);
+    --subtype-menu-text: rgba(255, 255, 255, 0.88);
+
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.42);
+  }
 }
 
 .menu-chip {
+  border-color: transparent;
+  background: transparent;
+  color: var(--subtype-menu-text);
   font-size: 12px;
+
+  &:hover {
+    background: rgba(234, 68, 77, 0.1);
+  }
 }
 
 .subtype-menu-enter-active,
