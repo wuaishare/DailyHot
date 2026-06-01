@@ -19,10 +19,14 @@
             />
             <n-text class="name-text">{{ hotData.label }}</n-text>
           </div>
-          <n-text v-if="hotListData?.type" class="subtitle" :depth="2">
+          <n-text
+            v-if="hotListData?.type && !subtypeGroups.length"
+            class="subtitle"
+            :depth="2"
+          >
             {{ hotListData.type }}
           </n-text>
-          <n-skeleton v-else width="60px" text round />
+          <n-skeleton v-else-if="!subtypeGroups.length" width="60px" text round />
         </n-space>
         <SubtypeBar
           v-if="subtypeGroups.length"
@@ -33,7 +37,7 @@
         />
       </div>
     </template>
-    <n-scrollbar class="news-list" ref="scrollbarRef">
+    <n-scrollbar class="news-list" ref="scrollbarRef" @scroll="hidePreview">
       <Transition name="fade" mode="out-in">
         <div v-if="loadingError" class="error">
           <n-result
@@ -64,6 +68,12 @@
             class="item"
             v-for="(item, index) in hotListData.data.slice(0, 15)"
             :key="item"
+            @mouseenter="showPreview(item, $event)"
+            @pointerenter="showPreview(item, $event)"
+            @mouseleave="hidePreview"
+            @pointerleave="hidePreview"
+            @focusin="showPreview(item, $event)"
+            @focusout="hidePreview"
           >
             <div class="line">
               <n-text
@@ -90,18 +100,6 @@
               >
                 <span class="title-text">{{ item.title }}</span>
               </n-a>
-            </div>
-            <div
-              class="cover-wrapper"
-              v-if="showImages && item.cover && !coverErrorMap[item.cover]"
-            >
-              <img
-                class="cover"
-                :src="item.cover"
-                :alt="item.title"
-                loading="lazy"
-                @error="coverErrorMap[item.cover] = true"
-              />
             </div>
           </div>
         </div>
@@ -159,6 +157,23 @@
       </Transition>
     </template>
   </n-card>
+  <Teleport to="body">
+    <Transition name="cover-preview">
+      <div
+        v-if="previewItem"
+        class="hot-cover-preview"
+        :style="previewStyle"
+      >
+        <img
+          class="cover"
+          :src="previewItem.cover"
+          :alt="previewItem.title"
+          loading="lazy"
+          @error="coverErrorMap[previewItem.cover] = true; hidePreview()"
+        />
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -208,6 +223,8 @@ const hotListData = ref(null);
 const scrollbarRef = ref(null);
 const listLoading = ref(false);
 const loadingError = ref(false);
+const previewItem = ref(null);
+const previewStyle = ref({});
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
@@ -304,11 +321,36 @@ const getItemLink = (data) => {
   return isDesktop.value ? data.url : data.mobileUrl;
 };
 
+const showPreview = (item, event) => {
+  if (!showImages.value || !item?.cover || coverErrorMap[item.cover]) return;
+  if (!isClient || !event?.currentTarget) return;
+  const rect = event.currentTarget.getBoundingClientRect();
+  const width = Math.min(240, Math.max(180, rect.width - 32));
+  const left = Math.min(
+    window.innerWidth - width - 12,
+    Math.max(12, rect.left + 32)
+  );
+  const maxTop = Math.max(12, window.innerHeight - 250);
+  const top = Math.min(maxTop, Math.max(12, rect.bottom + 6));
+
+  previewItem.value = item;
+  previewStyle.value = {
+    width: `${width}px`,
+    left: `${left}px`,
+    top: `${top}px`,
+  };
+};
+
+const hidePreview = () => {
+  previewItem.value = null;
+};
+
 const changeSubType = (subtype) => {
   const nextSubtype = resolveSourceSubtype(subtypeOptions.value, subtype);
   if (!nextSubtype || nextSubtype === activeSubType.value) return;
   activeSubType.value = nextSubtype;
   persistSourceSubtype(props.hotData.name, nextSubtype);
+  hidePreview();
   listLoading.value = true;
   getHotListsData(props.hotData.name);
 };
@@ -371,6 +413,7 @@ onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener("resize", updateIsDesktop);
   }
+  hidePreview();
 });
 </script>
 
@@ -540,35 +583,6 @@ onBeforeUnmount(() => {
         }
       }
 
-      .cover-wrapper {
-        position: absolute;
-        left: 32px;
-        top: calc(100% + 6px);
-        z-index: 3;
-        width: min(220px, calc(100% - 32px));
-        max-height: 220px;
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(6px);
-        transition: opacity 0.18s ease, transform 0.18s ease;
-        padding-top: 2px;
-
-        .cover {
-          width: 100%;
-          max-height: 220px;
-          object-fit: contain;
-          object-position: center;
-          border-radius: 8px;
-          display: block;
-          background: rgba(0, 0, 0, 0.06);
-          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-        }
-      }
-
-      &:hover .cover-wrapper {
-        opacity: 1;
-        transform: translateY(0);
-      }
     }
   }
 
@@ -583,5 +597,38 @@ onBeforeUnmount(() => {
       height: 24px;
     }
   }
+}
+
+.hot-cover-preview {
+  position: fixed;
+  z-index: 3000;
+  max-height: 240px;
+  padding: 6px;
+  pointer-events: none;
+  border: 1px solid rgba(127, 127, 127, 0.18);
+  border-radius: 14px;
+  background: var(--n-card-color, var(--n-color, #fff));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+
+  .cover {
+    display: block;
+    width: 100%;
+    max-height: 228px;
+    object-fit: contain;
+    object-position: center;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+
+.cover-preview-enter-active,
+.cover-preview-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.cover-preview-enter-from,
+.cover-preview-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
 </style>

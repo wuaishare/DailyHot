@@ -38,7 +38,7 @@
               </div>
               <div class="name">
                 <n-text class="title">{{ listData.title }}</n-text>
-                <n-text class="subtitle" :depth="3">
+                <n-text v-if="!subtypeGroups.length" class="subtitle" :depth="3">
                   {{ listData.subtitle }}
                 </n-text>
               </div>
