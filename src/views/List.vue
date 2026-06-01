@@ -235,6 +235,7 @@ const typeDragging = ref(false);
 const typeDragMoved = ref(false);
 let typeDragStartX = 0;
 let typeDragStartScrollLeft = 0;
+let typePointerCaptured = false;
 let typeResizeObserver = null;
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
@@ -343,17 +344,19 @@ const startTypeDrag = (event) => {
   }
   typeDragging.value = true;
   typeDragMoved.value = false;
+  typePointerCaptured = false;
   typeDragStartX = event.clientX;
   typeDragStartScrollLeft = track.scrollLeft;
-  track.setPointerCapture?.(event.pointerId);
 };
 
 const dragTypeTrack = (event) => {
   const track = getTypeTrackElement();
   if (!typeDragging.value || !track) return;
   const deltaX = event.clientX - typeDragStartX;
-  if (Math.abs(deltaX) > 4) {
+  if (!typeDragMoved.value && Math.abs(deltaX) > 4) {
     typeDragMoved.value = true;
+    track.setPointerCapture?.(event.pointerId);
+    typePointerCaptured = true;
   }
   track.scrollLeft = typeDragStartScrollLeft - deltaX;
   updateTypeShadow();
@@ -363,7 +366,10 @@ const endTypeDrag = (event) => {
   const track = getTypeTrackElement();
   if (!typeDragging.value) return;
   typeDragging.value = false;
-  track?.releasePointerCapture?.(event.pointerId);
+  if (typePointerCaptured) {
+    track?.releasePointerCapture?.(event.pointerId);
+    typePointerCaptured = false;
+  }
   updateTypeShadow();
   if (typeDragMoved.value && typeof window !== "undefined") {
     window.setTimeout(() => {
