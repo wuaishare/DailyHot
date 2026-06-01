@@ -159,6 +159,13 @@ import { getCacheVersion } from "@/utils/cache";
 import { useRouter } from "vue-router";
 import { formatTime } from "@/utils/getTime";
 import { getHotListsWithFallback } from "@/api";
+import {
+  buildSourceSubtypeParams,
+  getSourceSubtypeOptions,
+  persistSourceSubtype,
+  readSourceSubtype,
+  resolveSourceSubtype,
+} from "@/utils/sourceSubtypes";
 
 const router = useRouter();
 const store = mainStore();
@@ -183,18 +190,7 @@ const availableNews = computed(() => {
 const listType = ref(
   router.currentRoute.value.query.type || availableNews.value[0]?.name
 );
-const sourceTypeOptions = {
-  baidu: [
-    { label: "热搜", value: "realtime" },
-    { label: "小说", value: "novel" },
-    { label: "电影", value: "movie" },
-    { label: "电视剧", value: "teleplay" },
-    { label: "汽车", value: "car" },
-    { label: "游戏", value: "game" },
-  ],
-};
 const listSubType = ref(null);
-const activeTypeOptions = computed(() => sourceTypeOptions[listType.value] || []);
 const pageNumber = ref(
   router.currentRoute.value.query.page
     ? Number(router.currentRoute.value.query.page)
@@ -207,15 +203,15 @@ const linkTarget = computed(() =>
 );
 const showImages = computed(() => store.showImages);
 const logoSrc = (name) => `/logo/${name}.png?v=${cacheVersion}`;
+const activeTypeOptions = computed(() =>
+  getSourceSubtypeOptions(listType.value)
+);
 
 const resolveSubType = (route) => {
-  const options = sourceTypeOptions[listType.value] || [];
-  if (!options.length) return null;
+  const options = activeTypeOptions.value;
   const candidate = route?.query?.subtype;
-  if (candidate && options.some((opt) => opt.value === candidate)) {
-    return candidate;
-  }
-  return options[0].value;
+  const stored = readSourceSubtype(listType.value);
+  return resolveSourceSubtype(options, candidate || stored);
 };
 
 // 获取热榜数据
@@ -236,8 +232,7 @@ const getHotListsData = async (name, isNew = false) => {
   if (!item) return;
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
   const params = {
-    ...(item.params || {}),
-    ...(listSubType.value ? { type: listSubType.value } : {}),
+    ...buildSourceSubtypeParams(item.name, listSubType.value),
   };
   getHotListsWithFallback(item.name, isNew, params, { useApi2 })
     .then(({ result, usedFallback, fallbackSuccess }) => {
@@ -274,10 +269,15 @@ const getItemLink = (data) => {
 // 切换类别
 const changeType = (type) => {
   if (!type) return;
+  const nextSubtype = resolveSourceSubtype(
+    getSourceSubtypeOptions(type),
+    readSourceSubtype(type)
+  );
   router.push({
     path: "/list",
     query: {
       type,
+      ...(nextSubtype ? { subtype: nextSubtype } : {}),
       page: 1,
     },
   });
@@ -285,6 +285,7 @@ const changeType = (type) => {
 
 const changeSubType = (subtype) => {
   if (!subtype || subtype === listSubType.value) return;
+  persistSourceSubtype(listType.value, subtype);
   router.push({
     path: "/list",
     query: {
@@ -309,12 +310,16 @@ watch(
 watch(
   () => pageNumber.value,
   (val) => {
+    const query = {
+      type: listType.value,
+      page: val,
+    };
+    if (listSubType.value) {
+      query.subtype = listSubType.value;
+    }
     router.push({
       path: "/list",
-      query: {
-        type: listType.value,
-        page: val,
-      },
+      query,
     });
     document.querySelector(".n-back-top")?.click();
   }
@@ -326,8 +331,9 @@ watch(
   (val) => {
     if (val.name === "list") {
       listType.value = val.query.type;
-      pageNumber.value = Number(val.query.page);
+      pageNumber.value = Number(val.query.page) || 1;
       listSubType.value = resolveSubType(val);
+      persistSourceSubtype(listType.value, listSubType.value);
       getHotListsData(listType.value);
     }
   }
@@ -340,6 +346,16 @@ watch(
     if (!exists && availableNews.value[0]) {
       changeType(availableNews.value[0].name);
     }
+  },
+  { deep: true }
+);
+
+watch(
+  () => [listType.value, activeTypeOptions.value],
+  () => {
+    const nextSubtype = resolveSubType(router.currentRoute.value);
+    if (nextSubtype === listSubType.value) return;
+    listSubType.value = nextSubtype;
   },
   { deep: true }
 );

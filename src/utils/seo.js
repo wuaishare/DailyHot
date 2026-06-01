@@ -76,9 +76,9 @@ const LIST_SEO_MAP = {
     description: "掘金热门文章榜，面向开发者的技术热点与实践。",
   },
   "douban-movie": {
-    label: "豆瓣电影口碑榜",
-    keywords: "豆瓣电影榜单,口碑电影,热门电影",
-    description: "豆瓣电影口碑榜，热门影视与评分趋势一览。",
+    label: "豆瓣电影与剧集热榜",
+    keywords: "豆瓣电影榜单,豆瓣电视剧榜单,热门电影,热门剧集",
+    description: "豆瓣电影与剧集热榜，覆盖热映电影、热门电影、热门电视剧、综艺、动画与纪录片。",
   },
   "douban-group": {
     label: "豆瓣小组热帖",

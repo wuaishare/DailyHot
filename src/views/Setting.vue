@@ -94,7 +94,7 @@
           :tooltip="false"
           :max="20"
           :min="14"
-          :step="0.01"
+          :step="1"
           :marks="{
             14: '小一点',
             16: '默认',

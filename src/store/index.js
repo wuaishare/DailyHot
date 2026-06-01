@@ -414,8 +414,8 @@ export const mainStore = defineStore("mainData", {
       // 紧凑模式
       compactMode: true,
       // 自动刷新
-      autoRefreshEnabled: true,
-      autoRefreshPaused: true,
+      autoRefreshEnabled: false,
+      autoRefreshPaused: false,
       autoRefreshInterval: 1800,
       // 是否显示封面图片
       showImages: true,
@@ -434,7 +434,7 @@ export const mainStore = defineStore("mainData", {
       // 时间数据
       timeData: null,
       // 字体大小
-      listFontSize: 15.84,
+      listFontSize: 16,
     };
   },
   getters: {},

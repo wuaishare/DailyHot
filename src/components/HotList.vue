@@ -9,20 +9,40 @@
     @click="toList"
   >
     <template #header>
-      <n-space class="title" justify="space-between">
-        <div class="name">
-          <n-avatar
-            class="ico"
-            :src="`/logo/${hotData.name}.png?v=${cacheVersion}`"
-            fallback-src="/ico/icon_error.png"
-          />
-          <n-text class="name-text">{{ hotData.label }}</n-text>
-        </div>
-        <n-text v-if="hotListData?.type" class="subtitle" :depth="2">
-          {{ hotListData.type }}
-        </n-text>
-        <n-skeleton v-else width="60px" text round />
-      </n-space>
+      <div class="header-block">
+        <n-space class="title" justify="space-between">
+          <div class="name">
+            <n-avatar
+              class="ico"
+              :src="`/logo/${hotData.name}.png?v=${cacheVersion}`"
+              fallback-src="/ico/icon_error.png"
+            />
+            <n-text class="name-text">{{ hotData.label }}</n-text>
+          </div>
+          <n-text v-if="hotListData?.type" class="subtitle" :depth="2">
+            {{ hotListData.type }}
+          </n-text>
+          <n-skeleton v-else width="60px" text round />
+        </n-space>
+        <n-space
+          v-if="subtypeOptions.length"
+          class="subtype"
+          :size="6"
+          @click.stop
+        >
+          <n-tag
+            v-for="item in subtypeOptions"
+            :key="item.value"
+            size="small"
+            round
+            class="subtype-tag"
+            :type="item.value === activeSubType ? 'primary' : 'default'"
+            @click.stop="changeSubType(item.value)"
+          >
+            {{ item.label }}
+          </n-tag>
+        </n-space>
+      </div>
     </template>
     <n-scrollbar class="news-list" ref="scrollbarRef">
       <Transition name="fade" mode="out-in">
@@ -159,6 +179,13 @@ import { formatTime } from "@/utils/getTime";
 import { getCacheVersion } from "@/utils/cache";
 import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
+import {
+  buildSourceSubtypeParams,
+  getSourceSubtypeOptions,
+  persistSourceSubtype,
+  readSourceSubtype,
+  resolveSourceSubtype,
+} from "@/utils/sourceSubtypes";
 
 const router = useRouter();
 const store = mainStore();
@@ -195,6 +222,24 @@ const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
 const showImages = computed(() => store.showImages);
+const subtypeOptions = computed(() => getSourceSubtypeOptions(props.hotData.name));
+const activeSubType = ref(
+  resolveSourceSubtype(
+    subtypeOptions.value,
+    readSourceSubtype(props.hotData.name)
+  )
+);
+
+watch(
+  () => subtypeOptions.value,
+  (options) => {
+    activeSubType.value = resolveSourceSubtype(
+      options,
+      readSourceSubtype(props.hotData.name)
+    );
+  },
+  { immediate: true, deep: true }
+);
 
 const updateIsDesktop = () => {
   if (!isClient) return;
@@ -209,9 +254,14 @@ const getHotListsData = async (name, isNew = false) => {
     const item = store.newsArr.find((item) => item.name == name);
     const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
     const { result, usedFallback, fallbackSuccess } =
-      await getHotListsWithFallback(item.name, isNew, item.params, {
+      await getHotListsWithFallback(
+        item.name,
+        isNew,
+        buildSourceSubtypeParams(item.name, activeSubType.value),
+        {
         useApi2,
-      });
+        }
+      );
     if (usedFallback && fallbackSuccess && !useApi2) {
       store.setSourceApi2(item.name, true);
     }
@@ -262,14 +312,27 @@ const getItemLink = (data) => {
   return isDesktop.value ? data.url : data.mobileUrl;
 };
 
+const changeSubType = (subtype) => {
+  const nextSubtype = resolveSourceSubtype(subtypeOptions.value, subtype);
+  if (!nextSubtype || nextSubtype === activeSubType.value) return;
+  activeSubType.value = nextSubtype;
+  persistSourceSubtype(props.hotData.name, nextSubtype);
+  listLoading.value = true;
+  getHotListsData(props.hotData.name);
+};
+
 // 前往全部列表
 const toList = () => {
   if (props.hotData.name) {
+    const query = {
+      type: props.hotData.name,
+    };
+    if (activeSubType.value) {
+      query.subtype = activeSubType.value;
+    }
     router.push({
       path: "/list",
-      query: {
-        type: props.hotData.name,
-      },
+      query,
     });
   } else {
     $message.error("数据出错，请重试");
@@ -324,6 +387,11 @@ onBeforeUnmount(() => {
   border-radius: 12px;
   transition: all 0.3s;
   cursor: pointer;
+  .header-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
   .title {
     display: flex;
     align-items: center;
@@ -343,6 +411,14 @@ onBeforeUnmount(() => {
     .subtitle {
       margin-left: auto;
       font-size: 12px;
+    }
+  }
+
+  .subtype {
+    flex-wrap: wrap;
+
+    .subtype-tag {
+      cursor: pointer;
     }
   }
 
