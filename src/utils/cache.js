@@ -1,4 +1,4 @@
-const CACHE_VERSION = "1.4.0";
+const CACHE_VERSION = "1.4.1";
 
 export const getCacheVersion = () => CACHE_VERSION;
 
