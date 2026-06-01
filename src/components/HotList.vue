@@ -226,6 +226,8 @@ const listLoading = ref(false);
 const loadingError = ref(false);
 const previewItem = ref(null);
 const previewStyle = ref({});
+const previewSizeCache = new Map();
+let previewRequestId = 0;
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
@@ -324,40 +326,78 @@ const getItemLink = (data) => {
   return isDesktop.value ? data.url : data.mobileUrl;
 };
 
-const showPreview = (item, event) => {
+const getPreviewSize = (cover) => {
+  if (previewSizeCache.has(cover)) return previewSizeCache.get(cover);
+  const sizePromise = new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const scale = Math.min(
+        previewMaxWidth / image.naturalWidth,
+        previewMaxHeight / image.naturalHeight,
+        1
+      );
+      resolve({
+        width: Math.round(image.naturalWidth * scale),
+        height: Math.round(image.naturalHeight * scale),
+      });
+    };
+    image.onerror = reject;
+    image.src = cover;
+  });
+  previewSizeCache.set(cover, sizePromise);
+  return sizePromise;
+};
+
+const showPreview = async (item, event) => {
   if (!showImages.value || !item?.cover || coverErrorMap[item.cover]) return;
   if (!isClient || !event?.currentTarget) return;
-  const rect = event.currentTarget.getBoundingClientRect();
-  const cardRect = event.currentTarget
-    .closest(".hot-list")
-    ?.getBoundingClientRect();
+  const target = event.currentTarget;
+  const requestId = ++previewRequestId;
+  let previewSize;
+  try {
+    previewSize = await getPreviewSize(item.cover);
+  } catch (error) {
+    coverErrorMap[item.cover] = true;
+    hidePreview();
+    return;
+  }
+  if (requestId !== previewRequestId || !target.isConnected) return;
+
+  const rect = target.getBoundingClientRect();
+  const card = target.closest(".hot-list");
+  const cardRect = card?.getBoundingClientRect();
+  const textRects = Array.from(card?.querySelectorAll(".text") || []).map(
+    (node) => node.getBoundingClientRect()
+  );
   const padding = 12;
   const gap = 10;
+  const previewWidth = previewSize.width;
+  const previewHeight = previewSize.height;
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const clampLeft = (value) =>
-    clamp(value, padding, window.innerWidth - previewMaxWidth - padding);
+    clamp(value, padding, window.innerWidth - previewWidth - padding);
   const clampTop = (value) =>
-    clamp(value, padding, window.innerHeight - previewMaxHeight - padding);
+    clamp(value, padding, window.innerHeight - previewHeight - padding);
   const placeRight =
-    window.innerWidth - rect.right >= previewMaxWidth + gap + padding;
+    window.innerWidth - rect.right >= previewWidth + gap + padding;
   const placeLeft =
-    rect.left >= previewMaxWidth + gap + padding;
+    rect.left >= previewWidth + gap + padding;
   const placeBelow =
     cardRect &&
-    window.innerHeight - cardRect.bottom >= previewMaxHeight + gap + padding;
+    window.innerHeight - cardRect.bottom >= previewHeight + gap + padding;
   const placeAbove =
-    cardRect && cardRect.top >= previewMaxHeight + gap + padding;
+    cardRect && cardRect.top >= previewHeight + gap + padding;
   let left = clampLeft(rect.left + 32);
   let top = clampTop(rect.top - 8);
 
   if (placeRight) {
     left = rect.right + gap;
   } else if (placeLeft) {
-    left = rect.left - previewMaxWidth - gap;
+    left = rect.left - previewWidth - gap;
   } else if (placeBelow) {
     top = cardRect.bottom + gap;
   } else if (placeAbove) {
-    top = cardRect.top - previewMaxHeight - gap;
+    top = cardRect.top - previewHeight - gap;
   } else {
     hidePreview();
     return;
@@ -366,13 +406,14 @@ const showPreview = (item, event) => {
   left = clampLeft(left);
   top = clampTop(top);
 
-  const overlapsCardText =
-    cardRect &&
-    left < cardRect.right &&
-    left + previewMaxWidth > cardRect.left &&
-    top < cardRect.bottom &&
-    top + previewMaxHeight > cardRect.top;
-  if (overlapsCardText && !placeBelow && !placeAbove) {
+  const overlapsText = textRects.some(
+    (textRect) =>
+      left < textRect.right &&
+      left + previewWidth > textRect.left &&
+      top < textRect.bottom &&
+      top + previewHeight > textRect.top
+  );
+  if (overlapsText && !placeBelow && !placeAbove) {
     hidePreview();
     return;
   }
@@ -385,6 +426,7 @@ const showPreview = (item, event) => {
 };
 
 const hidePreview = () => {
+  previewRequestId += 1;
   previewItem.value = null;
 };
 
