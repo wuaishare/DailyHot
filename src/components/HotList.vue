@@ -666,6 +666,13 @@ onBeforeUnmount(() => {
         text-decoration: none;
         color: inherit;
 
+        .title-text {
+          display: -webkit-box;
+          overflow: hidden;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+        }
+
         @media (min-width: 768px) {
           &:hover {
             transform: translateX(4px);
