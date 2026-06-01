@@ -109,6 +109,12 @@
                         :depth="3"
                         v-html="item.desc"
                       />
+                      <div class="message">
+                        <div class="hot" v-if="item.hot">
+                          <n-icon :depth="3" :component="Fire" />
+                          <n-text class="hot-text" :depth="3" v-html="item.hot" />
+                        </div>
+                      </div>
                     </div>
                     <div
                       class="cover-wrapper"
@@ -124,12 +130,6 @@
                     </div>
                   </div>
                 </n-a>
-                <div class="message">
-                  <div class="hot" v-if="item.hot">
-                    <n-icon :depth="3" :component="Fire" />
-                    <n-text class="hot-text" :depth="3" v-html="item.hot" />
-                  </div>
-                </div>
               </n-list-item>
             </n-list>
             <n-pagination
@@ -379,7 +379,19 @@ onBeforeUnmount(() => {
 .list {
   .type {
     width: 100%;
+    flex-flow: row nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
     .tag {
+      flex: 0 0 auto;
       cursor: pointer;
       .logo {
         height: 22px;
@@ -390,11 +402,19 @@ onBeforeUnmount(() => {
   }
   .subtype {
     width: 100%;
-    margin-top: 8px;
+    margin-top: 6px;
   }
   .card {
-    margin-top: 20px;
+    margin-top: 10px;
     border-radius: 8px;
+    :deep(.n-card-header) {
+      padding: 14px 16px 10px;
+    }
+
+    :deep(.n-card__content) {
+      padding: 0 16px 16px;
+    }
+
     .fade-enter-active,
     .fade-leave-active {
       transition: opacity 0.3s ease-in-out;
@@ -415,25 +435,30 @@ onBeforeUnmount(() => {
     }
     .header {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      column-gap: 16px;
       align-items: center;
       justify-content: space-between;
-      height: 60px;
+      min-height: 44px;
       .logo {
         display: flex;
         align-items: center;
         img {
-          height: 50px;
-          width: 50px;
+          height: 42px;
+          width: 42px;
         }
       }
       .name {
         display: flex;
         align-items: center;
-        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
         .title {
-          font-size: 22px;
+          overflow: hidden;
+          font-size: 18px;
           font-weight: bold;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .subtitle {
           font-size: 14px;
@@ -443,7 +468,9 @@ onBeforeUnmount(() => {
         display: flex;
         align-items: center;
         justify-content: flex-end;
+        min-width: 0;
         font-size: 14px;
+        white-space: nowrap;
         .total {
           &::before {
             content: "共 ";
@@ -516,40 +543,47 @@ onBeforeUnmount(() => {
       .text {
         display: flex;
         flex-direction: row;
+        min-width: 0;
         text-decoration: none;
         color: inherit;
         .content {
           display: grid;
-          grid-template-columns: 1fr 160px;
-          gap: 12px;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 14px;
           align-items: center;
           width: 100%;
         }
         .copy {
           display: flex;
           flex-direction: column;
+          justify-content: center;
+          min-width: 0;
           .title {
+            overflow: hidden;
             font-size: 16px;
             margin-bottom: 4px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
           .desc {
             overflow: hidden;
             font-size: 14px;
-            display: -webkit-inline-box;
+            display: -webkit-box;
             -webkit-box-orient: vertical;
-            -webkit-line-clamp: 5;
+            -webkit-line-clamp: 2;
           }
         }
         .cover-wrapper {
-          max-height: none;
+          flex: 0 0 auto;
           opacity: 1;
           overflow: hidden;
+          border-radius: 10px;
           .cover {
-            width: 160px;
-            height: 120px;
-            object-fit: contain;
+            width: 78px;
+            height: 104px;
+            object-fit: cover;
             object-position: center;
-            border-radius: 12px;
+            border-radius: 10px;
             display: block;
             background: rgba(0, 0, 0, 0.05);
           }
@@ -559,20 +593,25 @@ onBeforeUnmount(() => {
         :deep(.n-list) {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 12px 16px;
+          gap: 10px 14px;
         }
         :deep(.n-list-item) {
           border: none;
           border-radius: 10px;
           box-shadow: inset 0 0 0 1px var(--n-border-color);
+          padding: 10px 12px;
+
+          .n-list-item__main {
+            min-width: 0;
+          }
         }
         .text {
           .content {
-            grid-template-columns: 1fr 140px;
+            grid-template-columns: minmax(0, 1fr) auto;
           }
           .cover-wrapper {
             .cover {
-              width: 140px;
+              width: 84px;
               height: 112px;
             }
           }
@@ -581,7 +620,8 @@ onBeforeUnmount(() => {
       .message {
         display: flex;
         align-items: center;
-        margin-top: 12px;
+        margin-top: 6px;
+        min-height: 18px;
         .hot {
           display: flex;
           align-items: center;
@@ -593,7 +633,7 @@ onBeforeUnmount(() => {
         }
       }
       .pagination {
-        margin: 20px 0;
+        margin: 14px 0 4px;
         align-self: center;
       }
       @media (max-width: 740px) {

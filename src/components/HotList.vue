@@ -435,31 +435,40 @@ onBeforeUnmount(() => {
     .name {
       display: flex;
       align-items: center;
-      flex: 0 0 auto;
+      flex: 0 1 auto;
       min-width: 0;
+      max-width: 46%;
       .n-avatar {
         background-color: transparent;
         width: 25px;
         height: 25px;
         margin-right: 8px;
+        flex: 0 0 auto;
       }
 
       .name-text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap;
       }
     }
 
     .header-subtype {
-      flex: 1 1 auto;
+      flex: 1 1 0;
       min-width: 0;
-      max-width: 68%;
+      max-width: none;
       margin-left: auto;
     }
 
-    .header-subtype:deep(.group-tabs),
-    .header-subtype:deep(.flat-track) {
-      justify-content: flex-end;
+    .header-subtype:deep(.subtype-scroll) {
+      justify-content: flex-start;
       padding: 0;
+    }
+
+    .header-subtype:deep(.subtype-chip) {
+      font-size: 12px;
+      padding: 5px 11px;
     }
 
     .subtitle {

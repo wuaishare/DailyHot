@@ -28,8 +28,8 @@ const SOURCE_SUBTYPE_GROUPS = {
   "douban-movie": [
     {
       key: "cinema",
-      label: "影院热映",
-      items: [{ label: "影院热映", value: "movie_showing" }],
+      label: "热映",
+      items: [{ label: "热映", value: "movie_showing" }],
     },
     {
       key: "new",

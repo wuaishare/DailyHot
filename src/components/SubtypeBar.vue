@@ -1,62 +1,100 @@
 <template>
-  <div v-if="groups.length" class="subtype-bar" @click.stop>
-    <div v-if="useGroupTabs" class="group-tabs">
+  <div
+    v-if="groups.length"
+    class="subtype-bar"
+    :class="{
+      'has-left-shadow': canScrollLeft,
+      'has-right-shadow': canScrollRight,
+      'is-dragging': isDragging,
+    }"
+    @click.stop
+  >
+    <div class="scroll-shell">
       <div
-        v-for="group in groups"
-        :key="getGroupKey(group)"
-        class="group-tab-wrap"
-        @mouseenter="openGroup(group, $event)"
-        @mouseleave="scheduleCloseGroup"
+        v-if="useGroupTabs"
+        ref="trackRef"
+        class="subtype-scroll group-tabs"
+        @pointerdown="startDrag"
+        @pointermove="dragScroll"
+        @pointerup="endDrag"
+        @pointercancel="endDrag"
+        @pointerleave="endDrag"
+        @scroll="handleTrackScroll"
+      >
+        <div
+          v-for="group in groups"
+          :key="getGroupKey(group)"
+          class="group-tab-wrap"
+          @mouseenter="openGroup(group, $event)"
+          @mouseleave="scheduleCloseGroup"
+        >
+          <button
+            type="button"
+            class="subtype-chip group-tab"
+            :class="{ active: isGroupActive(group) }"
+            @click="handleGroupClick(group, $event)"
+          >
+            {{ group.label || group.items?.[0]?.label }}
+          </button>
+          <Teleport to="body">
+            <Transition name="subtype-menu">
+              <div
+                v-if="(group.items || []).length > 1 && openGroupKey === getGroupKey(group)"
+                class="subtype-menu"
+                :style="menuStyle"
+                @mouseenter="keepMenuOpen"
+                @mouseleave="scheduleCloseGroup"
+              >
+                <button
+                  v-for="item in group.items"
+                  :key="item.value"
+                  type="button"
+                  class="subtype-chip menu-chip"
+                  :class="{ active: item.value === activeValue }"
+                  @click="selectItem(item.value)"
+                >
+                  {{ item.label }}
+                </button>
+              </div>
+            </Transition>
+          </Teleport>
+        </div>
+      </div>
+      <div
+        v-else
+        ref="trackRef"
+        class="subtype-scroll flat-track"
+        @pointerdown="startDrag"
+        @pointermove="dragScroll"
+        @pointerup="endDrag"
+        @pointercancel="endDrag"
+        @pointerleave="endDrag"
+        @scroll="handleTrackScroll"
       >
         <button
+          v-for="item in flatItems"
+          :key="item.value"
           type="button"
-          class="subtype-chip group-tab"
-          :class="{ active: isGroupActive(group) }"
-          @click="handleGroupClick(group, $event)"
+          class="subtype-chip"
+          :class="{ active: item.value === activeValue }"
+          @click="handleItemClick(item.value, $event)"
         >
-          {{ group.label || group.items?.[0]?.label }}
+          {{ item.label }}
         </button>
-        <Teleport to="body">
-          <Transition name="subtype-menu">
-            <div
-              v-if="(group.items || []).length > 1 && openGroupKey === getGroupKey(group)"
-              class="subtype-menu"
-              :style="menuStyle"
-              @mouseenter="keepMenuOpen"
-              @mouseleave="scheduleCloseGroup"
-            >
-              <button
-                v-for="item in group.items"
-                :key="item.value"
-                type="button"
-                class="subtype-chip menu-chip"
-                :class="{ active: item.value === activeValue }"
-                @click="selectItem(item.value)"
-              >
-                {{ item.label }}
-              </button>
-            </div>
-          </Transition>
-        </Teleport>
       </div>
-    </div>
-    <div v-else class="flat-track">
-      <button
-        v-for="item in flatItems"
-        :key="item.value"
-        type="button"
-        class="subtype-chip"
-        :class="{ active: item.value === activeValue }"
-        @click="selectItem(item.value)"
-      >
-        {{ item.label }}
-      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 
 const props = defineProps({
   groups: {
@@ -73,7 +111,16 @@ const emit = defineEmits(["change"]);
 
 const openGroupKey = ref(null);
 const menuStyle = ref({});
+const trackRef = ref(null);
+const canScrollLeft = ref(false);
+const canScrollRight = ref(false);
+const isDragging = ref(false);
+const dragMoved = ref(false);
 let closeTimer = null;
+let dragStartX = 0;
+let dragStartScrollLeft = 0;
+let resizeObserver = null;
+
 const flatItems = computed(() =>
   props.groups.flatMap((group) => group.items || [])
 );
@@ -91,24 +138,101 @@ const getActiveGroupItem = (group) =>
 
 const isGroupActive = (group) => Boolean(getActiveGroupItem(group));
 
+const updateScrollShadow = () => {
+  const track = trackRef.value;
+  if (!track) {
+    canScrollLeft.value = false;
+    canScrollRight.value = false;
+    return;
+  }
+  const maxScrollLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+  canScrollLeft.value = track.scrollLeft > 1;
+  canScrollRight.value = maxScrollLeft - track.scrollLeft > 1;
+};
+
+const attachResizeObserver = () => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+  if (typeof ResizeObserver === "undefined" || !trackRef.value) return;
+  resizeObserver = new ResizeObserver(updateScrollShadow);
+  resizeObserver.observe(trackRef.value);
+};
+
+const refreshScrollState = () => {
+  nextTick(() => {
+    attachResizeObserver();
+    updateScrollShadow();
+  });
+};
+
+const startDrag = (event) => {
+  const track = trackRef.value;
+  if (!track || event.button !== 0 || track.scrollWidth <= track.clientWidth) {
+    return;
+  }
+  isDragging.value = true;
+  dragMoved.value = false;
+  dragStartX = event.clientX;
+  dragStartScrollLeft = track.scrollLeft;
+  track.setPointerCapture?.(event.pointerId);
+  clearCloseTimer();
+};
+
+const dragScroll = (event) => {
+  const track = trackRef.value;
+  if (!isDragging.value || !track) return;
+  const deltaX = event.clientX - dragStartX;
+  if (Math.abs(deltaX) > 4) {
+    dragMoved.value = true;
+    closeGroup();
+  }
+  track.scrollLeft = dragStartScrollLeft - deltaX;
+  updateScrollShadow();
+};
+
+const endDrag = (event) => {
+  const track = trackRef.value;
+  if (!isDragging.value) return;
+  isDragging.value = false;
+  track?.releasePointerCapture?.(event.pointerId);
+  updateScrollShadow();
+  if (dragMoved.value && typeof window !== "undefined") {
+    window.setTimeout(() => {
+      dragMoved.value = false;
+    }, 0);
+  }
+};
+
+const handleTrackScroll = () => {
+  updateScrollShadow();
+  if (openGroupKey.value) closeGroup();
+};
+
 const positionMenu = (target) => {
   if (typeof window === "undefined" || !target) return;
   const rect = target.getBoundingClientRect();
-  const width = Math.min(300, window.innerWidth - 24);
+  const width = Math.min(420, window.innerWidth - 24);
   const left = Math.min(
     window.innerWidth - width - 12,
     Math.max(12, rect.left)
   );
+  const top = rect.bottom + 6;
+  const maxHeight = Math.min(240, window.innerHeight - 24);
+  const showAbove = top + 140 > window.innerHeight && rect.top > 150;
 
   menuStyle.value = {
     left: `${left}px`,
-    top: `${rect.bottom + 2}px`,
+    top: `${showAbove ? Math.max(12, rect.top - 8) : top}px`,
     maxWidth: `${width}px`,
+    maxHeight: `${maxHeight}px`,
+    transform: showAbove ? "translateY(-100%)" : "none",
   };
 };
 
 const openGroup = (group, event) => {
-  if ((group.items || []).length <= 1) return;
+  if ((group.items || []).length <= 1 || isDragging.value) return;
   clearCloseTimer();
   openGroupKey.value = getGroupKey(group);
   positionMenu(event?.currentTarget);
@@ -144,7 +268,19 @@ const selectItem = (value) => {
   closeGroup();
 };
 
+const handleItemClick = (value, event) => {
+  if (dragMoved.value) {
+    event?.preventDefault();
+    return;
+  }
+  selectItem(value);
+};
+
 const handleGroupClick = (group, event) => {
+  if (dragMoved.value) {
+    event?.preventDefault();
+    return;
+  }
   const items = group.items || [];
   if (!items.length) return;
   if (items.length === 1) {
@@ -163,15 +299,32 @@ const handleGroupClick = (group, event) => {
   }
 };
 
+watch(
+  () => [props.groups, props.activeValue, useGroupTabs.value],
+  refreshScrollState,
+  { deep: true }
+);
+
 onMounted(() => {
   if (typeof document !== "undefined") {
     document.addEventListener("click", closeGroup);
   }
+  if (typeof window !== "undefined") {
+    window.addEventListener("resize", updateScrollShadow);
+  }
+  refreshScrollState();
 });
 
 onBeforeUnmount(() => {
   if (typeof document !== "undefined") {
     document.removeEventListener("click", closeGroup);
+  }
+  if (typeof window !== "undefined") {
+    window.removeEventListener("resize", updateScrollShadow);
+  }
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
   }
   clearCloseTimer();
 });
@@ -185,6 +338,48 @@ onBeforeUnmount(() => {
   z-index: 50;
 }
 
+.scroll-shell {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 24px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.16s ease;
+  }
+
+  &::before {
+    left: 0;
+    background: linear-gradient(
+      90deg,
+      var(--n-card-color, var(--n-color, #fff)),
+      transparent
+    );
+  }
+
+  &::after {
+    right: 0;
+    background: linear-gradient(
+      270deg,
+      var(--n-card-color, var(--n-color, #fff)),
+      transparent
+    );
+  }
+}
+
+.has-left-shadow .scroll-shell::before,
+.has-right-shadow .scroll-shell::after {
+  opacity: 0.92;
+}
+
 .group-tabs,
 .flat-track {
   display: flex;
@@ -194,19 +389,23 @@ onBeforeUnmount(() => {
   padding: 2px 0 6px;
 }
 
-.group-tabs {
-  overflow: visible;
-}
-
-.flat-track {
+.subtype-scroll {
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  cursor: grab;
+  touch-action: pan-y;
 
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+.is-dragging .subtype-scroll {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .group-tab-wrap {
@@ -255,10 +454,16 @@ onBeforeUnmount(() => {
   width: max-content;
   min-width: 120px;
   padding: 8px;
+  overflow: auto;
   border: 1px solid var(--n-border-color);
   border-radius: 12px;
   background: var(--n-card-color, var(--n-color, #fff));
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .menu-chip {
