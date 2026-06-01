@@ -339,10 +339,9 @@ const showPreview = (item, event) => {
   const clampTop = (value) =>
     clamp(value, padding, window.innerHeight - previewMaxHeight - padding);
   const placeRight =
-    cardRect &&
-    window.innerWidth - cardRect.right >= previewMaxWidth + gap + padding;
+    window.innerWidth - rect.right >= previewMaxWidth + gap + padding;
   const placeLeft =
-    cardRect && cardRect.left >= previewMaxWidth + gap + padding;
+    rect.left >= previewMaxWidth + gap + padding;
   const placeBelow =
     cardRect &&
     window.innerHeight - cardRect.bottom >= previewMaxHeight + gap + padding;
@@ -352,9 +351,9 @@ const showPreview = (item, event) => {
   let top = clampTop(rect.top - 8);
 
   if (placeRight) {
-    left = cardRect.right + gap;
+    left = rect.right + gap;
   } else if (placeLeft) {
-    left = cardRect.left - previewMaxWidth - gap;
+    left = rect.left - previewMaxWidth - gap;
   } else if (placeBelow) {
     top = cardRect.bottom + gap;
   } else if (placeAbove) {
