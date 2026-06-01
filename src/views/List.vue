@@ -1,21 +1,40 @@
 <template>
   <div class="list">
-    <n-space class="type" v-if="availableNews.length">
-      <n-tag
-        round
-        size="large"
-        class="tag"
-        v-for="item in availableNews"
-        :key="item"
-        :type="item.name === listType ? 'primary' : 'default'"
-        @click="changeType(item.name)"
+    <div
+      v-if="availableNews.length"
+      class="type-shell"
+      :class="{
+        'has-left-shadow': typeCanScrollLeft,
+        'has-right-shadow': typeCanScrollRight,
+        'is-dragging': typeDragging,
+      }"
+    >
+      <div
+        ref="typeTrackRef"
+        class="type"
+        @pointerdown="startTypeDrag"
+        @pointermove="dragTypeTrack"
+        @pointerup="endTypeDrag"
+        @pointercancel="endTypeDrag"
+        @pointerleave="endTypeDrag"
+        @scroll="updateTypeShadow"
       >
-        {{ item.label }}
-        <template #avatar>
-          <img :src="logoSrc(item.name)" alt="logo" class="logo" />
-        </template>
-      </n-tag>
-    </n-space>
+        <n-tag
+          round
+          size="large"
+          class="tag"
+          v-for="item in availableNews"
+          :key="item"
+          :type="item.name === listType ? 'primary' : 'default'"
+          @click="changeType(item.name, $event)"
+        >
+          {{ item.label }}
+          <template #avatar>
+            <img :src="logoSrc(item.name)" alt="logo" class="logo" />
+          </template>
+        </n-tag>
+      </div>
+    </div>
     <SubtypeBar
       v-if="subtypeGroups.length"
       class="subtype"
@@ -194,6 +213,14 @@ const pageNumber = ref(
 );
 const listData = ref(null);
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
+const typeTrackRef = ref(null);
+const typeCanScrollLeft = ref(false);
+const typeCanScrollRight = ref(false);
+const typeDragging = ref(false);
+const typeDragMoved = ref(false);
+let typeDragStartX = 0;
+let typeDragStartScrollLeft = 0;
+let typeResizeObserver = null;
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
@@ -265,8 +292,77 @@ const getItemLink = (data) => {
   return isDesktop.value ? data.url : data.mobileUrl;
 };
 
+const getTypeTrackElement = () => typeTrackRef.value?.$el || typeTrackRef.value;
+
+const updateTypeShadow = () => {
+  const track = getTypeTrackElement();
+  if (!track) {
+    typeCanScrollLeft.value = false;
+    typeCanScrollRight.value = false;
+    return;
+  }
+  const maxScrollLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+  typeCanScrollLeft.value = track.scrollLeft > 1;
+  typeCanScrollRight.value = maxScrollLeft - track.scrollLeft > 1;
+};
+
+const refreshTypeScrollState = () => {
+  nextTick(() => {
+    const track = getTypeTrackElement();
+    if (typeResizeObserver) {
+      typeResizeObserver.disconnect();
+      typeResizeObserver = null;
+    }
+    if (track && typeof ResizeObserver !== "undefined") {
+      typeResizeObserver = new ResizeObserver(updateTypeShadow);
+      typeResizeObserver.observe(track);
+    }
+    updateTypeShadow();
+  });
+};
+
+const startTypeDrag = (event) => {
+  const track = getTypeTrackElement();
+  if (!track || event.button !== 0 || track.scrollWidth <= track.clientWidth) {
+    return;
+  }
+  typeDragging.value = true;
+  typeDragMoved.value = false;
+  typeDragStartX = event.clientX;
+  typeDragStartScrollLeft = track.scrollLeft;
+  track.setPointerCapture?.(event.pointerId);
+};
+
+const dragTypeTrack = (event) => {
+  const track = getTypeTrackElement();
+  if (!typeDragging.value || !track) return;
+  const deltaX = event.clientX - typeDragStartX;
+  if (Math.abs(deltaX) > 4) {
+    typeDragMoved.value = true;
+  }
+  track.scrollLeft = typeDragStartScrollLeft - deltaX;
+  updateTypeShadow();
+};
+
+const endTypeDrag = (event) => {
+  const track = getTypeTrackElement();
+  if (!typeDragging.value) return;
+  typeDragging.value = false;
+  track?.releasePointerCapture?.(event.pointerId);
+  updateTypeShadow();
+  if (typeDragMoved.value && typeof window !== "undefined") {
+    window.setTimeout(() => {
+      typeDragMoved.value = false;
+    }, 0);
+  }
+};
+
 // 切换类别
-const changeType = (type) => {
+const changeType = (type, event) => {
+  if (typeDragMoved.value) {
+    event?.preventDefault();
+    return;
+  }
   if (!type) return;
   const nextSubtype = resolveSourceSubtype(
     getSourceSubtypeOptions(type),
@@ -345,6 +441,7 @@ watch(
     if (!exists && availableNews.value[0]) {
       changeType(availableNews.value[0].name);
     }
+    refreshTypeScrollState();
   },
   { deep: true }
 );
@@ -363,7 +460,9 @@ onMounted(() => {
   updateIsDesktop();
   if (isClient) {
     window.addEventListener("resize", updateIsDesktop);
+    window.addEventListener("resize", updateTypeShadow);
   }
+  refreshTypeScrollState();
   listSubType.value = resolveSubType(router.currentRoute.value);
   getHotListsData(listType.value);
 });
@@ -371,20 +470,74 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener("resize", updateIsDesktop);
+    window.removeEventListener("resize", updateTypeShadow);
+  }
+  if (typeResizeObserver) {
+    typeResizeObserver.disconnect();
+    typeResizeObserver = null;
   }
 });
 </script>
 
 <style lang="scss" scoped>
 .list {
+  .type-shell {
+    position: relative;
+    overflow: hidden;
+    max-height: 78px;
+
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 4px;
+      z-index: 2;
+      width: 34px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.16s ease;
+    }
+
+    &::before {
+      left: 0;
+      background: linear-gradient(90deg, var(--n-color, #fff), transparent);
+    }
+
+    &::after {
+      right: 0;
+      background: linear-gradient(270deg, var(--n-color, #fff), transparent);
+    }
+
+    &.has-left-shadow::before,
+    &.has-right-shadow::after {
+      opacity: 0.94;
+    }
+
+    &.is-dragging {
+      .type {
+        cursor: grabbing;
+        user-select: none;
+      }
+    }
+  }
+
   .type {
     width: 100%;
-    flex-flow: row nowrap !important;
+    display: grid !important;
+    grid-auto-columns: max-content;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, max-content);
+    gap: 6px 8px;
+    align-items: start;
+    align-content: start;
     overflow-x: auto;
     overflow-y: hidden;
-    padding-bottom: 4px;
+    padding-bottom: 8px;
+    cursor: grab;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
 
     &::-webkit-scrollbar {
       display: none;
