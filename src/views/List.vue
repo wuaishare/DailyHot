@@ -19,20 +19,26 @@
         @pointerleave="endTypeDrag"
         @scroll="updateTypeShadow"
       >
-        <n-tag
-          round
-          size="large"
-          class="tag"
-          v-for="item in availableNews"
-          :key="item"
-          :type="item.name === listType ? 'primary' : 'default'"
-          @click="changeType(item.name, $event)"
+        <div
+          v-for="(row, rowIndex) in sourceRows"
+          :key="rowIndex"
+          class="type-row"
         >
-          {{ item.label }}
-          <template #avatar>
-            <img :src="logoSrc(item.name)" alt="logo" class="logo" />
-          </template>
-        </n-tag>
+          <n-tag
+            round
+            size="large"
+            class="tag"
+            v-for="item in row"
+            :key="item.name"
+            :type="item.name === listType ? 'primary' : 'default'"
+            @click="changeType(item.name, $event)"
+          >
+            {{ item.label }}
+            <template #avatar>
+              <img :src="logoSrc(item.name)" alt="logo" class="logo" />
+            </template>
+          </n-tag>
+        </div>
       </div>
     </div>
     <SubtypeBar
@@ -202,6 +208,15 @@ const availableNews = computed(() => {
     )
     .sort((a, b) => a.order - b.order);
 });
+const sourceRows = computed(() =>
+  availableNews.value.reduce(
+    (rows, item, index) => {
+      rows[index % 2].push(item);
+      return rows;
+    },
+    [[], []]
+  )
+);
 const listType = ref(
   router.currentRoute.value.query.type || availableNews.value[0]?.name
 );
@@ -524,13 +539,6 @@ onBeforeUnmount(() => {
 
   .type {
     width: 100%;
-    display: grid !important;
-    grid-auto-columns: max-content;
-    grid-auto-flow: column;
-    grid-template-rows: repeat(2, max-content);
-    gap: 6px 8px;
-    align-items: start;
-    align-content: start;
     overflow-x: auto;
     overflow-y: hidden;
     padding-bottom: 8px;
@@ -542,9 +550,21 @@ onBeforeUnmount(() => {
     &::-webkit-scrollbar {
       display: none;
     }
+  }
+
+  .type-row {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+    gap: 8px;
+
+    & + .type-row {
+      margin-top: 6px;
+    }
 
     .tag {
       flex: 0 0 auto;
+      width: max-content;
       cursor: pointer;
       .logo {
         height: 22px;
