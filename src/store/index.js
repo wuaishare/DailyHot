@@ -69,7 +69,7 @@ export const mainStore = defineStore("mainData", {
           name: "bilibili",
           order: 8,
           show: true,
-          category: "社区",
+          category: "综合",
         },
         {
           label: "知乎",
@@ -232,13 +232,20 @@ export const mainStore = defineStore("mainData", {
           show: true,
           category: "游戏",
         },
-        { label: "LOL", name: "lol", order: 32, show: true, category: "游戏" },
+        {
+          label: "LOL",
+          name: "lol",
+          order: 32,
+          show: true,
+          category: "游戏",
+        },
         {
           label: "虎嗅",
           name: "huxiu",
           order: 33,
           show: true,
           category: "科技",
+          useApi2: true,
         },
         {
           label: "少数派",
@@ -287,7 +294,7 @@ export const mainStore = defineStore("mainData", {
           name: "acfun",
           order: 40,
           show: true,
-          category: "社区",
+          category: "综合",
         },
         {
           label: "NGA",
@@ -302,6 +309,7 @@ export const mainStore = defineStore("mainData", {
           order: 42,
           show: true,
           category: "社区",
+          useApi2: true,
         },
         {
           label: "全球主机交流",
@@ -372,6 +380,7 @@ export const mainStore = defineStore("mainData", {
           order: 52,
           show: true,
           category: "生活",
+          useApi2: true,
         },
         {
           label: "中央气象台",
@@ -403,29 +412,29 @@ export const mainStore = defineStore("mainData", {
       // 页头默认折叠
       headerCollapsed: true,
       // 紧凑模式
-      compactMode: false,
+      compactMode: true,
       // 自动刷新
-      autoRefreshEnabled: false,
-      autoRefreshPaused: false,
+      autoRefreshEnabled: true,
+      autoRefreshPaused: true,
       autoRefreshInterval: 1800,
       // 是否显示封面图片
-      showImages: false,
+      showImages: true,
       // 分类
-      categoryEnabled: false,
+      categoryEnabled: true,
       activeCategory: "全部",
       categories: [
         { id: "general", name: "综合", order: 0, builtin: true },
         { id: "tech", name: "科技", order: 1, builtin: true },
-        { id: "community", name: "社区", order: 2, builtin: true },
+        { id: "life", name: "生活", order: 2, builtin: true },
         { id: "games", name: "游戏", order: 3, builtin: true },
-        { id: "life", name: "生活", order: 4, builtin: true },
+        { id: "community", name: "社区", order: 4, builtin: true },
       ],
       // 失效的榜单源（临时标记，不持久化）
       unavailableSources: [],
       // 时间数据
       timeData: null,
       // 字体大小
-      listFontSize: 16,
+      listFontSize: 15.84,
     };
   },
   getters: {},
