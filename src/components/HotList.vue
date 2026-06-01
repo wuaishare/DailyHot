@@ -120,7 +120,7 @@
             </n-text>
             <n-text class="time" :depth="3" v-else> 获取失败 </n-text>
             <n-space class="controls">
-              <n-popover v-if="hotListData.data.length > 15">
+              <n-popover v-if="hotListData.data.length">
                 <template #trigger>
                   <n-button
                     size="tiny"

@@ -122,6 +122,7 @@ const dragMoved = ref(false);
 let closeTimer = null;
 let dragStartX = 0;
 let dragStartScrollLeft = 0;
+let pointerCaptured = false;
 let resizeObserver = null;
 
 const flatItems = computed(() =>
@@ -178,9 +179,9 @@ const startDrag = (event) => {
   }
   isDragging.value = true;
   dragMoved.value = false;
+  pointerCaptured = false;
   dragStartX = event.clientX;
   dragStartScrollLeft = track.scrollLeft;
-  track.setPointerCapture?.(event.pointerId);
   clearCloseTimer();
 };
 
@@ -188,8 +189,10 @@ const dragScroll = (event) => {
   const track = trackRef.value;
   if (!isDragging.value || !track) return;
   const deltaX = event.clientX - dragStartX;
-  if (Math.abs(deltaX) > 4) {
+  if (!dragMoved.value && Math.abs(deltaX) > 4) {
     dragMoved.value = true;
+    track.setPointerCapture?.(event.pointerId);
+    pointerCaptured = true;
     closeGroup();
   }
   track.scrollLeft = dragStartScrollLeft - deltaX;
@@ -200,7 +203,10 @@ const endDrag = (event) => {
   const track = trackRef.value;
   if (!isDragging.value) return;
   isDragging.value = false;
-  track?.releasePointerCapture?.(event.pointerId);
+  if (pointerCaptured) {
+    track?.releasePointerCapture?.(event.pointerId);
+    pointerCaptured = false;
+  }
   updateScrollShadow();
   if (dragMoved.value && typeof window !== "undefined") {
     window.setTimeout(() => {
