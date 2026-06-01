@@ -5,34 +5,39 @@
         v-for="group in groups"
         :key="getGroupKey(group)"
         class="group-tab-wrap"
-        @mouseenter="openGroup(group)"
-        @mouseleave="closeGroup"
+        @mouseenter="openGroup(group, $event)"
+        @mouseleave="scheduleCloseGroup"
       >
         <button
           type="button"
           class="subtype-chip group-tab"
           :class="{ active: isGroupActive(group) }"
-          @click="handleGroupClick(group)"
+          @click="handleGroupClick(group, $event)"
         >
           {{ group.label || group.items?.[0]?.label }}
         </button>
-        <Transition name="subtype-menu">
-          <div
-            v-if="(group.items || []).length > 1 && openGroupKey === getGroupKey(group)"
-            class="subtype-menu"
-          >
-            <button
-              v-for="item in group.items"
-              :key="item.value"
-              type="button"
-              class="subtype-chip menu-chip"
-              :class="{ active: item.value === activeValue }"
-              @click="selectItem(item.value)"
+        <Teleport to="body">
+          <Transition name="subtype-menu">
+            <div
+              v-if="(group.items || []).length > 1 && openGroupKey === getGroupKey(group)"
+              class="subtype-menu"
+              :style="menuStyle"
+              @mouseenter="keepMenuOpen"
+              @mouseleave="scheduleCloseGroup"
             >
-              {{ item.label }}
-            </button>
-          </div>
-        </Transition>
+              <button
+                v-for="item in group.items"
+                :key="item.value"
+                type="button"
+                class="subtype-chip menu-chip"
+                :class="{ active: item.value === activeValue }"
+                @click="selectItem(item.value)"
+              >
+                {{ item.label }}
+              </button>
+            </div>
+          </Transition>
+        </Teleport>
       </div>
     </div>
     <div v-else class="flat-track">
@@ -67,6 +72,8 @@ const props = defineProps({
 const emit = defineEmits(["change"]);
 
 const openGroupKey = ref(null);
+const menuStyle = ref({});
+let closeTimer = null;
 const flatItems = computed(() =>
   props.groups.flatMap((group) => group.items || [])
 );
@@ -84,13 +91,51 @@ const getActiveGroupItem = (group) =>
 
 const isGroupActive = (group) => Boolean(getActiveGroupItem(group));
 
-const openGroup = (group) => {
+const positionMenu = (target) => {
+  if (typeof window === "undefined" || !target) return;
+  const rect = target.getBoundingClientRect();
+  const width = Math.min(300, window.innerWidth - 24);
+  const left = Math.min(
+    window.innerWidth - width - 12,
+    Math.max(12, rect.left)
+  );
+
+  menuStyle.value = {
+    left: `${left}px`,
+    top: `${rect.bottom + 2}px`,
+    maxWidth: `${width}px`,
+  };
+};
+
+const openGroup = (group, event) => {
   if ((group.items || []).length <= 1) return;
+  clearCloseTimer();
   openGroupKey.value = getGroupKey(group);
+  positionMenu(event?.currentTarget);
+};
+
+const keepMenuOpen = () => {
+  clearCloseTimer();
+  if (!openGroupKey.value) return;
+};
+
+const clearCloseTimer = () => {
+  if (!closeTimer) return;
+  clearTimeout(closeTimer);
+  closeTimer = null;
 };
 
 const closeGroup = () => {
+  clearCloseTimer();
   openGroupKey.value = null;
+};
+
+const scheduleCloseGroup = () => {
+  clearCloseTimer();
+  closeTimer = setTimeout(() => {
+    openGroupKey.value = null;
+    closeTimer = null;
+  }, 120);
 };
 
 const selectItem = (value) => {
@@ -99,7 +144,7 @@ const selectItem = (value) => {
   closeGroup();
 };
 
-const handleGroupClick = (group) => {
+const handleGroupClick = (group, event) => {
   const items = group.items || [];
   if (!items.length) return;
   if (items.length === 1) {
@@ -109,6 +154,9 @@ const handleGroupClick = (group) => {
 
   openGroupKey.value =
     openGroupKey.value === getGroupKey(group) ? null : getGroupKey(group);
+  if (openGroupKey.value) {
+    positionMenu(event?.currentTarget);
+  }
 
   if (!isGroupActive(group)) {
     emit("change", items[0].value);
@@ -125,6 +173,7 @@ onBeforeUnmount(() => {
   if (typeof document !== "undefined") {
     document.removeEventListener("click", closeGroup);
   }
+  clearCloseTimer();
 });
 </script>
 
@@ -133,7 +182,7 @@ onBeforeUnmount(() => {
   position: relative;
   width: 100%;
   overflow: visible;
-  z-index: 5;
+  z-index: 50;
 }
 
 .group-tabs,
@@ -163,13 +212,6 @@ onBeforeUnmount(() => {
 .group-tab-wrap {
   position: relative;
   flex: 0 0 auto;
-
-  &:nth-last-child(-n + 2) {
-    .subtype-menu {
-      right: 0;
-      left: auto;
-    }
-  }
 }
 
 .subtype-chip {
@@ -205,20 +247,17 @@ onBeforeUnmount(() => {
 }
 
 .subtype-menu {
-  position: absolute;
-  top: calc(100% + 2px);
-  left: 0;
-  z-index: 20;
+  position: fixed;
+  z-index: 3001;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   width: max-content;
   min-width: 120px;
-  max-width: min(300px, calc(100vw - 32px));
   padding: 8px;
   border: 1px solid var(--n-border-color);
   border-radius: 12px;
-  background: var(--n-card-color, var(--n-color));
+  background: var(--n-card-color, var(--n-color, #fff));
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
 }
 

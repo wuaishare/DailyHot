@@ -10,7 +10,7 @@
   >
     <template #header>
       <div class="header-block">
-        <n-space class="title" justify="space-between">
+        <div class="title">
           <div class="name">
             <n-avatar
               class="ico"
@@ -19,6 +19,14 @@
             />
             <n-text class="name-text">{{ hotData.label }}</n-text>
           </div>
+          <SubtypeBar
+            v-if="subtypeGroups.length"
+            class="header-subtype"
+            :groups="subtypeGroups"
+            :active-value="activeSubType"
+            @change="changeSubType"
+            @click.stop
+          />
           <n-text
             v-if="hotListData?.type && !subtypeGroups.length"
             class="subtitle"
@@ -27,14 +35,7 @@
             {{ hotListData.type }}
           </n-text>
           <n-skeleton v-else-if="!subtypeGroups.length" width="60px" text round />
-        </n-space>
-        <SubtypeBar
-          v-if="subtypeGroups.length"
-          :groups="subtypeGroups"
-          :active-value="activeSubType"
-          @change="changeSubType"
-          @click.stop
-        />
+        </div>
       </div>
     </template>
     <n-scrollbar class="news-list" ref="scrollbarRef" @scroll="hidePreview">
@@ -325,17 +326,16 @@ const showPreview = (item, event) => {
   if (!showImages.value || !item?.cover || coverErrorMap[item.cover]) return;
   if (!isClient || !event?.currentTarget) return;
   const rect = event.currentTarget.getBoundingClientRect();
-  const width = Math.min(240, Math.max(180, rect.width - 32));
+  const maxPreviewWidth = 260;
   const left = Math.min(
-    window.innerWidth - width - 12,
+    window.innerWidth - maxPreviewWidth - 12,
     Math.max(12, rect.left + 32)
   );
-  const maxTop = Math.max(12, window.innerHeight - 250);
+  const maxTop = Math.max(12, window.innerHeight - 340);
   const top = Math.min(maxTop, Math.max(12, rect.bottom + 6));
 
   previewItem.value = item;
   previewStyle.value = {
-    width: `${width}px`,
     left: `${left}px`,
     top: `${top}px`,
   };
@@ -423,24 +423,43 @@ onBeforeUnmount(() => {
   transition: all 0.3s;
   cursor: pointer;
   .header-block {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: block;
   }
   .title {
     display: flex;
     align-items: center;
+    gap: 12px;
     font-size: 16px;
-    height: 26px;
+    height: 32px;
+    min-width: 0;
     .name {
       display: flex;
       align-items: center;
+      flex: 0 0 auto;
+      min-width: 0;
       .n-avatar {
         background-color: transparent;
         width: 25px;
         height: 25px;
         margin-right: 8px;
       }
+
+      .name-text {
+        white-space: nowrap;
+      }
+    }
+
+    .header-subtype {
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: 68%;
+      margin-left: auto;
+    }
+
+    .header-subtype:deep(.group-tabs),
+    .header-subtype:deep(.flat-track) {
+      justify-content: flex-end;
+      padding: 0;
     }
 
     .subtitle {
@@ -602,22 +621,21 @@ onBeforeUnmount(() => {
 .hot-cover-preview {
   position: fixed;
   z-index: 3000;
-  max-height: 240px;
-  padding: 6px;
   pointer-events: none;
-  border: 1px solid rgba(127, 127, 127, 0.18);
-  border-radius: 14px;
-  background: var(--n-card-color, var(--n-color, #fff));
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+  line-height: 0;
+  filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.22));
 
   .cover {
     display: block;
-    width: 100%;
-    max-height: 228px;
+    width: auto;
+    height: auto;
+    max-width: 260px;
+    max-height: 320px;
     object-fit: contain;
     object-position: center;
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(127, 127, 127, 0.2);
+    border-radius: 12px;
+    background: transparent;
   }
 }
 
