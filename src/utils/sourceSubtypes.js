@@ -1,31 +1,63 @@
 const STORAGE_PREFIX = "dailyhot:source-subtype:";
 
-const SOURCE_SUBTYPE_OPTIONS = {
+const SOURCE_SUBTYPE_GROUPS = {
   baidu: [
-    { label: "热搜", value: "realtime" },
-    { label: "小说", value: "novel" },
-    { label: "电影", value: "movie" },
-    { label: "电视剧", value: "teleplay" },
-    { label: "汽车", value: "car" },
-    { label: "游戏", value: "game" },
+    {
+      key: "default",
+      label: "",
+      items: [
+        { label: "热搜", value: "realtime" },
+        { label: "小说", value: "novel" },
+        { label: "电影", value: "movie" },
+        { label: "电视剧", value: "teleplay" },
+        { label: "汽车", value: "car" },
+        { label: "游戏", value: "game" },
+      ],
+    },
   ],
   hostloc: [
-    { label: "最新回复", value: "new" },
-    { label: "最新发表", value: "newthread" },
+    {
+      key: "default",
+      label: "",
+      items: [
+        { label: "最新回复", value: "new" },
+        { label: "最新发表", value: "newthread" },
+      ],
+    },
   ],
   "douban-movie": [
-    { label: "影院热映", value: "movie_showing" },
-    { label: "热门电影", value: "movie_hot_gaia" },
-    { label: "新片榜", value: "movie_hot" },
-    { label: "最新电影", value: "movie_latest" },
-    { label: "热门电视剧", value: "tv_hot" },
-    { label: "国产剧", value: "tv_domestic" },
-    { label: "综艺", value: "show_hot" },
-    { label: "欧美剧", value: "tv_american" },
-    { label: "日剧", value: "tv_japanese" },
-    { label: "韩剧", value: "tv_korean" },
-    { label: "动画", value: "tv_animation" },
-    { label: "纪录片", value: "tv_documentary" },
+    {
+      key: "cinema",
+      label: "影院热映",
+      items: [{ label: "影院热映", value: "movie_showing" }],
+    },
+    {
+      key: "new",
+      label: "新片榜",
+      items: [{ label: "新片榜", value: "movie_hot" }],
+    },
+    {
+      key: "movie",
+      label: "电影",
+      items: [
+        { label: "热门", value: "movie_hot_gaia" },
+        { label: "最新", value: "movie_latest" },
+      ],
+    },
+    {
+      key: "tv",
+      label: "电视剧",
+      items: [
+        { label: "综合", value: "tv_hot" },
+        { label: "国产剧", value: "tv_domestic" },
+        { label: "综艺", value: "show_hot" },
+        { label: "欧美剧", value: "tv_american" },
+        { label: "日剧", value: "tv_japanese" },
+        { label: "韩剧", value: "tv_korean" },
+        { label: "动画", value: "tv_animation" },
+        { label: "纪录片", value: "tv_documentary" },
+      ],
+    },
   ],
 };
 
@@ -34,8 +66,11 @@ const normalizeValue = (value) => {
   return value ?? null;
 };
 
+export const getSourceSubtypeGroups = (sourceName) =>
+  SOURCE_SUBTYPE_GROUPS[sourceName] || [];
+
 export const getSourceSubtypeOptions = (sourceName) =>
-  SOURCE_SUBTYPE_OPTIONS[sourceName] || [];
+  getSourceSubtypeGroups(sourceName).flatMap((group) => group.items || []);
 
 export const getSourceSubtypeStorageKey = (sourceName) =>
   `${STORAGE_PREFIX}${sourceName}`;

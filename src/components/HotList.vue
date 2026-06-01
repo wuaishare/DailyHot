@@ -24,24 +24,13 @@
           </n-text>
           <n-skeleton v-else width="60px" text round />
         </n-space>
-        <n-space
-          v-if="subtypeOptions.length"
-          class="subtype"
-          :size="6"
+        <SubtypeBar
+          v-if="subtypeGroups.length"
+          :groups="subtypeGroups"
+          :active-value="activeSubType"
+          @change="changeSubType"
           @click.stop
-        >
-          <n-tag
-            v-for="item in subtypeOptions"
-            :key="item.value"
-            size="small"
-            round
-            class="subtype-tag"
-            :type="item.value === activeSubType ? 'primary' : 'default'"
-            @click.stop="changeSubType(item.value)"
-          >
-            {{ item.label }}
-          </n-tag>
-        </n-space>
+        />
       </div>
     </template>
     <n-scrollbar class="news-list" ref="scrollbarRef">
@@ -179,8 +168,10 @@ import { formatTime } from "@/utils/getTime";
 import { getCacheVersion } from "@/utils/cache";
 import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
+import SubtypeBar from "@/components/SubtypeBar.vue";
 import {
   buildSourceSubtypeParams,
+  getSourceSubtypeGroups,
   getSourceSubtypeOptions,
   persistSourceSubtype,
   readSourceSubtype,
@@ -222,6 +213,7 @@ const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
 const showImages = computed(() => store.showImages);
+const subtypeGroups = computed(() => getSourceSubtypeGroups(props.hotData.name));
 const subtypeOptions = computed(() => getSourceSubtypeOptions(props.hotData.name));
 const activeSubType = ref(
   resolveSourceSubtype(
@@ -259,7 +251,7 @@ const getHotListsData = async (name, isNew = false) => {
         isNew,
         buildSourceSubtypeParams(item.name, activeSubType.value),
         {
-        useApi2,
+          useApi2,
         }
       );
     if (usedFallback && fallbackSuccess && !useApi2) {
@@ -414,14 +406,6 @@ onBeforeUnmount(() => {
     }
   }
 
-  .subtype {
-    flex-wrap: wrap;
-
-    .subtype-tag {
-      cursor: pointer;
-    }
-  }
-
   .message {
     display: flex;
     align-items: flex-end;
@@ -462,6 +446,7 @@ onBeforeUnmount(() => {
     padding-right: 6px;
 
     .item {
+      position: relative;
       display: flex;
       flex-direction: column;
       margin-bottom: 6px;
@@ -556,26 +541,33 @@ onBeforeUnmount(() => {
       }
 
       .cover-wrapper {
-        display: block;
-        max-height: 0;
-        overflow: hidden;
+        position: absolute;
+        left: 32px;
+        top: calc(100% + 6px);
+        z-index: 3;
+        width: min(220px, calc(100% - 32px));
+        max-height: 220px;
         opacity: 0;
-        transition: all 0.25s ease;
-        width: 100%;
+        pointer-events: none;
+        transform: translateY(6px);
+        transition: opacity 0.18s ease, transform 0.18s ease;
+        padding-top: 2px;
 
         .cover {
-          margin-top: 6px;
           width: 100%;
-          max-height: 160px;
-          object-fit: cover;
+          max-height: 220px;
+          object-fit: contain;
+          object-position: center;
           border-radius: 8px;
           display: block;
+          background: rgba(0, 0, 0, 0.06);
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
         }
       }
 
       &:hover .cover-wrapper {
-        max-height: 180px;
         opacity: 1;
+        transform: translateY(0);
       }
     }
   }

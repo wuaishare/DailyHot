@@ -16,19 +16,13 @@
         </template>
       </n-tag>
     </n-space>
-    <n-space class="subtype" v-if="activeTypeOptions.length">
-      <n-tag
-        round
-        size="small"
-        class="tag"
-        v-for="item in activeTypeOptions"
-        :key="item.value"
-        :type="item.value === listSubType ? 'primary' : 'default'"
-        @click="changeSubType(item.value)"
-      >
-        {{ item.label }}
-      </n-tag>
-    </n-space>
+    <SubtypeBar
+      v-if="subtypeGroups.length"
+      class="subtype"
+      :groups="subtypeGroups"
+      :active-value="listSubType"
+      @change="changeSubType"
+    />
     <n-card class="card">
       <template #header>
         <Transition name="fade" mode="out-in">
@@ -159,8 +153,10 @@ import { getCacheVersion } from "@/utils/cache";
 import { useRouter } from "vue-router";
 import { formatTime } from "@/utils/getTime";
 import { getHotListsWithFallback } from "@/api";
+import SubtypeBar from "@/components/SubtypeBar.vue";
 import {
   buildSourceSubtypeParams,
+  getSourceSubtypeGroups,
   getSourceSubtypeOptions,
   persistSourceSubtype,
   readSourceSubtype,
@@ -203,6 +199,9 @@ const linkTarget = computed(() =>
 );
 const showImages = computed(() => store.showImages);
 const logoSrc = (name) => `/logo/${name}.png?v=${cacheVersion}`;
+const subtypeGroups = computed(() =>
+  getSourceSubtypeGroups(listType.value)
+);
 const activeTypeOptions = computed(() =>
   getSourceSubtypeOptions(listType.value)
 );
@@ -392,9 +391,6 @@ onBeforeUnmount(() => {
   .subtype {
     width: 100%;
     margin-top: 8px;
-    .tag {
-      cursor: pointer;
-    }
   }
   .card {
     margin-top: 20px;
@@ -550,10 +546,12 @@ onBeforeUnmount(() => {
           overflow: hidden;
           .cover {
             width: 160px;
-            height: 96px;
-            object-fit: cover;
+            height: 120px;
+            object-fit: contain;
+            object-position: center;
             border-radius: 12px;
             display: block;
+            background: rgba(0, 0, 0, 0.05);
           }
         }
       }
@@ -575,7 +573,7 @@ onBeforeUnmount(() => {
           .cover-wrapper {
             .cover {
               width: 140px;
-              height: 84px;
+              height: 112px;
             }
           }
         }
