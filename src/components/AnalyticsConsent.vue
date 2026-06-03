@@ -68,24 +68,33 @@ onMounted(() => {
 <style lang="scss" scoped>
 .analytics-consent {
   position: fixed;
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
+  inset: 0;
   z-index: 80;
   display: flex;
   justify-content: center;
+  align-items: flex-end;
+  padding: 20px;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgb(255 255 255 / 0.82) 0%,
+    rgb(255 255 255 / 0.66) 26%,
+    rgb(255 255 255 / 0) 100%
+  );
+  backdrop-filter: blur(8px);
 
   .content {
     width: min(760px, 100%);
     padding: 16px 18px;
     border-radius: 16px;
-    background: var(--n-card-color);
+    background: rgb(255 255 255 / 0.98);
     border: 1px solid var(--n-border-color);
-    box-shadow: 0 18px 40px rgb(0 0 0 / 10%);
+    box-shadow: 0 18px 40px rgb(0 0 0 / 16%);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
+    pointer-events: auto;
   }
 
   .copy {
@@ -109,6 +118,22 @@ onMounted(() => {
       flex-direction: column;
       align-items: flex-start;
     }
+  }
+}
+
+:global(.dark) .analytics-consent,
+:global(body.dark) .analytics-consent,
+:global(html.dark) .analytics-consent {
+  background: linear-gradient(
+    to top,
+    rgb(10 12 16 / 0.84) 0%,
+    rgb(10 12 16 / 0.68) 26%,
+    rgb(10 12 16 / 0) 100%
+  );
+
+  .content {
+    background: rgb(24 26 32 / 0.96);
+    box-shadow: 0 18px 40px rgb(0 0 0 / 34%);
   }
 }
 
