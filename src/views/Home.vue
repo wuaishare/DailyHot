@@ -11,6 +11,7 @@
     >
       <n-grid-item
         class="news-card"
+        :class="{ 'with-entrance': enableCardEntrance }"
         v-for="(item, index) in visibleNews"
         :key="item"
         :style="{ animationDelay: index / 10 + 0.2 + 's' }"
@@ -34,6 +35,7 @@ import { mainStore } from "@/store";
 import HotList from "@/components/HotList.vue";
 
 const store = mainStore();
+const enableCardEntrance = ref(true);
 const visibleNews = computed(() => {
   const categoryOn = store.categoryEnabled;
   const current = store.activeCategory;
@@ -44,6 +46,12 @@ const visibleNews = computed(() => {
       categoryOn && current !== "全部" ? item.category === current : true
     )
     .sort((a, b) => a.order - b.order);
+});
+
+onMounted(() => {
+  window.setTimeout(() => {
+    enableCardEntrance.value = false;
+  }, 400);
 });
 
 // 重置
@@ -66,7 +74,7 @@ const reset = () => {
 
 <style lang="scss" scoped>
 .home {
-  .news-card {
+  .news-card.with-entrance {
     opacity: 0;
     transform: translateY(20px);
     animation-timing-function: cubic-bezier(0.42, 0, 0.58, 1);
