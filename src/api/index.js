@@ -1,4 +1,5 @@
 import axios from "@/api/request";
+import { getAdminToken } from "@/utils/adminAuth";
 
 const DEFAULT_FALLBACK_DELAY_MS = 1200;
 const API2_ONLY_SOURCES = new Set(["tianya"]);
@@ -42,6 +43,11 @@ export const getAnalyticsDashboard = (days = 30) =>
     url: "/analytics",
     baseURL: import.meta.env.VITE_GLOBAL_API2 || import.meta.env.VITE_GLOBAL_API,
     params: { days },
+    headers: getAdminToken()
+      ? {
+          Authorization: `Bearer ${getAdminToken()}`,
+        }
+      : {},
   });
 
 /**
