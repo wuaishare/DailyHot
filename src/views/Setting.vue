@@ -125,8 +125,8 @@
           </n-text>
         </div>
         <n-space wrap>
-          <n-tag :type="analyticsConsent === 'accepted' ? 'success' : 'warning'">
-            {{ analyticsConsent === "accepted" ? "已同意统计" : "未同意统计" }}
+          <n-tag :type="analyticsConsent?.analytics ? 'success' : 'warning'">
+            {{ analyticsConsent?.analytics ? "已启用统计分析" : "未启用统计分析" }}
           </n-tag>
           <n-button
             size="small"
@@ -134,7 +134,7 @@
             strong
             @click="toggleAnalyticsConsent"
           >
-            {{ analyticsConsent === "accepted" ? "撤回同意" : "同意统计" }}
+            {{ analyticsConsent?.analytics ? "关闭统计分析" : "开启统计分析" }}
           </n-button>
           <n-button
             v-if="isAnalyticsPanelVisible"
@@ -390,7 +390,10 @@
 import { storeToRefs } from "pinia";
 import { mainStore } from "@/store";
 import { clearAppCaches, getCacheVersion } from "@/utils/cache";
-import { ANALYTICS_CONSENT, setAnalyticsConsent as persistAnalyticsConsent } from "@/utils/analytics";
+import {
+  DEFAULT_CONSENT,
+  setAnalyticsConsent as persistAnalyticsConsent,
+} from "@/utils/analytics";
 import { useOsTheme } from "naive-ui";
 import draggable from "vuedraggable";
 
@@ -672,15 +675,16 @@ const handleRenameCategory = (id, val) => {
 };
 
 const toggleAnalyticsConsent = () => {
-  const next =
-    analyticsConsent.value === ANALYTICS_CONSENT.accepted
-      ? ANALYTICS_CONSENT.rejected
-      : ANALYTICS_CONSENT.accepted;
+  const next = {
+    ...DEFAULT_CONSENT,
+    ...analyticsConsent.value,
+    analytics: !analyticsConsent.value?.analytics,
+  };
   analyticsConsent.value = next;
   store.analyticsPromptDismissed = true;
   persistAnalyticsConsent(next);
   $message.success(
-    next === ANALYTICS_CONSENT.accepted ? "已开启匿名统计" : "已关闭匿名统计"
+    next.analytics ? "已开启匿名统计" : "已关闭匿名统计"
   );
 };
 

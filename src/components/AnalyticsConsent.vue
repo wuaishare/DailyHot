@@ -4,15 +4,47 @@
       <div v-if="visible" class="analytics-consent">
         <div class="content">
           <div class="copy">
-            <n-text class="title">统计与隐私设置</n-text>
+            <n-text class="title">Cookie 与统计偏好</n-text>
             <n-text depth="3" class="desc">
-              为了优化首页默认排序、来源入口分析、日活与运维指标，我们希望在你同意后统计匿名使用行为。
-              仅记录匿名事件与哈希化访客标识，不存储原始 IP。
+              我们使用必要功能保持网站正常运行；在你同意后，才会启用统计分析与广告相关功能。
             </n-text>
           </div>
+
+          <div class="groups">
+            <div class="group">
+              <div>
+                <n-text class="group-title">必要功能</n-text>
+                <n-text depth="3" class="group-desc">维持站点基础运行，始终开启。</n-text>
+              </div>
+              <n-switch :value="true" disabled />
+            </div>
+            <div class="group">
+              <div>
+                <n-text class="group-title">统计分析</n-text>
+                <n-text depth="3" class="group-desc">用于 PV / UV / 来源入口 / 点击率分析。</n-text>
+              </div>
+              <n-switch v-model:value="draftConsent.analytics" />
+            </div>
+            <div class="group">
+              <div>
+                <n-text class="group-title">广告归因</n-text>
+                <n-text depth="3" class="group-desc">用于广告转化归因与投放效果衡量。</n-text>
+              </div>
+              <n-switch v-model:value="draftConsent.ad_storage" />
+            </div>
+            <div class="group">
+              <div>
+                <n-text class="group-title">广告个性化</n-text>
+                <n-text depth="3" class="group-desc">用于个性化广告与相关受众能力。</n-text>
+              </div>
+              <n-switch v-model:value="draftConsent.ad_personalization" />
+            </div>
+          </div>
+
           <n-space wrap>
-            <n-button tertiary @click="reject">拒绝</n-button>
-            <n-button type="primary" @click="accept">同意统计</n-button>
+            <n-button tertiary @click="rejectAll">拒绝可选项</n-button>
+            <n-button tertiary @click="acceptSelected">保存选择</n-button>
+            <n-button type="primary" @click="acceptAll">接受全部</n-button>
           </n-space>
         </div>
       </div>
@@ -23,7 +55,8 @@
 <script setup>
 import { mainStore } from "@/store";
 import {
-  ANALYTICS_CONSENT,
+  CONSENT_CATEGORIES,
+  DEFAULT_CONSENT,
   getAnalyticsConsent,
   setAnalyticsConsent,
 } from "@/utils/analytics";
@@ -39,27 +72,64 @@ const visible = computed(
   () => !store.analyticsPromptDismissed && !store.analyticsConsent
 );
 
-const accept = () => {
-  store.setAnalyticsConsent(ANALYTICS_CONSENT.accepted);
+const createDraft = (source = {}) => ({
+  ...DEFAULT_CONSENT,
+  ...source,
+});
+
+const draftConsent = reactive(
+  createDraft({
+    [CONSENT_CATEGORIES.analytics]: false,
+    [CONSENT_CATEGORIES.adStorage]: false,
+    [CONSENT_CATEGORIES.adUserData]: false,
+    [CONSENT_CATEGORIES.adPersonalization]: false,
+  })
+);
+
+const applyConsent = (consent) => {
+  const normalized = createDraft(consent);
+  normalized[CONSENT_CATEGORIES.adUserData] =
+    normalized[CONSENT_CATEGORIES.adStorage] ||
+    normalized[CONSENT_CATEGORIES.adUserData];
+  store.setAnalyticsConsent(normalized);
   store.setAnalyticsPromptDismissed(true);
-  setAnalyticsConsent(ANALYTICS_CONSENT.accepted);
+  setAnalyticsConsent(normalized);
   initAnalyticsVendors();
-  grantAnalyticsConsentToVendors();
-  trackEvent({
-    event: "consent_update",
-    consent: ANALYTICS_CONSENT.accepted,
-    category: "privacy",
-  });
-  trackEvent({
-    event: "page_view",
-    category: "privacy",
+  grantAnalyticsConsentToVendors(normalized);
+  if (normalized[CONSENT_CATEGORIES.analytics]) {
+    trackEvent({
+      event: "consent_update",
+      category: "privacy",
+      consent: "analytics_enabled",
+      meta: normalized,
+    });
+    trackEvent({
+      event: "page_view",
+      category: "privacy",
+    });
+  }
+};
+
+const acceptAll = () => {
+  applyConsent({
+    [CONSENT_CATEGORIES.analytics]: true,
+    [CONSENT_CATEGORIES.adStorage]: true,
+    [CONSENT_CATEGORIES.adUserData]: true,
+    [CONSENT_CATEGORIES.adPersonalization]: true,
   });
 };
 
-const reject = () => {
-  store.setAnalyticsConsent(ANALYTICS_CONSENT.rejected);
-  store.setAnalyticsPromptDismissed(true);
-  setAnalyticsConsent(ANALYTICS_CONSENT.rejected);
+const rejectAll = () => {
+  applyConsent({
+    [CONSENT_CATEGORIES.analytics]: false,
+    [CONSENT_CATEGORIES.adStorage]: false,
+    [CONSENT_CATEGORIES.adUserData]: false,
+    [CONSENT_CATEGORIES.adPersonalization]: false,
+  });
+};
+
+const acceptSelected = () => {
+  applyConsent(draftConsent);
 };
 
 onMounted(() => {
@@ -68,9 +138,8 @@ onMounted(() => {
   if (stored) {
     store.setAnalyticsConsent(stored);
     store.setAnalyticsPromptDismissed(true);
-    if (stored === ANALYTICS_CONSENT.accepted) {
-      grantAnalyticsConsentToVendors();
-    }
+    grantAnalyticsConsentToVendors(stored);
+    Object.assign(draftConsent, createDraft(stored));
   }
 });
 </script>
@@ -94,15 +163,14 @@ onMounted(() => {
   backdrop-filter: blur(8px);
 
   .content {
-    width: min(760px, 100%);
-    padding: 16px 18px;
+    width: min(840px, 100%);
+    padding: 18px 20px;
     border-radius: 16px;
     background: rgb(255 255 255 / 0.98);
     border: 1px solid var(--n-border-color);
     box-shadow: 0 18px 40px rgb(0 0 0 / 16%);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
     gap: 16px;
     pointer-events: auto;
   }
@@ -120,14 +188,31 @@ onMounted(() => {
 
   .desc {
     line-height: 1.6;
-    max-width: 560px;
   }
 
-  @media (max-width: 720px) {
-    .content {
-      flex-direction: column;
-      align-items: flex-start;
-    }
+  .groups {
+    display: grid;
+    gap: 10px;
+  }
+
+  .group {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgb(0 0 0 / 0.03);
+  }
+
+  .group-title {
+    font-weight: 600;
+  }
+
+  .group-desc {
+    display: block;
+    margin-top: 4px;
+    line-height: 1.5;
   }
 }
 
@@ -144,6 +229,10 @@ onMounted(() => {
   .content {
     background: rgb(24 26 32 / 0.96);
     box-shadow: 0 18px 40px rgb(0 0 0 / 34%);
+  }
+
+  .group {
+    background: rgb(255 255 255 / 0.04);
   }
 }
 

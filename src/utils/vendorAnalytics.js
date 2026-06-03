@@ -1,4 +1,5 @@
 let initialized = false;
+import { CONSENT_CATEGORIES } from "@/utils/analytics";
 
 const appendScript = (src, attrs = {}) => {
   if (typeof document === "undefined") return;
@@ -61,14 +62,22 @@ export const initAnalyticsVendors = () => {
   initBaiduTongji();
 };
 
-export const grantAnalyticsConsentToVendors = () => {
+export const grantAnalyticsConsentToVendors = (consent) => {
   if (typeof window === "undefined") return;
   if (typeof window.gtag === "function") {
     window.gtag("consent", "update", {
-      analytics_storage: "granted",
-      ad_storage: "denied",
-      ad_user_data: "denied",
-      ad_personalization: "denied",
+      analytics_storage: consent?.[CONSENT_CATEGORIES.analytics]
+        ? "granted"
+        : "denied",
+      ad_storage: consent?.[CONSENT_CATEGORIES.adStorage]
+        ? "granted"
+        : "denied",
+      ad_user_data: consent?.[CONSENT_CATEGORIES.adUserData]
+        ? "granted"
+        : "denied",
+      ad_personalization: consent?.[CONSENT_CATEGORIES.adPersonalization]
+        ? "granted"
+        : "denied",
     });
   }
 };
