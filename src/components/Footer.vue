@@ -67,6 +67,10 @@ const footerLinks = [
     label: "精品阅读站",
     href: "https://v.wuaishare.cn/",
   },
+  {
+    label: "隐私说明",
+    href: "/privacy",
+  },
 ];
 
 const appVersion = getCacheVersion();

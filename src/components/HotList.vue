@@ -193,6 +193,7 @@ import {
   readSourceSubtype,
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
+import { trackEvent } from "@/utils/track";
 
 const router = useRouter();
 const store = mainStore();
@@ -435,6 +436,12 @@ const hidePreview = () => {
 const changeSubType = (subtype) => {
   const nextSubtype = resolveSourceSubtype(subtypeOptions.value, subtype);
   if (!nextSubtype || nextSubtype === activeSubType.value) return;
+  trackEvent({
+    event: "home_subtype_change",
+    source: props.hotData.name,
+    subtype: nextSubtype,
+    category: props.hotData.category,
+  });
   activeSubType.value = nextSubtype;
   persistSourceSubtype(props.hotData.name, nextSubtype);
   hidePreview();
@@ -445,6 +452,12 @@ const changeSubType = (subtype) => {
 // 前往全部列表
 const toList = () => {
   if (props.hotData.name) {
+    trackEvent({
+      event: "rank_click",
+      source: props.hotData.name,
+      subtype: activeSubType.value,
+      category: props.hotData.category,
+    });
     const query = {
       type: props.hotData.name,
     };

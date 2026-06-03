@@ -28,6 +28,22 @@ export const getHotLists = (type, isNew = false, params, options = {}) => {
   });
 };
 
+export const sendAnalyticsEvent = (payload) =>
+  axios({
+    method: "POST",
+    url: "/analytics",
+    baseURL: import.meta.env.VITE_GLOBAL_API2 || import.meta.env.VITE_GLOBAL_API,
+    data: payload,
+  });
+
+export const getAnalyticsDashboard = (days = 30) =>
+  axios({
+    method: "GET",
+    url: "/analytics",
+    baseURL: import.meta.env.VITE_GLOBAL_API2 || import.meta.env.VITE_GLOBAL_API,
+    params: { days },
+  });
+
 /**
  * 获取热榜数据（主 API 失败时自动尝试备用 API）
  * @param {string} type 热榜分类名称

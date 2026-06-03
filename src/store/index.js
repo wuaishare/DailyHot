@@ -439,6 +439,9 @@ export const mainStore = defineStore("mainData", {
       ],
       // 失效的榜单源（临时标记，不持久化）
       unavailableSources: [],
+      analyticsConsent: null,
+      analyticsPromptDismissed: false,
+      analyticsRecommendedOrder: [],
       // 时间数据
       timeData: null,
       // 字体大小
@@ -525,6 +528,15 @@ export const mainStore = defineStore("mainData", {
     },
     setActiveCategory(name) {
       this.activeCategory = name;
+    },
+    setAnalyticsConsent(value) {
+      this.analyticsConsent = value;
+    },
+    setAnalyticsPromptDismissed(value) {
+      this.analyticsPromptDismissed = value;
+    },
+    setAnalyticsRecommendedOrder(list) {
+      this.analyticsRecommendedOrder = Array.isArray(list) ? list : [];
     },
     // 更改系统主题
     setSiteTheme(val) {
@@ -613,6 +625,8 @@ export const mainStore = defineStore("mainData", {
         "activeCategory",
         "categories",
         "listFontSize",
+        "analyticsConsent",
+        "analyticsPromptDismissed",
       ],
     },
   ],

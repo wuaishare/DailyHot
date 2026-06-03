@@ -27,6 +27,7 @@
         </router-view>
       </main>
       <Footer />
+      <AnalyticsConsent />
     </n-layout>
   </Provider>
 </template>
@@ -36,6 +37,7 @@ import { mainStore } from "@/store";
 import Provider from "@/components/Provider.vue";
 import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
+import AnalyticsConsent from "@/components/AnalyticsConsent.vue";
 import { useRouter } from "vue-router";
 
 const store = mainStore();

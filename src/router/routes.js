@@ -46,6 +46,26 @@ const routes = [
     },
     component: () => import("@/views/Setting.vue"),
   },
+  {
+    path: "/analytics",
+    name: "analytics",
+    meta: {
+      title: "数据统计",
+      seoTitle: "数据统计 - 今日热榜",
+      robots: "noindex,nofollow",
+    },
+    component: () => import("@/views/Analytics.vue"),
+  },
+  {
+    path: "/privacy",
+    name: "privacy",
+    meta: {
+      title: "隐私说明",
+      seoTitle: "隐私说明 - 今日热榜",
+      robots: "noindex,nofollow",
+    },
+    component: () => import("@/views/Privacy.vue"),
+  },
   // 测试页面
   {
     path: "/test",

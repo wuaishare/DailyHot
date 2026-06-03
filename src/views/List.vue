@@ -125,6 +125,18 @@
                   :href="getItemLink(item)"
                   :target="linkTarget"
                   rel="noopener noreferrer nofollow"
+                  @click="trackEvent({
+                    event: 'rank_item_click',
+                    source: listType,
+                    subtype: listSubType,
+                    category: store.activeCategory,
+                    href: getItemLink(item),
+                    meta: {
+                      itemId: item.id,
+                      itemTitle: item.title,
+                      rankIndex: index + 1 + (pageNumber - 1) * 20,
+                    },
+                  })"
                 >
                   <div class="content">
                     <div class="copy">
@@ -188,6 +200,7 @@ import {
   readSourceSubtype,
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
+import { trackEvent } from "@/utils/track";
 
 const router = useRouter();
 const store = mainStore();
@@ -406,6 +419,11 @@ const changeType = (type, event) => {
     return;
   }
   if (!type) return;
+  trackEvent({
+    event: "list_source_change",
+    source: type,
+    category: store.activeCategory,
+  });
   const nextSubtype = resolveSourceSubtype(
     getSourceSubtypeOptions(type),
     readSourceSubtype(type)
@@ -422,6 +440,12 @@ const changeType = (type, event) => {
 
 const changeSubType = (subtype) => {
   if (!subtype || subtype === listSubType.value) return;
+  trackEvent({
+    event: "list_subtype_change",
+    source: listType.value,
+    subtype,
+    category: store.activeCategory,
+  });
   persistSourceSubtype(listType.value, subtype);
   router.push({
     path: "/list",

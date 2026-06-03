@@ -117,6 +117,36 @@
       </div>
     </n-card>
     <n-card class="set-item full">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">统计与隐私</n-text>
+          <n-text class="tip" :depth="3">
+            默认不采集行为统计；同意后仅记录匿名事件与哈希化访客标识，可随时撤回。
+          </n-text>
+        </div>
+        <n-space wrap>
+          <n-tag :type="analyticsConsent === 'accepted' ? 'success' : 'warning'">
+            {{ analyticsConsent === "accepted" ? "已同意统计" : "未同意统计" }}
+          </n-tag>
+          <n-button
+            size="small"
+            secondary
+            strong
+            @click="toggleAnalyticsConsent"
+          >
+            {{ analyticsConsent === "accepted" ? "撤回同意" : "同意统计" }}
+          </n-button>
+          <n-button
+            size="small"
+            tertiary
+            @click="$router.push('/analytics')"
+          >
+            查看统计面板
+          </n-button>
+        </n-space>
+      </div>
+    </n-card>
+    <n-card class="set-item full">
       <div class="top" style="align-items: flex-start">
         <div class="name">
           <n-text class="text">分类管理</n-text>
@@ -359,6 +389,7 @@
 import { storeToRefs } from "pinia";
 import { mainStore } from "@/store";
 import { clearAppCaches, getCacheVersion } from "@/utils/cache";
+import { ANALYTICS_CONSENT, setAnalyticsConsent as persistAnalyticsConsent } from "@/utils/analytics";
 import { useOsTheme } from "naive-ui";
 import draggable from "vuedraggable";
 
@@ -378,6 +409,7 @@ const {
   showImages,
   categoryEnabled,
   activeCategory,
+  analyticsConsent,
 } = storeToRefs(store);
 const categories = computed(() =>
   store.categories.slice().sort((a, b) => a.order - b.order)
@@ -635,6 +667,19 @@ const handleAddCategory = () => {
 
 const handleRenameCategory = (id, val) => {
   store.renameCategory(id, val);
+};
+
+const toggleAnalyticsConsent = () => {
+  const next =
+    analyticsConsent.value === ANALYTICS_CONSENT.accepted
+      ? ANALYTICS_CONSENT.rejected
+      : ANALYTICS_CONSENT.accepted;
+  analyticsConsent.value = next;
+  store.analyticsPromptDismissed = true;
+  persistAnalyticsConsent(next);
+  $message.success(
+    next === ANALYTICS_CONSENT.accepted ? "已开启匿名统计" : "已关闭匿名统计"
+  );
 };
 
 watch(

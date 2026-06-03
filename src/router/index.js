@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import routes from "@/router/routes";
 import { applySeoMeta } from "@/utils/seo";
+import { trackEvent } from "@/utils/track";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +20,16 @@ router.afterEach((to) => {
     window.$loadingBar.finish();
   }
   applySeoMeta(to);
+  trackEvent({
+    event: "page_view",
+    source: to.query.type || to.name,
+    subtype: to.query.subtype,
+    category: to.name === "home" ? "home" : "list",
+    meta: {
+      routeName: to.name,
+      path: to.path,
+    },
+  });
 });
 
 export default router;
