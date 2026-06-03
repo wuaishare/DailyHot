@@ -15,6 +15,16 @@ router.beforeEach(() => {
   }
 });
 
+router.beforeEach((to) => {
+  if (
+    to.name === "analytics" &&
+    typeof window !== "undefined" &&
+    import.meta.env.PROD
+  ) {
+    return { path: "/404" };
+  }
+});
+
 router.afterEach((to) => {
   if (typeof window !== "undefined" && window.$loadingBar) {
     window.$loadingBar.finish();

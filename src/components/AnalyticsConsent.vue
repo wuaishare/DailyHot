@@ -28,6 +28,10 @@ import {
   setAnalyticsConsent,
 } from "@/utils/analytics";
 import { trackEvent } from "@/utils/track";
+import {
+  grantAnalyticsConsentToVendors,
+  initAnalyticsVendors,
+} from "@/utils/vendorAnalytics";
 
 const store = mainStore();
 
@@ -39,6 +43,8 @@ const accept = () => {
   store.setAnalyticsConsent(ANALYTICS_CONSENT.accepted);
   store.setAnalyticsPromptDismissed(true);
   setAnalyticsConsent(ANALYTICS_CONSENT.accepted);
+  initAnalyticsVendors();
+  grantAnalyticsConsentToVendors();
   trackEvent({
     event: "consent_update",
     consent: ANALYTICS_CONSENT.accepted,
@@ -57,10 +63,14 @@ const reject = () => {
 };
 
 onMounted(() => {
+  initAnalyticsVendors();
   const stored = getAnalyticsConsent();
   if (stored) {
     store.setAnalyticsConsent(stored);
     store.setAnalyticsPromptDismissed(true);
+    if (stored === ANALYTICS_CONSENT.accepted) {
+      grantAnalyticsConsentToVendors();
+    }
   }
 });
 </script>

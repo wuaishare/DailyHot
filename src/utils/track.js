@@ -4,6 +4,7 @@ import {
   getSessionId,
   shouldTrackAnalytics,
 } from "@/utils/analytics";
+import { trackVendorEvent } from "@/utils/vendorAnalytics";
 
 const buildBasePayload = () => ({
   sessionId: getSessionId(),
@@ -19,6 +20,7 @@ const buildBasePayload = () => ({
 
 export const trackEvent = async (payload) => {
   if (!shouldTrackAnalytics()) return;
+  trackVendorEvent(payload.event, payload);
   try {
     await sendAnalyticsEvent({
       ...buildBasePayload(),

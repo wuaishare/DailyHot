@@ -137,6 +137,7 @@
             {{ analyticsConsent === "accepted" ? "撤回同意" : "同意统计" }}
           </n-button>
           <n-button
+            v-if="isAnalyticsPanelVisible"
             size="small"
             tertiary
             @click="$router.push('/analytics')"
@@ -421,6 +422,7 @@ const newCategory = ref("");
 const cacheVersion = ref(getCacheVersion());
 const logoSrc = (name) => `/logo/${name}.png?v=${cacheVersion.value}`;
 const importFileRef = ref(null);
+const isAnalyticsPanelVisible = !import.meta.env.PROD;
 const persistedKeys = [
   "siteTheme",
   "siteThemeAuto",

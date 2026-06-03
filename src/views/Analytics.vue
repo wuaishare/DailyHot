@@ -28,16 +28,6 @@
     <n-grid cols="1 900:2" :x-gap="14" :y-gap="14" style="margin-top: 14px">
       <n-grid-item>
         <n-card title="首页默认排序建议">
-          <template #header-extra>
-            <n-button
-              size="small"
-              tertiary
-              :disabled="!dashboard?.recommendedHomeOrder?.length"
-              @click="applyRecommendedOrder"
-            >
-              应用到首页排序
-            </n-button>
-          </template>
           <n-list v-if="dashboard?.recommendedHomeOrder?.length">
             <n-list-item
               v-for="(item, index) in dashboard.recommendedHomeOrder.slice(0, 15)"
@@ -126,25 +116,6 @@ const loadDashboard = async () => {
   const result = await getAnalyticsDashboard(days.value);
   dashboard.value = result.dashboard || null;
   store.setAnalyticsRecommendedOrder(dashboard.value?.recommendedHomeOrder || []);
-};
-
-const applyRecommendedOrder = () => {
-  const order = dashboard.value?.recommendedHomeOrder || [];
-  if (!order.length) {
-    $message.warning("暂无可应用的排序建议");
-    return;
-  }
-  const clickMap = new Map(order.map((item, index) => [item.source, index]));
-  const fallbackOrder = new Map(store.defaultNewsArr.map((item) => [item.name, item.order]));
-  store.newsArr = store.newsArr
-    .slice()
-    .sort((a, b) => {
-      const ai = clickMap.has(a.name) ? clickMap.get(a.name) : 10_000 + (fallbackOrder.get(a.name) || 0);
-      const bi = clickMap.has(b.name) ? clickMap.get(b.name) : 10_000 + (fallbackOrder.get(b.name) || 0);
-      return ai - bi;
-    })
-    .map((item, index) => ({ ...item, order: index }));
-  $message.success("已按统计推荐顺序更新首页默认排序");
 };
 
 onMounted(() => {
