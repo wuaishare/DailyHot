@@ -13,12 +13,16 @@ switch (process.env.NODE_ENV) {
 }
 
 axios.defaults.timeout = 30000;
-axios.defaults.headers = { "Content-Type": "application/json" };
+axios.defaults.headers.common = { Accept: "application/json" };
 
 // 请求拦截
 axios.interceptors.request.use(
   (request) => {
     // if (request.loadingBar != "Hidden") $loadingBar.start();
+    if (request.method?.toLowerCase() === "get") {
+      delete request.headers["Content-Type"];
+      delete request.headers["content-type"];
+    }
     if (typeof localStorage !== "undefined") {
       const token = localStorage.getItem("token");
       if (token) {

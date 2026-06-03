@@ -265,7 +265,10 @@ const getHotListsData = async (name, isNew = false) => {
   if (isPrerender) return;
   try {
     loadingError.value = false;
-    const item = store.newsArr.find((item) => item.name == name);
+    const item =
+      store.newsArr.find((item) => item.name == name) ||
+      store.defaultNewsArr.find((item) => item.name == name);
+    if (!item) return;
     const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
     const { result, usedFallback, fallbackSuccess } =
       await getHotListsWithFallback(
@@ -279,7 +282,6 @@ const getHotListsData = async (name, isNew = false) => {
     if (usedFallback && fallbackSuccess && !useApi2) {
       store.setSourceApi2(item.name, true);
     }
-    // console.log(result);
     if (result.code === 200) {
       store.markAvailable(item.name);
       listLoading.value = false;

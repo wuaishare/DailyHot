@@ -270,7 +270,9 @@ const getHotListsData = async (name, isNew = false) => {
     return;
   }
   listData.value = null;
-  const item = store.newsArr.find((item) => item.name == name);
+  const item =
+    store.newsArr.find((item) => item.name == name) ||
+    store.defaultNewsArr.find((item) => item.name == name);
   if (!item) return;
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
   const params = {
@@ -278,7 +280,6 @@ const getHotListsData = async (name, isNew = false) => {
   };
   getHotListsWithFallback(item.name, isNew, params, { useApi2 })
     .then(({ result, usedFallback, fallbackSuccess }) => {
-      console.log(result);
       if (usedFallback && fallbackSuccess && !useApi2) {
         store.setSourceApi2(item.name, true);
       }
@@ -461,6 +462,8 @@ watch(
     const exists = availableNews.value.find((i) => i.name === listType.value);
     if (!exists && availableNews.value[0]) {
       changeType(availableNews.value[0].name);
+    } else if (exists && !listData.value) {
+      getHotListsData(listType.value);
     }
     refreshTypeScrollState();
   },

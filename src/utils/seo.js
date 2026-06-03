@@ -85,6 +85,11 @@ const LIST_SEO_MAP = {
     keywords: "豆瓣小组热帖,豆瓣热榜,社区讨论",
     description: "豆瓣小组热门帖文，聚合社区内的热门讨论。",
   },
+  tianya: {
+    label: "天涯社区精华帖",
+    keywords: "天涯社区,天涯荟萃,天涯神帖,社区精华帖",
+    description: "天涯社区官方恢复开放的天涯荟萃与精华帖榜单。",
+  },
   ngabbs: {
     label: "NGA 热帖",
     keywords: "NGA 热帖,NGA 热榜,游戏论坛热点",
