@@ -454,6 +454,15 @@ export const mainStore = defineStore("mainData", {
         category: item.category || fallback,
       }));
     },
+    mergeNewsWithDefaults(list) {
+      const defaultByName = new Map(
+        this.defaultNewsArr.map((item) => [item.name, item])
+      );
+      return this.ensureCategoriesForNews(list).map((item) => ({
+        ...(defaultByName.get(item.name) || {}),
+        ...item,
+      }));
+    },
     addCategory(name) {
       if (!name) return false;
       const limit = 10;
@@ -532,13 +541,13 @@ export const mainStore = defineStore("mainData", {
       if (!this.newsArr || this.newsArr.length === 0) {
         this.newsArr = this.defaultNewsArr;
       } else {
-        this.newsArr = this.ensureCategoriesForNews(this.newsArr);
+        this.newsArr = this.mergeNewsWithDefaults(this.newsArr);
       }
     },
     // 检查更新
     checkNewsUpdate() {
       this.defaultNewsArr = this.ensureCategoriesForNews(this.defaultNewsArr);
-      this.newsArr = this.ensureCategoriesForNews(this.newsArr);
+      this.newsArr = this.mergeNewsWithDefaults(this.newsArr);
       if (typeof localStorage === "undefined") {
         this.ensureNewsList();
         return false;

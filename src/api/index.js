@@ -1,6 +1,7 @@
 import axios from "@/api/request";
 
 const DEFAULT_FALLBACK_DELAY_MS = 1200;
+const API2_ONLY_SOURCES = new Set(["tianya"]);
 
 /**
  * 获取热榜分类数据
@@ -11,7 +12,7 @@ const DEFAULT_FALLBACK_DELAY_MS = 1200;
  * @returns
  */
 export const getHotLists = (type, isNew = false, params, options = {}) => {
-  const useApi2 = options?.useApi2;
+  const useApi2 = options?.useApi2 || API2_ONLY_SOURCES.has(type);
   const apiBase = import.meta.env.VITE_GLOBAL_API;
   const apiBase2 = import.meta.env.VITE_GLOBAL_API2;
   const timeout = options?.timeout;
@@ -42,7 +43,7 @@ export const getHotListsWithFallback = async (
   options = {}
 ) => {
   const hasApi2 = Boolean(import.meta.env.VITE_GLOBAL_API2);
-  const preferApi2 = Boolean(options?.useApi2);
+  const preferApi2 = Boolean(options?.useApi2 || API2_ONLY_SOURCES.has(type));
   const timeout = options?.timeout;
   const fallbackDelay = options?.fallbackDelay ?? DEFAULT_FALLBACK_DELAY_MS;
   const run = (useApi2) =>

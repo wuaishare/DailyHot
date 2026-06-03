@@ -491,6 +491,14 @@ onMounted(() => {
   getHotListsData(listType.value);
 });
 
+onActivated(() => {
+  listSubType.value = resolveSubType(router.currentRoute.value);
+  if (!listData.value) {
+    getHotListsData(listType.value);
+  }
+  refreshTypeScrollState();
+});
+
 onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener("resize", updateIsDesktop);

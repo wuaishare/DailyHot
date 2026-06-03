@@ -21,7 +21,7 @@
         <router-view v-slot="{ Component }">
           <keep-alive>
             <transition name="scale" mode="out-in">
-              <component :is="Component" />
+              <component :is="Component" :key="router.currentRoute.value.fullPath" />
             </transition>
           </keep-alive>
         </router-view>
