@@ -463,6 +463,26 @@ export const mainStore = defineStore("mainData", {
         ...item,
       }));
     },
+    dedupeNewsList(list) {
+      const merged = this.mergeNewsWithDefaults(list);
+      const byName = new Map();
+      for (const item of merged) {
+        if (!item?.name) continue;
+        if (!byName.has(item.name)) {
+          byName.set(item.name, item);
+          continue;
+        }
+        const current = byName.get(item.name);
+        byName.set(item.name, {
+          ...current,
+          ...item,
+          label: item.label || current.label,
+          order:
+            typeof current.order === "number" ? current.order : item.order,
+        });
+      }
+      return Array.from(byName.values());
+    },
     addCategory(name) {
       if (!name) return false;
       const limit = 10;
@@ -541,13 +561,13 @@ export const mainStore = defineStore("mainData", {
       if (!this.newsArr || this.newsArr.length === 0) {
         this.newsArr = this.defaultNewsArr;
       } else {
-        this.newsArr = this.mergeNewsWithDefaults(this.newsArr);
+        this.newsArr = this.dedupeNewsList(this.newsArr);
       }
     },
     // 检查更新
     checkNewsUpdate() {
       this.defaultNewsArr = this.ensureCategoriesForNews(this.defaultNewsArr);
-      this.newsArr = this.mergeNewsWithDefaults(this.newsArr);
+      this.newsArr = this.dedupeNewsList(this.newsArr);
       if (typeof localStorage === "undefined") {
         this.ensureNewsList();
         return false;
@@ -559,15 +579,14 @@ export const mainStore = defineStore("mainData", {
       // 执行比较并迁移
       if (this.newsArr.length > 0) {
         for (const newItem of this.defaultNewsArr) {
-          const exists = this.newsArr.some(
-            (news) => newItem.label === news.label && newItem.name === news.name
-          );
+          const exists = this.newsArr.some((news) => newItem.name === news.name);
           if (!exists) {
             console.log("列表有更新：", newItem);
             updatedNum++;
             this.newsArr.push(newItem);
           }
         }
+        this.newsArr = this.dedupeNewsList(this.newsArr);
         if (updatedNum) $message.success(`成功更新 ${updatedNum} 个榜单数据`);
       } else {
         console.log("列表无内容，写入默认");

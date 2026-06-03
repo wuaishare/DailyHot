@@ -30,7 +30,7 @@ const SOURCE_SUBTYPE_GROUPS = {
       key: "default",
       label: "",
       items: [
-        { label: "官方首页", value: "index" },
+        { label: "首页", value: "index" },
         { label: "精品", value: "featured" },
       ],
     },
