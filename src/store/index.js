@@ -319,7 +319,7 @@ export const mainStore = defineStore("mainData", {
           category: "社区",
         },
         {
-          label: "天涯",
+          label: "天涯社区",
           name: "tianya",
           order: 44,
           show: true,

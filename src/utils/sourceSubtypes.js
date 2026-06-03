@@ -31,10 +31,7 @@ const SOURCE_SUBTYPE_GROUPS = {
       label: "",
       items: [
         { label: "官方首页", value: "index" },
-        { label: "默认", value: "default" },
-        { label: "排行", value: "rank" },
         { label: "精品", value: "featured" },
-        { label: "最新", value: "latest" },
       ],
     },
   ],
