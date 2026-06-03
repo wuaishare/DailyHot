@@ -3,6 +3,26 @@ import { getAdminToken } from "@/utils/adminAuth";
 
 const DEFAULT_FALLBACK_DELAY_MS = 1200;
 const API2_ONLY_SOURCES = new Set(["tianya"]);
+const appApiBase = import.meta.env.VITE_GLOBAL_API;
+const analyticsApiBases = import.meta.env.PROD
+  ? ["/api", import.meta.env.VITE_GLOBAL_API].filter(Boolean)
+  : [import.meta.env.VITE_GLOBAL_API2, import.meta.env.VITE_GLOBAL_API].filter(Boolean);
+
+const requestAnalytics = async (config) => {
+  let lastError;
+  for (const baseURL of analyticsApiBases) {
+    try {
+      return await axios({
+        ...config,
+        baseURL,
+        silent: true,
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+};
 
 /**
  * 获取热榜分类数据
@@ -14,7 +34,7 @@ const API2_ONLY_SOURCES = new Set(["tianya"]);
  */
 export const getHotLists = (type, isNew = false, params, options = {}) => {
   const useApi2 = options?.useApi2 || API2_ONLY_SOURCES.has(type);
-  const apiBase = import.meta.env.VITE_GLOBAL_API;
+  const apiBase = appApiBase;
   const apiBase2 = import.meta.env.VITE_GLOBAL_API2;
   const timeout = options?.timeout;
   return axios({
@@ -30,18 +50,16 @@ export const getHotLists = (type, isNew = false, params, options = {}) => {
 };
 
 export const sendAnalyticsEvent = (payload) =>
-  axios({
+  requestAnalytics({
     method: "POST",
     url: "/analytics",
-    baseURL: import.meta.env.VITE_GLOBAL_API2 || import.meta.env.VITE_GLOBAL_API,
     data: payload,
   });
 
 export const getAnalyticsDashboard = (days = 30) =>
-  axios({
+  requestAnalytics({
     method: "GET",
     url: "/analytics",
-    baseURL: import.meta.env.VITE_GLOBAL_API2 || import.meta.env.VITE_GLOBAL_API,
     params: { days },
     headers: getAdminToken()
       ? {

@@ -47,6 +47,9 @@ axios.interceptors.response.use(
     return response.data;
   },
   (error) => {
+    if (error.config?.silent) {
+      return Promise.reject(error);
+    }
     if (typeof window !== "undefined" && window.$loadingBar) {
       window.$loadingBar.error();
     }
