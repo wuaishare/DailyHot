@@ -4,7 +4,8 @@
       站点未完工
     </n-alert> -->
     <n-grid
-      v-if="visibleNews[0]"
+      v-if="renderNews[0]"
+      v-show="visibleCount > 0"
       cols="1 560:2 800:3 1100:4 1500:5"
       :x-gap="store.compactMode ? 14 : 24"
       :y-gap="store.compactMode ? 14 : 24"
@@ -12,14 +13,18 @@
       <n-grid-item
         class="news-card"
         :class="{ 'with-entrance': enableCardEntrance }"
-        v-for="(item, index) in visibleNews"
+        v-for="(item, index) in renderNews"
         :key="item"
+        v-show="isCategoryVisible(item)"
         :style="{ animationDelay: index / 10 + 0.2 + 's' }"
       >
         <HotList :hotData="item" />
       </n-grid-item>
     </n-grid>
-    <div class="error" v-else>
+    <div class="error" v-if="renderNews[0] && visibleCount === 0">
+      <n-divider dashed class="tip"> 当前分类暂无内容 </n-divider>
+    </div>
+    <div class="error" v-else-if="!renderNews[0]">
       <n-divider dashed class="tip"> 此处暂无内容 </n-divider>
       <n-space justify="center">
         <n-button size="large" secondary strong @click="reset">
@@ -36,17 +41,19 @@ import HotList from "@/components/HotList.vue";
 
 const store = mainStore();
 const enableCardEntrance = ref(true);
-const visibleNews = computed(() => {
-  const categoryOn = store.categoryEnabled;
-  const current = store.activeCategory;
+const renderNews = computed(() => {
   return store.newsArr
     .filter((item) => item.show)
     .filter((item) => !store.unavailableSources.includes(item.name))
-    .filter((item) =>
-      categoryOn && current !== "全部" ? item.category === current : true
-    )
     .sort((a, b) => a.order - b.order);
 });
+const isCategoryVisible = (item) => {
+  if (!store.categoryEnabled || store.activeCategory === "全部") return true;
+  return item.category === store.activeCategory;
+};
+const visibleCount = computed(
+  () => renderNews.value.filter((item) => isCategoryVisible(item)).length
+);
 
 onMounted(() => {
   window.setTimeout(() => {
