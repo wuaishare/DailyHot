@@ -23,9 +23,13 @@ export default async function handler(req, res) {
     return;
   }
 
-  const pathValue = Array.isArray(req.query.path)
+  const queryPath = Array.isArray(req.query.path)
     ? req.query.path.join("/")
     : req.query.path || "";
+  const requestPath = new URL(req.url, "https://hot.wuaishare.cn").pathname
+    .replace(/^\/api\/?/, "")
+    .replace(/^\/+/, "");
+  const pathValue = queryPath || requestPath;
 
   if (
     pathValue === "analytics" &&
