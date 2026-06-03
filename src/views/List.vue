@@ -1,6 +1,7 @@
 <template>
   <div class="list">
     <div
+      ref="typeContainerRef"
       v-if="availableNews.length"
       class="type-shell"
       :class="{
@@ -208,13 +209,15 @@ const availableNews = computed(() => {
     )
     .sort((a, b) => a.order - b.order);
 });
+const typeContainerRef = ref(null);
+const typeRowCount = ref(2);
 const sourceRows = computed(() =>
   availableNews.value.reduce(
     (rows, item, index) => {
-      rows[index % 2].push(item);
+      rows[index % typeRowCount.value].push(item);
       return rows;
     },
-    [[], []]
+    Array.from({ length: typeRowCount.value }, () => [])
   )
 );
 const listType = ref(
@@ -323,6 +326,16 @@ const updateTypeShadow = () => {
   typeCanScrollRight.value = maxScrollLeft - track.scrollLeft > 1;
 };
 
+const updateTypeRowCount = () => {
+  const container = typeContainerRef.value;
+  const track = getTypeTrackElement();
+  if (!container || !track) {
+    typeRowCount.value = 2;
+    return;
+  }
+  typeRowCount.value = track.scrollWidth <= container.clientWidth ? 1 : 2;
+};
+
 const refreshTypeScrollState = () => {
   nextTick(() => {
     const track = getTypeTrackElement();
@@ -331,9 +344,16 @@ const refreshTypeScrollState = () => {
       typeResizeObserver = null;
     }
     if (track && typeof ResizeObserver !== "undefined") {
-      typeResizeObserver = new ResizeObserver(updateTypeShadow);
+      typeResizeObserver = new ResizeObserver(() => {
+        updateTypeRowCount();
+        updateTypeShadow();
+      });
       typeResizeObserver.observe(track);
+      if (typeContainerRef.value) {
+        typeResizeObserver.observe(typeContainerRef.value);
+      }
     }
+    updateTypeRowCount();
     updateTypeShadow();
   });
 };
