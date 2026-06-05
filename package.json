@@ -23,7 +23,8 @@
     "terser": "^5.36.0",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5",
-    "vuedraggable": "^4.1.0"
+    "vuedraggable": "^4.1.0",
+    "workbox-window": "^6.6.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.6.2",
@@ -31,7 +32,7 @@
     "unplugin-auto-import": "^0.12.2",
     "unplugin-vue-components": "^0.22.12",
     "vite": "^4.5.5",
-    "vite-plugin-pwa": "^0.14.7",
-    "vite-plugin-prerender": "^1.0.8"
+    "vite-plugin-prerender": "^1.0.8",
+    "vite-plugin-pwa": "^0.14.7"
   }
 }
