@@ -34,13 +34,50 @@ function readGitValue(args, fallback) {
     : fallback;
 }
 
+function runGit(args) {
+  return spawnSync("git", args, {
+    cwd: repoRoot,
+    stdio: "ignore",
+    timeout: 30000,
+  }).status === 0;
+}
+
+function ensureFullGitHistory() {
+  const isShallow = readGitValue(
+    ["rev-parse", "--is-shallow-repository"],
+    "false"
+  );
+  if (isShallow !== "true") return;
+
+  if (!runGit(["fetch", "--unshallow", "--quiet"])) {
+    runGit(["fetch", "--depth=2147483647", "--quiet"]);
+  }
+}
+
+function resolveBuildNumber() {
+  const envBuildNumber = process.env.VITE_BUILD_NUMBER?.trim();
+  if (envBuildNumber) return envBuildNumber;
+
+  ensureFullGitHistory();
+
+  const isStillShallow = readGitValue(
+    ["rev-parse", "--is-shallow-repository"],
+    "false"
+  );
+  if (isStillShallow === "true") {
+    const vercelCommitSha = process.env.VERCEL_GIT_COMMIT_SHA?.trim();
+    return vercelCommitSha
+      ? parseInt(vercelCommitSha.slice(0, 8), 16).toString()
+      : Date.now().toString();
+  }
+
+  return readGitValue(["rev-list", "--count", "HEAD"], Date.now().toString());
+}
+
 export default defineConfig(({ mode }) => {
   const enablePrerender = process.env.PRERENDER === "true";
   const productVersion = readPackageVersion();
-  const envBuildNumber = process.env.VITE_BUILD_NUMBER?.trim();
-  const buildNumber =
-    envBuildNumber ||
-    readGitValue(["rev-list", "--count", "HEAD"], Date.now().toString());
+  const buildNumber = resolveBuildNumber();
   const buildVersion = readGitValue(
     ["log", "-1", "--format=%cd", "--date=format:%y.%m%d.%H%M%S"],
     "00.0000.000000"
