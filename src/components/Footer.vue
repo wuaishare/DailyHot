@@ -15,6 +15,7 @@
         class="author-link"
         :depth="3"
         :href="originRepo.href"
+        :title="originRepo.title"
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -50,7 +51,7 @@
 
 <script setup>
 import packageJson from "@/../package.json";
-import { getCacheVersion } from "@/utils/cache";
+import { getBuildVersion, getDisplayVersion } from "@/utils/cache";
 
 const icp = ref(import.meta.env.VITE_ICP ? import.meta.env.VITE_ICP : null);
 
@@ -73,11 +74,13 @@ const footerLinks = [
   },
 ];
 
-const appVersion = getCacheVersion();
+const appVersion = getDisplayVersion();
+const buildVersion = getBuildVersion();
 
 const originRepo = {
-  label: `DailyHot(二次开发版 v${appVersion})`,
+  label: `DailyHot(二次开发版 ${appVersion})`,
   href: "https://github.com/wuaishare/DailyHot/tree/live",
+  title: buildVersion,
 };
 </script>
 

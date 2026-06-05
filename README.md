@@ -48,11 +48,12 @@ pnpm build
 - `VITE_SITE_URL`：站点线上域名（用于生成 `sitemap.xml`/`robots.txt` 与 canonical），注意用完整域名（含 'https://'），不要带末尾 '/'。
 - `VITE_ICP`：ICP 备案号（可选）。
 - `VITE_DIR`：站点部署路径（如 `/` 或子目录路径）。
+- `VITE_BUILD_NUMBER`：构建号覆盖值（可选；默认使用 Git 提交序号，用于 `v1.4.4-alpha (构建号)` 展示与缓存刷新）。
 - `PRERENDER`：是否开启预渲染（默认关闭；本地需要预渲染时设置 `PRERENDER=true pnpm build`，Vercel 等 CI 若缺少 chromium 依赖请保持默认）。
 
 ## 缓存版本
 
-如需手动更新缓存版本号，可在 `src/utils/cache.js` 中修改 `CACHE_VERSION`，版本号变更会触发缓存清理并刷新。
+展示版本来自 `package.json`，格式为 `v1.4.4-alpha (构建号)`；括号内构建号由 Git 提交序号自动生成。前端缓存刷新只依据构建号判断，正常提交部署后无需手动修改缓存版本。
 
 ## Vercel 部署
 

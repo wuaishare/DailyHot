@@ -1,6 +1,11 @@
-const CACHE_VERSION = "1.4.4";
+const APP_VERSION = __APP_VERSION__;
+const CACHE_VERSION = APP_VERSION.buildNumber || APP_VERSION.version;
 
 export const getCacheVersion = () => CACHE_VERSION;
+export const getDisplayVersion = () => APP_VERSION.version;
+export const getProductVersion = () => APP_VERSION.productVersion;
+export const getBuildNumber = () => APP_VERSION.buildNumber;
+export const getBuildVersion = () => APP_VERSION.buildVersion;
 
 export const clearAppCaches = async () => {
   try {

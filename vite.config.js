@@ -1,5 +1,8 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig, loadEnv } from "vite";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 import { VitePWA } from "vite-plugin-pwa";
 import prerender from "vite-plugin-prerender";
@@ -7,19 +10,50 @@ import vue from "@vitejs/plugin-vue";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 
+const repoRoot = fileURLToPath(new URL(".", import.meta.url));
+
+function readPackageVersion() {
+  try {
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")
+    );
+    const version = packageJson.version?.trim() || "0.0.0";
+    return version.startsWith("v") ? version : `v${version}`;
+  } catch {
+    return "v0.0.0";
+  }
+}
+
+function readGitValue(args, fallback) {
+  const result = spawnSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  return result.status === 0 && result.stdout.trim()
+    ? result.stdout.trim()
+    : fallback;
+}
+
 export default defineConfig(({ mode }) => {
   const enablePrerender = process.env.PRERENDER === "true";
-  const buildId =
-    process.env.VERCEL_GIT_COMMIT_SHA ||
-    process.env.GITHUB_SHA ||
-    process.env.COMMIT_REF ||
-    process.env.VERCEL_DEPLOYMENT_ID ||
-    process.env.npm_package_version ||
-    Date.now().toString();
+  const productVersion = readPackageVersion();
+  const envBuildNumber = process.env.VITE_BUILD_NUMBER?.trim();
+  const buildNumber =
+    envBuildNumber ||
+    readGitValue(["rev-list", "--count", "HEAD"], Date.now().toString());
+  const buildVersion = readGitValue(
+    ["log", "-1", "--format=%cd", "--date=format:%y.%m%d.%H%M%S"],
+    "00.0000.000000"
+  );
   return {
     base: loadEnv(mode, process.cwd())["VITE_DIR"],
     define: {
-      __APP_VERSION__: JSON.stringify(buildId),
+      __APP_VERSION__: JSON.stringify({
+        version: `${productVersion} (${buildNumber})`,
+        productVersion,
+        buildNumber,
+        buildVersion,
+      }),
     },
     plugins: [
       vue(),
