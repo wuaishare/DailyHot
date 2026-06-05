@@ -43,9 +43,10 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: "autoUpdate",
         workbox: {
-          clientsClaim: false,
-          skipWaiting: false,
+          clientsClaim: true,
+          skipWaiting: true,
           cleanupOutdatedCaches: true,
+          navigateFallbackDenylist: [/^\/api(?:\/|$)/],
           runtimeCaching: [
             {
               urlPattern: /(.*?)\.(woff2|woff|ttf)/,
