@@ -238,9 +238,7 @@ const activeCategoryLocal = computed({
   },
 });
 const availableCategorySet = computed(() => {
-  const availableNews = store.newsArr
-    .filter((item) => item.show)
-    .filter((item) => !store.unavailableSources.includes(item.name));
+  const availableNews = store.newsArr.filter((item) => item.show);
   return new Set(availableNews.map((item) => item.category || "综合"));
 });
 const categoryOptions = computed(() => {

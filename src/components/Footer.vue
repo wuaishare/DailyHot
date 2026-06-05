@@ -78,7 +78,7 @@ const appVersion = getDisplayVersion();
 const buildVersion = getBuildVersion();
 
 const originRepo = {
-  label: `DailyHot(二次开发版 ${appVersion})`,
+  label: `DailyHot 二次开发版 ${appVersion}`,
   href: "https://github.com/wuaishare/DailyHot/tree/live",
   title: buildVersion,
 };

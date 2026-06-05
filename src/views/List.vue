@@ -216,7 +216,6 @@ const availableNews = computed(() => {
   const currentCat = store.activeCategory;
   return store.newsArr
     .filter((item) => item.show)
-    .filter((item) => !store.unavailableSources.includes(item.name))
     .filter((item) =>
       categoryOn && currentCat !== "全部" ? item.category === currentCat : true
     )
