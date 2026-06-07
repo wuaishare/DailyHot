@@ -1,5 +1,6 @@
 const CONSENT_KEY = "dailyhot:analytics-consent";
 const SESSION_KEY = "dailyhot:session-id";
+export const OPEN_CONSENT_EVENT = "dailyhot:open-consent-settings";
 
 export const CONSENT_CATEGORIES = {
   necessary: "necessary",
@@ -11,7 +12,7 @@ export const CONSENT_CATEGORIES = {
 
 export const DEFAULT_CONSENT = {
   [CONSENT_CATEGORIES.necessary]: true,
-  [CONSENT_CATEGORIES.analytics]: false,
+  [CONSENT_CATEGORIES.analytics]: true,
   [CONSENT_CATEGORIES.adStorage]: false,
   [CONSENT_CATEGORIES.adUserData]: false,
   [CONSENT_CATEGORIES.adPersonalization]: false,
@@ -29,6 +30,7 @@ export const getAnalyticsConsent = () => {
       ...DEFAULT_CONSENT,
       ...parsed,
       [CONSENT_CATEGORIES.necessary]: true,
+      [CONSENT_CATEGORIES.analytics]: true,
     };
   } catch {
     return null;
@@ -41,12 +43,15 @@ export const setAnalyticsConsent = (value) => {
     ...DEFAULT_CONSENT,
     ...(value || {}),
     [CONSENT_CATEGORIES.necessary]: true,
+    [CONSENT_CATEGORIES.analytics]: true,
   };
   localStorage.setItem(CONSENT_KEY, JSON.stringify(next));
 };
 
 export const shouldTrackAnalytics = () =>
-  Boolean(getAnalyticsConsent()?.[CONSENT_CATEGORIES.analytics]);
+  getAnalyticsConsent()
+    ? Boolean(getAnalyticsConsent()?.[CONSENT_CATEGORIES.analytics])
+    : true;
 
 export const getSessionId = () => {
   if (!canUseStorage()) return "server";

@@ -121,20 +121,20 @@
         <div class="name">
           <n-text class="text">统计与隐私</n-text>
           <n-text class="tip" :depth="3">
-            默认不采集行为统计；同意后仅记录匿名事件与哈希化访客标识，可随时撤回。
+            站点基础统计始终启用；这里只管理广告归因、营销追踪与个性化广告偏好。
           </n-text>
         </div>
         <n-space wrap>
-          <n-tag :type="analyticsConsent?.analytics ? 'success' : 'warning'">
-            {{ analyticsConsent?.analytics ? "已启用统计分析" : "未启用统计分析" }}
+          <n-tag type="success">
+            已启用统计分析
           </n-tag>
           <n-button
             size="small"
             secondary
             strong
-            @click="toggleAnalyticsConsent"
+            @click="openConsentSettings"
           >
-            {{ analyticsConsent?.analytics ? "关闭统计分析" : "开启统计分析" }}
+            管理广告偏好
           </n-button>
           <n-button
             v-if="isAnalyticsPanelVisible"
@@ -391,8 +391,7 @@ import { storeToRefs } from "pinia";
 import { mainStore } from "@/store";
 import { clearAppCaches, getCacheVersion } from "@/utils/cache";
 import {
-  DEFAULT_CONSENT,
-  setAnalyticsConsent as persistAnalyticsConsent,
+  OPEN_CONSENT_EVENT,
 } from "@/utils/analytics";
 import { useOsTheme } from "naive-ui";
 import draggable from "vuedraggable";
@@ -413,7 +412,6 @@ const {
   showImages,
   categoryEnabled,
   activeCategory,
-  analyticsConsent,
 } = storeToRefs(store);
 const categories = computed(() =>
   store.categories.slice().sort((a, b) => a.order - b.order)
@@ -674,18 +672,10 @@ const handleRenameCategory = (id, val) => {
   store.renameCategory(id, val);
 };
 
-const toggleAnalyticsConsent = () => {
-  const next = {
-    ...DEFAULT_CONSENT,
-    ...analyticsConsent.value,
-    analytics: !analyticsConsent.value?.analytics,
-  };
-  analyticsConsent.value = next;
-  store.analyticsPromptDismissed = true;
-  persistAnalyticsConsent(next);
-  $message.success(
-    next.analytics ? "已开启匿名统计" : "已关闭匿名统计"
-  );
+const openConsentSettings = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(OPEN_CONSENT_EVENT));
+  }
 };
 
 watch(
