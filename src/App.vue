@@ -28,6 +28,7 @@
       </main>
       <Footer />
       <AnalyticsConsent />
+      <SpeedInsights />
     </n-layout>
   </Provider>
 </template>
@@ -38,6 +39,7 @@ import Provider from "@/components/Provider.vue";
 import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
 import AnalyticsConsent from "@/components/AnalyticsConsent.vue";
+import { SpeedInsights } from "@vercel/speed-insights/vue";
 import { useRouter } from "vue-router";
 
 const store = mainStore();
