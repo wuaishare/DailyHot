@@ -14,18 +14,20 @@
               站点基础功能与统计分析始终启用，广告个性化与营销追踪由你决定。
             </p>
             <p class="desc">
-              我们会保留必要功能与匿名统计，用于站点运维、内容优化和质量判断；广告个性化、营销追踪与增强受众能力仅在你同意后启用。
+              我们会保留必要功能与匿名统计，用于站点运维、内容优化和质量判断；广告归因、营销追踪与个性化广告仅在你同意后启用。选择“同意必要”即表示仅接受必要功能与统计分析；如果你不接受这些基础项，可以选择“拒绝并离开”退出访问。
             </p>
           </div>
 
           <div class="actions">
-            <n-button tertiary @click="acceptRequiredOnly">
-              拒绝广告相关
+            <n-button tertiary @click="declineAndExit">
+              拒绝并离开
             </n-button>
-            <n-button tertiary @click="detailsOpen = !detailsOpen">
-              {{ detailsOpen ? "收起设置" : "高级设置" }}
+            <n-button tertiary @click="openDetails">
+              {{ detailsOpen ? "收起详情" : "查看详情" }}
             </n-button>
-            <n-button type="primary" @click="acceptAll">同意全部</n-button>
+            <n-button type="primary" @click="acceptRequiredOnly">
+              同意必要
+            </n-button>
           </div>
 
           <Transition name="details-expand">
@@ -79,11 +81,14 @@
 
               <div class="details-footer">
                 <p class="footer-text">
-                  你也可以稍后在“设置 > 统计与隐私”中重新调整广告相关偏好。
+                  你也可以稍后在“设置 > 统计与隐私”中重新调整广告相关偏好；如果不接受必要功能与统计分析，请使用“拒绝并离开”退出网页访问。
                 </p>
                 <n-space wrap justify="end">
+                  <n-button tertiary @click="declineAndExit">
+                    拒绝并离开
+                  </n-button>
                   <n-button tertiary @click="acceptRequiredOnly">
-                    拒绝广告相关
+                    同意必要
                   </n-button>
                   <n-button tertiary @click="acceptSelected">
                     保存当前选择
@@ -207,8 +212,13 @@ const acceptSelected = () => {
   applyConsent(draftConsent);
 };
 
+const declineAndExit = () => {
+  if (typeof window === "undefined") return;
+  window.location.replace("about:blank");
+};
+
 const openDetails = () => {
-  detailsOpen.value = true;
+  detailsOpen.value = !detailsOpen.value;
   if (!store.analyticsPromptDismissed) return;
   Object.assign(draftConsent, createDraft(store.analyticsConsent || {}));
   store.setAnalyticsPromptDismissed(false);
