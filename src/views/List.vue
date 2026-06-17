@@ -36,7 +36,7 @@
           >
             {{ item.label }}
             <template #avatar>
-              <img :src="logoSrc(item.name)" alt="logo" class="logo" />
+              <img :src="logoSrc(item.name)" alt="logo" class="logo" @error="handleLogoError" />
             </template>
           </n-tag>
         </div>
@@ -60,7 +60,7 @@
           <template v-else>
             <div class="header">
               <div class="logo">
-                <img :src="logoSrc(listType)" alt="logo" />
+                <img :src="logoSrc(listType)" alt="logo" @error="handleLogoError" />
               </div>
               <div class="name">
                 <n-text class="title">{{ listData.title }}</n-text>
@@ -256,7 +256,43 @@ const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
 const showImages = computed(() => store.showImages);
-const logoSrc = (name) => `/logo/${name}.png?v=${cacheVersion}`;
+const logoAliasMap = {
+  "producthunt-ai": "producthunt",
+  "hackernews-ai": "hackernews",
+  "sina-ai": "sina",
+};
+const aiLogoSources = new Set([
+  "openrouter-rankings",
+  "artificialanalysis",
+  "lmarena",
+  "designarena",
+  "aicpb-rankings",
+  "llm-stats",
+  "skills-rank",
+  "openai-news",
+  "openai-research",
+  "anthropic-news",
+  "deepmind-blog",
+  "meta-ai-blog",
+  "huggingface-blog",
+  "mistral-news",
+  "cohere-blog",
+  "perplexity-blog",
+  "xai-news",
+  "hf-models",
+  "hf-papers",
+  "paperswithcode",
+  "reddit-localllama",
+  "reddit-machinelearning",
+  "reddit-artificial",
+]);
+const logoSrc = (name) =>
+  aiLogoSources.has(name)
+    ? "/ico/favicon.png"
+    : `/logo/${logoAliasMap[name] || name}.png?v=${cacheVersion}`;
+const handleLogoError = (event) => {
+  event.target.src = "/ico/favicon.png";
+};
 const subtypeGroups = computed(() =>
   getSourceSubtypeGroups(listType.value)
 );

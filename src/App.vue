@@ -28,7 +28,7 @@
       </main>
       <Footer />
       <AnalyticsConsent />
-      <SpeedInsights />
+      <SpeedInsights v-if="showSpeedInsights" />
     </n-layout>
   </Provider>
 </template>
@@ -44,6 +44,11 @@ import { useRouter } from "vue-router";
 
 const store = mainStore();
 const router = useRouter();
+const showSpeedInsights =
+  import.meta.env.PROD &&
+  (typeof window === "undefined" ||
+    (window.location.hostname !== "127.0.0.1" &&
+      window.location.hostname !== "localhost"));
 
 const headerExpanded = ref(!store.headerCollapsed);
 const collapseTimer = ref(null);

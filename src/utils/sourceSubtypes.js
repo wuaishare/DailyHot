@@ -69,6 +69,29 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  designarena: [
+    {
+      key: "frontend",
+      label: "前端",
+      items: [
+        { label: "Website", value: "website" },
+        { label: "UI Component", value: "uicomponent" },
+        { label: "DataViz", value: "dataviz" },
+        { label: "SVG", value: "svg" },
+      ],
+    },
+    {
+      key: "creative",
+      label: "创意",
+      items: [
+        { label: "Game Dev", value: "gamedev" },
+        { label: "3D", value: "3d" },
+        { label: "Slides", value: "slides" },
+        { label: "Image", value: "image" },
+        { label: "Video", value: "video" },
+      ],
+    },
+  ],
 };
 
 const normalizeValue = (value) => {

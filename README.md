@@ -28,17 +28,30 @@
 
 ## 后续 AI 榜单方向
 
-- 已在 `DailyHotApi` 的 README 中增补「AI 信息源扩展规划（2026-06）」。
-- 当前更适合作为首批新增的一手 AI 圈信息源：
-  - Hugging Face Models
-  - Hugging Face Trending Papers
-  - LMArena
+- 已在 `DailyHotApi` 的 README 中增补「AI 信息源扩展规划（2026-06）」并同步第一阶段接入状态。
+- 当前 `AI` 一级分类已纳入前端来源清单的第一阶段来源包括：
   - Artificial Analysis
+  - LMArena
+  - DesignArena
+  - AICPB 榜单
+  - LLM Stats
+  - Skills Rank
+  - OpenAI 官方新闻
+  - Anthropic 官方新闻
+  - DeepMind 官方博客
+  - Hugging Face 博客 / 模型 / 热门论文
+  - Mistral 官方新闻
+  - Cohere 官方博客
+  - Product Hunt AI
+  - Hacker News AI
+  - 新浪 AI 热榜
+- 当前仍在待攻坚来源：
   - OpenRouter Rankings
-- 现有项目内可继续强化的 AI 相关入口：
-  - 新浪 `AI热榜`
-  - Product Hunt
-  - Hacker News
+  - OpenAI Research
+  - Meta AI Blog
+  - Perplexity Blog
+  - xAI News
+  - Reddit 相关 AI 社区
 
 
 ## 部署

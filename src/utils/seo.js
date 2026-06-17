@@ -130,6 +130,101 @@ const LIST_SEO_MAP = {
     keywords: "网易新闻热榜,新闻热点,资讯排行",
     description: "网易新闻热点榜，聚合当下高关注度新闻。",
   },
+  "openrouter-rankings": {
+    label: "OpenRouter 排行榜",
+    keywords: "OpenRouter 排行榜,AI 模型热度,模型使用趋势",
+    description: "OpenRouter 模型使用热度与调用趋势排行榜。",
+  },
+  artificialanalysis: {
+    label: "Artificial Analysis 排行榜",
+    keywords: "Artificial Analysis,AI 排行榜,模型评测",
+    description: "Artificial Analysis 模型能力、价格与速度综合排行榜。",
+  },
+  lmarena: {
+    label: "LMArena 排行榜",
+    keywords: "LMArena,大模型排行榜,模型对战榜",
+    description: "LMArena 文本模型对战与用户投票排行榜。",
+  },
+  designarena: {
+    label: "DesignArena 排行榜",
+    keywords: "DesignArena,AI 设计榜单,前端模型排行榜",
+    description: "DesignArena 前端、设计与创意类 AI 模型排行榜。",
+  },
+  "aicpb-rankings": {
+    label: "AICPB 全球 AI 排行榜",
+    keywords: "AICPB,全球 AI 排行榜,AI 产品榜单",
+    description: "AICPB 全球 AI 产品与网站热度排行榜。",
+  },
+  "llm-stats": {
+    label: "LLM Stats 排行榜",
+    keywords: "LLM Stats,大模型比较,AI 模型榜单",
+    description: "LLM Stats 模型能力、速度与价格排行榜。",
+  },
+  "skills-rank": {
+    label: "Skills Rank 排行榜",
+    keywords: "Skills Rank,Agent Skills,安装量榜单",
+    description: "Skills Rank 展示 Agent Skills 安装量与流行度排行。",
+  },
+  "openai-news": {
+    label: "OpenAI 官方新闻",
+    keywords: "OpenAI 官方新闻,OpenAI 更新,OpenAI 博客",
+    description: "OpenAI 官方新闻与产品发布动态。",
+  },
+  "anthropic-news": {
+    label: "Anthropic 官方新闻",
+    keywords: "Anthropic 官方新闻,Claude 更新,Anthropic 博客",
+    description: "Anthropic 官方新闻、Claude 更新与发布动态。",
+  },
+  "deepmind-blog": {
+    label: "DeepMind 官方博客",
+    keywords: "DeepMind 博客,Google DeepMind,AI 研究更新",
+    description: "Google DeepMind 官方博客与研究更新。",
+  },
+  "huggingface-blog": {
+    label: "Hugging Face 官方博客",
+    keywords: "Hugging Face 博客,AI 开源,模型生态",
+    description: "Hugging Face 官方博客与模型生态更新。",
+  },
+  "mistral-news": {
+    label: "Mistral 官方新闻",
+    keywords: "Mistral 新闻,Mistral AI,模型更新",
+    description: "Mistral 官方产品与模型更新动态。",
+  },
+  "cohere-blog": {
+    label: "Cohere 官方博客",
+    keywords: "Cohere 博客,Cohere AI,企业 AI",
+    description: "Cohere 官方博客、研究与产品更新。",
+  },
+  "hf-models": {
+    label: "Hugging Face 模型趋势",
+    keywords: "Hugging Face 模型,模型趋势,开源模型",
+    description: "Hugging Face 模型趋势榜，观察热门开源模型。",
+  },
+  "hf-papers": {
+    label: "Hugging Face 热门论文",
+    keywords: "Hugging Face 热门论文,AI 论文趋势,热门论文",
+    description: "Hugging Face 热门论文趋势榜。",
+  },
+  paperswithcode: {
+    label: "Papers with Code",
+    keywords: "Papers with Code,热门论文,论文代码",
+    description: "Papers with Code 热门论文与代码趋势。",
+  },
+  "producthunt-ai": {
+    label: "Product Hunt AI",
+    keywords: "Product Hunt AI,AI 产品发现,AI 新品",
+    description: "Product Hunt 中与 AI 相关的产品发现流。",
+  },
+  "hackernews-ai": {
+    label: "Hacker News AI",
+    keywords: "Hacker News AI,AI 社区热议,技术讨论",
+    description: "Hacker News 中与 AI 相关的热门讨论。",
+  },
+  "sina-ai": {
+    label: "新浪 AI 热榜",
+    keywords: "新浪 AI 热榜,AI 资讯,中文 AI 热点",
+    description: "新浪 AI 热榜，补充中文 AI 资讯视角。",
+  },
   weread: {
     label: "微信读书热榜",
     keywords: "微信读书热榜,阅读榜单,热门书籍",

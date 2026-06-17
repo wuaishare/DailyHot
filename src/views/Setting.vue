@@ -236,7 +236,7 @@
             :content-style="{ display: 'flex', alignItems: 'center' }"
           >
             <div class="desc" :style="{ opacity: element.show ? null : 0.6 }">
-              <img class="logo" :src="logoSrc(element.name)" alt="logo" />
+              <img class="logo" :src="logoSrc(element.name)" alt="logo" @error="handleLogoError" />
               <n-text class="news-name" v-html="element.label" />
               <n-tag
                 size="small"
@@ -421,7 +421,43 @@ const categoryOptions = computed(() =>
 );
 const newCategory = ref("");
 const cacheVersion = ref(getCacheVersion());
-const logoSrc = (name) => `/logo/${name}.png?v=${cacheVersion.value}`;
+const logoAliasMap = {
+  "producthunt-ai": "producthunt",
+  "hackernews-ai": "hackernews",
+  "sina-ai": "sina",
+};
+const aiLogoSources = new Set([
+  "openrouter-rankings",
+  "artificialanalysis",
+  "lmarena",
+  "designarena",
+  "aicpb-rankings",
+  "llm-stats",
+  "skills-rank",
+  "openai-news",
+  "openai-research",
+  "anthropic-news",
+  "deepmind-blog",
+  "meta-ai-blog",
+  "huggingface-blog",
+  "mistral-news",
+  "cohere-blog",
+  "perplexity-blog",
+  "xai-news",
+  "hf-models",
+  "hf-papers",
+  "paperswithcode",
+  "reddit-localllama",
+  "reddit-machinelearning",
+  "reddit-artificial",
+]);
+const logoSrc = (name) =>
+  aiLogoSources.has(name)
+    ? "/ico/favicon.png"
+    : `/logo/${logoAliasMap[name] || name}.png?v=${cacheVersion.value}`;
+const handleLogoError = (event) => {
+  event.target.src = "/ico/favicon.png";
+};
 const importFileRef = ref(null);
 const isAnalyticsPanelVisible = !import.meta.env.PROD;
 const persistedKeys = [
