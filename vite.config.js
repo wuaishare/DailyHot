@@ -62,6 +62,16 @@ function ensureFullGitHistory() {
   }
 }
 
+function readGitHubRepo() {
+  const owner = process.env.VERCEL_GIT_REPO_OWNER?.trim();
+  const repo = process.env.VERCEL_GIT_REPO_SLUG?.trim();
+  if (owner && repo) return { owner, repo };
+
+  const remoteUrl = readGitValue(["config", "--get", "remote.origin.url"], "");
+  const matched = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/.]+)(?:\.git)?$/);
+  return matched ? { owner: matched[1], repo: matched[2] } : null;
+}
+
 function formatDateFallback() {
   const date = new Date();
   const year = String(date.getFullYear()).slice(-2);
@@ -94,7 +104,58 @@ function resolveBuildDate() {
 export default defineConfig(async ({ mode }) => {
   const enablePrerender = process.env.PRERENDER === "true";
   const productVersion = readPackageVersion();
-  const buildDate = resolveBuildDate();
+  let buildDate = resolveBuildDate();
+  const isStillShallow = readGitValue(
+    ["rev-parse", "--is-shallow-repository"],
+    "false"
+  );
+  if (isStillShallow === "true" && typeof fetch === "function") {
+    const repoInfo = readGitHubRepo();
+    const ref =
+      process.env.VERCEL_GIT_COMMIT_REF?.trim() ||
+      readGitValue(["rev-parse", "--abbrev-ref", "HEAD"], "");
+    if (repoInfo && ref) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      try {
+        const dates = [];
+        for (const pathName of versionSourcePaths) {
+          const response = await fetch(
+            `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/commits?sha=${encodeURIComponent(
+              ref
+            )}&path=${encodeURIComponent(pathName)}&per_page=1`,
+            {
+              headers: {
+                Accept: "application/vnd.github+json",
+                "User-Agent": "DailyHot-build-version",
+              },
+              signal: controller.signal,
+            }
+          );
+          if (!response.ok) continue;
+          const commits = await response.json();
+          const latest = commits?.[0]?.commit?.committer?.date;
+          if (!latest) continue;
+          const date = new Date(latest);
+          if (Number.isNaN(date.getTime())) continue;
+          const yy = String(date.getFullYear()).slice(-2);
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const dd = String(date.getDate()).padStart(2, "0");
+          const hh = String(date.getHours()).padStart(2, "0");
+          const mi = String(date.getMinutes()).padStart(2, "0");
+          dates.push(`${yy}${mm}${dd}${hh}${mi}`);
+        }
+        if (dates.length) {
+          dates.sort();
+          buildDate = dates[dates.length - 1];
+        }
+      } catch {
+        // Fall back to local git-derived value.
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+  }
   return {
     base: loadEnv(mode, process.cwd())["VITE_DIR"],
     define: {
