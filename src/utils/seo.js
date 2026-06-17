@@ -235,6 +235,11 @@ const LIST_SEO_MAP = {
     keywords: "ClawHub Skills,AI 技能榜,Agent Skills",
     description: "ClawHub Skills 推荐、安装、星标与分类榜单。",
   },
+  clawhub: {
+    label: "ClawHub",
+    keywords: "ClawHub,AI 技能与插件榜,Agent Skills,Agent Plugins",
+    description: "ClawHub 的 Skills 与 Plugins 聚合榜单入口。",
+  },
   "clawhub-plugins": {
     label: "ClawHub Plugins",
     keywords: "ClawHub Plugins,AI 插件榜,Agent 插件",

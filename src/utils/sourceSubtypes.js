@@ -126,6 +126,40 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  clawhub: [
+    {
+      key: "skills",
+      label: "Skills",
+      items: [
+        { label: "Recommended", value: "skills-recommended" },
+        { label: "Featured", value: "skills-featured" },
+        { label: "Most starred", value: "skills-stars" },
+        { label: "Most installed", value: "skills-installs" },
+        { label: "Recently updated", value: "skills-updated" },
+        { label: "Newest", value: "skills-newest" },
+        { label: "Name", value: "skills-name" },
+        { label: "MCP Tools", value: "skills-mcp-tools" },
+        { label: "Prompts", value: "skills-prompts" },
+        { label: "Workflows", value: "skills-workflows" },
+        { label: "Dev Tools", value: "skills-dev-tools" },
+        { label: "Data & APIs", value: "skills-data" },
+        { label: "Security", value: "skills-security" },
+        { label: "Automation", value: "skills-automation" },
+        { label: "Other", value: "skills-other" },
+      ],
+    },
+    {
+      key: "plugins",
+      label: "Plugins",
+      items: [
+        { label: "Recommended", value: "plugins-recommended" },
+        { label: "Featured", value: "plugins-featured" },
+        { label: "Most installed", value: "plugins-installs" },
+        { label: "Recently updated", value: "plugins-updated" },
+        { label: "Data & APIs", value: "plugins-data" },
+      ],
+    },
+  ],
   "clawhub-skills": [
     {
       key: "sort",

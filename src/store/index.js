@@ -477,17 +477,9 @@ export const mainStore = defineStore("mainData", {
           subtype: "排行榜",
         },
         {
-          label: "ClawHub Skills",
-          name: "clawhub-skills",
+          label: "ClawHub",
+          name: "clawhub",
           order: 64,
-          show: true,
-          category: "AI",
-          subtype: "技能 / 插件",
-        },
-        {
-          label: "ClawHub Plugins",
-          name: "clawhub-plugins",
-          order: 65,
           show: true,
           category: "AI",
           subtype: "技能 / 插件",
@@ -495,7 +487,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "OpenAI",
           name: "openai-news",
-          order: 66,
+          order: 65,
           show: true,
           category: "AI",
           subtype: "官方资讯",
@@ -503,7 +495,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "OpenAI Research",
           name: "openai-research",
-          order: 67,
+          order: 66,
           show: true,
           category: "AI",
           subtype: "官方资讯",
@@ -511,7 +503,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Anthropic",
           name: "anthropic-news",
-          order: 68,
+          order: 67,
           show: true,
           category: "AI",
           subtype: "官方资讯",
@@ -519,7 +511,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "DeepMind",
           name: "deepmind-blog",
-          order: 69,
+          order: 68,
           show: true,
           category: "AI",
           subtype: "官方资讯",
@@ -527,7 +519,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Meta AI",
           name: "meta-ai-blog",
-          order: 70,
+          order: 69,
           show: true,
           category: "AI",
           subtype: "官方资讯",
@@ -535,7 +527,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Hugging Face",
           name: "huggingface-blog",
-          order: 71,
+          order: 70,
           show: true,
           category: "AI",
           subtype: "官方资讯",
@@ -543,7 +535,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Mistral",
           name: "mistral-news",
-          order: 72,
+          order: 71,
           show: true,
           category: "AI",
           subtype: "官方资讯",
@@ -551,7 +543,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Cohere",
           name: "cohere-blog",
-          order: 73,
+          order: 72,
           show: true,
           category: "AI",
           subtype: "官方资讯",
@@ -559,7 +551,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Perplexity",
           name: "perplexity-blog",
-          order: 74,
+          order: 73,
           show: false,
           category: "AI",
           subtype: "官方资讯",
@@ -567,7 +559,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "xAI",
           name: "xai-news",
-          order: 75,
+          order: 74,
           show: false,
           category: "AI",
           subtype: "官方资讯",
@@ -575,7 +567,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "HF Models",
           name: "hf-models",
-          order: 76,
+          order: 75,
           show: true,
           category: "AI",
           subtype: "开源 / 论文",
@@ -583,7 +575,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "HF Papers",
           name: "hf-papers",
-          order: 77,
+          order: 76,
           show: true,
           category: "AI",
           subtype: "开源 / 论文",
@@ -591,7 +583,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Papers with Code",
           name: "paperswithcode",
-          order: 78,
+          order: 77,
           show: true,
           category: "AI",
           subtype: "开源 / 论文",
@@ -599,7 +591,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Product Hunt",
           name: "producthunt-ai",
-          order: 79,
+          order: 78,
           show: true,
           category: "AI",
           subtype: "产品发现",
@@ -607,7 +599,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Hacker News",
           name: "hackernews-ai",
-          order: 80,
+          order: 79,
           show: true,
           category: "AI",
           subtype: "社区热议",
@@ -615,7 +607,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Reddit /r/LocalLLaMA",
           name: "reddit-localllama",
-          order: 81,
+          order: 80,
           show: false,
           category: "AI",
           subtype: "社区热议",
@@ -623,7 +615,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Reddit /r/MachineLearning",
           name: "reddit-machinelearning",
-          order: 82,
+          order: 81,
           show: false,
           category: "AI",
           subtype: "社区热议",
@@ -631,7 +623,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Reddit /r/artificial",
           name: "reddit-artificial",
-          order: 83,
+          order: 82,
           show: false,
           category: "AI",
           subtype: "社区热议",
@@ -639,7 +631,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "新浪 AI 热榜",
           name: "sina-ai",
-          order: 84,
+          order: 83,
           show: true,
           category: "AI",
           subtype: "官方资讯",
@@ -721,6 +713,7 @@ export const mainStore = defineStore("mainData", {
       }));
     },
     mergeNewsWithDefaults(list) {
+      list = this.normalizeLegacySources(list);
       const defaultByName = new Map(
         this.defaultNewsArr.map((item) => [item.name, item])
       );
@@ -748,6 +741,38 @@ export const mainStore = defineStore("mainData", {
         });
       }
       return Array.from(byName.values());
+    },
+    normalizeLegacySources(list) {
+      if (!Array.isArray(list) || !list.length) return list;
+      const oldNames = ["clawhub-skills", "clawhub-plugins"];
+      const clawhubDefault = this.defaultNewsArr.find((item) => item.name === "clawhub");
+      if (!clawhubDefault) return list;
+      const legacyItems = list.filter((item) => oldNames.includes(item?.name));
+      const currentClawhub = list.find((item) => item?.name === "clawhub");
+      if (!legacyItems.length && !currentClawhub) return list;
+
+      const keep = list.filter(
+        (item) => item?.name !== "clawhub" && !oldNames.includes(item?.name)
+      );
+      const sourceItems = [currentClawhub, ...legacyItems].filter(Boolean);
+      const merged = sourceItems.reduce(
+        (acc, item) => ({
+          ...acc,
+          ...item,
+          name: "clawhub",
+          label: "ClawHub",
+          show: acc.show || item.show,
+        }),
+        { ...clawhubDefault, show: false }
+      );
+      const orders = sourceItems
+        .map((item) => item.order)
+        .filter((value) => typeof value === "number");
+      if (orders.length) {
+        merged.order = Math.min(...orders);
+      }
+      keep.push(merged);
+      return keep;
     },
     addCategory(name) {
       if (!name) return false;

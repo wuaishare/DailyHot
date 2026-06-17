@@ -37,7 +37,7 @@
   - LLM Stats
   - Skills Rank
   - OpenRouter
-  - ClawHub Skills / Plugins
+  - ClawHub
   - OpenAI
   - OpenAI Research
   - Anthropic
@@ -57,6 +57,7 @@
 
 - 说明：
   - `OpenRouter` 当前已切到公开前台榜单接口，支持模型周榜、厂商份额、应用榜、性能榜等多个官方子榜。
+  - `ClawHub` 当前以前端只显示一个一级卡片，`Skills / Plugins` 作为其子分类组。
   - `ClawHub Plugins` 的 `Official only` / 多数官方分类接口当前在服务端直连场景下仍不稳定，因此前端只展示已验证可用的子类；后端预留已保留，后面官方稳定后可直接放开。
 
 ## 下一波高价值来源
