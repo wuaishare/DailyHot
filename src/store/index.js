@@ -1,5 +1,14 @@
 import { defineStore } from "pinia";
 
+const BUILTIN_CATEGORIES = [
+  { id: "general", name: "综合", order: 0, builtin: true },
+  { id: "tech", name: "科技", order: 1, builtin: true },
+  { id: "life", name: "生活", order: 2, builtin: true },
+  { id: "games", name: "游戏", order: 3, builtin: true },
+  { id: "community", name: "社区", order: 4, builtin: true },
+  { id: "ai", name: "AI", order: 5, builtin: true },
+];
+
 export const mainStore = defineStore("mainData", {
   state: () => {
     return {
@@ -638,14 +647,7 @@ export const mainStore = defineStore("mainData", {
       // 分类
       categoryEnabled: true,
       activeCategory: "全部",
-      categories: [
-        { id: "general", name: "综合", order: 0, builtin: true },
-        { id: "tech", name: "科技", order: 1, builtin: true },
-        { id: "life", name: "生活", order: 2, builtin: true },
-        { id: "games", name: "游戏", order: 3, builtin: true },
-        { id: "community", name: "社区", order: 4, builtin: true },
-        { id: "ai", name: "AI", order: 5, builtin: true },
-      ],
+      categories: BUILTIN_CATEGORIES,
       // 失效的榜单源（临时标记，不持久化）
       unavailableSources: [],
       analyticsConsent: null,
@@ -659,6 +661,42 @@ export const mainStore = defineStore("mainData", {
   },
   getters: {},
   actions: {
+    ensureBuiltinCategories() {
+      const current = Array.isArray(this.categories) ? this.categories : [];
+      const mergedBuiltin = BUILTIN_CATEGORIES.map((builtin) => {
+        const existing = current.find(
+          (item) => item?.id === builtin.id || item?.name === builtin.name
+        );
+        return {
+          ...builtin,
+          ...existing,
+          id: builtin.id,
+          name: builtin.name,
+          order: builtin.order,
+          builtin: true,
+        };
+      });
+      const custom = current
+        .filter(
+          (item) =>
+            item &&
+            !BUILTIN_CATEGORIES.some(
+              (builtin) => builtin.id === item.id || builtin.name === item.name
+            )
+        )
+        .map((item, index) => ({
+          ...item,
+          order: BUILTIN_CATEGORIES.length + index,
+          builtin: false,
+        }));
+      this.categories = mergedBuiltin.concat(custom);
+      if (
+        this.activeCategory !== "全部" &&
+        !this.categories.some((item) => item.name === this.activeCategory)
+      ) {
+        this.activeCategory = "全部";
+      }
+    },
     ensureCategoriesForNews(list) {
       const fallback = "综合";
       return list.map((item) => ({
@@ -778,6 +816,7 @@ export const mainStore = defineStore("mainData", {
     },
     // 初始化默认榜单（SSR/预渲染也能有基础数据）
     ensureNewsList() {
+      this.ensureBuiltinCategories();
       this.defaultNewsArr = this.ensureCategoriesForNews(this.defaultNewsArr);
       if (!this.newsArr || this.newsArr.length === 0) {
         this.newsArr = this.defaultNewsArr;
@@ -787,6 +826,7 @@ export const mainStore = defineStore("mainData", {
     },
     // 检查更新
     checkNewsUpdate() {
+      this.ensureBuiltinCategories();
       this.defaultNewsArr = this.ensureCategoriesForNews(this.defaultNewsArr);
       this.newsArr = this.dedupeNewsList(this.newsArr);
       if (typeof localStorage === "undefined") {

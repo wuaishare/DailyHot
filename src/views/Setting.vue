@@ -393,6 +393,7 @@ import { clearAppCaches, getCacheVersion } from "@/utils/cache";
 import {
   OPEN_CONSENT_EVENT,
 } from "@/utils/analytics";
+import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { useOsTheme } from "naive-ui";
 import draggable from "vuedraggable";
 
@@ -421,42 +422,9 @@ const categoryOptions = computed(() =>
 );
 const newCategory = ref("");
 const cacheVersion = ref(getCacheVersion());
-const logoAliasMap = {
-  "producthunt-ai": "producthunt",
-  "hackernews-ai": "hackernews",
-  "sina-ai": "sina",
-};
-const aiLogoSources = new Set([
-  "openrouter-rankings",
-  "artificialanalysis",
-  "lmarena",
-  "designarena",
-  "aicpb-rankings",
-  "llm-stats",
-  "skills-rank",
-  "openai-news",
-  "openai-research",
-  "anthropic-news",
-  "deepmind-blog",
-  "meta-ai-blog",
-  "huggingface-blog",
-  "mistral-news",
-  "cohere-blog",
-  "perplexity-blog",
-  "xai-news",
-  "hf-models",
-  "hf-papers",
-  "paperswithcode",
-  "reddit-localllama",
-  "reddit-machinelearning",
-  "reddit-artificial",
-]);
-const logoSrc = (name) =>
-  aiLogoSources.has(name)
-    ? "/ico/favicon.png"
-    : `/logo/${logoAliasMap[name] || name}.png?v=${cacheVersion.value}`;
+const logoSrc = (name) => getSourceLogo(name, cacheVersion.value);
 const handleLogoError = (event) => {
-  event.target.src = "/ico/favicon.png";
+  event.target.src = getSourceLogoFallback();
 };
 const importFileRef = ref(null);
 const isAnalyticsPanelVisible = !import.meta.env.PROD;
