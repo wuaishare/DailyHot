@@ -92,6 +92,88 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "openrouter-rankings": [
+    {
+      key: "usage",
+      label: "热度",
+      items: [
+        { label: "模型周榜", value: "models-week" },
+        { label: "厂商份额", value: "market-share" },
+        { label: "工具调用", value: "tools" },
+        { label: "多模态输入", value: "images" },
+        { label: "图像输出", value: "image-output" },
+      ],
+    },
+    {
+      key: "ecosystem",
+      label: "生态",
+      items: [
+        { label: "应用日榜", value: "apps-day" },
+        { label: "应用周榜", value: "apps-week" },
+        { label: "应用月榜", value: "apps-month" },
+        { label: "性能榜", value: "performance" },
+        { label: "AA 智能", value: "benchmarks-aa-intelligence" },
+      ],
+    },
+    {
+      key: "scene",
+      label: "场景",
+      items: [
+        { label: "编程", value: "use-case-programming" },
+        { label: "英文", value: "natural-language-english" },
+        { label: "Python", value: "programming-language-python" },
+        { label: "10K 上下文", value: "context-length-10k" },
+      ],
+    },
+  ],
+  "clawhub-skills": [
+    {
+      key: "sort",
+      label: "榜单",
+      items: [
+        { label: "Recommended", value: "recommended" },
+        { label: "Featured", value: "featured" },
+        { label: "Most starred", value: "stars" },
+        { label: "Most installed", value: "installs" },
+        { label: "Recently updated", value: "updated" },
+        { label: "Newest", value: "newest" },
+        { label: "Name", value: "name" },
+      ],
+    },
+    {
+      key: "category",
+      label: "分类",
+      items: [
+        { label: "MCP Tools", value: "mcp-tools" },
+        { label: "Prompts", value: "prompts" },
+        { label: "Workflows", value: "workflows" },
+        { label: "Dev Tools", value: "dev-tools" },
+        { label: "Data & APIs", value: "data" },
+        { label: "Security", value: "security" },
+        { label: "Automation", value: "automation" },
+        { label: "Other", value: "other" },
+      ],
+    },
+  ],
+  "clawhub-plugins": [
+    {
+      key: "sort",
+      label: "榜单",
+      items: [
+        { label: "Recommended", value: "recommended" },
+        { label: "Featured", value: "featured" },
+        { label: "Most installed", value: "installs" },
+        { label: "Recently updated", value: "updated" },
+      ],
+    },
+    {
+      key: "category",
+      label: "分类",
+      items: [
+        { label: "Data & APIs", value: "data" },
+      ],
+    },
+  ],
 };
 
 const normalizeValue = (value) => {

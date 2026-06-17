@@ -230,6 +230,16 @@ const LIST_SEO_MAP = {
     keywords: "Hacker News AI,AI 社区热议,技术讨论",
     description: "Hacker News 中与 AI 相关的热门讨论。",
   },
+  "clawhub-skills": {
+    label: "ClawHub Skills",
+    keywords: "ClawHub Skills,AI 技能榜,Agent Skills",
+    description: "ClawHub Skills 推荐、安装、星标与分类榜单。",
+  },
+  "clawhub-plugins": {
+    label: "ClawHub Plugins",
+    keywords: "ClawHub Plugins,AI 插件榜,Agent 插件",
+    description: "ClawHub Plugins 推荐、精选、官方与分类榜单。",
+  },
   "sina-ai": {
     label: "新浪 AI 热榜",
     keywords: "新浪 AI 热榜,AI 资讯,中文 AI 热点",

@@ -36,24 +36,43 @@
   - AICPB 榜单
   - LLM Stats
   - Skills Rank
-  - OpenAI 官方新闻
+  - OpenRouter
+  - ClawHub Skills / Plugins
+  - OpenAI
   - OpenAI Research
-  - Anthropic 官方新闻
-  - DeepMind 官方博客
-  - Meta AI 官方动态
+  - Anthropic
+  - DeepMind
+  - Meta AI
   - Hugging Face 博客 / 模型 / 热门论文
   - Papers with Code
-  - Mistral 官方新闻
-  - Cohere 官方博客
-  - Product Hunt AI
-  - Hacker News AI
+  - Mistral
+  - Cohere
+  - Product Hunt
+  - Hacker News
   - 新浪 AI 热榜
 - 当前仍在待攻坚来源：
-  - OpenRouter Rankings
   - Perplexity Blog
   - xAI News
   - Reddit 相关 AI 社区
-  - 说明：`OpenRouter Rankings` 已切到官方 datasets API，但生产环境仍需补充 `OPENROUTER_API_KEY` 后才会默认开放展示。
+
+- 说明：
+  - `OpenRouter` 当前已切到公开前台榜单接口，支持模型周榜、厂商份额、应用榜、性能榜等多个官方子榜。
+  - `ClawHub Plugins` 的 `Official only` / 多数官方分类接口当前在服务端直连场景下仍不稳定，因此前端只展示已验证可用的子类；后端预留已保留，后面官方稳定后可直接放开。
+
+## 下一波高价值来源
+
+- `Google AI / Google Developers AI`
+  - 价值：Gemini、Vertex AI、A2A / Agent 生态、开发者能力更新快，适合补官方工程动态。
+- `Microsoft AI / Azure AI / Microsoft Research`
+  - 价值：Copilot、Phi、企业落地、研究与产品双线并行，实用性强。
+- `NVIDIA Technical Blog / Research`
+  - 价值：推理基础设施、GPU、TensorRT-LLM、NIM、Agent infra，偏工程实战。
+- `Qwen / ModelScope`
+  - 价值：中文 AI 圈一手模型、Agent、开源生态信息源。
+- `LangChain / LangGraph Changelog`
+  - 价值：Agent 应用层工具链更新频繁，适合面向实战用户。
+- `vLLM / Ollama / Open WebUI`
+  - 价值：开源推理与本地部署生态的高频必看源，适合补“能直接用”的 AI 工程内容。
 
 
 ## 部署

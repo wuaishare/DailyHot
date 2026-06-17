@@ -22,6 +22,8 @@ const SOURCE_LOGO_MAP = {
   "reddit-localllama": "/logo/ai/reddit.png",
   "reddit-machinelearning": "/logo/ai/reddit.png",
   "reddit-artificial": "/logo/ai/reddit.png",
+  "clawhub-skills": "/logo/ai/clawhub-icon.png",
+  "clawhub-plugins": "/logo/ai/clawhub-icon.png",
 };
 
 const SOURCE_LOGO_ALIAS_MAP = {
