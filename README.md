@@ -26,6 +26,20 @@
 - 设置页面、列表页面布局优化
 - 已同步对接 DailyHotApi 中的所有热榜接口
 
+## 后续 AI 榜单方向
+
+- 已在 `DailyHotApi` 的 README 中增补「AI 信息源扩展规划（2026-06）」。
+- 当前更适合作为首批新增的一手 AI 圈信息源：
+  - Hugging Face Models
+  - Hugging Face Trending Papers
+  - LMArena
+  - Artificial Analysis
+  - OpenRouter Rankings
+- 现有项目内可继续强化的 AI 相关入口：
+  - 新浪 `AI热榜`
+  - Product Hunt
+  - Hacker News
+
 
 ## 部署
 
@@ -53,7 +67,7 @@ pnpm build
 
 ## 缓存版本
 
-展示版本来自 `package.json`，格式为 `v1.4.4 (构建号)`；括号内构建号优先由 Git 提交序号自动生成。CI 若是浅克隆会在构建时自动补全历史再计算提交序号；如果补全失败，会通过 GitHub API 读取当前提交的提交总数；如果 GitHub API 也失败，才退回到当前提交 SHA 派生数字，仍保证每次提交部署后缓存版本变化。前端缓存刷新只依据构建号判断，正常提交部署后无需手动修改缓存版本。
+展示版本来自 `package.json`，格式为 `v1.4.4 (YYMMDDHHMM)`；括号内版本号默认取当前构建所对应提交的时间，例如 `2606180930`。当前端发布后，只要提交时间变化，缓存版本也会随之变化；如果本地或 CI 无法读取 Git 提交时间，则退回到构建当下的 `YYMMDDHHMM`，避免出现 `00.0000.000000` 或时间戳样式的难读版本号。
 
 ## Vercel 部署
 

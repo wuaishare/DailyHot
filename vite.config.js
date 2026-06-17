@@ -54,92 +54,40 @@ function ensureFullGitHistory() {
   }
 }
 
-function readGitHubRepo() {
-  const owner = process.env.VERCEL_GIT_REPO_OWNER?.trim();
-  const repo = process.env.VERCEL_GIT_REPO_SLUG?.trim();
-  if (owner && repo) return `${owner}/${repo}`;
-
-  const remoteUrl = readGitValue(["config", "--get", "remote.origin.url"], "");
-  const matched = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/.]+)(?:\.git)?$/);
-  return matched ? `${matched[1]}/${matched[2]}` : "";
+function formatDateFallback() {
+  const date = new Date();
+  const year = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}${month}${day}${hours}${minutes}`;
 }
 
-async function readGitHubCommitCount() {
-  if (typeof fetch !== "function") return "";
-
-  const repo = readGitHubRepo();
-  const ref =
-    process.env.VERCEL_GIT_COMMIT_SHA?.trim() ||
-    process.env.VERCEL_GIT_COMMIT_REF?.trim() ||
-    readGitValue(["rev-parse", "HEAD"], "");
-  if (!repo || !ref) return "";
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-  try {
-    const response = await fetch(
-      `https://api.github.com/repos/${repo}/commits?sha=${encodeURIComponent(
-        ref
-      )}&per_page=1`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-          "User-Agent": "DailyHot-build-version",
-        },
-        signal: controller.signal,
-      }
-    );
-    if (!response.ok) return "";
-
-    const link = response.headers.get("link") || "";
-    const matched = link.match(/[?&]page=(\d+)>;\s*rel="last"/);
-    return matched ? matched[1] : "1";
-  } catch {
-    return "";
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-async function resolveBuildNumber() {
-  const envBuildNumber = process.env.VITE_BUILD_NUMBER?.trim();
-  if (envBuildNumber) return envBuildNumber;
+function resolveBuildDate() {
+  const envBuildDate = process.env.VITE_BUILD_NUMBER?.trim();
+  if (envBuildDate) return envBuildDate;
 
   ensureFullGitHistory();
 
-  const isStillShallow = readGitValue(
-    ["rev-parse", "--is-shallow-repository"],
-    "false"
+  return readGitValue(
+    ["log", "-1", "--format=%cd", "--date=format:%y%m%d%H%M"],
+    formatDateFallback()
   );
-  if (isStillShallow === "true") {
-    const githubCommitCount = await readGitHubCommitCount();
-    if (githubCommitCount) return githubCommitCount;
-
-    const vercelCommitSha = process.env.VERCEL_GIT_COMMIT_SHA?.trim();
-    return vercelCommitSha
-      ? parseInt(vercelCommitSha.slice(0, 8), 16).toString()
-      : Date.now().toString();
-  }
-
-  return readGitValue(["rev-list", "--count", "HEAD"], Date.now().toString());
 }
 
 export default defineConfig(async ({ mode }) => {
   const enablePrerender = process.env.PRERENDER === "true";
   const productVersion = readPackageVersion();
-  const buildNumber = await resolveBuildNumber();
-  const buildVersion = readGitValue(
-    ["log", "-1", "--format=%cd", "--date=format:%y.%m%d.%H%M%S"],
-    "00.0000.000000"
-  );
+  const buildDate = resolveBuildDate();
   return {
     base: loadEnv(mode, process.cwd())["VITE_DIR"],
     define: {
       __APP_VERSION__: JSON.stringify({
-        version: `${productVersion} (${buildNumber})`,
+        version: `${productVersion} (${buildDate})`,
         productVersion,
-        buildNumber,
-        buildVersion,
+        buildNumber: buildDate,
+        buildVersion: buildDate,
       }),
     },
     plugins: [
