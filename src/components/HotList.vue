@@ -14,7 +14,7 @@
           <div class="name">
             <n-avatar
               class="ico"
-              :src="`/logo/${hotData.name}.png?v=${cacheVersion}`"
+              :src="logoSrc(hotData.name)"
               fallback-src="/ico/icon_error.png"
             />
             <n-text class="name-text">{{ hotData.label }}</n-text>
@@ -202,6 +202,40 @@ const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
 const cacheVersion = getCacheVersion();
+const logoAliasMap = {
+  "producthunt-ai": "producthunt",
+  "hackernews-ai": "hackernews",
+  "sina-ai": "sina",
+};
+const aiLogoSources = new Set([
+  "openrouter-rankings",
+  "artificialanalysis",
+  "lmarena",
+  "designarena",
+  "aicpb-rankings",
+  "llm-stats",
+  "skills-rank",
+  "openai-news",
+  "openai-research",
+  "anthropic-news",
+  "deepmind-blog",
+  "meta-ai-blog",
+  "huggingface-blog",
+  "mistral-news",
+  "cohere-blog",
+  "perplexity-blog",
+  "xai-news",
+  "hf-models",
+  "hf-papers",
+  "paperswithcode",
+  "reddit-localllama",
+  "reddit-machinelearning",
+  "reddit-artificial",
+]);
+const logoSrc = (name) =>
+  aiLogoSources.has(name)
+    ? "/ico/favicon.png"
+    : `/logo/${logoAliasMap[name] || name}.png?v=${cacheVersion}`;
 const props = defineProps({
   // 热榜数据
   hotData: {
