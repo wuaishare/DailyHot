@@ -78,17 +78,17 @@ function resolveBuildDate() {
 
   ensureFullGitHistory();
 
-  return readGitValue(
-    [
-      "log",
-      "-1",
-      "--format=%cd",
-      "--date=format:%y%m%d%H%M",
-      "--",
-      ...versionSourcePaths,
-    ],
-    formatDateFallback()
-  );
+  const dates = versionSourcePaths
+    .map((pathName) =>
+      readGitValue(
+        ["log", "-1", "--format=%cd", "--date=format:%y%m%d%H%M", "--", pathName],
+        ""
+      )
+    )
+    .filter(Boolean)
+    .sort();
+
+  return dates[dates.length - 1] || formatDateFallback();
 }
 
 export default defineConfig(async ({ mode }) => {
