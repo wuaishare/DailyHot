@@ -37,9 +37,12 @@
   - LLM Stats
   - Skills Rank
   - OpenAI 官方新闻
+  - OpenAI Research
   - Anthropic 官方新闻
   - DeepMind 官方博客
+  - Meta AI 官方动态
   - Hugging Face 博客 / 模型 / 热门论文
+  - Papers with Code
   - Mistral 官方新闻
   - Cohere 官方博客
   - Product Hunt AI
@@ -47,11 +50,10 @@
   - 新浪 AI 热榜
 - 当前仍在待攻坚来源：
   - OpenRouter Rankings
-  - OpenAI Research
-  - Meta AI Blog
   - Perplexity Blog
   - xAI News
   - Reddit 相关 AI 社区
+  - 说明：`OpenRouter Rankings` 已切到官方 datasets API，但生产环境仍需补充 `OPENROUTER_API_KEY` 后才会默认开放展示。
 
 
 ## 部署

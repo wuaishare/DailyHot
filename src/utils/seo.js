@@ -170,6 +170,11 @@ const LIST_SEO_MAP = {
     keywords: "OpenAI 官方新闻,OpenAI 更新,OpenAI 博客",
     description: "OpenAI 官方新闻与产品发布动态。",
   },
+  "openai-research": {
+    label: "OpenAI Research",
+    keywords: "OpenAI Research,OpenAI 研究动态,AI 官方研究",
+    description: "OpenAI Research 官方研究与技术发布更新。",
+  },
   "anthropic-news": {
     label: "Anthropic 官方新闻",
     keywords: "Anthropic 官方新闻,Claude 更新,Anthropic 博客",
@@ -179,6 +184,11 @@ const LIST_SEO_MAP = {
     label: "DeepMind 官方博客",
     keywords: "DeepMind 博客,Google DeepMind,AI 研究更新",
     description: "Google DeepMind 官方博客与研究更新。",
+  },
+  "meta-ai-blog": {
+    label: "Meta AI 官方动态",
+    keywords: "Meta AI,Meta Llama,Meta 官方 AI 动态",
+    description: "Meta 官方 AI 动态与 Llama 相关新闻更新。",
   },
   "huggingface-blog": {
     label: "Hugging Face 官方博客",
@@ -208,7 +218,7 @@ const LIST_SEO_MAP = {
   paperswithcode: {
     label: "Papers with Code",
     keywords: "Papers with Code,热门论文,论文代码",
-    description: "Papers with Code 热门论文与代码趋势。",
+    description: "Papers with Code 热门论文与代码趋势，当前由 Hugging Face Trending Papers 承载。",
   },
   "producthunt-ai": {
     label: "Product Hunt AI",
