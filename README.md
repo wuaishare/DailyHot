@@ -62,12 +62,12 @@ pnpm build
 - `VITE_SITE_URL`：站点线上域名（用于生成 `sitemap.xml`/`robots.txt` 与 canonical），注意用完整域名（含 'https://'），不要带末尾 '/'。
 - `VITE_ICP`：ICP 备案号（可选）。
 - `VITE_DIR`：站点部署路径（如 `/` 或子目录路径）。
-- `VITE_BUILD_NUMBER`：构建号覆盖值（可选；默认使用 Git 提交序号，用于 `v1.4.4 (构建号)` 展示与缓存刷新）。
+- `VITE_BUILD_NUMBER`：构建号覆盖值（可选；默认使用最近一次前端代码提交时间，用于 `v1.4.4 (构建号)` 展示与缓存刷新）。
 - `PRERENDER`：是否开启预渲染（默认关闭；本地需要预渲染时设置 `PRERENDER=true pnpm build`，Vercel 等 CI 若缺少 chromium 依赖请保持默认）。
 
 ## 缓存版本
 
-展示版本来自 `package.json`，格式为 `v1.4.4 (YYMMDDHHMM)`；括号内版本号默认取当前构建所对应提交的时间，例如 `2606180930`。当前端发布后，只要提交时间变化，缓存版本也会随之变化；如果本地或 CI 无法读取 Git 提交时间，则退回到构建当下的 `YYMMDDHHMM`，避免出现 `00.0000.000000` 或时间戳样式的难读版本号。
+展示版本来自 `package.json`，格式为 `v1.4.4 (YYMMDDHHMM)`；括号内版本号默认取最近一次前端代码提交时间，例如 `2606102007`。这里的“代码提交”只统计 `src/`、`public/`、`api/`、`index.html`、`package.json`、`vercel.json` 等实际影响站点产物的路径，不会因为单纯修改 `README` 或构建脚本说明文字而改变页脚版本。若本地或 CI 无法读取 Git 提交时间，则退回到构建当下的 `YYMMDDHHMM`，避免出现 `00.0000.000000` 或时间戳样式的难读版本号。
 
 ## Vercel 部署
 

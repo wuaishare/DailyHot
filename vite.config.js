@@ -11,6 +11,14 @@ import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 
 const repoRoot = fileURLToPath(new URL(".", import.meta.url));
+const versionSourcePaths = [
+  "src",
+  "public",
+  "api",
+  "index.html",
+  "package.json",
+  "vercel.json",
+];
 
 function readPackageVersion() {
   try {
@@ -71,7 +79,14 @@ function resolveBuildDate() {
   ensureFullGitHistory();
 
   return readGitValue(
-    ["log", "-1", "--format=%cd", "--date=format:%y%m%d%H%M"],
+    [
+      "log",
+      "-1",
+      "--format=%cd",
+      "--date=format:%y%m%d%H%M",
+      "--",
+      ...versionSourcePaths,
+    ],
     formatDateFallback()
   );
 }
