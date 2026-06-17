@@ -112,8 +112,9 @@ export default defineConfig(async ({ mode }) => {
   if (isStillShallow === "true" && typeof fetch === "function") {
     const repoInfo = readGitHubRepo();
     const ref =
+      process.env.VERCEL_GIT_COMMIT_SHA?.trim() ||
       process.env.VERCEL_GIT_COMMIT_REF?.trim() ||
-      readGitValue(["rev-parse", "--abbrev-ref", "HEAD"], "");
+      readGitValue(["rev-parse", "HEAD"], "");
     if (repoInfo && ref) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
