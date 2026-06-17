@@ -9,7 +9,9 @@
     "dev": "vite",
     "prebuild": "node scripts/generate-seo-files.js",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "print:build-number": "node scripts/resolve-code-build-date.cjs",
+    "deploy:prod": "node scripts/vercel-deploy-prod.cjs"
   },
   "dependencies": {
     "@icon-park/vue-next": "^1.4.2",
