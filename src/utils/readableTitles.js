@@ -43,7 +43,7 @@ const toTranslatedMap = (entries = []) =>
 const enqueueLocaleRequest = (locale, request) =>
   new Promise((resolve, reject) => {
     const pool =
-      localeRequestPool.get(locale) || { active: 0, limit: 2, queue: [] };
+      localeRequestPool.get(locale) || { active: 0, limit: 4, queue: [] };
     localeRequestPool.set(locale, pool);
 
     const run = () => {
