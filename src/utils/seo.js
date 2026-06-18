@@ -12,14 +12,165 @@ import {
 import { getSourceSubtypeOptions } from "@/utils/sourceSubtypes";
 
 const DEFAULT_SEO = {
-  title: "今日热榜 - 全网热点聚合与多平台热榜实时更新",
+  title: "吾爱热榜 - 全网热点排行榜聚合与实时趋势追踪",
   description:
-    "今日热榜聚合微博、知乎、抖音、B站、头条等多平台热榜，一站式浏览全网热点。支持榜单筛选与排序、自动刷新和简洁高效的阅读体验。",
+    "吾爱热榜聚合微博、知乎、抖音、B站、头条、新闻站与垂直社区热榜，支持分类浏览、榜单切换、自动刷新与多语言阅读，帮助你一站式掌握全网热点。",
   keywords:
-    "今日热榜,全网热点,热榜聚合,微博热搜,知乎热榜,抖音热榜,B站热榜,头条热榜,实时热点,榜单排行",
+    "吾爱热榜,今日热榜,全网热点,热榜聚合,微博热搜,知乎热榜,抖音热榜,B站热榜,头条热榜,实时热点,榜单排行",
   ogImage: "/ico/favicon.png",
-  siteName: "今日热榜",
+  siteName: "吾爱热榜",
   locale: "zh_CN",
+};
+
+const SEO_BRAND_NAME_ZH = "吾爱热榜";
+
+const CATEGORY_SEO_MAP = {
+  "综合": {
+    title: "综合热榜",
+    titleTail: "微博、知乎、抖音、头条与新闻站全网热点聚合",
+    description:
+      "综合热榜聚合微博热搜、知乎热榜、抖音热榜、百度热搜、腾讯新闻、网易新闻等多平台实时热点，适合一站式追踪全网焦点、突发资讯与大众话题。",
+    keywords: [
+      "综合热榜",
+      "全网热点",
+      "微博热搜",
+      "知乎热榜",
+      "抖音热榜",
+      "百度热搜",
+      "新闻热榜",
+      "实时热点",
+    ],
+  },
+  "科技": {
+    title: "科技热榜",
+    titleTail: "科技新闻、数码资讯与开发者趋势聚合",
+    description:
+      "科技热榜聚合 36氪、IT之家、少数派、CSDN、掘金、GitHub 趋势、酷安等平台内容，覆盖科技新闻、数码资讯、开源项目、编程实践与开发者社区热点。",
+    keywords: [
+      "科技热榜",
+      "科技新闻",
+      "数码资讯",
+      "开发者社区",
+      "GitHub 趋势",
+      "开源项目",
+      "CSDN 热榜",
+      "掘金热榜",
+    ],
+  },
+  "生活": {
+    title: "生活热榜",
+    titleTail: "消费、阅读、影视与生活方式热点聚合",
+    description:
+      "生活热榜聚合什么值得买、微信读书、豆瓣电影、豆瓣小组、纽约时报、中央气象台等内容，覆盖消费决策、热门书影音、天气与日常生活方式话题。",
+    keywords: [
+      "生活热榜",
+      "消费热点",
+      "微信读书热榜",
+      "豆瓣电影热榜",
+      "什么值得买",
+      "生活方式",
+      "阅读榜单",
+      "影视热榜",
+    ],
+  },
+  "游戏": {
+    title: "游戏热榜",
+    titleTail: "游戏资讯、官方公告与玩家社区讨论聚合",
+    description:
+      "游戏热榜聚合游戏葡萄、游研社、米游社、原神、崩坏：星穹铁道、英雄联盟等热门榜单，覆盖游戏资讯、官方动态、版本公告与玩家讨论热点。",
+    keywords: [
+      "游戏热榜",
+      "游戏资讯",
+      "玩家社区",
+      "米游社",
+      "原神热榜",
+      "星穹铁道热榜",
+      "英雄联盟热榜",
+      "游戏公告",
+    ],
+  },
+  "社区": {
+    title: "社区热榜",
+    titleTail: "论坛热议、社区热帖与开发者讨论聚合",
+    description:
+      "社区热榜聚合百度贴吧、V2EX、NGA、吾爱破解、天涯、Nodeseek 等平台热门帖子，帮助你快速掌握论坛热议、社区热帖与圈层讨论动态。",
+    keywords: [
+      "社区热榜",
+      "论坛热议",
+      "V2EX 热榜",
+      "百度贴吧",
+      "NGA 热帖",
+      "吾爱破解",
+      "Nodeseek",
+      "社区讨论",
+    ],
+  },
+  AI: {
+    title: "AI 热榜",
+    titleTail: "AI 模型排行榜、AI 资讯与热门工具榜单聚合",
+    description:
+      "AI 热榜聚合 OpenRouter、Artificial Analysis、Arena AI、LLM Stats、OpenAI、Anthropic、Hugging Face、Product Hunt 等平台，覆盖模型排行、官方动态、论文趋势与 AI 产品发现。",
+    keywords: [
+      "AI热榜",
+      "AI排行榜",
+      "大模型排行榜",
+      "AI资讯",
+      "OpenRouter",
+      "OpenAI",
+      "Hugging Face",
+      "AI产品",
+    ],
+  },
+};
+
+const trimTerminalPunctuation = (value = "") =>
+  String(value)
+    .trim()
+    .replace(/[。！？!?,，；;：:]+$/gu, "");
+
+const escapeRegExp = (value = "") =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const stripLeadingPhrases = (value = "", phrases = []) =>
+  phrases
+    .filter(Boolean)
+    .reduce(
+      (result, phrase) =>
+        result.replace(new RegExp(`^${escapeRegExp(String(phrase).trim())}[\\s·:：-]*`, "u"), ""),
+      String(value).trim()
+    )
+    .trim();
+
+const normalizeTitleLabel = (value = "") =>
+  String(value)
+    .replace(/\s*·\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const keywordTokensFrom = (value) =>
+  Array.isArray(value)
+    ? value.flatMap((item) => keywordTokensFrom(item))
+    : String(value || "")
+        .split(/[,\n]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+const mergeKeywords = (...segments) =>
+  [...new Set(segments.flatMap((segment) => keywordTokensFrom(segment)))].join(",");
+
+const buildZhTitle = (main, detail) =>
+  detail
+    ? `${normalizeTitleLabel(main)} - ${detail} | ${SEO_BRAND_NAME_ZH}`
+    : `${normalizeTitleLabel(main)} | ${SEO_BRAND_NAME_ZH}`;
+
+const buildZhListIntent = ({
+  sourceLabel,
+  subtypeLabel,
+  meta,
+}) => {
+  const rawDescription = trimTerminalPunctuation(meta?.description || "");
+  const stripped = stripLeadingPhrases(rawDescription, [sourceLabel, subtypeLabel]);
+  return stripped || "实时热榜与趋势榜";
 };
 
 const LIST_SEO_MAP = {
@@ -555,6 +706,35 @@ const getCategorySeo = (route, canonical) => {
     ? getCategoryLabel(rawCategoryName, locale)
     : "";
   if (!categoryName) return null;
+  const categoryMeta = CATEGORY_SEO_MAP[rawCategoryName];
+  if (locale === "zh-CN" && categoryMeta) {
+    const title = buildZhTitle(categoryMeta.title, categoryMeta.titleTail);
+    const description = categoryMeta.description;
+    const keywords = mergeKeywords(
+      categoryMeta.keywords,
+      rawCategoryName,
+      categoryName,
+      SEO_BRAND_NAME_ZH
+    );
+    return {
+      title,
+      description,
+      keywords,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        inLanguage: getLocaleMeta(locale)?.htmlLang || "zh-CN",
+        url: canonical,
+        mainEntity: {
+          "@type": "ItemList",
+          name: categoryMeta.title,
+          itemListOrder: "Descending",
+        },
+      },
+    };
+  }
   const title = i18n.global.t(
     "seo.categoryTitle",
     { category: categoryName },
@@ -605,7 +785,9 @@ const getListSeo = (route, siteUrl, canonical) => {
     : route?.params?.subtypeSlug;
   const subtypeLabel = getSubtypeLabel(sourceKey, subtypeSlug, locale);
   const label = subtypeLabel ? `${sourceLabel} · ${subtypeLabel}` : sourceLabel;
-  const localizedDefaultTitle = i18n.global.t("seo.listTitle", {}, { locale });
+  const titleLabel = normalizeTitleLabel(
+    subtypeLabel ? `${sourceLabel} ${subtypeLabel}` : sourceLabel
+  );
   const localizedDefaultDescription = i18n.global.t(
     "seo.listDescription",
     {},
@@ -643,12 +825,30 @@ const getListSeo = (route, siteUrl, canonical) => {
         ? meta.keywords
         : i18n.global.t("seo.sourceKeywords", { label: sourceLabel }, { locale });
   const localizedSiteName = i18n.global.t("common.siteName", {}, { locale });
+  const zhIntent = buildZhListIntent({
+    sourceLabel,
+    subtypeLabel,
+    meta,
+  });
   const title =
     locale === "zh-CN"
-      ? `${label} - 今日热榜_吾爱分享网`
+      ? buildZhTitle(titleLabel, zhIntent)
       : `${label} - ${localizedSiteName}`;
-  const finalDescription = description || localizedDefaultDescription;
-  const finalKeywords = keywords || localizedDefaultKeywords;
+  const finalDescription =
+    locale === "zh-CN"
+      ? `${titleLabel}页面，聚合${zhIntent}、对应平台最新数据与原站入口，支持实时浏览、榜单切换、分页跳转与一键直达。`
+      : description || localizedDefaultDescription;
+  const finalKeywords =
+    locale === "zh-CN"
+      ? mergeKeywords(
+          keywords,
+          sourceLabel,
+          subtypeLabel,
+          zhIntent,
+          titleLabel,
+          SEO_BRAND_NAME_ZH
+        )
+      : keywords || localizedDefaultKeywords;
 
   return {
     title,
@@ -710,7 +910,6 @@ export const applySeoMeta = (route) => {
     { locale }
   );
   const localizedListKeywords = i18n.global.t("seo.listKeywords", {}, { locale });
-  const isLocaleRoute = locale !== "zh-CN";
   const isListRoute = ["list", "list-locale", "list-legacy"].includes(route?.name);
   const isHomeRoute = ["home", "home-locale"].includes(route?.name);
 
@@ -718,8 +917,8 @@ export const applySeoMeta = (route) => {
     listSeo?.title ||
     categorySeo?.title ||
     pageSeo?.title ||
-    (isLocaleRoute && isHomeRoute ? localizedHomeTitle : null) ||
-    (isLocaleRoute && isListRoute ? localizedListTitle : null) ||
+    (isHomeRoute ? localizedHomeTitle : null) ||
+    (isListRoute ? localizedListTitle : null) ||
     resolveValue(meta.seoTitle || meta.title, context) ||
     localizedHomeTitle ||
     DEFAULT_SEO.title;
@@ -727,16 +926,16 @@ export const applySeoMeta = (route) => {
     listSeo?.description ||
     categorySeo?.description ||
     pageSeo?.description ||
-    (isLocaleRoute && isHomeRoute ? localizedHomeDescription : null) ||
-    (isLocaleRoute && isListRoute ? localizedListDescription : null) ||
+    (isHomeRoute ? localizedHomeDescription : null) ||
+    (isListRoute ? localizedListDescription : null) ||
     resolveValue(meta.description, context) ||
     localizedHomeDescription ||
     DEFAULT_SEO.description;
   const keywords =
     listSeo?.keywords ||
     categorySeo?.keywords ||
-    (isLocaleRoute && isHomeRoute ? localizedHomeKeywords : null) ||
-    (isLocaleRoute && isListRoute ? localizedListKeywords : null) ||
+    (isHomeRoute ? localizedHomeKeywords : null) ||
+    (isListRoute ? localizedListKeywords : null) ||
     resolveValue(meta.keywords, context) ||
     localizedHomeKeywords ||
     DEFAULT_SEO.keywords;

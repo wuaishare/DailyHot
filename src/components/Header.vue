@@ -255,6 +255,8 @@ const isSmallScreen = ref(false);
 const isSettingPage = computed(
   () => ["setting", "setting-locale"].includes(router.currentRoute.value?.name)
 );
+const isRefreshEnabledRoute = (routeName) =>
+  ["home", "home-locale", "category", "category-locale"].includes(routeName);
 const currentLocaleMeta = computed(
   () =>
     getSupportedLocales().find((item) => item.code === locale.value) ||
@@ -609,8 +611,7 @@ watch(
     const categoryName = getCategoryNameBySlug(val.params?.categorySlug);
     store.setActiveCategory(categoryName || "全部");
     locale.value = getLocaleFromRoute(val);
-    const isHome = ["/", "/en", "/zh-tw", "/ja", "/ko"].includes(val.path);
-    showRefresh.value = isHome ? true : false;
+    showRefresh.value = isRefreshEnabledRoute(val?.name);
   }
 );
 
@@ -621,9 +622,7 @@ onMounted(() => {
   const categoryName = getCategoryNameBySlug(router.currentRoute.value?.params?.categorySlug);
   store.setActiveCategory(categoryName || "全部");
   locale.value = getLocaleFromRoute(router.currentRoute.value);
-  showRefresh.value = ["/", "/en", "/zh-tw", "/ja", "/ko"].includes(
-    router.currentRoute.value?.path
-  );
+  showRefresh.value = isRefreshEnabledRoute(router.currentRoute.value?.name);
   syncTimeForm();
   setupCountdown();
   updateScreen();

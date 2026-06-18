@@ -232,19 +232,19 @@ export const messages = {
       importSuccess: "设置导入成功",
     },
     seo: {
-      homeTitle: "今日热榜 - 全网热点聚合与多平台热榜实时更新_吾爱分享网",
+      homeTitle: "吾爱热榜 - 全网热点排行榜聚合、分类热榜与实时趋势追踪_吾爱分享网",
       homeDescription:
-        "今日热榜聚合微博、知乎、抖音、B站、头条等多平台热榜，一站式浏览全网热点。支持榜单筛选与排序、自动刷新和简洁高效的阅读体验。",
+        "吾爱热榜聚合微博、知乎、抖音、B站、头条、新闻站与垂直社区热榜，支持分类浏览、榜单切换、自动刷新与多语言阅读，帮助你一站式掌握全网热点。",
       homeKeywords:
-        "今日热榜,全网热点,热榜聚合,微博热搜,知乎热榜,抖音热榜,B站热榜,头条热榜,实时热点,榜单排行",
-      listTitle: "热榜列表 - 今日热榜",
+        "吾爱热榜,今日热榜,全网热点,热榜聚合,微博热搜,知乎热榜,抖音热榜,B站热榜,头条热榜,实时热点,榜单排行",
+      listTitle: "平台热榜详情页 - 吾爱热榜",
       listDescription:
-        "按平台查看实时热榜排行，覆盖微博、知乎、抖音、B站等热门站点，支持分页与快速跳转。",
+        "按平台查看实时热榜排行与榜单详情，支持子分类切换、分页浏览、自动刷新与原站直达。",
       listKeywords:
-        "热榜列表,热门榜单,实时排行,微博热搜,知乎热榜,抖音热榜,B站热榜",
-      categoryTitle: "{category}热榜 - 今日热榜",
-      categoryDescription: "浏览 {category} 分类下的实时热榜与热门话题。",
-      categoryKeywords: "{category},热榜,实时热点,分类榜单,今日热榜",
+        "热榜详情页,平台榜单,热门榜单,实时排行,榜单详情,子分类热榜,自动刷新",
+      categoryTitle: "{category}热榜 - 吾爱热榜",
+      categoryDescription: "浏览 {category} 分类下的实时热榜、热门话题与代表性平台榜单。",
+      categoryKeywords: "{category},热榜,实时热点,分类榜单,吾爱热榜",
       sourceDescription:
         "{label} 实时更新，支持快速浏览、分页跳转与热门话题追踪。",
       sourceSubtypeDescription:
@@ -509,17 +509,17 @@ export const messages = {
       importSuccess: "Settings imported",
     },
     seo: {
-      homeTitle: "DailyHot - Real-time trending topics across platforms",
+      homeTitle: "DailyHot - Cross-platform trending rankings and real-time hot topics",
       homeDescription:
         "DailyHot aggregates trending topics from Weibo, Zhihu, Douyin, Bilibili, Toutiao and more, helping you browse cross-platform trends in one place.",
       homeKeywords:
         "DailyHot,trending topics,hot lists,Weibo,Zhihu,Douyin,Bilibili,real-time trends",
-      listTitle: "Rankings - DailyHot",
+      listTitle: "Platform Ranking Details - DailyHot",
       listDescription:
         "Browse real-time ranking pages by platform with quick access to trending content and category filters.",
       listKeywords:
         "rankings,hot list,trending topics,real-time ranking,Weibo,Zhihu,Douyin,Bilibili",
-      categoryTitle: "{category} Rankings - DailyHot",
+      categoryTitle: "{category} Hot Rankings - DailyHot",
       categoryDescription:
         "Browse the latest trending topics inside the {category} category.",
       categoryKeywords:
@@ -785,17 +785,17 @@ export const messages = {
       importSuccess: "設定匯入成功",
     },
     seo: {
-      homeTitle: "今日熱榜 - 全網熱點聚合與多平台熱榜即時更新",
+      homeTitle: "吾愛熱榜 - 全網熱點排行榜聚合與即時趨勢追蹤",
       homeDescription:
         "今日熱榜彙整微博、知乎、抖音、B站、頭條等多平台熱門榜單，一站式掌握全網趨勢。",
       homeKeywords:
         "今日熱榜,全網熱點,熱榜聚合,微博熱搜,知乎熱榜,抖音熱榜,B站熱榜,即時趨勢",
-      listTitle: "熱榜列表 - 今日熱榜",
+      listTitle: "平台熱榜詳情頁 - 吾愛熱榜",
       listDescription:
         "依平台瀏覽即時熱榜排行，快速查看熱門內容與分類趨勢。",
       listKeywords:
         "熱榜列表,熱門榜單,即時排行,微博熱搜,知乎熱榜,抖音熱榜,B站熱榜",
-      categoryTitle: "{category}熱榜 - 今日熱榜",
+      categoryTitle: "{category}熱榜 - 吾愛熱榜",
       categoryDescription: "瀏覽 {category} 分類下的即時熱榜與熱門話題。",
       categoryKeywords: "{category},熱榜,即時熱點,分類榜單,今日熱榜",
       sourceDescription:
