@@ -2,15 +2,18 @@ const SOURCE_LOGO_MAP = {
   "openrouter-rankings": "/logo/ai/openrouter-rankings.svg",
   artificialanalysis: "/logo/ai/artificialanalysis.png",
   lmarena: "/logo/ai/lmarena.svg",
+  "arena-ai": "https://arena.ai/favicon.ico",
   designarena: "/logo/ai/designarena.png",
   "aicpb-rankings": "/logo/ai/aicpb-rankings.png",
   "llm-stats": "/logo/ai/llm-stats.svg",
   "skills-rank": "/logo/ai/skills-rank.svg",
+  openai: "/logo/ai/openai-news.svg",
   "openai-news": "/logo/ai/openai-news.svg",
   "openai-research": "/logo/ai/openai-research.svg",
   "anthropic-news": "/logo/ai/anthropic-news.svg",
   "deepmind-blog": "/logo/ai/deepmind-blog.svg",
   "meta-ai-blog": "/logo/ai/meta-ai-blog.svg",
+  huggingface: "/logo/ai/huggingface-blog.svg",
   "huggingface-blog": "/logo/ai/huggingface-blog.svg",
   "hf-models": "/logo/ai/hf-models.svg",
   "hf-papers": "/logo/ai/hf-papers.svg",
@@ -37,6 +40,9 @@ export const getSourceLogo = (name, cacheVersion = "") => {
   const path = SOURCE_LOGO_MAP[name]
     ? SOURCE_LOGO_MAP[name]
     : `/logo/${SOURCE_LOGO_ALIAS_MAP[name] || name}.png`;
+  if (/^https?:\/\//.test(path)) {
+    return `${path}${path.includes("?") ? "&" : "?"}v=${cacheVersion}`;
+  }
   return `${path}?v=${cacheVersion}`;
 };
 

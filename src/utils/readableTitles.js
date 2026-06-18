@@ -4,14 +4,14 @@ import { getReadableTranslations } from "@/api";
 const READABLE_TRANSLATION_LOCALES = new Set(["zh-CN", "zh-TW"]);
 
 const READABLE_TRANSLATION_SOURCES = new Set([
-  "openai-news",
-  "openai-research",
+  "openai",
   "anthropic-news",
   "deepmind-blog",
   "meta-ai-blog",
-  "huggingface-blog",
+  "huggingface",
   "mistral-news",
   "cohere-blog",
+  "arena-ai",
   "hf-papers",
   "paperswithcode",
   "producthunt-ai",

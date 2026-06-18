@@ -258,6 +258,7 @@ const showImages = computed(() => store.showImages);
 const shouldEnhanceReadableTitles = computed(() =>
   shouldUseReadableTitleTranslation(props.hotData.name, locale.value)
 );
+const HOT_LIST_VISIBLE_LIMIT = 15;
 const sourceLabel = computed(() =>
   getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
 );
@@ -273,7 +274,7 @@ const cardSubtitle = computed(() => {
 });
 let hotListRequestId = 0;
 const visibleItems = computed(() =>
-  (hotListData.value?.data || []).slice(0, 15).map((item) => {
+  (hotListData.value?.data || []).slice(0, HOT_LIST_VISIBLE_LIMIT).map((item) => {
     const originalTitle = String(item?.originalTitle || "");
     return {
       ...item,
@@ -358,7 +359,7 @@ const getHotListsData = async (name, isNew = false) => {
           ? {
               ...buildSourceSubtypeParams(item.name, activeSubType.value),
               locale: locale.value,
-              translate_limit: 5,
+              translate_limit: HOT_LIST_VISIBLE_LIMIT,
               translate_offset: 0,
               translate_nonce: Date.now(),
             }

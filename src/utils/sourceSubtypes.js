@@ -92,6 +92,143 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "arena-ai": [
+    {
+      key: "chat",
+      label: "Chat",
+      items: [
+        { label: "综合", value: "text" },
+        { label: "Agent", value: "agent" },
+        { label: "Vision", value: "vision" },
+        { label: "Document", value: "document" },
+        { label: "Search", value: "search" },
+      ],
+    },
+    {
+      key: "code",
+      label: "Code",
+      items: [
+        { label: "WebDev", value: "code-webdev" },
+        { label: "HTML", value: "code-webdev-html" },
+        { label: "React", value: "code-webdev-react" },
+        { label: "Image to WebDev", value: "code-image-to-webdev" },
+      ],
+    },
+    {
+      key: "image",
+      label: "Image",
+      items: [
+        { label: "Text to Image", value: "text-to-image" },
+        { label: "Image Edit", value: "image-edit" },
+      ],
+    },
+    {
+      key: "video",
+      label: "Video",
+      items: [
+        { label: "Text to Video", value: "text-to-video" },
+        { label: "Image to Video", value: "image-to-video" },
+        { label: "Video Edit", value: "video-edit" },
+      ],
+    },
+  ],
+  "artificialanalysis": [
+    {
+      key: "default",
+      label: "",
+      items: [
+        { label: "模型榜", value: "models" },
+        { label: "厂商榜", value: "providers" },
+      ],
+    },
+  ],
+  "aicpb-rankings": [
+    {
+      key: "global",
+      label: "全球",
+      items: [
+        { label: "网站", value: "global-web" },
+        { label: "App", value: "global-app" },
+        { label: "云服务", value: "ai-cloud-web" },
+      ],
+    },
+    {
+      key: "segments",
+      label: "细分",
+      items: [
+        { label: "中国", value: "china-web" },
+        { label: "聊天", value: "chatbot-web" },
+        { label: "搜索", value: "search-web" },
+        { label: "Vibe Coding", value: "vibe-coding-web" },
+        { label: "Agent", value: "agent-web" },
+        { label: "Claw Agent", value: "openclaw-agent-web" },
+        { label: "角色", value: "character-web" },
+        { label: "图片生成", value: "image-generator-web" },
+        { label: "图片编辑", value: "image-editor-web" },
+        { label: "视频生成", value: "video-generator-web" },
+        { label: "视频编辑", value: "video-editor-web" },
+        { label: "PPT", value: "ppt-web" },
+        { label: "音乐", value: "music-web" },
+        { label: "会议", value: "meeting-web" },
+      ],
+    },
+    {
+      key: "growth",
+      label: "增速",
+      items: [
+        { label: "全球增长", value: "global-growth-web" },
+        { label: "中国增长", value: "china-growth-web" },
+        { label: "Claw 增长", value: "openclaw-growth-web" },
+        { label: "全球放缓", value: "global-slowdown-web" },
+      ],
+    },
+  ],
+  "llm-stats": [
+    {
+      key: "core",
+      label: "综合",
+      items: [
+        { label: "总榜", value: "llm-leaderboard" },
+        { label: "开源榜", value: "open-llm-leaderboard" },
+      ],
+    },
+    {
+      key: "scenario",
+      label: "场景",
+      items: [
+        { label: "编程", value: "best-ai-for-coding" },
+        { label: "写作", value: "best-ai-for-writing" },
+        { label: "数学", value: "best-ai-for-math" },
+        { label: "研究", value: "best-ai-for-research" },
+        { label: "长上下文", value: "best-ai-for-long-context" },
+        { label: "工具调用", value: "best-ai-for-tool-calling" },
+        { label: "推理", value: "best-ai-for-reasoning" },
+        { label: "图像生成", value: "best-ai-for-image-generation" },
+        { label: "视频生成", value: "best-ai-for-video-generation" },
+      ],
+    },
+  ],
+  openai: [
+    {
+      key: "default",
+      label: "",
+      items: [
+        { label: "官方新闻", value: "news" },
+        { label: "官方研究", value: "research" },
+      ],
+    },
+  ],
+  huggingface: [
+    {
+      key: "default",
+      label: "",
+      items: [
+        { label: "官方博客", value: "blog" },
+        { label: "模型榜", value: "models" },
+        { label: "论文榜", value: "papers" },
+      ],
+    },
+  ],
   "openrouter-rankings": [
     {
       key: "usage",
