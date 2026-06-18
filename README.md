@@ -21,6 +21,8 @@
 - 自动刷新与倒计时控制（支持暂停/继续）
 - 设置导入导出，方便备份迁移
 - 备用 API 自动回退，失败时自动切换并记住
+- 多语言界面与动态内容翻译增强，当前内置 `简体中文 / English / 繁體中文 / 日本語 / 한국어`
+- 多语言 SEO：支持 canonical、hreflang、语言前缀路由、分类页与榜单页静态路径
 - 主题切换、紧凑模式、列表字体大小与跳转方式
 - 热榜源有封面图数据且无防盗链时会自动显示新闻封面图（首页鼠标悬浮显示、列表页直接显示）
 - 设置页面、列表页面布局优化
@@ -90,6 +92,20 @@ pnpm build
 // 构建时会预渲染 首页 / 榜单页，并生成 sitemap.xml 与 robots.txt
 ```
 
+## 多语言与 SEO 路径
+
+- 默认语言 `zh-CN` 使用根路径，如 `/`、`/category/ai`、`/rank/openrouter-rankings/models-week`
+- 非默认语言使用语言前缀：
+  - `/en/`
+  - `/zh-tw/`
+  - `/ja/`
+  - `/ko/`
+- 主要 SEO 路径：
+  - 首页：`/:lang?/`
+  - 分类页：`/:lang?/category/:categorySlug`
+  - 榜单页：`/:lang?/rank/:sourceSlug/:subtypeSlug?`
+- 旧版 `/list?type=xxx&subtype=yyy` 仍可访问，但会自动跳转到新的 SEO 友好路径。
+
 ## 环境变量
 
 - `VITE_GLOBAL_API`：热榜 API 地址。
@@ -98,6 +114,7 @@ pnpm build
 - `VITE_ICP`：ICP 备案号（可选）。
 - `VITE_DIR`：站点部署路径（如 `/` 或子目录路径）。
 - `VITE_BUILD_NUMBER`：构建号覆盖值（可选；默认使用最近一次前端代码提交时间，用于 `v1.4.4 (构建号)` 展示与缓存刷新）。
+- `VITE_CLARITY_PROJECT_ID`：Microsoft Clarity 项目 ID（可选；配合站点统计启用行为回放与点击热图）。
 - `PRERENDER`：是否开启预渲染（默认关闭；本地需要预渲染时设置 `PRERENDER=true pnpm build`，Vercel 等 CI 若缺少 chromium 依赖请保持默认）。
 
 ## 缓存版本

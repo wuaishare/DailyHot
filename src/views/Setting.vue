@@ -1,11 +1,11 @@
 <template>
   <div class="setting">
-    <div class="title">全局设置</div>
-    <n-h6 prefix="bar"> 基础设置 </n-h6>
+    <div class="title">{{ t("settings.title") }}</div>
+    <n-h6 prefix="bar"> {{ t("settings.baseSection") }} </n-h6>
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">明暗模式</n-text>
+          <n-text class="text">{{ t("settings.theme") }}</n-text>
         </div>
         <n-select
           class="set"
@@ -18,8 +18,10 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">明暗模式跟随系统</n-text>
-          <n-text class="tip" :depth="3"> 明暗模式是否跟随系统当前模式 </n-text>
+          <n-text class="text">{{ t("settings.themeAuto") }}</n-text>
+          <n-text class="tip" :depth="3">
+            {{ t("settings.themeAutoTip") }}
+          </n-text>
         </div>
         <n-switch
           v-model:value="siteThemeAuto"
@@ -31,8 +33,10 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">链接跳转方式</n-text>
-          <n-text class="tip" :depth="3"> 选择榜单列表内容的跳转方式 </n-text>
+          <n-text class="text">{{ t("settings.linkOpenType") }}</n-text>
+          <n-text class="tip" :depth="3">
+            {{ t("settings.linkOpenTypeTip") }}
+          </n-text>
         </div>
         <n-select
           class="set"
@@ -44,8 +48,10 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">固定导航栏</n-text>
-          <n-text class="tip" :depth="3"> 导航栏是否固定 </n-text>
+          <n-text class="text">{{ t("settings.headerFixed") }}</n-text>
+          <n-text class="tip" :depth="3">
+            {{ t("settings.headerFixedTip") }}
+          </n-text>
         </div>
         <n-switch v-model:value="headerFixed" :round="false" />
       </div>
@@ -53,9 +59,9 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">导航栏默认折叠</n-text>
+          <n-text class="text">{{ t("settings.headerCollapsed") }}</n-text>
           <n-text class="tip" :depth="3">
-            默认显示极简导航，鼠标悬停或点击后展开完整内容
+            {{ t("settings.headerCollapsedTip") }}
           </n-text>
         </div>
         <n-switch v-model:value="headerCollapsed" :round="false" />
@@ -64,9 +70,9 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">紧凑模式</n-text>
+          <n-text class="text">{{ t("settings.compactMode") }}</n-text>
           <n-text class="tip" :depth="3">
-            减少页面内边距，显示更多榜单内容
+            {{ t("settings.compactModeTip") }}
           </n-text>
         </div>
         <n-switch v-model:value="compactMode" :round="false" />
@@ -75,7 +81,7 @@
     <n-card class="set-item">
       <div class="top" style="flex-direction: column; align-items: flex-start">
         <div class="name">
-          <n-text class="text">列表文本大小</n-text>
+          <n-text class="text">{{ t("settings.listFontSize") }}</n-text>
           <n-card
             class="tip"
             :style="{
@@ -84,7 +90,7 @@
             }"
           >
             <n-text :style="{ fontSize: listFontSize + 'px' }">
-              我是将要显示的文字的大小
+              {{ t("settings.listFontPreview") }}
             </n-text>
           </n-card>
         </div>
@@ -95,20 +101,16 @@
           :max="20"
           :min="14"
           :step="1"
-          :marks="{
-            14: '小一点',
-            16: '默认',
-            20: '最大',
-          }"
+          :marks="listFontMarks"
         />
       </div>
     </n-card>
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">分类开关</n-text>
+          <n-text class="text">{{ t("settings.categoryEnabled") }}</n-text>
           <n-text class="tip" :depth="3">
-            开启后顶部导航和列表将按分类筛选热榜
+            {{ t("settings.categoryEnabledTip") }}
           </n-text>
         </div>
         <n-space vertical align="end">
@@ -119,14 +121,14 @@
     <n-card class="set-item full">
       <div class="top">
         <div class="name">
-          <n-text class="text">统计与隐私</n-text>
+          <n-text class="text">{{ t("settings.privacyControl") }}</n-text>
           <n-text class="tip" :depth="3">
-            站点基础统计始终启用；这里只管理广告归因、营销追踪与个性化广告偏好。
+            {{ t("settings.privacyControlTip") }}
           </n-text>
         </div>
         <n-space wrap>
           <n-tag type="success">
-            已启用统计分析
+            {{ t("settings.analyticsRequiredTag") }}
           </n-tag>
           <n-button
             size="small"
@@ -134,15 +136,15 @@
             strong
             @click="openConsentSettings"
           >
-            管理广告偏好
+            {{ t("settings.manageAdPreferences") }}
           </n-button>
           <n-button
             v-if="isAnalyticsPanelVisible"
             size="small"
             tertiary
-            @click="$router.push('/analytics')"
+            @click="router.push(buildFixedLocalePath(locale, '/analytics'))"
           >
-            查看统计面板
+            {{ t("settings.viewAnalytics") }}
           </n-button>
         </n-space>
       </div>
@@ -150,9 +152,9 @@
     <n-card class="set-item full">
       <div class="top" style="align-items: flex-start">
         <div class="name">
-          <n-text class="text">分类管理</n-text>
+          <n-text class="text">{{ t("settings.categoryManagement") }}</n-text>
           <n-text class="tip" :depth="3">
-            默认分类不可删除，最多保留 10 个分类
+            {{ t("settings.categoryManagementTip") }}
           </n-text>
         </div>
         <div class="categories">
@@ -160,11 +162,11 @@
             <n-input
               v-model:value="newCategory"
               size="small"
-              placeholder="新分类名称"
+              :placeholder="t('settings.newCategoryPlaceholder')"
               style="width: 180px"
             />
             <n-button size="small" type="primary" @click="handleAddCategory">
-              新增
+              {{ t("settings.addCategory") }}
             </n-button>
           </div>
           <div class="list">
@@ -174,8 +176,14 @@
               :key="cat.id"
             >
               <n-input
+                v-if="cat.builtin"
                 size="small"
-                :disabled="cat.builtin"
+                disabled
+                :value="getCategoryDisplayName(cat)"
+              />
+              <n-input
+                v-else
+                size="small"
                 v-model:value="cat.name"
                 @change="(val) => handleRenameCategory(cat.id, val)"
               />
@@ -186,7 +194,7 @@
                 :disabled="cat.builtin"
                 @click="store.removeCategory(cat.id)"
               >
-                删除
+                {{ t("settings.deleteCategory") }}
               </n-button>
             </div>
           </div>
@@ -196,29 +204,35 @@
     <n-card class="set-item full">
       <div class="top">
         <div class="name">
-          <n-text class="text">榜单排序</n-text>
+          <n-text class="text">{{ t("settings.rankingOrder") }}</n-text>
           <n-text class="tip" :depth="3">
-            拖拽以排序，开关用以控制在页面中的显示状态，可分配分类
+            {{ t("settings.rankingOrderTip") }}
           </n-text>
         </div>
         <n-space wrap>
           <n-popconfirm @positive-click="restoreDefaultOrder">
             <template #trigger>
-              <n-button class="control" size="small"> 恢复默认排序 </n-button>
+              <n-button class="control" size="small">
+                {{ t("settings.restoreDefaultOrder") }}
+              </n-button>
             </template>
-            确认将排序恢复到默认状态？
+            {{ t("settings.restoreDefaultOrderConfirm") }}
           </n-popconfirm>
           <n-popconfirm @positive-click="restoreDefaultCategory">
             <template #trigger>
-              <n-button class="control" size="small"> 恢复默认分类 </n-button>
+              <n-button class="control" size="small">
+                {{ t("settings.restoreDefaultCategory") }}
+              </n-button>
             </template>
-            确认将分类恢复到默认状态？
+            {{ t("settings.restoreDefaultCategoryConfirm") }}
           </n-popconfirm>
           <n-popconfirm @positive-click="restoreDefaultStatus">
             <template #trigger>
-              <n-button class="control" size="small"> 恢复默认状态 </n-button>
+              <n-button class="control" size="small">
+                {{ t("settings.restoreDefaultStatus") }}
+              </n-button>
             </template>
-            确认将显示状态恢复到默认状态？
+            {{ t("settings.restoreDefaultStatusConfirm") }}
           </n-popconfirm>
         </n-space>
       </div>
@@ -237,13 +251,13 @@
           >
             <div class="desc" :style="{ opacity: element.show ? null : 0.6 }">
               <img class="logo" :src="logoSrc(element.name)" alt="logo" @error="handleLogoError" />
-              <n-text class="news-name" v-html="element.label" />
+              <n-text class="news-name" v-html="getSourceDisplayLabel(element)" />
               <n-tag
                 size="small"
                 type="warning"
                 v-if="store.unavailableSources.includes(element.name)"
               >
-                不可用
+                {{ t("settings.unavailable") }}
               </n-tag>
             </div>
             <n-select
@@ -251,26 +265,26 @@
               class="category-select"
               :options="categoryOptions"
               v-model:value="element.category"
-              placeholder="分类"
+              :placeholder="t('settings.categoryPlaceholder')"
               :disabled="!categoryEnabled"
             />
             <n-switch
               class="switch"
               :round="false"
               v-model:value="element.show"
-              @update:value="saveSoreData(element.label, element.show)"
+              @update:value="saveSoreData(getSourceDisplayLabel(element), element.show)"
             />
           </n-card>
         </template>
       </draggable>
     </n-card>
-    <n-h6 prefix="bar"> 杂项设置 </n-h6>
+    <n-h6 prefix="bar"> {{ t("settings.miscSection") }} </n-h6>
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">自动刷新</n-text>
+          <n-text class="text">{{ t("settings.autoRefresh") }}</n-text>
           <n-text class="tip" :depth="3">
-            定时刷新页面，默认 0 时 30 分 0 秒（最小 60 秒），关闭时不生效
+            {{ t("settings.autoRefreshTip") }}
           </n-text>
         </div>
         <div class="auto-refresh">
@@ -285,7 +299,7 @@
                 button-placement="both"
                 @update:value="applyAutoInterval"
               />
-              <span class="unit">时</span>
+              <span class="unit">{{ t("header.hour") }}</span>
             </div>
             <div class="time-item">
               <n-input-number
@@ -297,7 +311,7 @@
                 button-placement="both"
                 @update:value="applyAutoInterval"
               />
-              <span class="unit">分</span>
+              <span class="unit">{{ t("header.minute") }}</span>
             </div>
             <div class="time-item">
               <n-input-number
@@ -309,7 +323,7 @@
                 button-placement="both"
                 @update:value="applyAutoInterval"
               />
-              <span class="unit">秒</span>
+              <span class="unit">{{ t("header.second") }}</span>
             </div>
           </div>
           <n-switch v-model:value="autoRefreshEnabled" :round="false" />
@@ -319,9 +333,9 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">显示封面图片</n-text>
+          <n-text class="text">{{ t("settings.showImages") }}</n-text>
           <n-text class="tip" :depth="3">
-            开启后在首页卡片和列表中显示封面图片（有防盗链的将自动隐藏）
+            {{ t("settings.showImagesTip") }}
           </n-text>
         </div>
         <n-switch v-model:value="showImages" :round="false" />
@@ -330,33 +344,36 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">清除缓存</n-text>
+          <n-text class="text">{{ t("settings.clearCache") }}</n-text>
           <n-text class="tip" :depth="3">
-            当前缓存版本：{{ cacheVersion }}（由吾爱分享二次开发
-            <n-a
-              href="https://www.wuaishare.cn/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              https://www.wuaishare.cn/
-            </n-a>
-            ），点击立即清除并刷新
+            {{
+              t("settings.clearCacheTip", {
+                version: cacheVersion,
+                url: "https://www.wuaishare.cn/",
+              })
+            }}
           </n-text>
         </div>
-        <n-button @click="clearCache" type="warning" ghost> 清除缓存 </n-button>
+        <n-button @click="clearCache" type="warning" ghost>
+          {{ t("settings.clearCacheAction") }}
+        </n-button>
       </div>
     </n-card>
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">设置导入导出</n-text>
+          <n-text class="text">{{ t("settings.importExport") }}</n-text>
           <n-text class="tip" :depth="3">
-            导出为 JSON 文件，导入会覆盖当前设置
+            {{ t("settings.importExportTip") }}
           </n-text>
         </div>
         <n-space>
-          <n-button size="small" @click="exportSettings"> 导出设置 </n-button>
-          <n-button size="small" @click="triggerImport"> 导入设置 </n-button>
+          <n-button size="small" @click="exportSettings">
+            {{ t("settings.exportSettings") }}
+          </n-button>
+          <n-button size="small" @click="triggerImport">
+            {{ t("settings.importSettings") }}
+          </n-button>
         </n-space>
         <input
           ref="importFileRef"
@@ -370,16 +387,18 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">重置所有数据</n-text>
+          <n-text class="text">{{ t("settings.resetAll") }}</n-text>
           <n-text class="tip" :depth="3">
-            重置所有数据，你的自定义设置都将会丢失
+            {{ t("settings.resetAllTip") }}
           </n-text>
         </div>
         <n-popconfirm @positive-click="reset">
           <template #trigger>
-            <n-button type="warning"> 重置 </n-button>
+            <n-button type="warning">
+              {{ t("settings.resetAllAction") }}
+            </n-button>
           </template>
-          确认重置所有数据？你的自定义设置都将会丢失！
+          {{ t("settings.resetAllConfirm") }}
         </n-popconfirm>
       </div>
     </n-card>
@@ -390,15 +409,19 @@
 import { storeToRefs } from "pinia";
 import { mainStore } from "@/store";
 import { clearAppCaches, getCacheVersion } from "@/utils/cache";
-import {
-  OPEN_CONSENT_EVENT,
-} from "@/utils/analytics";
+import { OPEN_CONSENT_EVENT } from "@/utils/analytics";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { useOsTheme } from "naive-ui";
+import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import draggable from "vuedraggable";
+import { buildFixedLocalePath, getCategoryLabel } from "@/utils/locale";
+import { getSourceLabel } from "@/utils/sourceLabels";
 
 const store = mainStore();
 const osThemeRef = useOsTheme();
+const router = useRouter();
+const { t, locale } = useI18n({ useScope: "global" });
 const {
   siteTheme,
   siteThemeAuto,
@@ -418,11 +441,20 @@ const categories = computed(() =>
   store.categories.slice().sort((a, b) => a.order - b.order)
 );
 const categoryOptions = computed(() =>
-  categories.value.map((c) => ({ label: c.name, value: c.name }))
+  categories.value.map((c) => ({
+    label: getCategoryLabel(c.name, locale.value),
+    value: c.name,
+  }))
 );
 const newCategory = ref("");
 const cacheVersion = ref(getCacheVersion());
 const logoSrc = (name) => getSourceLogo(name, cacheVersion.value);
+const getCategoryDisplayName = (category) =>
+  category?.builtin
+    ? getCategoryLabel(category.name, locale.value)
+    : category?.name || "";
+const getSourceDisplayLabel = (item) =>
+  getSourceLabel(item?.name, locale.value, item?.label || item?.name);
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };
@@ -447,32 +479,37 @@ const persistedKeys = [
 ];
 
 // 深浅模式
-const themeOptions = ref([
+const themeOptions = computed(() => [
   {
-    label: "浅色模式",
+    label: t("settings.themeLight"),
     value: "light",
   },
   {
-    label: "深色模式",
+    label: t("settings.themeDark"),
     value: "dark",
   },
 ]);
 
 // 榜单跳转
-const linkOptions = [
+const linkOptions = computed(() => [
   {
-    label: "新页面打开",
+    label: t("settings.linkOpenNew"),
     value: "open",
   },
   {
-    label: "当前页打开",
+    label: t("settings.linkOpenCurrent"),
     value: "href",
   },
-];
+]);
+
+const listFontMarks = computed(() => ({
+  14: t("settings.listFontSmall"),
+  16: t("settings.listFontDefault"),
+  20: t("settings.listFontLarge"),
+}));
 
 // 开启明暗自动跟随
 const themeAutoOpen = (val) => {
-  console.log(osThemeRef.value);
   if (val) {
     siteTheme.value = osThemeRef.value;
   }
@@ -504,7 +541,7 @@ const restoreDefaultOrder = () => {
     order: restored.length + idx,
   }));
   newsArr.value = restored.concat(extraWithOrder);
-  $message.success("恢复默认榜单排序成功");
+  $message.success(t("settings.restoreOrderSuccess"));
 };
 
 const restoreDefaultCategory = () => {
@@ -516,7 +553,7 @@ const restoreDefaultCategory = () => {
     category:
       defaultCategoryMap.get(item.name) || item.category || "综合",
   }));
-  $message.success("恢复默认榜单分类成功");
+  $message.success(t("settings.restoreCategorySuccess"));
 };
 
 const restoreDefaultStatus = () => {
@@ -530,14 +567,18 @@ const restoreDefaultStatus = () => {
         ? defaultStatusMap.get(item.name)
         : item.show,
   }));
-  $message.success("恢复默认榜单状态成功");
+  $message.success(t("settings.restoreStatusSuccess"));
 };
 
 // 将排序结果写入
 const saveSoreData = (name = null, open = false) => {
   normalizeOrder();
   $message.success(
-    name ? `${name}榜单已${open ? "开启" : "关闭"}` : "榜单排序成功"
+    name
+      ? t(open ? "settings.sourceEnabled" : "settings.sourceDisabled", {
+          name,
+        })
+      : t("settings.sortSuccess")
   );
 };
 
@@ -579,7 +620,7 @@ const syncAutoTime = () => {
 const applyAutoInterval = () => {
   const seconds = timeToSeconds(autoTime);
   if (seconds < 60) {
-    $message.warning("自动刷新最少 60 秒");
+    $message.warning(t("settings.autoRefreshMinWarning"));
     return;
   }
   autoRefreshInterval.value = seconds;
@@ -594,14 +635,14 @@ const exportSettings = () => {
   if (typeof localStorage === "undefined") return;
   const stored = localStorage.getItem("mainData");
   if (!stored) {
-    $message.warning("暂无可导出的设置");
+    $message.warning(t("settings.noSettingsToExport"));
     return;
   }
   let parsed = null;
   try {
     parsed = JSON.parse(stored);
   } catch (error) {
-    $message.error("导出失败，设置数据异常");
+    $message.error(t("settings.exportInvalidData"));
     return;
   }
   const payload = {
@@ -621,7 +662,7 @@ const exportSettings = () => {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  $message.success("设置导出成功");
+  $message.success(t("settings.exportSuccess"));
 };
 
 const triggerImport = () => {
@@ -639,12 +680,12 @@ const handleImportFile = async (event) => {
     const content = await file.text();
     parsed = JSON.parse(content);
   } catch (error) {
-    $message.error("导入失败，文件格式不正确");
+    $message.error(t("settings.importInvalidFormat"));
     return;
   }
   const data = parsed?.data || parsed;
   if (!data || typeof data !== "object") {
-    $message.error("导入失败，设置数据异常");
+    $message.error(t("settings.importInvalidData"));
     return;
   }
   const patch = {};
@@ -654,14 +695,14 @@ const handleImportFile = async (event) => {
     }
   });
   if (!Object.keys(patch).length) {
-    $message.warning("未找到可导入的设置");
+    $message.warning(t("settings.importNoUsableData"));
     return;
   }
   store.$patch(patch);
   store.ensureNewsList();
   await nextTick();
   store.checkNewsUpdate();
-  $message.success("设置导入成功");
+  $message.success(t("settings.importSuccess"));
 };
 
 const handleAddCategory = () => {

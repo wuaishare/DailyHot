@@ -17,7 +17,7 @@
               :src="logoSrc(hotData.name)"
               fallback-src="/ico/icon_error.png"
             />
-            <n-text class="name-text">{{ hotData.label }}</n-text>
+            <n-text class="name-text">{{ sourceLabel }}</n-text>
           </div>
           <SubtypeBar
             v-if="subtypeGroups.length"
@@ -44,8 +44,8 @@
           <n-result
             size="small"
             status="500"
-            title="哎呀，加载失败了"
-            description="生活总会遇到不如意的事情"
+            :title="t('hotList.loadErrorTitle')"
+            :description="t('hotList.loadErrorDescription')"
             style="margin-top: 40px"
           />
           <n-button
@@ -58,7 +58,7 @@
             <template #icon>
               <n-icon :component="Refresh" />
             </template>
-            重试
+            {{ t("hotList.retry") }}
           </n-button>
         </div>
         <div v-else-if="!hotListData || listLoading" class="loading">
@@ -118,7 +118,9 @@
             <n-text class="time" :depth="3" v-if="updateTime">
               {{ updateTime }}
             </n-text>
-            <n-text class="time" :depth="3" v-else> 获取失败 </n-text>
+            <n-text class="time" :depth="3" v-else>
+              {{ t("hotList.updateFailed") }}
+            </n-text>
             <n-space class="controls">
               <n-popover v-if="hotListData.data.length">
                 <template #trigger>
@@ -134,7 +136,7 @@
                     </template>
                   </n-button>
                 </template>
-                查看更多
+                {{ t("hotList.viewMore") }}
               </n-popover>
               <n-popover>
                 <template #trigger>
@@ -150,7 +152,7 @@
                     </template>
                   </n-button>
                 </template>
-                获取最新
+                {{ t("hotList.refreshLatest") }}
               </n-popover>
             </n-space>
           </div>
@@ -184,20 +186,23 @@ import { formatTime } from "@/utils/getTime";
 import { getCacheVersion } from "@/utils/cache";
 import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import SubtypeBar from "@/components/SubtypeBar.vue";
 import {
   buildSourceSubtypeParams,
   getSourceSubtypeGroups,
-  getSourceSubtypeOptions,
   persistSourceSubtype,
   readSourceSubtype,
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo } from "@/utils/sourceLogos";
 import { trackEvent } from "@/utils/track";
+import { getSourceLabel, localizeSubtypeGroups } from "@/utils/sourceLabels";
+import { buildRankPath } from "@/utils/locale";
 
 const router = useRouter();
 const store = mainStore();
+const { locale, t } = useI18n({ useScope: "global" });
 const isClient = typeof window !== "undefined";
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
@@ -238,8 +243,13 @@ const linkTarget = computed(() =>
 const previewMaxWidth = 260;
 const previewMaxHeight = 260;
 const showImages = computed(() => store.showImages);
-const subtypeGroups = computed(() => getSourceSubtypeGroups(props.hotData.name));
-const subtypeOptions = computed(() => getSourceSubtypeOptions(props.hotData.name));
+const sourceLabel = computed(() =>
+  getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
+);
+const subtypeGroups = computed(() =>
+  localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value)
+);
+const subtypeOptions = computed(() => subtypeGroups.value.flatMap((group) => group.items || []));
 const activeSubType = ref(
   resolveSourceSubtype(
     subtypeOptions.value,
@@ -301,7 +311,7 @@ const getHotListsData = async (name, isNew = false) => {
   } catch (error) {
     store.markUnavailable(name);
     loadingError.value = true;
-    $message.error("热榜加载失败，请重试");
+    $message.error(t("hotList.loadFailedMessage"));
   }
 };
 
@@ -320,7 +330,7 @@ const getNewData = () => {
     }
   } else {
     // 不执行点击事件
-    $message.info("请稍后再刷新");
+    $message.info(t("hotList.refreshTooSoon"));
   }
 };
 
@@ -460,18 +470,11 @@ const toList = () => {
       subtype: activeSubType.value,
       category: props.hotData.category,
     });
-    const query = {
-      type: props.hotData.name,
-    };
-    if (activeSubType.value) {
-      query.subtype = activeSubType.value;
-    }
-    router.push({
-      path: "/list",
-      query,
-    });
+    router.push(
+      buildRankPath(locale.value, props.hotData.name, activeSubType.value)
+    );
   } else {
-    $message.error("数据出错，请重试");
+    $message.error(t("hotList.loadFailedMessage"));
   }
 };
 
@@ -484,7 +487,6 @@ const checkListShow = () => {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
-        console.log(`👀 ${typeName} 可见，开始加载`);
         getHotListsData(props.hotData.name);
         observer.unobserve(entry.target);
       }
@@ -498,7 +500,7 @@ watch(
   () => store.timeData,
   () => {
     if (hotListData.value) {
-      updateTime.value = formatTime(hotListData.value.updateTime);
+      updateTime.value = formatTime(hotListData.value.updateTime, locale.value);
     }
   }
 );

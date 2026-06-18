@@ -3,8 +3,8 @@
   <n-config-provider
     abstract
     inline-theme-disabled
-    :locale="zhCN"
-    :date-locale="dateZhCN"
+    :locale="currentNaiveLocale"
+    :date-locale="currentNaiveDateLocale"
     :theme="theme"
     :theme-overrides="themeOverrides"
   >
@@ -25,6 +25,14 @@
 import {
   zhCN,
   dateZhCN,
+  enUS,
+  dateEnUS,
+  zhTW,
+  dateZhTW,
+  jaJP,
+  dateJaJP,
+  koKR,
+  dateKoKR,
   darkTheme,
   useOsTheme,
   useLoadingBar,
@@ -32,10 +40,13 @@ import {
   useMessage,
   useNotification,
 } from "naive-ui";
+import { useI18n } from "vue-i18n";
 import { mainStore } from "@/store";
+import { setDocumentLanguage } from "@/utils/locale";
 
 const store = mainStore();
 const osThemeRef = useOsTheme();
+const { locale } = useI18n({ useScope: "global" });
 
 // 明暗切换
 let theme = ref(null);
@@ -46,6 +57,22 @@ const changeTheme = () => {
     theme.value = darkTheme;
   }
 };
+
+const localeMap = {
+  "zh-CN": { locale: zhCN, dateLocale: dateZhCN },
+  en: { locale: enUS, dateLocale: dateEnUS },
+  "zh-TW": { locale: zhTW, dateLocale: dateZhTW },
+  ja: { locale: jaJP, dateLocale: dateJaJP },
+  ko: { locale: koKR, dateLocale: dateKoKR },
+};
+
+const currentNaiveLocale = computed(
+  () => localeMap[locale.value]?.locale || zhCN
+);
+
+const currentNaiveDateLocale = computed(
+  () => localeMap[locale.value]?.dateLocale || dateZhCN
+);
 
 // 根据系统决定明暗切换
 const osThemeChange = (val) => {
@@ -68,6 +95,14 @@ watch(
   (val) => {
     osThemeChange(val);
   }
+);
+
+watch(
+  () => locale.value,
+  (val) => {
+    setDocumentLanguage(val);
+  },
+  { immediate: true }
 );
 
 // 配置主题色

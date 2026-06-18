@@ -20,13 +20,13 @@
       </n-grid-item>
     </n-grid>
     <div class="error" v-if="renderNews[0] && filteredNews.length === 0">
-      <n-divider dashed class="tip"> 当前分类暂无内容 </n-divider>
+      <n-divider dashed class="tip"> {{ t("common.emptyCategory") }} </n-divider>
     </div>
     <div class="error" v-else-if="!renderNews[0]">
-      <n-divider dashed class="tip"> 此处暂无内容 </n-divider>
+      <n-divider dashed class="tip"> {{ t("common.noContent") }} </n-divider>
       <n-space justify="center">
         <n-button size="large" secondary strong @click="reset">
-          出错了？点此重置
+          {{ t("home.resetAction") }}
         </n-button>
       </n-space>
     </div>
@@ -36,8 +36,10 @@
 <script setup>
 import { mainStore } from "@/store";
 import HotList from "@/components/HotList.vue";
+import { useI18n } from "vue-i18n";
 
 const store = mainStore();
+const { t } = useI18n({ useScope: "global" });
 const enableCardEntrance = ref(true);
 const renderNews = computed(() => {
   return store.newsArr
@@ -60,11 +62,10 @@ onMounted(() => {
 // 重置
 const reset = () => {
   $dialog.warning({
-    title: "重置站点",
-    content:
-      "确认重置站点？你的自定义数据将会恢复为默认状态！（当设置页面能正常进入并显示时请不要执行此操作！）",
-    positiveText: "重置",
-    negativeText: "取消",
+    title: t("home.resetTitle"),
+    content: t("home.resetContent"),
+    positiveText: t("home.resetConfirm"),
+    negativeText: t("home.resetCancel"),
     onPositiveClick: () => {
       if (typeof window !== "undefined") {
         if (window.$timeInterval) clearInterval(window.$timeInterval);

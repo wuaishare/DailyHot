@@ -1,16 +1,17 @@
 <template>
   <footer>
     <div class="copyright">
-      <n-text class="description" v-html="packageJson.description" />
+      <n-text class="description">{{ t("footer.description") }}</n-text>
       <n-a
         class="author"
         :depth="3"
         :href="packageJson.github"
         target="_blank"
         rel="noopener noreferrer"
-        v-html="packageJson.author"
-      />
-      <n-text>. Powered by </n-text>
+      >
+        {{ t("footer.author") }}
+      </n-a>
+      <n-text>. {{ t("footer.poweredBy") }} </n-text>
       <n-a
         class="author-link"
         :depth="3"
@@ -29,8 +30,8 @@
           class="link"
           :depth="3"
           :href="link.href"
-          target="_blank"
-          rel="noopener noreferrer"
+          :target="link.external ? '_blank' : undefined"
+          :rel="link.external ? 'noopener noreferrer' : undefined"
         >
           {{ link.label }}
         </n-a>
@@ -50,38 +51,45 @@
 </template>
 
 <script setup>
+import { useI18n } from "vue-i18n";
 import packageJson from "@/../package.json";
 import { getBuildVersion, getDisplayVersion } from "@/utils/cache";
+import { buildFixedLocalePath } from "@/utils/locale";
 
 const icp = ref(import.meta.env.VITE_ICP ? import.meta.env.VITE_ICP : null);
+const { t, locale } = useI18n({ useScope: "global" });
 
-const footerLinks = [
+const footerLinks = computed(() => [
   {
-    label: "网页自动刷新（油猴脚本）",
+    label: t("footer.autoRefresh"),
     href: "https://greasyfork.org/zh-CN/scripts/541188",
+    external: true,
   },
   {
-    label: "吾爱分享社区",
+    label: t("footer.community"),
     href: "https://sns.wuaishare.cn/",
+    external: true,
   },
   {
-    label: "精品阅读站",
+    label: t("footer.reading"),
     href: "https://v.wuaishare.cn/",
+    external: true,
   },
   {
-    label: "隐私说明",
-    href: "/privacy",
+    label: t("footer.privacy"),
+    href: buildFixedLocalePath(locale.value, "/privacy"),
+    external: false,
   },
-];
+]);
 
 const appVersion = getDisplayVersion();
 const buildVersion = getBuildVersion();
 
-const originRepo = {
-  label: `DailyHot 二次开发版 ${appVersion}`,
+const originRepo = computed(() => ({
+  label: t("footer.releaseLabel", { version: appVersion }),
   href: "https://github.com/wuaishare/DailyHot/tree/live",
   title: buildVersion,
-};
+}));
 </script>
 
 <style lang="scss" scoped>
@@ -98,7 +106,7 @@ footer {
     margin-bottom: 4px;
     .description {
       &::after {
-        content: "Copyright @";
+        content: "Copyright ©";
         margin: 0 6px;
       }
     }

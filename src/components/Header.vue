@@ -1,34 +1,28 @@
 <template>
   <n-card :bordered="false" class="app-header" content-style="padding: 0">
     <section>
-      <div class="logo" @click="router.push('/')">
+      <div class="logo" @click="router.push(buildHomePath(locale))">
         <img src="/ico/favicon.png" alt="logo" />
         <div class="name">
-          <n-text>今日热榜</n-text>
-          <n-text :depth="3">汇聚全网热点，热门尽览无余_吾爱分享网</n-text>
+          <n-text>{{ t("common.siteName") }}</n-text>
+          <n-text :depth="3">{{ t("common.siteTagline") }}</n-text>
         </div>
       </div>
       <div v-if="!store.categoryEnabled">
         <div class="current-time" v-if="store.timeData">
           <n-text class="time">{{ store.timeData.time.text }}</n-text>
           <n-text class="date" :depth="3">
-            {{
-              store.timeData.lunar.GanZhiYear +
-              "年 " +
-              store.timeData.lunar.text +
-              " " +
-              store.timeData.time.weekday
-            }}
+            {{ currentDateText }}
           </n-text>
         </div>
         <div class="current-time" v-else>
-          <n-text class="time">时间获取中</n-text>
+          <n-text class="time">{{ t("common.loadingTime") }}</n-text>
         </div>
       </div>
       <div v-else class="category-select">
         <div v-if="isSettingPage" class="category-back">
-          <n-button size="small" type="primary" strong @click="router.push('/')">
-            返回首页
+          <n-button size="small" type="primary" strong @click="router.push(buildHomePath(locale))">
+            {{ t("common.backHome") }}
           </n-button>
         </div>
         <div v-else-if="!isSmallScreen" class="category-nav">
@@ -52,11 +46,23 @@
           v-model:value="activeCategoryLocal"
           :options="categoryOptions"
           size="large"
-          placeholder="选择分类"
+          :placeholder="t('common.selectCategory')"
         />
       </div>
       <div class="controls">
         <n-space justify="end">
+          <n-dropdown
+            trigger="click"
+            :options="languageOptions"
+            @select="switchLocale"
+          >
+            <n-button secondary strong round>
+              <template #icon>
+                <img class="flag-icon" :src="currentLocaleMeta.flag" :alt="currentLocaleMeta.label" />
+              </template>
+              {{ currentLocaleMeta.shortLabel }}
+            </n-button>
+          </n-dropdown>
           <n-popover
             v-if="showRefresh"
             trigger="hover"
@@ -74,14 +80,14 @@
             </template>
             <div class="refresh-panel" @click.stop>
               <div class="panel-header">
-                <n-text>刷新控制</n-text>
-                <n-text depth="3" v-if="countdownText">下次：{{ countdownText }}</n-text>
+                <n-text>{{ t("header.refreshControl") }}</n-text>
+                <n-text depth="3" v-if="countdownText">{{ t("header.nextRefresh") }}：{{ countdownText }}</n-text>
               </div>
               <n-button block type="primary" dashed @click="manualRefresh">
                 <template #icon>
                   <n-icon :component="Refresh" />
                 </template>
-                立即刷新
+                {{ t("header.refreshNow") }}
               </n-button>
               <div class="auto-row">
               <n-space align="center" justify="space-between">
@@ -91,10 +97,10 @@
                     v-model:value="autoEnabled"
                     @update:value="toggleAutoRefresh"
                   />
-                  <n-text>自动刷新</n-text>
+                  <n-text>{{ t("header.autoRefresh") }}</n-text>
                 </n-space>
                 <n-button text size="small" @click="togglePause" :disabled="!store.autoRefreshEnabled">
-                  {{ store.autoRefreshPaused ? "继续" : "暂停" }}
+                  {{ store.autoRefreshPaused ? t("header.resume") : t("header.pause") }}
                 </n-button>
               </n-space>
               <div class="time-inputs">
@@ -107,7 +113,7 @@
                     button-placement="both"
                     @update:value="applyAutoInterval"
                   />
-                  <span class="unit">时</span>
+                  <span class="unit">{{ t("header.hour") }}</span>
                 </div>
                 <div class="time-item">
                   <n-input-number
@@ -118,7 +124,7 @@
                     button-placement="both"
                     @update:value="applyAutoInterval"
                   />
-                  <span class="unit">分</span>
+                  <span class="unit">{{ t("header.minute") }}</span>
                 </div>
                 <div class="time-item">
                   <n-input-number
@@ -129,11 +135,11 @@
                     button-placement="both"
                     @update:value="applyAutoInterval"
                   />
-                  <span class="unit">秒</span>
+                  <span class="unit">{{ t("header.second") }}</span>
                 </div>
               </div>
                 <n-text depth="3" class="tip">
-                  默认 0时30分0秒，最少 60 秒。开启后图标右侧显示倒计时。
+                  {{ t("header.refreshTip") }}
                 </n-text>
               </div>
             </div>
@@ -157,17 +163,17 @@
                 </template>
               </n-button>
             </template>
-            {{ store.siteTheme === "light" ? "深色模式" : "浅色模式" }}
+            {{ store.siteTheme === "light" ? t("common.darkMode") : t("common.lightMode") }}
           </n-popover>
           <n-popover>
             <template #trigger>
-              <n-button secondary strong round @click="router.push('/setting')">
+              <n-button secondary strong round @click="router.push(buildFixedLocalePath(locale, '/setting'))">
                 <template #icon>
                   <n-icon :component="SettingTwo" />
                 </template>
               </n-button>
             </template>
-            全局设置
+            {{ t("common.settings") }}
           </n-popover>
         </n-space>
       </div>
@@ -209,11 +215,26 @@ import {
 import { getCurrentTime } from "@/utils/getTime.js";
 import { mainStore } from "@/store";
 import { NText, NIcon } from "naive-ui";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { h } from "vue";
+import {
+  buildCategoryPath,
+  buildFixedLocalePath,
+  buildHomePath,
+  buildLocalePathFromRoute,
+  getCategoryLabel,
+  getCategoryNameBySlug,
+  getCategorySlugByName,
+  getLocaleFromRoute,
+  getSupportedLocales,
+  savePreferredLocale,
+} from "@/utils/locale";
 
 const router = useRouter();
+const route = useRoute();
 const store = mainStore();
+const { t, locale } = useI18n({ useScope: "global" });
 const timeInterval = ref(null);
 const showRefresh = ref(false);
 const countdownText = ref("");
@@ -227,14 +248,55 @@ const timeForm = reactive({
 });
 const isSmallScreen = ref(false);
 const isSettingPage = computed(
-  () => router.currentRoute.value?.name === "setting"
+  () => ["setting", "setting-locale"].includes(router.currentRoute.value?.name)
 );
+const currentLocaleMeta = computed(
+  () =>
+    getSupportedLocales().find((item) => item.code === locale.value) ||
+    getSupportedLocales()[0]
+);
+const buildCalendarDate = (timeData) => {
+  if (!timeData?.time) return null;
+  return new Date(
+    Number(timeData.time.year),
+    Number(timeData.time.month) - 1,
+    Number(timeData.time.day),
+    Number(timeData.time.hour),
+    Number(timeData.time.minute),
+    Number(timeData.time.second)
+  );
+};
+const formatHeaderDate = (timeData) => {
+  if (!timeData) return t("header.dateLoadFailed");
+  if (locale.value === "zh-CN") {
+    return `${timeData.lunar.GanZhiYear}年 ${timeData.lunar.text} ${timeData.time.weekday}`;
+  }
+  const currentDate = buildCalendarDate(timeData);
+  if (!currentDate || Number.isNaN(currentDate.getTime())) {
+    return t("header.dateLoadFailed");
+  }
+  const targetLocale = currentLocaleMeta.value.htmlLang || locale.value;
+  return new Intl.DateTimeFormat(targetLocale, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(currentDate);
+};
+const currentDateText = computed(() => formatHeaderDate(store.timeData));
 const activeCategoryLocal = computed({
   get() {
     return store.activeCategory;
   },
   set(val) {
     store.setActiveCategory(val);
+    const targetPath =
+      val === "全部"
+        ? buildHomePath(locale.value)
+        : buildCategoryPath(locale.value, getCategorySlugByName(val));
+    if (router.currentRoute.value.fullPath !== targetPath) {
+      router.push(targetPath);
+    }
   },
 });
 const availableCategorySet = computed(() => {
@@ -246,10 +308,33 @@ const categoryOptions = computed(() => {
     .slice()
     .sort((a, b) => a.order - b.order)
     .filter((cat) => availableCategorySet.value.has(cat.name))
-    .map((c) => ({ label: c.name, value: c.name }));
-  return [{ label: "全部", value: "全部" }, ...base];
+    .map((c) => ({ label: getCategoryLabel(c.name, locale.value), value: c.name }));
+  return [{ label: t("categories.all"), value: "全部" }, ...base];
 });
 const categoryNavOptions = computed(() => categoryOptions.value);
+const languageOptions = computed(() =>
+  getSupportedLocales().map((item) => ({
+    key: item.code,
+    label: () =>
+      h(
+        "div",
+        { class: "locale-option" },
+        [
+          h("img", { class: "flag-icon", src: item.flag, alt: item.label }),
+          h("span", null, item.label),
+        ]
+      ),
+  }))
+);
+
+const switchLocale = (nextLocale) => {
+  locale.value = nextLocale;
+  savePreferredLocale(nextLocale);
+  const target = buildLocalePathFromRoute(route, nextLocale);
+  if (router.currentRoute.value.fullPath !== target) {
+    router.push(target);
+  }
+};
 
 watchEffect(() => {
   if (!store.categoryEnabled) return;
@@ -278,20 +363,13 @@ const timeRender = () => {
     [
       h(NText, null, {
         default: () =>
-          store.timeData ? store.timeData.time.text : "时间获取失败",
+          store.timeData ? store.timeData.time.text : t("header.timeLoadFailed"),
       }),
       h(
         NText,
         { depth: 3, style: "font-size: 12px" },
         {
-          default: () =>
-            store.timeData
-              ? store.timeData.lunar.GanZhiYear +
-                "年 " +
-                store.timeData.lunar.text +
-                " " +
-                store.timeData.time.weekday
-              : "日期获取失败",
+          default: () => formatHeaderDate(store.timeData),
         }
       ),
     ]
@@ -299,7 +377,7 @@ const timeRender = () => {
 };
 
 // 移动端菜单
-const menuOptions = [
+const menuOptions = computed(() => [
   {
     key: "header",
     type: "render",
@@ -310,7 +388,7 @@ const menuOptions = [
     type: "divider",
   },
   {
-    label: "刷新页面",
+    label: t("header.refreshPage"),
     key: "refresh",
     icon: () => {
       return h(NIcon, null, {
@@ -319,11 +397,21 @@ const menuOptions = [
     },
   },
   {
-    label: () => {
-      return h(NText, null, {
-        default: () => (store.siteTheme === "light" ? "深色模式" : "浅色模式"),
-      });
-    },
+    key: "locale-divider",
+    type: "divider",
+  },
+  ...getSupportedLocales().map((item) => ({
+    label: item.label,
+    key: `locale:${item.code}`,
+  })),
+  {
+    label: () =>
+      h(NText, null, {
+        default: () =>
+          store.siteTheme === "light"
+            ? t("common.darkMode")
+            : t("common.lightMode"),
+      }),
     key: "changeTheme",
     icon: () => {
       return h(NIcon, null, {
@@ -332,7 +420,7 @@ const menuOptions = [
     },
   },
   {
-    label: "全局设置",
+    label: t("common.settings"),
     key: "setting",
     icon: () => {
       return h(NIcon, null, {
@@ -340,16 +428,18 @@ const menuOptions = [
       });
     },
   },
-];
+]);
 
 // 移动端下拉菜单点击事件
 const menuOptionsSelect = (val) => {
   if (val === "refresh") {
     manualRefresh();
+  } else if (String(val).startsWith("locale:")) {
+    switchLocale(String(val).replace("locale:", ""));
   } else if (val === "changeTheme") {
     store.setSiteTheme(store.siteTheme === "light" ? "dark" : "light");
   } else if (val === "setting") {
-    router.push("/setting");
+    router.push(buildFixedLocalePath(locale.value, "/setting"));
   }
   mobileMenuOpen.value = false;
 };
@@ -408,7 +498,7 @@ const syncTimeForm = () => {
 const applyAutoInterval = () => {
   const seconds = timeToSeconds(timeForm);
   if (seconds < 60) {
-    $message.warning("自动刷新最少 60 秒");
+    $message.warning(t("header.refreshMinWarning"));
     return;
   }
   store.autoRefreshInterval = seconds;
@@ -422,7 +512,7 @@ const formatCountdown = (remainMs) => {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
-  return `${h}时${m}分${s}秒`;
+  return `${h}${t("header.hour")}${m}${t("header.minute")}${s}${t("header.second")}`;
 };
 
 const updateCountdown = () => {
@@ -446,7 +536,7 @@ const updateCountdown = () => {
   }
   const remain = nextTime - Date.now();
   if (remain <= 0) {
-    countdownText.value = "刷新中...";
+    countdownText.value = t("header.refreshInProgress");
     return;
   }
   countdownText.value = formatCountdown(remain);
@@ -482,7 +572,10 @@ watch(
 watch(
   () => router.currentRoute.value,
   (val) => {
-    const isHome = val.path === "/";
+    const categoryName = getCategoryNameBySlug(val.params?.categorySlug);
+    store.setActiveCategory(categoryName || "全部");
+    locale.value = getLocaleFromRoute(val);
+    const isHome = ["/", "/en", "/zh-tw", "/ja", "/ko"].includes(val.path);
     showRefresh.value = isHome ? true : false;
   }
 );
@@ -491,7 +584,12 @@ onMounted(() => {
   window.$timeInterval = timeInterval.value = setInterval(() => {
     store.timeData = getCurrentTime();
   }, 1000);
-  showRefresh.value = router.currentRoute.value?.path === "/" ? true : false;
+  const categoryName = getCategoryNameBySlug(router.currentRoute.value?.params?.categorySlug);
+  store.setActiveCategory(categoryName || "全部");
+  locale.value = getLocaleFromRoute(router.currentRoute.value);
+  showRefresh.value = ["/", "/en", "/zh-tw", "/ja", "/ko"].includes(
+    router.currentRoute.value?.path
+  );
   syncTimeForm();
   setupCountdown();
   updateScreen();
@@ -588,6 +686,18 @@ onBeforeUnmount(() => {
   .controls {
     display: flex;
     justify-content: flex-end;
+    .locale-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .flag-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
     .countdown {
       margin-left: 3px;
       font-size: 12px;

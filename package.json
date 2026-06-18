@@ -25,6 +25,7 @@
     "scrollreveal": "^4.0.9",
     "terser": "^5.36.0",
     "vue": "^3.5.12",
+    "vue-i18n": "^11.4.5",
     "vue-router": "^4.4.5",
     "vuedraggable": "^4.1.0",
     "workbox-window": "^6.6.0"

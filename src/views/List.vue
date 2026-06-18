@@ -34,7 +34,7 @@
             :type="item.name === listType ? 'primary' : 'default'"
             @click="changeType(item.name, $event)"
           >
-            {{ item.label }}
+            {{ getSourceDisplayLabel(item) }}
             <template #avatar>
               <img :src="logoSrc(item.name)" alt="logo" class="logo" @error="handleLogoError" />
             </template>
@@ -188,7 +188,8 @@
 import { Fire } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
 import { getCacheVersion } from "@/utils/cache";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { formatTime } from "@/utils/getTime";
 import { getHotListsWithFallback } from "@/api";
 import SubtypeBar from "@/components/SubtypeBar.vue";
@@ -201,10 +202,14 @@ import {
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
+import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
 import { trackEvent } from "@/utils/track";
+import { getSourceLabel, localizeSubtypeGroups } from "@/utils/sourceLabels";
 
 const router = useRouter();
+const route = useRoute();
 const store = mainStore();
+const { locale, t } = useI18n({ useScope: "global" });
 const isClient = typeof window !== "undefined";
 const cacheVersion = getCacheVersion();
 const isPrerender =
@@ -233,8 +238,12 @@ const sourceRows = computed(() =>
     Array.from({ length: typeRowCount.value }, () => [])
   )
 );
+const resolveRouteType = (targetRoute) =>
+  getSourceNameBySlug(
+    targetRoute?.params?.sourceSlug || targetRoute?.query?.type || availableNews.value[0]?.name
+  );
 const listType = ref(
-  router.currentRoute.value.query.type || availableNews.value[0]?.name
+  resolveRouteType(router.currentRoute.value)
 );
 const listSubType = ref(null);
 const pageNumber = ref(
@@ -258,19 +267,21 @@ const linkTarget = computed(() =>
 );
 const showImages = computed(() => store.showImages);
 const logoSrc = (name) => getSourceLogo(name, cacheVersion);
+const getSourceDisplayLabel = (item) =>
+  getSourceLabel(item?.name, locale.value, item?.label || item?.name);
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };
 const subtypeGroups = computed(() =>
-  getSourceSubtypeGroups(listType.value)
+  localizeSubtypeGroups(getSourceSubtypeGroups(listType.value), locale.value)
 );
 const activeTypeOptions = computed(() =>
-  getSourceSubtypeOptions(listType.value)
+  subtypeGroups.value.flatMap((group) => group.items || [])
 );
 
 const resolveSubType = (route) => {
   const options = activeTypeOptions.value;
-  const candidate = route?.query?.subtype;
+  const candidate = route?.params?.subtypeSlug || route?.query?.subtype;
   const stored = readSourceSubtype(listType.value);
   return resolveSourceSubtype(options, candidate || stored);
 };
@@ -279,13 +290,17 @@ const resolveSubType = (route) => {
 const getHotListsData = async (name, isNew = false) => {
   if (!name) return;
   if (isPrerender) {
-    const label = store.newsArr.find((item) => item.name === name)?.label || "热门榜单";
+    const label = getSourceDisplayLabel(
+      store.newsArr.find((item) => item.name === name) ||
+        store.defaultNewsArr.find((item) => item.name === name) ||
+        { name, label: name }
+    );
     listData.value = {
-      title: `${label}热榜`,
-      subtitle: "实时热榜 | 预渲染占位",
+      title: label,
+      subtitle: t("list.prerenderSubtitle"),
       data: [],
     };
-    updateTime.value = formatTime(new Date().toISOString());
+    updateTime.value = formatTime(new Date().toISOString(), locale.value);
     return;
   }
   listData.value = null;
@@ -312,7 +327,7 @@ const getHotListsData = async (name, isNew = false) => {
     })
     .catch(() => {
       store.markUnavailable(item.name);
-      $message.error("热榜加载失败，请重试");
+      $message.error(t("list.loadFailedMessage"));
     });
 };
 
@@ -431,14 +446,7 @@ const changeType = (type, event) => {
     getSourceSubtypeOptions(type),
     readSourceSubtype(type)
   );
-  router.push({
-    path: "/list",
-    query: {
-      type,
-      ...(nextSubtype ? { subtype: nextSubtype } : {}),
-      page: 1,
-    },
-  });
+  router.push(buildRankPath(getLocaleFromRoute(route), type, nextSubtype || ""));
 };
 
 const changeSubType = (subtype) => {
@@ -450,14 +458,7 @@ const changeSubType = (subtype) => {
     category: store.activeCategory,
   });
   persistSourceSubtype(listType.value, subtype);
-  router.push({
-    path: "/list",
-    query: {
-      type: listType.value,
-      subtype,
-      page: 1,
-    },
-  });
+  router.push(buildRankPath(getLocaleFromRoute(route), listType.value, subtype));
 };
 
 // 实时改变更新时间
@@ -465,7 +466,7 @@ watch(
   () => store.timeData,
   () => {
     if (listData.value) {
-      updateTime.value = formatTime(listData.value.updateTime);
+      updateTime.value = formatTime(listData.value.updateTime, locale.value);
     }
   }
 );
@@ -475,14 +476,14 @@ watch(
   () => pageNumber.value,
   (val) => {
     const query = {
-      type: listType.value,
       page: val,
     };
-    if (listSubType.value) {
-      query.subtype = listSubType.value;
-    }
     router.push({
-      path: "/list",
+      path: buildRankPath(
+        getLocaleFromRoute(route),
+        listType.value,
+        listSubType.value || ""
+      ),
       query,
     });
     document.querySelector(".n-back-top")?.click();
@@ -493,8 +494,8 @@ watch(
 watch(
   () => router.currentRoute.value,
   (val) => {
-    if (val.name === "list") {
-      listType.value = val.query.type;
+    if (["list", "list-locale", "list-legacy"].includes(val.name)) {
+      listType.value = resolveRouteType(val);
       pageNumber.value = Number(val.query.page) || 1;
       listSubType.value = resolveSubType(val);
       persistSourceSubtype(listType.value, listSubType.value);

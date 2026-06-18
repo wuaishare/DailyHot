@@ -1,3 +1,16 @@
+import i18n from "@/i18n";
+import {
+  buildLocalePathFromRoute,
+  getCategoryLabel,
+  getCategoryNameBySlug,
+  getLocaleFromRoute,
+  getLocaleMeta,
+  getSourceNameBySlug,
+  getSupportedLocales,
+  normalizeLocale,
+} from "@/utils/locale";
+import { getSourceSubtypeOptions } from "@/utils/sourceSubtypes";
+
 const DEFAULT_SEO = {
   title: "今日热榜 - 全网热点聚合与多平台热榜实时更新",
   description:
@@ -262,6 +275,144 @@ const LIST_SEO_MAP = {
   },
 };
 
+const SOURCE_LABEL_OVERRIDES = {
+  weibo: { en: "Weibo Hot Search" },
+  zhihu: { en: "Zhihu Hot List" },
+  douyin: { en: "Douyin Hot List" },
+  bilibili: { en: "Bilibili Trending" },
+  toutiao: { en: "Toutiao Hot List" },
+  baidu: { en: "Baidu Hot Search" },
+  kuaishou: { en: "Kuaishou Trending" },
+  "36kr": { en: "36Kr Trending" },
+  "qq-news": { en: "Tencent News Trending" },
+  "netease-news": { en: "Netease News Trending" },
+  "sina-news": { en: "Sina News Trending" },
+  ithome: { en: "ITHome Trending" },
+  sspai: { en: "SSPAI Trending" },
+  thepaper: { en: "The Paper Trending" },
+  tieba: { en: "Baidu Tieba Trending" },
+  smzdm: { en: "SMZDM Trending" },
+  nytimes: { en: "The New York Times" },
+  "douban-group": { en: "Douban Groups" },
+  "douban-movie": { en: "Douban Movies & TV" },
+  weread: { en: "WeRead Trending" },
+  csdn: { en: "CSDN Trending" },
+  juejin: { en: "Juejin Trending" },
+  hupu: { en: "Hupu Trending" },
+  coolapk: { en: "Coolapk Trending" },
+  v2ex: { en: "V2EX Trending" },
+  github: { en: "GitHub Trending" },
+  gameres: { en: "GameRes Trending" },
+  yystv: { en: "Yystv Trending" },
+  miyoushe: { en: "Miyoushe Trending" },
+  genshin: { en: "Genshin Impact" },
+  starrail: { en: "Honkai: Star Rail" },
+  honkai: { en: "Honkai Impact 3rd" },
+  lol: { en: "League of Legends" },
+  huxiu: { en: "Huxiu Trending" },
+  sina: { en: "Sina Hot List" },
+  tianya: { en: "Tianya Curated" },
+  ngabbs: { en: "NGA Trending" },
+  hellogithub: { en: "HelloGitHub Trending" },
+  jianshu: { en: "Jianshu Trending" },
+  "zhihu-daily": { en: "Zhihu Daily" },
+  "openrouter-rankings": { en: "OpenRouter Rankings" },
+  artificialanalysis: { en: "Artificial Analysis" },
+  lmarena: { en: "LMArena" },
+  designarena: { en: "DesignArena" },
+  "aicpb-rankings": { en: "AICPB Global AI Rankings" },
+  "llm-stats": { en: "LLM Stats" },
+  "skills-rank": { en: "Skills Rank" },
+  "openai-news": { en: "OpenAI News" },
+  "openai-research": { en: "OpenAI Research" },
+  "anthropic-news": { en: "Anthropic News" },
+  "deepmind-blog": { en: "DeepMind Blog" },
+  "meta-ai-blog": { en: "Meta AI" },
+  "huggingface-blog": { en: "Hugging Face Blog" },
+  "mistral-news": { en: "Mistral News" },
+  "cohere-blog": { en: "Cohere Blog" },
+  "hf-models": { en: "Hugging Face Models" },
+  "hf-papers": { en: "Hugging Face Papers" },
+  paperswithcode: { en: "Papers with Code" },
+  "producthunt-ai": { en: "Product Hunt AI" },
+  "hackernews-ai": { en: "Hacker News AI" },
+  "clawhub-skills": { en: "ClawHub Skills" },
+  clawhub: { en: "ClawHub" },
+  "clawhub-plugins": { en: "ClawHub Plugins" },
+  "sina-ai": { en: "Sina AI" },
+  default: { en: "Cross-platform Rankings" },
+};
+
+const SYSTEM_ROUTE_SEO_KEY_MAP = {
+  setting: "setting",
+  "setting-locale": "setting",
+  analytics: "analytics",
+  "analytics-locale": "analytics",
+  privacy: "privacy",
+  "privacy-locale": "privacy",
+  test: "test",
+  "test-locale": "test",
+  403: "forbidden",
+  "403-locale": "forbidden",
+  404: "notFound",
+  "404-locale": "notFound",
+  500: "serverError",
+  "500-locale": "serverError",
+};
+
+const containsNonLatin = (value = "") => /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(value);
+
+const titleCaseToken = (token = "") =>
+  token
+    .split(" ")
+    .filter(Boolean)
+    .map((part) =>
+      /^[A-Z0-9]+$/.test(part)
+        ? part
+        : part.charAt(0).toUpperCase() + part.slice(1)
+    )
+    .join(" ");
+
+const prettifySlug = (value = "") =>
+  titleCaseToken(
+    String(value)
+      .replace(/[-_]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+
+const getSourceLabel = (typeKey, locale = "zh-CN") => {
+  const normalizedLocale = normalizeLocale(locale);
+  const overrides = SOURCE_LABEL_OVERRIDES[typeKey] || SOURCE_LABEL_OVERRIDES.default;
+  if (overrides?.[normalizedLocale]) return overrides[normalizedLocale];
+  if (normalizedLocale === "zh-CN" && LIST_SEO_MAP[typeKey]?.label) {
+    return LIST_SEO_MAP[typeKey].label;
+  }
+  if (normalizedLocale === "zh-TW" && LIST_SEO_MAP[typeKey]?.label) {
+    return LIST_SEO_MAP[typeKey].label;
+  }
+  if (overrides?.en) return overrides.en;
+  if (LIST_SEO_MAP[typeKey]?.label && !containsNonLatin(LIST_SEO_MAP[typeKey].label)) {
+    return LIST_SEO_MAP[typeKey].label;
+  }
+  return prettifySlug(typeKey || "rankings");
+};
+
+const getSubtypeLabel = (sourceSlug, subtypeSlug, locale = "zh-CN") => {
+  if (!sourceSlug || !subtypeSlug) return "";
+  const subtype = getSourceSubtypeOptions(sourceSlug).find(
+    (item) => item.value === subtypeSlug
+  );
+  const rawLabel = subtype?.label || "";
+  const normalizedLocale = normalizeLocale(locale);
+  if (!rawLabel) return prettifySlug(subtypeSlug);
+  if (normalizedLocale === "zh-CN" || normalizedLocale === "zh-TW") {
+    return rawLabel;
+  }
+  if (!containsNonLatin(rawLabel)) return rawLabel;
+  return prettifySlug(subtypeSlug);
+};
+
 const normalizeSiteUrl = (url) => {
   if (!url) return "";
   return url.replace(/\/+$/, "");
@@ -303,6 +454,33 @@ const setLinkTag = (rel, href) => {
   tag.setAttribute("href", href);
 };
 
+const setAlternateLinks = (route, siteUrl) => {
+  const existing = document.head.querySelectorAll('link[data-i18n-alt="true"]');
+  existing.forEach((item) => item.remove());
+  if (!siteUrl) return;
+  const locales = getSupportedLocales();
+  locales.forEach((item) => {
+    const link = document.createElement("link");
+    link.setAttribute("rel", "alternate");
+    link.setAttribute("hreflang", item.htmlLang);
+    link.setAttribute(
+      "href",
+      buildAbsoluteUrl(buildLocalePathFromRoute(route, item.code), siteUrl)
+    );
+    link.setAttribute("data-i18n-alt", "true");
+    document.head.appendChild(link);
+  });
+  const xDefault = document.createElement("link");
+  xDefault.setAttribute("rel", "alternate");
+  xDefault.setAttribute("hreflang", "x-default");
+  xDefault.setAttribute(
+    "href",
+    buildAbsoluteUrl(buildLocalePathFromRoute(route, "zh-CN"), siteUrl)
+  );
+  xDefault.setAttribute("data-i18n-alt", "true");
+  document.head.appendChild(xDefault);
+};
+
 const setJsonLd = (id, data) => {
   const selector = `script#${id}`;
   const existing = document.head.querySelector(selector);
@@ -331,18 +509,39 @@ const resolveValue = (val, ctx) => {
   return typeof val === "function" ? val(ctx) : val;
 };
 
-const getListSeo = (route, siteUrl, canonical) => {
-  const typeParam = route?.query?.type || route?.params?.type;
-  const typeKey = Array.isArray(typeParam) ? typeParam?.[0] : typeParam;
-  const meta = (typeKey && LIST_SEO_MAP[typeKey]) || LIST_SEO_MAP.default;
-  const label = meta.label || "热门榜单";
-  const description =
-    meta.description ||
-    `${label}实时更新，覆盖当下高热度内容，支持分页与快速跳转。`;
-  const keywords =
-    meta.keywords || `${label},热门榜单,实时热榜,全网热点,今日热榜`;
-  const title = `${label} - 今日热榜_吾爱分享网`;
+const getPageSeo = (route, locale) => {
+  const pageKey = SYSTEM_ROUTE_SEO_KEY_MAP[route?.name];
+  if (!pageKey) return null;
+  return {
+    title: i18n.global.t(`seo.${pageKey}Title`, {}, { locale }),
+    description: i18n.global.t(`seo.${pageKey}Description`, {}, { locale }),
+  };
+};
 
+const getCategorySeo = (route, canonical) => {
+  const locale = getLocaleFromRoute(route);
+  const rawCategoryName = route?.params?.categorySlug
+    ? getCategoryNameBySlug(route.params.categorySlug)
+    : "";
+  const categoryName = rawCategoryName
+    ? getCategoryLabel(rawCategoryName, locale)
+    : "";
+  if (!categoryName) return null;
+  const title = i18n.global.t(
+    "seo.categoryTitle",
+    { category: categoryName },
+    { locale }
+  );
+  const description = i18n.global.t(
+    "seo.categoryDescription",
+    { category: categoryName },
+    { locale }
+  );
+  const keywords = i18n.global.t(
+    "seo.categoryKeywords",
+    { category: categoryName },
+    { locale }
+  );
   return {
     title,
     description,
@@ -350,14 +549,94 @@ const getListSeo = (route, siteUrl, canonical) => {
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      name: `${label} - 今日热榜`,
+      name: title,
       description,
-      inLanguage: "zh-CN",
+      inLanguage: getLocaleMeta(locale)?.htmlLang || "zh-CN",
+      url: canonical,
+      mainEntity: {
+        "@type": "ItemList",
+        name: categoryName,
+        itemListOrder: "Descending",
+      },
+    },
+  };
+};
+
+const getListSeo = (route, siteUrl, canonical) => {
+  const locale = getLocaleFromRoute(route);
+  const typeParam =
+    route?.query?.type ||
+    route?.params?.type ||
+    getSourceNameBySlug(route?.params?.sourceSlug);
+  const typeKey = Array.isArray(typeParam) ? typeParam?.[0] : typeParam;
+  const sourceKey = typeKey || "default";
+  const meta = LIST_SEO_MAP[sourceKey] || LIST_SEO_MAP.default;
+  const sourceLabel = getSourceLabel(sourceKey, locale);
+  const subtypeSlug = Array.isArray(route?.params?.subtypeSlug)
+    ? route.params.subtypeSlug[0]
+    : route?.params?.subtypeSlug;
+  const subtypeLabel = getSubtypeLabel(sourceKey, subtypeSlug, locale);
+  const label = subtypeLabel ? `${sourceLabel} · ${subtypeLabel}` : sourceLabel;
+  const localizedDefaultTitle = i18n.global.t("seo.listTitle", {}, { locale });
+  const localizedDefaultDescription = i18n.global.t(
+    "seo.listDescription",
+    {},
+    { locale }
+  );
+  const localizedDefaultKeywords = i18n.global.t(
+    "seo.listKeywords",
+    {},
+    { locale }
+  );
+  const description =
+    subtypeLabel
+      ? i18n.global.t(
+          "seo.sourceSubtypeDescription",
+          {
+            label: sourceLabel,
+            subtype: subtypeLabel,
+          },
+          { locale }
+        )
+      : locale === "zh-CN" && meta.description
+        ? meta.description
+        : i18n.global.t("seo.sourceDescription", { label: sourceLabel }, { locale });
+  const keywords =
+    subtypeLabel
+      ? i18n.global.t(
+          "seo.sourceSubtypeKeywords",
+          {
+            label: sourceLabel,
+            subtype: subtypeLabel,
+          },
+          { locale }
+        )
+      : locale === "zh-CN" && meta.keywords
+        ? meta.keywords
+        : i18n.global.t("seo.sourceKeywords", { label: sourceLabel }, { locale });
+  const localizedSiteName = i18n.global.t("common.siteName", {}, { locale });
+  const title =
+    locale === "zh-CN"
+      ? `${label} - 今日热榜_吾爱分享网`
+      : `${label} - ${localizedSiteName}`;
+  const finalDescription = description || localizedDefaultDescription;
+  const finalKeywords = keywords || localizedDefaultKeywords;
+
+  return {
+    title,
+    description: finalDescription,
+    keywords: finalKeywords,
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: title,
+      description: finalDescription,
+      inLanguage: getLocaleMeta(locale)?.htmlLang || "zh-CN",
       url: canonical,
       isPartOf: siteUrl || undefined,
       mainEntity: {
         "@type": "ItemList",
-        name: `${label}榜单`,
+        name: label,
         itemListOrder: "Descending",
         itemListElement: [
           {
@@ -374,26 +653,64 @@ const getListSeo = (route, siteUrl, canonical) => {
 
 export const applySeoMeta = (route) => {
   if (typeof document === "undefined") return;
+  const locale = normalizeLocale(getLocaleFromRoute(route));
   const meta = route?.meta || {};
   const siteUrl = getSiteUrl();
   const canonical = meta.canonical
     ? buildAbsoluteUrl(meta.canonical, siteUrl)
     : buildAbsoluteUrl(route?.fullPath || route?.path || "/", siteUrl);
-  const context = { route, siteUrl, canonical };
+  const context = { route, siteUrl, canonical, locale };
 
-  const listSeo = route?.name === "list" ? getListSeo(route, siteUrl, canonical) : null;
+  const listSeo = ["list", "list-locale", "list-legacy"].includes(route?.name)
+    ? getListSeo(route, siteUrl, canonical)
+    : null;
+  const categorySeo = ["category", "category-locale"].includes(route?.name)
+    ? getCategorySeo(route, canonical)
+    : null;
+  const pageSeo = getPageSeo(route, locale);
+  const localizedHomeTitle = i18n.global.t("seo.homeTitle", {}, { locale });
+  const localizedHomeDescription = i18n.global.t(
+    "seo.homeDescription",
+    {},
+    { locale }
+  );
+  const localizedHomeKeywords = i18n.global.t("seo.homeKeywords", {}, { locale });
+  const localizedListTitle = i18n.global.t("seo.listTitle", {}, { locale });
+  const localizedListDescription = i18n.global.t(
+    "seo.listDescription",
+    {},
+    { locale }
+  );
+  const localizedListKeywords = i18n.global.t("seo.listKeywords", {}, { locale });
+  const isLocaleRoute = locale !== "zh-CN";
+  const isListRoute = ["list", "list-locale", "list-legacy"].includes(route?.name);
+  const isHomeRoute = ["home", "home-locale"].includes(route?.name);
 
   const title =
     listSeo?.title ||
+    categorySeo?.title ||
+    pageSeo?.title ||
+    (isLocaleRoute && isHomeRoute ? localizedHomeTitle : null) ||
+    (isLocaleRoute && isListRoute ? localizedListTitle : null) ||
     resolveValue(meta.seoTitle || meta.title, context) ||
+    localizedHomeTitle ||
     DEFAULT_SEO.title;
   const description =
     listSeo?.description ||
+    categorySeo?.description ||
+    pageSeo?.description ||
+    (isLocaleRoute && isHomeRoute ? localizedHomeDescription : null) ||
+    (isLocaleRoute && isListRoute ? localizedListDescription : null) ||
     resolveValue(meta.description, context) ||
+    localizedHomeDescription ||
     DEFAULT_SEO.description;
   const keywords =
     listSeo?.keywords ||
+    categorySeo?.keywords ||
+    (isLocaleRoute && isHomeRoute ? localizedHomeKeywords : null) ||
+    (isLocaleRoute && isListRoute ? localizedListKeywords : null) ||
     resolveValue(meta.keywords, context) ||
+    localizedHomeKeywords ||
     DEFAULT_SEO.keywords;
   const robots = resolveValue(meta.robots, context) || "index,follow";
   const ogType = resolveValue(meta.ogType, context) || "website";
@@ -412,8 +729,12 @@ export const applySeoMeta = (route) => {
   setMetaTag("property", "og:description", description);
   setMetaTag("property", "og:url", canonical);
   setMetaTag("property", "og:image", ogImage);
-  setMetaTag("property", "og:site_name", DEFAULT_SEO.siteName);
-  setMetaTag("property", "og:locale", DEFAULT_SEO.locale);
+  setMetaTag("property", "og:site_name", i18n.global.t("common.siteName", {}, { locale }) || DEFAULT_SEO.siteName);
+  setMetaTag(
+    "property",
+    "og:locale",
+    (getLocaleMeta(locale)?.htmlLang || DEFAULT_SEO.locale).replace("-", "_")
+  );
 
   setMetaTag("name", "twitter:card", "summary_large_image");
   setMetaTag("name", "twitter:title", title);
@@ -421,9 +742,11 @@ export const applySeoMeta = (route) => {
   setMetaTag("name", "twitter:image", ogImage);
 
   setLinkTag("canonical", canonical);
+  setAlternateLinks(route, siteUrl);
 
   const jsonLd =
     listSeo?.jsonLd ||
+    categorySeo?.jsonLd ||
     (typeof meta.jsonLd === "function"
       ? meta.jsonLd({ siteUrl, canonical, title, description, route })
       : meta.jsonLd);

@@ -1,24 +1,79 @@
 import LunarCalendar from "lunar-calendar";
 
-export const formatTime = (timestamp) => {
+const normalizeLocale = (locale = "zh-CN") => {
+  const value = String(locale).toLowerCase();
+  if (value.startsWith("zh-tw")) return "zh-TW";
+  if (value.startsWith("en")) return "en";
+  if (value.startsWith("ja")) return "ja";
+  if (value.startsWith("ko")) return "ko";
+  return "zh-CN";
+};
+
+const RELATIVE_TIME_FORMATTERS = {
+  "zh-CN": {
+    justNow: () => "刚刚更新",
+    minutes: (minutes) => `${minutes}分钟前更新`,
+    hours: (hours) => `${hours}小时前更新`,
+    date: (date) => `${date.getMonth() + 1}月${date.getDate()}日`,
+  },
+  en: {
+    justNow: () => "Updated just now",
+    minutes: (minutes) => `Updated ${minutes} minute${minutes > 1 ? "s" : ""} ago`,
+    hours: (hours) => `Updated ${hours} hour${hours > 1 ? "s" : ""} ago`,
+    date: (date) =>
+      new Intl.DateTimeFormat("en", {
+        month: "short",
+        day: "numeric",
+      }).format(date),
+  },
+  "zh-TW": {
+    justNow: () => "剛剛更新",
+    minutes: (minutes) => `${minutes}分鐘前更新`,
+    hours: (hours) => `${hours}小時前更新`,
+    date: (date) => `${date.getMonth() + 1}月${date.getDate()}日`,
+  },
+  ja: {
+    justNow: () => "たった今更新",
+    minutes: (minutes) => `${minutes}分前に更新`,
+    hours: (hours) => `${hours}時間前に更新`,
+    date: (date) =>
+      new Intl.DateTimeFormat("ja", {
+        month: "numeric",
+        day: "numeric",
+      }).format(date),
+  },
+  ko: {
+    justNow: () => "방금 업데이트됨",
+    minutes: (minutes) => `${minutes}분 전 업데이트`,
+    hours: (hours) => `${hours}시간 전 업데이트`,
+    date: (date) =>
+      new Intl.DateTimeFormat("ko", {
+        month: "numeric",
+        day: "numeric",
+      }).format(date),
+  },
+};
+
+export const formatTime = (timestamp, locale = "zh-CN") => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
   const diffInMinutes = diffInSeconds / 60;
   const diffInHours = diffInMinutes / 60;
+  const formatter =
+    RELATIVE_TIME_FORMATTERS[normalizeLocale(locale)] ||
+    RELATIVE_TIME_FORMATTERS["zh-CN"];
 
   if (diffInSeconds < 60) {
-    return "刚刚更新";
+    return formatter.justNow();
   } else if (diffInMinutes < 60) {
     const minutes = Math.floor(diffInMinutes);
-    return `${minutes}分钟前更新`;
+    return formatter.minutes(minutes);
   } else if (diffInHours < 24) {
     const hours = Math.floor(diffInHours);
-    return `${hours}小时前更新`;
+    return formatter.hours(hours);
   } else {
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${month}月${day}日`;
+    return formatter.date(date);
   }
 };
 

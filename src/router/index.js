@@ -1,6 +1,15 @@
 import { createRouter, createWebHistory } from "vue-router";
 import routes from "@/router/routes";
 import { applySeoMeta } from "@/utils/seo";
+import { mainStore } from "@/store";
+import {
+  buildRankPath,
+  getCategoryNameBySlug,
+  getLocaleFromRoute,
+  getSourceNameBySlug,
+  savePreferredLocale,
+  setDocumentLanguage,
+} from "@/utils/locale";
 import { trackEvent } from "@/utils/track";
 
 const router = createRouter({
@@ -9,13 +18,44 @@ const router = createRouter({
 });
 
 // 路由守卫
-router.beforeEach(() => {
+router.beforeEach((to) => {
+  const store = mainStore();
+  const locale = getLocaleFromRoute(to);
+  setDocumentLanguage(locale);
+  savePreferredLocale(locale);
+  if (store?.setActiveCategory) {
+    const categoryName = getCategoryNameBySlug(to.params?.categorySlug);
+    store.setActiveCategory(categoryName || "全部");
+  }
   if (typeof window !== "undefined" && window.$loadingBar) {
     window.$loadingBar.start();
   }
 });
 
+router.beforeEach((to) => {
+  const locale = getLocaleFromRoute(to);
+  const legacyType = to.query?.type;
+  const legacySubtype = to.query?.subtype;
+  if (to.name === "list-legacy" && legacyType) {
+    const sourceSlug = getSourceNameBySlug(
+      Array.isArray(legacyType) ? legacyType[0] : legacyType
+    );
+    const subtypeSlug = Array.isArray(legacySubtype)
+      ? legacySubtype[0]
+      : legacySubtype;
+    return buildRankPath(locale, sourceSlug, subtypeSlug || "");
+  }
+  const categoryName = getCategoryNameBySlug(to.params?.categorySlug);
+  const store = mainStore();
+  if (store?.setActiveCategory) {
+    store.setActiveCategory(categoryName || "全部");
+  }
+});
+
 router.afterEach((to) => {
+  const locale = getLocaleFromRoute(to);
+  setDocumentLanguage(locale);
+  savePreferredLocale(locale);
   if (typeof window !== "undefined" && window.$loadingBar) {
     window.$loadingBar.finish();
   }

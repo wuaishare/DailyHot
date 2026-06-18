@@ -1,11 +1,14 @@
-import { createApp } from "vue";
+import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 
 import App from "./App.vue";
 import router from "@/router";
 import { mainStore } from "@/store";
+import i18n from "@/i18n";
 import { ensureCacheVersion } from "@/utils/cache";
+import { resolveInitialLocale, savePreferredLocale, setDocumentLanguage } from "@/utils/locale";
+import { applyDynamicTranslation } from "@/utils/translateEngine";
 import { registerSW } from "virtual:pwa-register";
 
 // 全局样式
@@ -29,10 +32,17 @@ updateServiceWorker = registerSW({
   await ensureCacheVersion();
 
   const app = createApp(App);
+  const initialLocale = resolveInitialLocale(
+    typeof window !== "undefined" ? window.location.pathname : "/"
+  );
 
   const pinia = createPinia();
   pinia.use(piniaPluginPersistedstate);
   app.use(pinia);
+  i18n.global.locale.value = initialLocale;
+  setDocumentLanguage(initialLocale);
+  savePreferredLocale(initialLocale);
+  app.use(i18n);
 
   // 预渲染/SSR 时需要默认榜单数据，避免首屏为空
   const store = mainStore();
@@ -41,4 +51,22 @@ updateServiceWorker = registerSW({
   app.use(router);
 
   app.mount("#app");
+
+  if (typeof window !== "undefined") {
+    const runTranslation = () => {
+      window.setTimeout(() => {
+        applyDynamicTranslation(i18n.global.locale.value);
+      }, 400);
+    };
+    watch(
+      () => i18n.global.locale.value,
+      () => {
+        runTranslation();
+      },
+      { immediate: true }
+    );
+    router.afterEach(() => {
+      runTranslation();
+    });
+  }
 })();
