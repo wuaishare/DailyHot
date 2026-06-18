@@ -341,6 +341,7 @@ export const mainStore = defineStore("mainData", {
           order: 45,
           show: true,
           category: "社区",
+          subtype: "日榜",
         },
         {
           label: "Nodeseek",

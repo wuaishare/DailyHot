@@ -35,6 +35,16 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  linuxdo: [
+    {
+      key: "default",
+      label: "",
+      items: [
+        { label: "日榜", value: "daily" },
+        { label: "周榜", value: "weekly" },
+      ],
+    },
+  ],
   "douban-movie": [
     {
       key: "cinema",

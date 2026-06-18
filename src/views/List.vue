@@ -387,8 +387,7 @@ const getHotListsData = async (name, isNew = false) => {
     : buildSourceSubtypeParams(item.name, listSubType.value);
   getHotListsWithFallback(item.name, isNew, params, {
     useApi2,
-    disableFallback: shouldTranslate,
-    forceNoCache: shouldTranslate,
+    forceNoCache: Boolean(isNew),
   })
     .then(({ result, usedFallback, fallbackSuccess }) => {
       if (requestId !== listRequestId) return;

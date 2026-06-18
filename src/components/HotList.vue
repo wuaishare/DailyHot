@@ -350,12 +350,11 @@ const requestHotListResult = (item, isNew, shouldTranslate, useApi2) =>
           translate_limit: HOT_LIST_VISIBLE_LIMIT,
           translate_offset: 0,
           translate_nonce: Date.now(),
-        }
+    }
       : buildSourceSubtypeParams(item.name, activeSubType.value),
     {
       useApi2,
-      disableFallback: shouldTranslate,
-      forceNoCache: shouldTranslate,
+      forceNoCache: Boolean(isNew),
     }
   );
 

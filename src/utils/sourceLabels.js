@@ -326,6 +326,20 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "注目論文ランキング",
     ko: "인기 논문 트렌드 랭킹",
   },
+  日榜: {
+    "zh-CN": "日榜",
+    "zh-TW": "日榜",
+    en: "Daily Rankings",
+    ja: "日間ランキング",
+    ko: "일간 랭킹",
+  },
+  周榜: {
+    "zh-CN": "周榜",
+    "zh-TW": "週榜",
+    en: "Weekly Rankings",
+    ja: "週間ランキング",
+    ko: "주간 랭킹",
+  },
   "开放模型总榜": {
     "zh-CN": "开放模型总榜",
     "zh-TW": "開放模型總榜",
