@@ -274,6 +274,7 @@ const cardSubtitle = computed(() => {
   }
   return getSourceSubtitleLabel(rawSubtitle, locale.value);
 });
+let hotListRequestId = 0;
 let titleTranslationRequestId = 0;
 const visibleItems = ref([]);
 const buildVisibleItems = (translatedTitles = {}) =>
@@ -306,6 +307,32 @@ const syncReadableTitleDom = (items = []) => {
     });
   });
 };
+const updateVisibleItems = async (items = hotListData.value?.data || []) => {
+  const requestId = ++titleTranslationRequestId;
+  const initialItems = buildVisibleItems();
+  visibleItems.value = initialItems;
+  syncReadableTitleDom(initialItems);
+  const titles = (items || [])
+    .slice(0, READABLE_TITLE_LIMIT)
+    .map((item) => item?.title || "");
+  if (!shouldEnhanceReadableTitles.value || !titles.length) {
+    if (requestId === titleTranslationRequestId) {
+      const fallbackItems = buildVisibleItems();
+      visibleItems.value = fallbackItems;
+      syncReadableTitleDom(fallbackItems);
+    }
+    return;
+  }
+  const translatedTitles = await translateReadableTitles(
+    titles,
+    locale.value
+  );
+  if (requestId === titleTranslationRequestId) {
+    const translatedItems = buildVisibleItems(translatedTitles);
+    visibleItems.value = translatedItems;
+    syncReadableTitleDom(translatedItems);
+  }
+};
 const subtypeGroups = computed(() =>
   localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value)
 );
@@ -329,38 +356,11 @@ watch(
 );
 
 watch(
-  () => [props.hotData.name, locale.value, hotListData.value?.data],
-  async () => {
-    const requestId = ++titleTranslationRequestId;
-    if (requestId === titleTranslationRequestId) {
-      visibleItems.value = buildVisibleItems();
-    }
-    const titles = (hotListData.value?.data || [])
-      .slice(0, READABLE_TITLE_LIMIT)
-      .map((item) => item?.title || "");
-    if (!shouldEnhanceReadableTitles.value || !titles.length) {
-      if (requestId === titleTranslationRequestId) {
-        visibleItems.value = buildVisibleItems();
-      }
-      return;
-    }
-    const translatedTitles = await translateReadableTitles(
-      titles,
-      locale.value
-    );
-    if (requestId === titleTranslationRequestId) {
-      visibleItems.value = buildVisibleItems(translatedTitles);
-    }
+  () => locale.value,
+  () => {
+    updateVisibleItems();
   },
   { immediate: true }
-);
-
-watch(
-  () => visibleItems.value,
-  (items) => {
-    syncReadableTitleDom(items);
-  },
-  { immediate: true, deep: true }
 );
 
 const updateIsDesktop = () => {
@@ -371,6 +371,7 @@ const updateIsDesktop = () => {
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (isPrerender) return;
+  const requestId = ++hotListRequestId;
   try {
     loadingError.value = false;
     const item =
@@ -390,10 +391,12 @@ const getHotListsData = async (name, isNew = false) => {
     if (usedFallback && fallbackSuccess && !useApi2) {
       store.setSourceApi2(item.name, true);
     }
+    if (requestId !== hotListRequestId) return;
     if (result.code === 200) {
       store.markAvailable(item.name);
       listLoading.value = false;
       hotListData.value = result;
+      await updateVisibleItems(result.data || []);
       // 滚动至顶部
       if (scrollbarRef.value) {
         scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
@@ -404,6 +407,7 @@ const getHotListsData = async (name, isNew = false) => {
       $message.error(result.title + result.message);
     }
   } catch (error) {
+    if (requestId !== hotListRequestId) return;
     store.markUnavailable(name);
     loadingError.value = true;
     $message.error(t("hotList.loadFailedMessage"));

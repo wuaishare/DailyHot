@@ -307,6 +307,7 @@ const listHeaderSubtitle = computed(() => {
   }
   return getSourceSubtitleLabel(rawSubtitle, locale.value);
 });
+let listRequestId = 0;
 let titleTranslationRequestId = 0;
 const currentPageItems = ref([]);
 const buildCurrentPageItems = (translatedTitles = {}) =>
@@ -340,6 +341,33 @@ const syncReadableTitleDom = (items = []) => {
     });
   });
 };
+const updateCurrentPageItems = async (items = listData.value?.data || []) => {
+  const requestId = ++titleTranslationRequestId;
+  const initialItems = buildCurrentPageItems();
+  currentPageItems.value = initialItems;
+  syncReadableTitleDom(initialItems);
+  const titles = (items || [])
+    .slice(pageNumber.value * 20 - 20, pageNumber.value * 20)
+    .slice(0, READABLE_TITLE_LIMIT)
+    .map((item) => item?.title || "");
+  if (!shouldEnhanceReadableTitles.value || !titles.length) {
+    if (requestId === titleTranslationRequestId) {
+      const fallbackItems = buildCurrentPageItems();
+      currentPageItems.value = fallbackItems;
+      syncReadableTitleDom(fallbackItems);
+    }
+    return;
+  }
+  const translatedTitles = await translateReadableTitles(
+    titles,
+    locale.value
+  );
+  if (requestId === titleTranslationRequestId) {
+    const translatedItems = buildCurrentPageItems(translatedTitles);
+    currentPageItems.value = translatedItems;
+    syncReadableTitleDom(translatedItems);
+  }
+};
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };
@@ -360,6 +388,7 @@ const resolveSubType = (route) => {
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (!name) return;
+  const requestId = ++listRequestId;
   if (isPrerender) {
     const label = getSourceDisplayLabel(
       store.newsArr.find((item) => item.name === name) ||
@@ -375,6 +404,7 @@ const getHotListsData = async (name, isNew = false) => {
     return;
   }
   listData.value = null;
+  currentPageItems.value = [];
   const item =
     store.newsArr.find((item) => item.name == name) ||
     store.defaultNewsArr.find((item) => item.name == name);
@@ -385,18 +415,21 @@ const getHotListsData = async (name, isNew = false) => {
   };
   getHotListsWithFallback(item.name, isNew, params, { useApi2 })
     .then(({ result, usedFallback, fallbackSuccess }) => {
+      if (requestId !== listRequestId) return;
       if (usedFallback && fallbackSuccess && !useApi2) {
         store.setSourceApi2(item.name, true);
       }
       if (result.code === 200) {
         store.markAvailable(item.name);
         listData.value = result;
+        updateCurrentPageItems(result.data || []);
       } else {
         store.markUnavailable(item.name);
         $message.error(result.message);
       }
     })
     .catch(() => {
+      if (requestId !== listRequestId) return;
       store.markUnavailable(item.name);
       $message.error(t("list.loadFailedMessage"));
     });
@@ -543,39 +576,11 @@ watch(
 );
 
 watch(
-  () => [listType.value, pageNumber.value, locale.value, listData.value?.data],
-  async () => {
-    const requestId = ++titleTranslationRequestId;
-    if (requestId === titleTranslationRequestId) {
-      currentPageItems.value = buildCurrentPageItems();
-    }
-    const titles = (listData.value?.data || [])
-      .slice(pageNumber.value * 20 - 20, pageNumber.value * 20)
-      .slice(0, READABLE_TITLE_LIMIT)
-      .map((item) => item?.title || "");
-    if (!shouldEnhanceReadableTitles.value || !titles.length) {
-      if (requestId === titleTranslationRequestId) {
-        currentPageItems.value = buildCurrentPageItems();
-      }
-      return;
-    }
-    const translatedTitles = await translateReadableTitles(
-      titles,
-      locale.value
-    );
-    if (requestId === titleTranslationRequestId) {
-      currentPageItems.value = buildCurrentPageItems(translatedTitles);
-    }
+  () => [pageNumber.value, locale.value],
+  () => {
+    updateCurrentPageItems();
   },
   { immediate: true }
-);
-
-watch(
-  () => currentPageItems.value,
-  (items) => {
-    syncReadableTitleDom(items);
-  },
-  { immediate: true, deep: true }
 );
 
 // 页数变化
