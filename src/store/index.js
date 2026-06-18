@@ -434,7 +434,7 @@ export const mainStore = defineStore("mainData", {
           order: 58,
           show: true,
           category: "AI",
-          subtype: "排行榜",
+          subtype: "模型综合评测榜",
         },
         {
           label: "LMArena",
@@ -442,7 +442,7 @@ export const mainStore = defineStore("mainData", {
           order: 59,
           show: true,
           category: "AI",
-          subtype: "排行榜",
+          subtype: "模型偏好对战榜",
         },
         {
           label: "DesignArena",
@@ -458,7 +458,7 @@ export const mainStore = defineStore("mainData", {
           order: 61,
           show: true,
           category: "AI",
-          subtype: "排行榜",
+          subtype: "全球 AI 产品热度榜",
         },
         {
           label: "LLM Stats",
@@ -466,7 +466,7 @@ export const mainStore = defineStore("mainData", {
           order: 62,
           show: true,
           category: "AI",
-          subtype: "排行榜",
+          subtype: "模型性能 / 价格榜",
         },
         {
           label: "Skills Rank",
@@ -474,7 +474,7 @@ export const mainStore = defineStore("mainData", {
           order: 63,
           show: true,
           category: "AI",
-          subtype: "排行榜",
+          subtype: "Agent Skills 安装榜",
         },
         {
           label: "ClawHub",
@@ -634,7 +634,7 @@ export const mainStore = defineStore("mainData", {
           order: 83,
           show: true,
           category: "AI",
-          subtype: "官方资讯",
+          subtype: "",
         },
       ],
       newsArr: [],

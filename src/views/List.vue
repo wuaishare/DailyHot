@@ -278,9 +278,15 @@ const currentSourceMeta = computed(
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
-const listHeaderSubtitle = computed(
-  () => currentSourceMeta.value?.subtype || listData.value?.subtitle || listData.value?.type || ""
-);
+const listHeaderSubtitle = computed(() => {
+  if (
+    currentSourceMeta.value &&
+    Object.prototype.hasOwnProperty.call(currentSourceMeta.value, "subtype")
+  ) {
+    return currentSourceMeta.value.subtype ?? "";
+  }
+  return listData.value?.subtitle || listData.value?.type || "";
+});
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };

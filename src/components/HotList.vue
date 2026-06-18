@@ -246,9 +246,12 @@ const showImages = computed(() => store.showImages);
 const sourceLabel = computed(() =>
   getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
 );
-const cardSubtitle = computed(
-  () => props.hotData.subtype || hotListData.value?.type || ""
-);
+const cardSubtitle = computed(() => {
+  if (Object.prototype.hasOwnProperty.call(props.hotData || {}, "subtype")) {
+    return props.hotData.subtype ?? "";
+  }
+  return hotListData.value?.type || "";
+});
 const subtypeGroups = computed(() =>
   localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value)
 );
@@ -535,6 +538,7 @@ onBeforeUnmount(() => {
   .title {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
     font-size: 16px;
     height: 32px;
@@ -542,9 +546,9 @@ onBeforeUnmount(() => {
     .name {
       display: flex;
       align-items: center;
-      flex: 0 1 auto;
+      flex: 1 1 0;
       min-width: 0;
-      max-width: 46%;
+      max-width: none;
       .n-avatar {
         background-color: transparent;
         width: 25px;
@@ -579,8 +583,15 @@ onBeforeUnmount(() => {
     }
 
     .subtitle {
-      margin-left: auto;
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: 46%;
+      margin-left: 12px;
       font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 

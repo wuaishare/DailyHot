@@ -1,7 +1,7 @@
 export const messages = {
   "zh-CN": {
     common: {
-      siteName: "今日热榜",
+      siteName: "吾爱热榜",
       siteTagline: "汇聚全网热点，热门尽览无余_吾爱分享网",
       home: "首页",
       settings: "全局设置",
@@ -43,7 +43,7 @@ export const messages = {
       ai: "AI",
     },
     footer: {
-      description: "今日热榜",
+      description: "吾爱热榜",
       author: "吾爱分享网",
       autoRefresh: "网页自动刷新（油猴脚本）",
       community: "吾爱分享社区",
@@ -401,7 +401,7 @@ export const messages = {
   },
   "zh-TW": {
     common: {
-      siteName: "今日熱榜",
+      siteName: "吾愛熱榜",
       siteTagline: "彙聚全網熱點，熱門一覽無遺",
       home: "首頁",
       settings: "全域設定",
@@ -443,7 +443,7 @@ export const messages = {
       ai: "AI",
     },
     footer: {
-      description: "今日熱榜",
+      description: "吾愛熱榜",
       author: "吾愛分享網",
       autoRefresh: "網頁自動重新整理腳本",
       community: "吾愛分享社群",

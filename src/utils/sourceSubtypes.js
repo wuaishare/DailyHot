@@ -126,6 +126,17 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  github: [
+    {
+      key: "default",
+      label: "",
+      items: [
+        { label: "日榜", value: "daily" },
+        { label: "周榜", value: "weekly" },
+        { label: "月榜", value: "monthly" },
+      ],
+    },
+  ],
   clawhub: [
     {
       key: "skills",
