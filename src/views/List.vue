@@ -212,6 +212,7 @@ import {
   getSourceSubtitleLabel,
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
+import { shouldUseReadableTitleTranslation } from "@/utils/readableTitles";
 
 const router = useRouter();
 const route = useRoute();
@@ -285,6 +286,9 @@ const currentSourceMeta = computed(
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
+const shouldEnhanceReadableTitles = computed(() =>
+  shouldUseReadableTitleTranslation(listType.value, locale.value)
+);
 const listHeaderSubtitle = computed(() => {
   const rawSubtitle =
     currentSourceMeta.value &&
@@ -353,13 +357,19 @@ const getHotListsData = async (name, isNew = false) => {
     store.defaultNewsArr.find((item) => item.name == name);
   if (!item) return;
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
-  const params = {
-    ...buildSourceSubtypeParams(item.name, listSubType.value),
-    locale: locale.value,
-    translate_limit: 20,
-    translate_offset: Math.max(0, (pageNumber.value - 1) * 20),
-  };
-  getHotListsWithFallback(item.name, isNew, params, { useApi2 })
+  const shouldTranslate = shouldEnhanceReadableTitles.value;
+  const params = shouldTranslate
+    ? {
+        ...buildSourceSubtypeParams(item.name, listSubType.value),
+        locale: locale.value,
+        translate_limit: 20,
+        translate_offset: Math.max(0, (pageNumber.value - 1) * 20),
+      }
+    : buildSourceSubtypeParams(item.name, listSubType.value);
+  getHotListsWithFallback(item.name, isNew, params, {
+    useApi2,
+    disableFallback: shouldTranslate,
+  })
     .then(({ result, usedFallback, fallbackSuccess }) => {
       if (requestId !== listRequestId) return;
       if (usedFallback && fallbackSuccess && !useApi2) {

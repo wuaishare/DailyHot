@@ -206,6 +206,7 @@ import {
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
+import { shouldUseReadableTitleTranslation } from "@/utils/readableTitles";
 
 const router = useRouter();
 const store = mainStore();
@@ -254,6 +255,9 @@ const linkTarget = computed(() =>
 const previewMaxWidth = 260;
 const previewMaxHeight = 260;
 const showImages = computed(() => store.showImages);
+const shouldEnhanceReadableTitles = computed(() =>
+  shouldUseReadableTitleTranslation(props.hotData.name, locale.value)
+);
 const sourceLabel = computed(() =>
   getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
 );
@@ -316,18 +320,22 @@ const getHotListsData = async (name, isNew = false) => {
       store.defaultNewsArr.find((item) => item.name == name);
     if (!item) return;
     const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
+    const shouldTranslate = shouldEnhanceReadableTitles.value;
     const { result, usedFallback, fallbackSuccess } =
       await getHotListsWithFallback(
         item.name,
         isNew,
-        {
-          ...buildSourceSubtypeParams(item.name, activeSubType.value),
-          locale: locale.value,
-          translate_limit: 15,
-          translate_offset: 0,
-        },
+        shouldTranslate
+          ? {
+              ...buildSourceSubtypeParams(item.name, activeSubType.value),
+              locale: locale.value,
+              translate_limit: 15,
+              translate_offset: 0,
+            }
+          : buildSourceSubtypeParams(item.name, activeSubType.value),
         {
           useApi2,
+          disableFallback: shouldTranslate,
         }
       );
     if (usedFallback && fallbackSuccess && !useApi2) {

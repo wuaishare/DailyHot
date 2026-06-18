@@ -98,14 +98,16 @@ export const getHotListsWithFallback = async (
 ) => {
   const hasApi2 = Boolean(import.meta.env.VITE_GLOBAL_API2);
   const preferApi2 = Boolean(options?.useApi2 || API2_ONLY_SOURCES.has(type));
+  const disableFallback = Boolean(options?.disableFallback);
   const timeout = options?.timeout;
   const fallbackDelay = options?.fallbackDelay ?? DEFAULT_FALLBACK_DELAY_MS;
   const run = (useApi2) =>
     getHotLists(type, isNew, params, { useApi2, timeout });
 
-  if (preferApi2 || !hasApi2) {
-    const result = await run(preferApi2);
-    return { result, usedApi2: preferApi2, usedFallback: false };
+  if (preferApi2 || !hasApi2 || disableFallback) {
+    const useApi2 = preferApi2 && !disableFallback;
+    const result = await run(useApi2);
+    return { result, usedApi2: useApi2, usedFallback: false };
   }
 
   const createAttempt = (useApi2) =>
