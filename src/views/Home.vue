@@ -37,9 +37,12 @@
 import { mainStore } from "@/store";
 import HotList from "@/components/HotList.vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
+import { getCategoryNameBySlug } from "@/utils/locale";
 
 const store = mainStore();
 const { t } = useI18n({ useScope: "global" });
+const route = useRoute();
 const enableCardEntrance = ref(true);
 const renderNews = computed(() => {
   return store.newsArr
@@ -47,6 +50,10 @@ const renderNews = computed(() => {
     .sort((a, b) => a.order - b.order);
 });
 const filteredNews = computed(() => {
+  const forcedCategory = getCategoryNameBySlug(route.params?.categorySlug);
+  if (forcedCategory) {
+    return renderNews.value.filter((item) => item.category === forcedCategory);
+  }
   if (!store.categoryEnabled || store.activeCategory === "全部") {
     return renderNews.value;
   }
