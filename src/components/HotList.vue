@@ -192,6 +192,7 @@ import { formatTime } from "@/utils/getTime";
 import { getCacheVersion } from "@/utils/cache";
 import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import SubtypeBar from "@/components/SubtypeBar.vue";
 import {
@@ -215,6 +216,7 @@ import {
 } from "@/utils/readableTitles";
 
 const router = useRouter();
+const route = useRoute();
 const store = mainStore();
 const { locale, t } = useI18n({ useScope: "global" });
 const isClient = typeof window !== "undefined";
@@ -264,6 +266,7 @@ const sourceLabel = computed(() =>
 const shouldEnhanceReadableTitles = computed(() =>
   shouldUseReadableTitleTranslation(props.hotData.name, locale.value)
 );
+const shouldEagerLoad = computed(() => Boolean(route.params?.categorySlug));
 const cardSubtitle = computed(() => {
   const rawSubtitle =
     Object.prototype.hasOwnProperty.call(props.hotData || {}, "subtype")
@@ -580,6 +583,10 @@ const toList = () => {
 // 判断列表是否显示
 const checkListShow = () => {
   if (isPrerender || !isClient || typeof document === "undefined") return;
+  if (shouldEagerLoad.value) {
+    getHotListsData(props.hotData.name);
+    return;
+  }
   const typeName = props.hotData.name;
   const listId = "hot-list-" + typeName;
   const listDom = document.getElementById(listId);
