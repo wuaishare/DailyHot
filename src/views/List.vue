@@ -63,9 +63,9 @@
                 <img :src="logoSrc(listType)" alt="logo" @error="handleLogoError" />
               </div>
               <div class="name">
-                <n-text class="title">{{ listData.title }}</n-text>
-                <n-text v-if="!subtypeGroups.length" class="subtitle" :depth="3">
-                  {{ listData.subtitle }}
+                <n-text class="title">{{ listHeaderTitle }}</n-text>
+                <n-text v-if="listHeaderSubtitle && !subtypeGroups.length" class="subtitle" :depth="3">
+                  {{ listHeaderSubtitle }}
                 </n-text>
               </div>
               <div class="data">
@@ -269,6 +269,18 @@ const showImages = computed(() => store.showImages);
 const logoSrc = (name) => getSourceLogo(name, cacheVersion);
 const getSourceDisplayLabel = (item) =>
   getSourceLabel(item?.name, locale.value, item?.label || item?.name);
+const currentSourceMeta = computed(
+  () =>
+    store.newsArr.find((item) => item.name === listType.value) ||
+    store.defaultNewsArr.find((item) => item.name === listType.value) ||
+    null
+);
+const listHeaderTitle = computed(
+  () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
+);
+const listHeaderSubtitle = computed(
+  () => currentSourceMeta.value?.subtype || listData.value?.subtitle || listData.value?.type || ""
+);
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };

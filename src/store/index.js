@@ -426,7 +426,7 @@ export const mainStore = defineStore("mainData", {
           order: 57,
           show: true,
           category: "AI",
-          subtype: "排行榜",
+          subtype: "模型周度热度榜",
         },
         {
           label: "Artificial Analysis",
@@ -490,15 +490,15 @@ export const mainStore = defineStore("mainData", {
           order: 65,
           show: true,
           category: "AI",
-          subtype: "官方资讯",
+          subtype: "官方新闻",
         },
         {
-          label: "OpenAI Research",
+          label: "OpenAI",
           name: "openai-research",
           order: 66,
           show: true,
           category: "AI",
-          subtype: "官方资讯",
+          subtype: "官方研究",
         },
         {
           label: "Anthropic",
@@ -506,7 +506,7 @@ export const mainStore = defineStore("mainData", {
           order: 67,
           show: true,
           category: "AI",
-          subtype: "官方资讯",
+          subtype: "官方新闻",
         },
         {
           label: "DeepMind",
@@ -514,7 +514,7 @@ export const mainStore = defineStore("mainData", {
           order: 68,
           show: true,
           category: "AI",
-          subtype: "官方资讯",
+          subtype: "官方博客",
         },
         {
           label: "Meta AI",
@@ -522,7 +522,7 @@ export const mainStore = defineStore("mainData", {
           order: 69,
           show: true,
           category: "AI",
-          subtype: "官方资讯",
+          subtype: "官方 AI 动态",
         },
         {
           label: "Hugging Face",
@@ -530,7 +530,7 @@ export const mainStore = defineStore("mainData", {
           order: 70,
           show: true,
           category: "AI",
-          subtype: "官方资讯",
+          subtype: "官方博客",
         },
         {
           label: "Mistral",
@@ -538,7 +538,7 @@ export const mainStore = defineStore("mainData", {
           order: 71,
           show: true,
           category: "AI",
-          subtype: "官方资讯",
+          subtype: "官方新闻",
         },
         {
           label: "Cohere",
@@ -546,7 +546,7 @@ export const mainStore = defineStore("mainData", {
           order: 72,
           show: true,
           category: "AI",
-          subtype: "官方资讯",
+          subtype: "官方博客",
         },
         {
           label: "Perplexity",
@@ -565,28 +565,28 @@ export const mainStore = defineStore("mainData", {
           subtype: "官方资讯",
         },
         {
-          label: "HF Models",
+          label: "Hugging Face",
           name: "hf-models",
           order: 75,
           show: true,
           category: "AI",
-          subtype: "开源 / 论文",
+          subtype: "开源模型趋势榜",
         },
         {
-          label: "HF Papers",
+          label: "Hugging Face",
           name: "hf-papers",
           order: 76,
           show: true,
           category: "AI",
-          subtype: "开源 / 论文",
+          subtype: "热门论文趋势榜",
         },
         {
           label: "Papers with Code",
           name: "paperswithcode",
           order: 77,
-          show: true,
+          show: false,
           category: "AI",
-          subtype: "开源 / 论文",
+          subtype: "论文代码镜像榜",
         },
         {
           label: "Product Hunt",
@@ -594,7 +594,7 @@ export const mainStore = defineStore("mainData", {
           order: 78,
           show: true,
           category: "AI",
-          subtype: "产品发现",
+          subtype: "AI 新品发现",
         },
         {
           label: "Hacker News",
@@ -602,7 +602,7 @@ export const mainStore = defineStore("mainData", {
           order: 79,
           show: true,
           category: "AI",
-          subtype: "社区热议",
+          subtype: "AI 热门讨论",
         },
         {
           label: "Reddit /r/LocalLLaMA",
@@ -717,10 +717,23 @@ export const mainStore = defineStore("mainData", {
       const defaultByName = new Map(
         this.defaultNewsArr.map((item) => [item.name, item])
       );
-      return this.ensureCategoriesForNews(list).map((item) => ({
-        ...(defaultByName.get(item.name) || {}),
-        ...item,
-      }));
+      return this.ensureCategoriesForNews(list).map((item) => {
+        const defaults = defaultByName.get(item.name) || {};
+        const merged = {
+          ...defaults,
+          ...item,
+        };
+        if (defaults.label) {
+          merged.label = defaults.label;
+        }
+        if (defaults.subtype) {
+          merged.subtype = defaults.subtype;
+        }
+        if (item.name === "paperswithcode") {
+          merged.show = false;
+        }
+        return merged;
+      });
     },
     dedupeNewsList(list) {
       const merged = this.mergeNewsWithDefaults(list);

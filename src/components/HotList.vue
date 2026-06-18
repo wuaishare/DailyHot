@@ -28,13 +28,13 @@
             @click.stop
           />
           <n-text
-            v-if="hotListData?.type && !subtypeGroups.length"
+            v-if="cardSubtitle && !subtypeGroups.length"
             class="subtitle"
             :depth="2"
           >
-            {{ hotListData.type }}
+            {{ cardSubtitle }}
           </n-text>
-          <n-skeleton v-else-if="!subtypeGroups.length" width="60px" text round />
+          <n-skeleton v-else-if="!subtypeGroups.length && !hotListData" width="60px" text round />
         </div>
       </div>
     </template>
@@ -245,6 +245,9 @@ const previewMaxHeight = 260;
 const showImages = computed(() => store.showImages);
 const sourceLabel = computed(() =>
   getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
+);
+const cardSubtitle = computed(
+  () => props.hotData.subtype || hotListData.value?.type || ""
 );
 const subtypeGroups = computed(() =>
   localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value)
