@@ -58,7 +58,12 @@
           >
             <n-button secondary strong round>
               <template #icon>
-                <img class="flag-icon" :src="currentLocaleMeta.flag" :alt="currentLocaleMeta.label" />
+                <img
+                  class="locale-trigger-flag"
+                  :src="currentLocaleMeta.flag"
+                  :alt="currentLocaleMeta.label"
+                  :style="localeFlagStyle"
+                />
               </template>
               {{ currentLocaleMeta.shortLabel }}
             </n-button>
@@ -318,14 +323,43 @@ const languageOptions = computed(() =>
     label: () =>
       h(
         "div",
-        { class: "locale-option" },
+        { class: "locale-option", style: localeOptionStyle },
         [
-          h("img", { class: "flag-icon", src: item.flag, alt: item.label }),
-          h("span", null, item.label),
+          h("img", {
+            class: "locale-option-flag",
+            src: item.flag,
+            alt: item.label,
+            style: localeFlagStyle,
+          }),
+          h(
+            "span",
+            { class: "locale-option-label", style: localeOptionLabelStyle },
+            item.label
+          ),
         ]
       ),
   }))
 );
+const localeOptionStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  minWidth: "124px",
+  maxWidth: "100%",
+  whiteSpace: "nowrap",
+};
+const localeOptionLabelStyle = {
+  display: "inline-block",
+  lineHeight: "1.25",
+};
+const localeFlagStyle = {
+  width: "16px",
+  height: "16px",
+  borderRadius: "50%",
+  objectFit: "cover",
+  flexShrink: "0",
+  display: "block",
+};
 
 const switchLocale = (nextLocale) => {
   locale.value = nextLocale;
@@ -686,18 +720,6 @@ onBeforeUnmount(() => {
   .controls {
     display: flex;
     justify-content: flex-end;
-    .locale-option {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .flag-icon {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
     .countdown {
       margin-left: 3px;
       font-size: 12px;
@@ -834,5 +856,29 @@ onBeforeUnmount(() => {
       display: block;
     }
   }
+}
+
+.locale-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 124px;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.locale-option-label {
+  display: inline-block;
+  line-height: 1.25;
+}
+
+.locale-option-flag,
+.locale-trigger-flag {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: block;
 }
 </style>
