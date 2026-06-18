@@ -382,6 +382,7 @@ const getHotListsData = async (name, isNew = false) => {
         locale: locale.value,
         translate_limit: 20,
         translate_offset: Math.max(0, (pageNumber.value - 1) * 20),
+        translate_nonce: `${pageNumber.value}-${Date.now()}`,
       }
     : buildSourceSubtypeParams(item.name, listSubType.value);
   getHotListsWithFallback(item.name, isNew, params, {

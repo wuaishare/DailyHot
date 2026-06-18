@@ -360,6 +360,7 @@ const getHotListsData = async (name, isNew = false) => {
               locale: locale.value,
               translate_limit: 5,
               translate_offset: 0,
+              translate_nonce: Date.now(),
             }
           : buildSourceSubtypeParams(item.name, activeSubType.value),
         {
