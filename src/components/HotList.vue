@@ -339,6 +339,26 @@ const updateIsDesktop = () => {
   isDesktop.value = window.innerWidth > 680;
 };
 
+const requestHotListResult = (item, isNew, shouldTranslate, useApi2) =>
+  getHotListsWithFallback(
+    item.name,
+    isNew,
+    shouldTranslate
+      ? {
+          ...buildSourceSubtypeParams(item.name, activeSubType.value),
+          locale: locale.value,
+          translate_limit: HOT_LIST_VISIBLE_LIMIT,
+          translate_offset: 0,
+          translate_nonce: Date.now(),
+        }
+      : buildSourceSubtypeParams(item.name, activeSubType.value),
+    {
+      useApi2,
+      disableFallback: shouldTranslate,
+      forceNoCache: shouldTranslate,
+    }
+  );
+
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (isPrerender) return;
@@ -351,25 +371,16 @@ const getHotListsData = async (name, isNew = false) => {
     if (!item) return;
     const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
     const shouldTranslate = shouldEnhanceReadableTitles.value;
-    const { result, usedFallback, fallbackSuccess } =
-      await getHotListsWithFallback(
-        item.name,
-        isNew,
-        shouldTranslate
-          ? {
-              ...buildSourceSubtypeParams(item.name, activeSubType.value),
-              locale: locale.value,
-              translate_limit: HOT_LIST_VISIBLE_LIMIT,
-              translate_offset: 0,
-              translate_nonce: Date.now(),
-            }
-          : buildSourceSubtypeParams(item.name, activeSubType.value),
-        {
-          useApi2,
-          disableFallback: shouldTranslate,
-          forceNoCache: shouldTranslate,
-        }
-      );
+    let response = await requestHotListResult(item, isNew, shouldTranslate, useApi2);
+    if (
+      shouldTranslate &&
+      response?.result?.code !== 200 &&
+      requestId === hotListRequestId
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      response = await requestHotListResult(item, true, shouldTranslate, useApi2);
+    }
+    const { result, usedFallback, fallbackSuccess } = response;
     if (usedFallback && fallbackSuccess && !useApi2) {
       store.setSourceApi2(item.name, true);
     }
@@ -388,6 +399,26 @@ const getHotListsData = async (name, isNew = false) => {
       $message.error(result.title + result.message);
     }
   } catch (error) {
+    const item =
+      store.newsArr.find((item) => item.name == name) ||
+      store.defaultNewsArr.find((item) => item.name == name);
+    const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
+    const shouldTranslate = shouldEnhanceReadableTitles.value;
+    if (shouldTranslate && item && requestId === hotListRequestId) {
+      try {
+        const retryResponse = await requestHotListResult(item, true, shouldTranslate, useApi2);
+        if (requestId !== hotListRequestId) return;
+        if (retryResponse?.result?.code === 200) {
+          store.markAvailable(item.name);
+          listLoading.value = false;
+          hotListData.value = retryResponse.result;
+          if (scrollbarRef.value) {
+            scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
+          }
+          return;
+        }
+      } catch {}
+    }
     if (requestId !== hotListRequestId) return;
     store.markUnavailable(name);
     loadingError.value = true;
