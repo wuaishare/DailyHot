@@ -438,17 +438,9 @@ export const mainStore = defineStore("mainData", {
           subtype: "模型综合评测榜",
         },
         {
-          label: "LMArena",
-          name: "lmarena",
-          order: 59,
-          show: true,
-          category: "AI",
-          subtype: "模型偏好对战榜",
-        },
-        {
           label: "Arena AI",
           name: "arena-ai",
-          order: 60,
+          order: 59,
           show: true,
           category: "AI",
           subtype: "综合对话榜",
@@ -456,7 +448,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "DesignArena",
           name: "designarena",
-          order: 61,
+          order: 60,
           show: true,
           category: "AI",
           subtype: "排行榜",
@@ -464,7 +456,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "AICPB",
           name: "aicpb-rankings",
-          order: 62,
+          order: 61,
           show: true,
           category: "AI",
           subtype: "全球 AI 产品热度榜",
@@ -472,7 +464,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "LLM Stats",
           name: "llm-stats",
-          order: 63,
+          order: 62,
           show: true,
           category: "AI",
           subtype: "模型性能 / 价格榜",
@@ -480,7 +472,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Skills Rank",
           name: "skills-rank",
-          order: 64,
+          order: 63,
           show: true,
           category: "AI",
           subtype: "Agent Skills 安装榜",
@@ -488,7 +480,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "ClawHub",
           name: "clawhub",
-          order: 65,
+          order: 64,
           show: true,
           category: "AI",
           subtype: "技能 / 插件",
@@ -496,7 +488,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "OpenAI",
           name: "openai",
-          order: 66,
+          order: 65,
           show: true,
           category: "AI",
           subtype: "官方新闻",
@@ -504,7 +496,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Anthropic",
           name: "anthropic-news",
-          order: 67,
+          order: 66,
           show: true,
           category: "AI",
           subtype: "官方新闻",
@@ -512,7 +504,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "DeepMind",
           name: "deepmind-blog",
-          order: 68,
+          order: 67,
           show: true,
           category: "AI",
           subtype: "官方博客",
@@ -520,7 +512,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Meta AI",
           name: "meta-ai-blog",
-          order: 69,
+          order: 68,
           show: true,
           category: "AI",
           subtype: "官方 AI 动态",
@@ -528,7 +520,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Mistral",
           name: "mistral-news",
-          order: 70,
+          order: 69,
           show: true,
           category: "AI",
           subtype: "官方新闻",
@@ -536,7 +528,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Cohere",
           name: "cohere-blog",
-          order: 71,
+          order: 70,
           show: true,
           category: "AI",
           subtype: "官方博客",
@@ -560,7 +552,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Hugging Face",
           name: "huggingface",
-          order: 75,
+          order: 74,
           show: true,
           category: "AI",
           subtype: "官方博客",
@@ -568,7 +560,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Papers with Code",
           name: "paperswithcode",
-          order: 76,
+          order: 75,
           show: false,
           category: "AI",
           subtype: "论文代码镜像榜",
@@ -576,7 +568,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Product Hunt",
           name: "producthunt-ai",
-          order: 77,
+          order: 76,
           show: true,
           category: "AI",
           subtype: "AI 新品发现",
@@ -584,7 +576,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "Hacker News",
           name: "hackernews-ai",
-          order: 78,
+          order: 77,
           show: true,
           category: "AI",
           subtype: "AI 热门讨论",
@@ -616,7 +608,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "新浪 AI 热榜",
           name: "sina-ai",
-          order: 83,
+          order: 82,
           show: true,
           category: "AI",
           subtype: "",
@@ -786,6 +778,7 @@ export const mainStore = defineStore("mainData", {
         "openai-news",
         "openai-research",
       ]);
+      normalized = mergeGroup(normalized, "arena-ai", ["lmarena"]);
       normalized = mergeGroup(normalized, "huggingface", [
         "huggingface-blog",
         "hf-models",

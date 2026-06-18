@@ -21,6 +21,13 @@ const CATEGORY_ID_TO_META = new Map(
   BUILTIN_CATEGORIES.map((item) => [item.id, item]),
 );
 
+const SOURCE_SLUG_ALIAS_MAP = {
+  lmarena: "arena-ai",
+};
+
+const normalizeSourceSlug = (slug = "") =>
+  SOURCE_SLUG_ALIAS_MAP[slug] || slug || null;
+
 export const getSupportedLocales = () => SUPPORTED_LOCALES.slice();
 
 export const getLocaleMeta = (locale = DEFAULT_LOCALE) =>
@@ -111,9 +118,9 @@ export const getCategoryNameBySlug = (slug) => {
   return meta?.name || null;
 };
 
-export const getSourceSlug = (name) => name || null;
+export const getSourceSlug = (name) => normalizeSourceSlug(name);
 
-export const getSourceNameBySlug = (slug) => slug || null;
+export const getSourceNameBySlug = (slug) => normalizeSourceSlug(slug);
 
 export const buildHomePath = (locale = DEFAULT_LOCALE) =>
   withLocalePrefix(locale, "/");
@@ -128,7 +135,7 @@ export const buildRankPath = (
   sourceSlug = "",
   subtypeSlug = "",
 ) => {
-  const safeSourceSlug = sourceSlug || "";
+  const safeSourceSlug = normalizeSourceSlug(sourceSlug) || "";
   const safeSubtypeSlug = subtypeSlug || "";
   const path = safeSubtypeSlug
     ? `/rank/${safeSourceSlug}/${safeSubtypeSlug}`

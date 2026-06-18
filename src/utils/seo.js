@@ -154,9 +154,9 @@ const LIST_SEO_MAP = {
     description: "Artificial Analysis 模型能力、价格与速度综合排行榜。",
   },
   lmarena: {
-    label: "LMArena 排行榜",
-    keywords: "LMArena,大模型排行榜,模型对战榜",
-    description: "LMArena 文本模型对战与用户投票排行榜。",
+    label: "Arena AI 排行榜",
+    keywords: "Arena AI,AI 对战榜,模型竞技场,多模态排行榜",
+    description: "Arena AI 多模态、Agent、WebDev、图像与视频对战排行榜。",
   },
   "arena-ai": {
     label: "Arena AI 排行榜",
@@ -333,7 +333,7 @@ const SOURCE_LABEL_OVERRIDES = {
   "zhihu-daily": { en: "Zhihu Daily" },
   "openrouter-rankings": { en: "OpenRouter" },
   artificialanalysis: { en: "Artificial Analysis" },
-  lmarena: { en: "LMArena" },
+  lmarena: { en: "Arena AI" },
   "arena-ai": { en: "Arena AI" },
   designarena: { en: "DesignArena" },
   "aicpb-rankings": { en: "AICPB Global AI Rankings" },

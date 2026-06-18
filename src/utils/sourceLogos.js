@@ -1,7 +1,7 @@
 const SOURCE_LOGO_MAP = {
   "openrouter-rankings": "/logo/ai/openrouter-rankings.svg",
   artificialanalysis: "/logo/ai/artificialanalysis.png",
-  lmarena: "/logo/ai/lmarena.svg",
+  lmarena: "/logo/ai/arena-ai.png",
   "arena-ai": "/logo/ai/arena-ai.png",
   designarena: "/logo/ai/designarena.png",
   "aicpb-rankings": "/logo/ai/aicpb-rankings.png",

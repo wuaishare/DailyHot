@@ -45,6 +45,18 @@ router.beforeEach((to) => {
       : legacySubtype;
     return buildRankPath(locale, sourceSlug, subtypeSlug || "");
   }
+  if (to.name === "list" || to.name === "list-locale") {
+    const rawSourceSlug = Array.isArray(to.params?.sourceSlug)
+      ? to.params.sourceSlug[0]
+      : to.params?.sourceSlug;
+    const sourceSlug = getSourceNameBySlug(rawSourceSlug);
+    const subtypeSlug = Array.isArray(to.params?.subtypeSlug)
+      ? to.params.subtypeSlug[0]
+      : to.params?.subtypeSlug;
+    if (rawSourceSlug && sourceSlug && rawSourceSlug !== sourceSlug) {
+      return buildRankPath(locale, sourceSlug, subtypeSlug || "");
+    }
+  }
   const categoryName = getCategoryNameBySlug(to.params?.categorySlug);
   const store = mainStore();
   if (store?.setActiveCategory) {
