@@ -101,8 +101,44 @@ function resolveBuildDate() {
   return dates[dates.length - 1] || formatDateFallback();
 }
 
+function buildPrerenderRoutes(categorySlugs = []) {
+  const storePath = path.join(repoRoot, "src/store/index.js");
+  const subtypePath = path.join(repoRoot, "src/utils/sourceSubtypes.js");
+  const storeSource = fs.readFileSync(storePath, "utf8");
+  const subtypeSource = fs.readFileSync(subtypePath, "utf8");
+  const sourceNames = [
+    ...new Set([...storeSource.matchAll(/name:\s*"([^"]+)"/g)].map((match) => match[1])),
+  ];
+  const subtypeBlocks = [...subtypeSource.matchAll(/"([^"]+)":\s*\[(.*?)\n\s*\],/gs)];
+  const subtypeMap = new Map();
+
+  for (const [, sourceName, block] of subtypeBlocks) {
+    const values = [...block.matchAll(/value:\s*"([^"]+)"/g)].map((match) => match[1]);
+    subtypeMap.set(sourceName, values);
+  }
+
+  const routes = new Set(["/", "/list"]);
+  categorySlugs.forEach((slug) => {
+    if (slug) routes.add(`/category/${slug}`);
+  });
+  sourceNames.forEach((source) => {
+    routes.add(`/rank/${source}`);
+    (subtypeMap.get(source) || []).forEach((subtype) => {
+      routes.add(`/rank/${source}/${subtype}`);
+    });
+  });
+
+  return [...routes].sort();
+}
+
 export default defineConfig(async ({ mode }) => {
   const enablePrerender = process.env.PRERENDER === "true";
+  const { BUILTIN_CATEGORIES } = await import(
+    new URL("./src/config/site-metadata.mjs", import.meta.url)
+  );
+  const prerenderRoutes = buildPrerenderRoutes(
+    BUILTIN_CATEGORIES.map((item) => item.slug).filter(Boolean)
+  );
   const productVersion = readPackageVersion();
   let buildDate = resolveBuildDate();
   const isStillShallow = readGitValue(
@@ -228,12 +264,12 @@ export default defineConfig(async ({ mode }) => {
           ],
         },
       }),
-      // 预渲染首页与榜单页，降低 SPA 空白首屏的抓取风险（默认关闭，CI 可用 PRERENDER=true 开启）
+      // 预渲染首页、分类页与榜单详情页，提升抓取器对动态 title/meta 的首屏感知能力。
       ...(enablePrerender
         ? [
             prerender({
               staticDir: fileURLToPath(new URL("./dist", import.meta.url)),
-              routes: ["/", "/list"],
+              routes: prerenderRoutes,
               rendererOptions: {
                 headless: true,
                 renderAfterDocumentEvent: "prerender-ready",

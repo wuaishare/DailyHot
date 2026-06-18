@@ -9,6 +9,7 @@
     "dev": "vite",
     "prebuild": "node scripts/generate-seo-files.js",
     "build": "vite build",
+    "postbuild": "node scripts/generate-route-shells.cjs",
     "preview": "vite preview",
     "print:build-number": "node scripts/resolve-code-build-date.cjs",
     "deploy:prod": "node scripts/vercel-deploy-prod.cjs"
