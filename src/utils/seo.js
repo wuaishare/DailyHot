@@ -518,6 +518,16 @@ const getPageSeo = (route, locale) => {
   };
 };
 
+const getHomeJsonLd = (siteUrl, title, description, locale) => ({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: i18n.global.t("common.siteName", {}, { locale }) || DEFAULT_SEO.siteName,
+  url: siteUrl || "/",
+  description,
+  inLanguage: getLocaleMeta(locale)?.htmlLang || "zh-CN",
+  headline: title,
+});
+
 const getCategorySeo = (route, canonical) => {
   const locale = getLocaleFromRoute(route);
   const rawCategoryName = route?.params?.categorySlug
@@ -747,6 +757,7 @@ export const applySeoMeta = (route) => {
   const jsonLd =
     listSeo?.jsonLd ||
     categorySeo?.jsonLd ||
+    (isHomeRoute ? getHomeJsonLd(siteUrl, title, description, locale) : null) ||
     (typeof meta.jsonLd === "function"
       ? meta.jsonLd({ siteUrl, canonical, title, description, route })
       : meta.jsonLd);
