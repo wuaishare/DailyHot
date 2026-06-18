@@ -141,6 +141,181 @@ const GROUP_LABEL_OVERRIDES = {
 };
 
 const SUBTYPE_LABEL_OVERRIDES = {
+  排行榜: {
+    "zh-CN": "排行榜",
+    "zh-TW": "排行榜",
+    en: "Rankings",
+    ja: "ランキング",
+    ko: "랭킹",
+  },
+  "模型周度热度榜": {
+    "zh-CN": "模型周度热度榜",
+    "zh-TW": "模型週熱度榜",
+    en: "Weekly Model Usage Rankings",
+    ja: "週間モデル利用ランキング",
+    ko: "주간 모델 사용량 랭킹",
+  },
+  "模型综合评测榜": {
+    "zh-CN": "模型综合评测榜",
+    "zh-TW": "模型綜合評測榜",
+    en: "Model Evaluation Rankings",
+    ja: "総合モデル評価ランキング",
+    ko: "모델 종합 평가 랭킹",
+  },
+  "模型偏好对战榜": {
+    "zh-CN": "模型偏好对战榜",
+    "zh-TW": "模型偏好對戰榜",
+    en: "Preference Battle Rankings",
+    ja: "モデル対戦ランキング",
+    ko: "선호도 배틀 랭킹",
+  },
+  "全球 AI 产品热度榜": {
+    "zh-CN": "全球 AI 产品热度榜",
+    "zh-TW": "全球 AI 產品熱度榜",
+    en: "Global AI Product Rankings",
+    ja: "世界AIプロダクト人気ランキング",
+    ko: "글로벌 AI 제품 인기 랭킹",
+  },
+  "模型性能 / 价格榜": {
+    "zh-CN": "模型性能 / 价格榜",
+    "zh-TW": "模型效能 / 價格榜",
+    en: "Performance & Pricing Rankings",
+    ja: "性能・価格ランキング",
+    ko: "성능·가격 랭킹",
+  },
+  "Agent Skills 安装榜": {
+    "zh-CN": "Agent Skills 安装榜",
+    "zh-TW": "Agent Skills 安裝榜",
+    en: "Agent Skills Install Rankings",
+    ja: "Agent Skills インストールランキング",
+    ko: "Agent Skills 설치 랭킹",
+  },
+  "技能 / 插件": {
+    "zh-CN": "技能 / 插件",
+    "zh-TW": "技能 / 外掛",
+    en: "Skills / Plugins",
+    ja: "スキル / プラグイン",
+    ko: "스킬 / 플러그인",
+  },
+  官方资讯: {
+    "zh-CN": "官方资讯",
+    "zh-TW": "官方資訊",
+    en: "Official Updates",
+    ja: "公式情報",
+    ko: "공식 업데이트",
+  },
+  官方新闻: {
+    "zh-CN": "官方新闻",
+    "zh-TW": "官方新聞",
+    en: "Official News",
+    ja: "公式ニュース",
+    ko: "공식 뉴스",
+  },
+  "官方研究": {
+    "zh-CN": "官方研究",
+    "zh-TW": "官方研究",
+    en: "Official Research",
+    ja: "公式研究",
+    ko: "공식 연구",
+  },
+  "官方研究更新": {
+    "zh-CN": "官方研究",
+    "zh-TW": "官方研究",
+    en: "Official Research",
+    ja: "公式研究",
+    ko: "공식 연구",
+  },
+  官方博客: {
+    "zh-CN": "官方博客",
+    "zh-TW": "官方部落格",
+    en: "Official Blog",
+    ja: "公式ブログ",
+    ko: "공식 블로그",
+  },
+  "官方 AI 动态": {
+    "zh-CN": "官方 AI 动态",
+    "zh-TW": "官方 AI 動態",
+    en: "Official AI Updates",
+    ja: "公式AIアップデート",
+    ko: "공식 AI 업데이트",
+  },
+  "开源模型趋势榜": {
+    "zh-CN": "开源模型趋势榜",
+    "zh-TW": "開源模型趨勢榜",
+    en: "Open Model Rankings",
+    ja: "オープンモデル人気ランキング",
+    ko: "오픈 모델 트렌드 랭킹",
+  },
+  "热门论文趋势榜": {
+    "zh-CN": "热门论文趋势榜",
+    "zh-TW": "熱門論文趨勢榜",
+    en: "Trending Papers Rankings",
+    ja: "注目論文ランキング",
+    ko: "인기 논문 트렌드 랭킹",
+  },
+  "论文代码镜像榜": {
+    "zh-CN": "论文代码镜像榜",
+    "zh-TW": "論文程式碼鏡像榜",
+    en: "Paper-Code Mirror Rankings",
+    ja: "論文コードミラーランキング",
+    ko: "논문·코드 미러 랭킹",
+  },
+  产品发现: {
+    "zh-CN": "产品发现",
+    "zh-TW": "產品發現",
+    en: "Product Discovery",
+    ja: "プロダクト発見",
+    ko: "제품 발견",
+  },
+  "AI 新品发现": {
+    "zh-CN": "AI 新品发现",
+    "zh-TW": "AI 新品發現",
+    en: "AI Product Discovery",
+    ja: "AI新製品発見",
+    ko: "AI 신제품 발견",
+  },
+  社区热议: {
+    "zh-CN": "社区热议",
+    "zh-TW": "社群熱議",
+    en: "Community Discussions",
+    ja: "コミュニティ議論",
+    ko: "커뮤니티 토론",
+  },
+  "AI 热门讨论": {
+    "zh-CN": "AI 热门讨论",
+    "zh-TW": "AI 熱門討論",
+    en: "AI Discussions",
+    ja: "AI人気議論",
+    ko: "AI 인기 토론",
+  },
+  "中文 AI 资讯热榜": {
+    "zh-CN": "中文 AI 资讯热榜",
+    "zh-TW": "中文 AI 資訊熱榜",
+    en: "Chinese AI News Rankings",
+    ja: "中国語AIニュースランキング",
+    ko: "중국어 AI 뉴스 랭킹",
+  },
+  日榜: {
+    "zh-CN": "日榜",
+    "zh-TW": "日榜",
+    en: "Daily",
+    ja: "日次",
+    ko: "일간",
+  },
+  周榜: {
+    "zh-CN": "周榜",
+    "zh-TW": "週榜",
+    en: "Weekly",
+    ja: "週間",
+    ko: "주간",
+  },
+  月榜: {
+    "zh-CN": "月榜",
+    "zh-TW": "月榜",
+    en: "Monthly",
+    ja: "月間",
+    ko: "월간",
+  },
   Recommended: {
     "zh-CN": "推荐",
     "zh-TW": "推薦",
@@ -364,6 +539,22 @@ export const getSubtypeLabel = (item, locale = "zh-CN") => {
   }
   if (rawLabel && !containsNonLatin(rawLabel)) return rawLabel;
   return prettifySlug(fallbackKey);
+};
+
+export const getSourceSubtitleLabel = (label = "", locale = "zh-CN") => {
+  const normalizedLocale = normalizeLocale(locale);
+  const override = SUBTYPE_LABEL_OVERRIDES[label];
+  if (override?.[normalizedLocale]) {
+    return override[normalizedLocale];
+  }
+  if (!label) return "";
+  if (normalizedLocale === "zh-CN" || normalizedLocale === "zh-TW") {
+    return label;
+  }
+  if (!containsNonLatin(label)) {
+    return label;
+  }
+  return prettifySlug(label);
 };
 
 export const getSubtypeGroupLabel = (group, locale = "zh-CN") => {

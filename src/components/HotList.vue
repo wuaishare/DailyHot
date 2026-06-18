@@ -197,7 +197,11 @@ import {
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo } from "@/utils/sourceLogos";
 import { trackEvent } from "@/utils/track";
-import { getSourceLabel, localizeSubtypeGroups } from "@/utils/sourceLabels";
+import {
+  getSourceLabel,
+  getSourceSubtitleLabel,
+  localizeSubtypeGroups,
+} from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
 
 const router = useRouter();
@@ -247,10 +251,14 @@ const sourceLabel = computed(() =>
   getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
 );
 const cardSubtitle = computed(() => {
+  const rawSubtitle =
+    Object.prototype.hasOwnProperty.call(props.hotData || {}, "subtype")
+      ? props.hotData.subtype ?? ""
+      : hotListData.value?.type || "";
   if (Object.prototype.hasOwnProperty.call(props.hotData || {}, "subtype")) {
-    return props.hotData.subtype ?? "";
+    return getSourceSubtitleLabel(rawSubtitle, locale.value);
   }
-  return hotListData.value?.type || "";
+  return getSourceSubtitleLabel(rawSubtitle, locale.value);
 });
 const subtypeGroups = computed(() =>
   localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value)

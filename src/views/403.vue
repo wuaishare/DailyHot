@@ -12,11 +12,11 @@
     <n-result
       class="error"
       status="403"
-      title="403 禁止访问"
-      description="总有些门是对你关闭的"
+      :title="t('statePage.forbiddenTitle')"
+      :description="t('statePage.forbiddenDescription')"
     >
       <template #footer>
-        <n-button @click="goHome">重新载入</n-button>
+        <n-button @click="goHome">{{ t("statePage.reload") }}</n-button>
       </template>
     </n-result>
   </n-layout>
@@ -24,7 +24,9 @@
 
 <script setup>
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 const router = useRouter();
+const { t } = useI18n({ useScope: "global" });
 
 const goHome = () => {
   router.push("/");

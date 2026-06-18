@@ -2,9 +2,9 @@
   <div class="analytics">
     <div class="title-row">
       <div>
-        <div class="title">数据统计</div>
+        <div class="title">{{ t("analyticsPage.title") }}</div>
         <n-text depth="3">
-          匿名访问与点击行为面板，用于默认排序与增长判断。该页面仅管理员可查看。
+          {{ t("analyticsPage.description") }}
         </n-text>
       </div>
       <n-space v-if="authorized">
@@ -14,14 +14,14 @@
           size="small"
           style="width: 120px"
         />
-        <n-button size="small" type="primary" @click="loadDashboard">刷新</n-button>
-        <n-button size="small" tertiary @click="logout">退出</n-button>
+        <n-button size="small" type="primary" @click="loadDashboard">{{ t("analyticsPage.refresh") }}</n-button>
+        <n-button size="small" tertiary @click="logout">{{ t("analyticsPage.logout") }}</n-button>
       </n-space>
     </div>
 
     <n-card v-if="!authorized" class="auth-card">
       <n-space vertical>
-        <n-text>请输入管理员访问令牌</n-text>
+        <n-text>{{ t("analyticsPage.enterToken") }}</n-text>
         <n-input
           v-model:value="adminTokenInput"
           type="password"
@@ -29,7 +29,7 @@
           placeholder="Analytics Admin Token"
         />
         <n-space>
-          <n-button type="primary" @click="login">进入统计面板</n-button>
+          <n-button type="primary" @click="login">{{ t("analyticsPage.enterPanel") }}</n-button>
         </n-space>
       </n-space>
     </n-card>
@@ -46,7 +46,7 @@
 
       <n-grid cols="1 900:2" :x-gap="14" :y-gap="14" style="margin-top: 14px">
         <n-grid-item>
-          <n-card title="首页默认排序建议">
+          <n-card :title="t('analyticsPage.homeOrder')">
             <n-list v-if="dashboard?.recommendedHomeOrder?.length">
               <n-list-item
                 v-for="(item, index) in dashboard.recommendedHomeOrder.slice(0, 15)"
@@ -54,15 +54,15 @@
               >
                 <n-space justify="space-between" style="width: 100%">
                   <n-text>{{ index + 1 }}. {{ sourceLabel(item.source) }}</n-text>
-                  <n-text depth="3">{{ item.clicks }} 点击</n-text>
+                  <n-text depth="3">{{ t("analyticsPage.clicks", { count: item.clicks }) }}</n-text>
                 </n-space>
               </n-list-item>
             </n-list>
-            <n-empty v-else description="暂无点击数据" />
+            <n-empty v-else :description="t('analyticsPage.emptyClicks')" />
           </n-card>
         </n-grid-item>
         <n-grid-item>
-          <n-card title="来源入口">
+          <n-card :title="t('analyticsPage.entries')">
             <n-list v-if="dashboard?.entries?.length">
               <n-list-item v-for="item in dashboard.entries.slice(0, 10)" :key="item.entry">
                 <n-space justify="space-between" style="width: 100%">
@@ -71,24 +71,24 @@
                 </n-space>
               </n-list-item>
             </n-list>
-            <n-empty v-else description="暂无来源入口数据" />
+            <n-empty v-else :description="t('analyticsPage.emptyEntries')" />
           </n-card>
         </n-grid-item>
         <n-grid-item>
-          <n-card title="每日流量">
+          <n-card :title="t('analyticsPage.dailyTraffic')">
             <n-list v-if="dashboard?.daily?.length">
               <n-list-item v-for="item in dashboard.daily.slice(0, 14)" :key="item.day">
                 <n-space justify="space-between" style="width: 100%">
                   <n-text>{{ item.day }}</n-text>
-                  <n-text depth="3">PV {{ item.pv }} / UV {{ item.uv }} / IP {{ item.dailyIp }}</n-text>
+                  <n-text depth="3">{{ t("analyticsPage.dailyStats", { pv: item.pv, uv: item.uv, ip: item.dailyIp }) }}</n-text>
                 </n-space>
               </n-list-item>
             </n-list>
-            <n-empty v-else description="暂无流量数据" />
+            <n-empty v-else :description="t('analyticsPage.emptyTraffic')" />
           </n-card>
         </n-grid-item>
         <n-grid-item>
-          <n-card title="分类画像">
+          <n-card :title="t('analyticsPage.categories')">
             <n-list v-if="dashboard?.categories?.length">
               <n-list-item
                 v-for="item in dashboard.categories.slice(0, 10)"
@@ -96,11 +96,11 @@
               >
                 <n-space justify="space-between" style="width: 100%">
                   <n-text>{{ item.category }}</n-text>
-                  <n-text depth="3">PV {{ item.pv }} / UV {{ item.uv }}</n-text>
+                  <n-text depth="3">{{ t("analyticsPage.categoryStats", { pv: item.pv, uv: item.uv }) }}</n-text>
                 </n-space>
               </n-list-item>
             </n-list>
-            <n-empty v-else description="暂无分类数据" />
+            <n-empty v-else :description="t('analyticsPage.emptyCategories')" />
           </n-card>
         </n-grid-item>
       </n-grid>
@@ -112,27 +112,34 @@
 import { getAnalyticsDashboard } from "@/api";
 import { getAdminToken, setAdminToken } from "@/utils/adminAuth";
 import { mainStore } from "@/store";
+import { useI18n } from "vue-i18n";
+import { getSourceLabel } from "@/utils/sourceLabels";
 
 const store = mainStore();
+const { locale, t } = useI18n({ useScope: "global" });
 const days = ref(30);
 const dashboard = ref(null);
 const authorized = ref(Boolean(getAdminToken()));
 const adminTokenInput = ref(getAdminToken());
 
-const dayOptions = [
-  { label: "近 7 天", value: 7 },
-  { label: "近 30 天", value: 30 },
-  { label: "近 90 天", value: 90 },
-];
+const dayOptions = computed(() => [
+  { label: t("analyticsPage.last7"), value: 7 },
+  { label: t("analyticsPage.last30"), value: 30 },
+  { label: t("analyticsPage.last90"), value: 90 },
+]);
 
 const sourceLabel = (source) =>
-  store.newsArr.find((item) => item.name === source)?.label || source;
+  getSourceLabel(
+    source,
+    locale.value,
+    store.newsArr.find((item) => item.name === source)?.label || source
+  );
 
 const overviewCards = computed(() => [
-  { label: "总事件", value: dashboard.value?.overview?.events || 0 },
-  { label: "页面浏览", value: dashboard.value?.overview?.pageViews || 0 },
-  { label: "独立访客", value: dashboard.value?.overview?.uniqueVisitors || 0 },
-  { label: "统计窗口", value: `${days.value} 天` },
+  { label: t("analyticsPage.totalEvents"), value: dashboard.value?.overview?.events || 0 },
+  { label: t("analyticsPage.pageViews"), value: dashboard.value?.overview?.pageViews || 0 },
+  { label: t("analyticsPage.uniqueVisitors"), value: dashboard.value?.overview?.uniqueVisitors || 0 },
+  { label: t("analyticsPage.window"), value: t("analyticsPage.windowDays", { days: days.value }) },
 ]);
 
 const loadDashboard = async () => {
@@ -155,12 +162,12 @@ const login = async () => {
   setAdminToken(adminTokenInput.value.trim());
   authorized.value = Boolean(getAdminToken());
   if (!authorized.value) {
-    $message.warning("请输入管理员访问令牌");
+    $message.warning(t("analyticsPage.tokenRequired"));
     return;
   }
   await loadDashboard();
   if (!dashboard.value) {
-    $message.error("管理员访问令牌无效");
+    $message.error(t("analyticsPage.tokenInvalid"));
   }
 };
 

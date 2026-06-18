@@ -73,8 +73,9 @@
                   v-if="listData.total"
                   :depth="3"
                   class="total"
-                  v-html="listData.total"
-                />
+                >
+                  {{ t("list.totalSummary", { total: listData.total }) }}
+                </n-text>
                 <n-text :depth="3" class="time" v-html="updateTime" />
               </div>
             </div>
@@ -204,7 +205,11 @@ import {
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
 import { trackEvent } from "@/utils/track";
-import { getSourceLabel, localizeSubtypeGroups } from "@/utils/sourceLabels";
+import {
+  getSourceLabel,
+  getSourceSubtitleLabel,
+  localizeSubtypeGroups,
+} from "@/utils/sourceLabels";
 
 const router = useRouter();
 const route = useRoute();
@@ -279,13 +284,18 @@ const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
 const listHeaderSubtitle = computed(() => {
+  const rawSubtitle =
+    currentSourceMeta.value &&
+    Object.prototype.hasOwnProperty.call(currentSourceMeta.value, "subtype")
+      ? currentSourceMeta.value.subtype ?? ""
+      : listData.value?.subtitle || listData.value?.type || "";
   if (
     currentSourceMeta.value &&
     Object.prototype.hasOwnProperty.call(currentSourceMeta.value, "subtype")
   ) {
-    return currentSourceMeta.value.subtype ?? "";
+    return getSourceSubtitleLabel(rawSubtitle, locale.value);
   }
-  return listData.value?.subtitle || listData.value?.type || "";
+  return getSourceSubtitleLabel(rawSubtitle, locale.value);
 });
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
@@ -727,14 +737,9 @@ onBeforeUnmount(() => {
         min-width: 0;
         font-size: 14px;
         white-space: nowrap;
-        .total {
-          &::before {
-            content: "共 ";
-          }
-          &::after {
-            content: " 条 ·";
-            margin-right: 6px;
-          }
+        .total::after {
+          content: " ·";
+          margin-right: 6px;
         }
       }
       @media (max-width: 740px) {

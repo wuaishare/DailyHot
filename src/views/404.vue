@@ -12,11 +12,11 @@
     <n-result
       class="error"
       status="404"
-      title="404 资源不存在"
-      description="生活总归带点荒谬"
+      :title="t('statePage.notFoundTitle')"
+      :description="t('statePage.notFoundDescription')"
     >
       <template #footer>
-        <n-button @click="goHome">重新载入</n-button>
+        <n-button @click="goHome">{{ t("statePage.reload") }}</n-button>
       </template>
     </n-result>
   </n-layout>
@@ -24,7 +24,9 @@
 
 <script setup>
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 const router = useRouter();
+const { t } = useI18n({ useScope: "global" });
 
 const goHome = () => {
   router.push("/");
