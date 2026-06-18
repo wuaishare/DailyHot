@@ -741,35 +741,56 @@ export const mainStore = defineStore("mainData", {
     },
     normalizeLegacySources(list) {
       if (!Array.isArray(list) || !list.length) return list;
-      const oldNames = ["clawhub-skills", "clawhub-plugins"];
-      const clawhubDefault = this.defaultNewsArr.find((item) => item.name === "clawhub");
-      if (!clawhubDefault) return list;
-      const legacyItems = list.filter((item) => oldNames.includes(item?.name));
-      const currentClawhub = list.find((item) => item?.name === "clawhub");
-      if (!legacyItems.length && !currentClawhub) return list;
+      const mergeGroup = (items, targetName, legacyNames) => {
+        const targetDefault = this.defaultNewsArr.find((item) => item.name === targetName);
+        if (!targetDefault) return items;
+        const existingTarget = items.find((item) => item?.name === targetName);
+        const legacyItems = items.filter((item) => legacyNames.includes(item?.name));
+        if (!existingTarget && !legacyItems.length) {
+          return items;
+        }
+        const keep = items.filter(
+          (item) => item?.name !== targetName && !legacyNames.includes(item?.name)
+        );
+        const sourceItems = [existingTarget, ...legacyItems].filter(Boolean);
+        const merged = sourceItems.reduce(
+          (acc, item) => ({
+            ...acc,
+            ...item,
+            ...targetDefault,
+            name: targetDefault.name,
+            label: targetDefault.label,
+            subtype: targetDefault.subtype,
+            category: targetDefault.category,
+            show: acc.show || item.show,
+          }),
+          { ...targetDefault, show: false }
+        );
+        const orders = sourceItems
+          .map((item) => item.order)
+          .filter((value) => typeof value === "number");
+        if (orders.length) {
+          merged.order = Math.min(...orders);
+        }
+        keep.push(merged);
+        return keep;
+      };
 
-      const keep = list.filter(
-        (item) => item?.name !== "clawhub" && !oldNames.includes(item?.name)
-      );
-      const sourceItems = [currentClawhub, ...legacyItems].filter(Boolean);
-      const merged = sourceItems.reduce(
-        (acc, item) => ({
-          ...acc,
-          ...item,
-          name: "clawhub",
-          label: "ClawHub",
-          show: acc.show || item.show,
-        }),
-        { ...clawhubDefault, show: false }
-      );
-      const orders = sourceItems
-        .map((item) => item.order)
-        .filter((value) => typeof value === "number");
-      if (orders.length) {
-        merged.order = Math.min(...orders);
-      }
-      keep.push(merged);
-      return keep;
+      let normalized = list;
+      normalized = mergeGroup(normalized, "clawhub", [
+        "clawhub-skills",
+        "clawhub-plugins",
+      ]);
+      normalized = mergeGroup(normalized, "openai", [
+        "openai-news",
+        "openai-research",
+      ]);
+      normalized = mergeGroup(normalized, "huggingface", [
+        "huggingface-blog",
+        "hf-models",
+        "hf-papers",
+      ]);
+      return normalized;
     },
     addCategory(name) {
       if (!name) return false;
