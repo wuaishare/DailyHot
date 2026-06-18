@@ -316,6 +316,24 @@ const currentPageItems = computed(() =>
       };
     })
 );
+const syncReadableTitleDom = (items = []) => {
+  nextTick(() => {
+    const rows = document.querySelectorAll(".all .n-list-item");
+    items.forEach((item, index) => {
+      const row = rows[index];
+      if (!row) return;
+      const linkNode = row.querySelector(".text");
+      const titleNode = row.querySelector(".content .copy .title");
+      if (!linkNode || !titleNode) return;
+      titleNode.textContent = item.displayTitle || item.originalTitle || "";
+      if (item.originalTitle) {
+        linkNode.setAttribute("title", item.originalTitle);
+      } else {
+        linkNode.removeAttribute("title");
+      }
+    });
+  });
+};
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };
@@ -529,6 +547,14 @@ watch(
       updateTime.value = formatTime(listData.value.updateTime, locale.value);
     }
   }
+);
+
+watch(
+  () => currentPageItems.value,
+  (items) => {
+    syncReadableTitleDom(items);
+  },
+  { immediate: true, deep: true }
 );
 
 // 页数变化

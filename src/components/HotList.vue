@@ -282,6 +282,27 @@ const visibleItems = computed(() =>
     };
   })
 );
+const syncReadableTitleDom = (items = []) => {
+  nextTick(() => {
+    const root =
+      document.getElementById(`${props.hotData.name}Lists`)?.closest(".hot-list") ||
+      document.getElementById(`hot-list-${props.hotData.name}`);
+    if (!root) return;
+    const links = root.querySelectorAll(".lists .item .text");
+    const titles = root.querySelectorAll(".lists .item .title-text");
+    items.forEach((item, index) => {
+      const linkNode = links[index];
+      const titleNode = titles[index];
+      if (!linkNode || !titleNode) return;
+      titleNode.textContent = item.displayTitle || item.originalTitle || "";
+      if (item.originalTitle) {
+        linkNode.setAttribute("title", item.originalTitle);
+      } else {
+        linkNode.removeAttribute("title");
+      }
+    });
+  });
+};
 const subtypeGroups = computed(() =>
   localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value)
 );
@@ -300,6 +321,14 @@ watch(
       options,
       readSourceSubtype(props.hotData.name)
     );
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => visibleItems.value,
+  (items) => {
+    syncReadableTitleDom(items);
   },
   { immediate: true, deep: true }
 );
