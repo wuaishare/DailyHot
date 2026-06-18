@@ -372,11 +372,7 @@ const getHotListsData = async (name, isNew = false) => {
     const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
     const shouldTranslate = shouldEnhanceReadableTitles.value;
     let response = await requestHotListResult(item, isNew, shouldTranslate, useApi2);
-    if (
-      shouldTranslate &&
-      response?.result?.code !== 200 &&
-      requestId === hotListRequestId
-    ) {
+    if (response?.result?.code !== 200 && requestId === hotListRequestId) {
       await new Promise((resolve) => setTimeout(resolve, 800));
       response = await requestHotListResult(item, true, shouldTranslate, useApi2);
     }
@@ -404,7 +400,7 @@ const getHotListsData = async (name, isNew = false) => {
       store.defaultNewsArr.find((item) => item.name == name);
     const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
     const shouldTranslate = shouldEnhanceReadableTitles.value;
-    if (shouldTranslate && item && requestId === hotListRequestId) {
+    if (item && requestId === hotListRequestId) {
       try {
         const retryResponse = await requestHotListResult(item, true, shouldTranslate, useApi2);
         if (requestId !== hotListRequestId) return;

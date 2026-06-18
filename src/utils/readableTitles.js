@@ -14,6 +14,7 @@ const READABLE_TRANSLATION_SOURCES = new Set([
   "arena-ai",
   "hf-papers",
   "paperswithcode",
+  "hackernews",
   "producthunt-ai",
   "hackernews-ai",
   "sina-ai",
