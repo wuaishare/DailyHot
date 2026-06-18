@@ -8,25 +8,25 @@
         >
           <div class="copy">
             <span class="eyebrow">
-              Cookie 与统计偏好
+              {{ t("consent.eyebrow") }}
             </span>
             <p class="title">
-              站点基础功能与统计分析始终启用，广告个性化与营销追踪由你决定。
+              {{ t("consent.title") }}
             </p>
             <p class="desc">
-              我们会保留必要功能与匿名统计，用于站点运维、内容优化和质量判断；广告归因、营销追踪与个性化广告仅在你同意后启用。选择“同意必要”即表示仅接受必要功能与统计分析；如果你不接受这些基础项，可以选择“拒绝并离开”退出访问。
+              {{ t("consent.description") }}
             </p>
           </div>
 
           <div class="actions">
             <n-button tertiary @click="declineAndExit">
-              拒绝并离开
+              {{ t("consent.rejectAndLeave") }}
             </n-button>
             <n-button tertiary @click="openDetails">
-              {{ detailsOpen ? "收起详情" : "查看详情" }}
+              {{ detailsOpen ? t("consent.collapseDetails") : t("consent.viewDetails") }}
             </n-button>
             <n-button type="primary" @click="acceptRequiredOnly">
-              同意必要
+              {{ t("consent.acceptRequired") }}
             </n-button>
           </div>
 
@@ -35,44 +35,44 @@
               v-if="detailsOpen"
               class="details"
               role="region"
-              aria-label="Cookie 详细设置"
+              :aria-label="t('consent.detailsAria')"
             >
               <div class="groups">
                 <div class="group locked">
                   <div>
-                    <div class="group-title">必要功能</div>
+                    <div class="group-title">{{ t("consent.necessaryTitle") }}</div>
                     <p class="group-desc">
-                      维持站点基础运行、主题设置、缓存与页面访问。
+                      {{ t("consent.necessaryDesc") }}
                     </p>
                   </div>
                   <n-switch :value="true" disabled />
                 </div>
                 <div class="group locked">
                   <div>
-                    <div class="group-title">统计分析</div>
+                    <div class="group-title">{{ t("consent.analyticsTitle") }}</div>
                     <p class="group-desc">
-                      用于 PV / UV / 来源入口 / 点击率分析，也是站点运维与内容优化的基础依据。
+                      {{ t("consent.analyticsDesc") }}
                     </p>
                   </div>
                   <div class="group-side">
-                    <n-tag size="small" type="info" round>始终开启</n-tag>
+                    <n-tag size="small" type="info" round>{{ t("consent.alwaysOn") }}</n-tag>
                     <n-switch :value="true" disabled />
                   </div>
                 </div>
                 <div class="group">
                   <div>
-                    <div class="group-title">广告归因与营销追踪</div>
+                    <div class="group-title">{{ t("consent.adStorageTitle") }}</div>
                     <p class="group-desc">
-                      用于广告转化归因、营销追踪与投放效果衡量；关闭后仍可展示非个性化或上下文广告。
+                      {{ t("consent.adStorageDesc") }}
                     </p>
                   </div>
                   <n-switch v-model:value="draftConsent.ad_storage" />
                 </div>
                 <div class="group">
                   <div>
-                    <div class="group-title">广告个性化与扩展受众</div>
+                    <div class="group-title">{{ t("consent.adPersonalTitle") }}</div>
                     <p class="group-desc">
-                      用于更精准的个性化广告、扩展受众能力与更细粒度的投放策略。
+                      {{ t("consent.adPersonalDesc") }}
                     </p>
                   </div>
                   <n-switch v-model:value="draftConsent.ad_personalization" />
@@ -81,20 +81,20 @@
 
               <div class="details-footer">
                 <p class="footer-text">
-                  你也可以稍后在“设置 > 统计与隐私”中重新调整广告相关偏好；如果不接受必要功能与统计分析，请使用“拒绝并离开”退出网页访问。
+                  {{ t("consent.footerText") }}
                 </p>
                 <n-space wrap justify="end">
                   <n-button tertiary @click="declineAndExit">
-                    拒绝并离开
+                    {{ t("consent.rejectAndLeave") }}
                   </n-button>
                   <n-button tertiary @click="acceptRequiredOnly">
-                    同意必要
+                    {{ t("consent.acceptRequired") }}
                   </n-button>
                   <n-button tertiary @click="acceptSelected">
-                    保存当前选择
+                    {{ t("consent.saveSelection") }}
                   </n-button>
-                  <n-button text tag="a" href="/privacy">
-                    隐私说明
+                  <n-button text tag="a" :href="buildFixedLocalePath(locale, '/privacy')">
+                    {{ t("consent.privacyLink") }}
                   </n-button>
                 </n-space>
               </div>
@@ -108,6 +108,7 @@
 
 <script setup>
 import { mainStore } from "@/store";
+import { useI18n } from "vue-i18n";
 import {
   CONSENT_CATEGORIES,
   DEFAULT_CONSENT,
@@ -120,8 +121,10 @@ import {
   grantAnalyticsConsentToVendors,
   initAnalyticsVendors,
 } from "@/utils/vendorAnalytics";
+import { buildFixedLocalePath } from "@/utils/locale";
 
 const store = mainStore();
+const { t, locale } = useI18n({ useScope: "global" });
 const isDarkTheme = computed(() => store.siteTheme === "dark");
 const consentThemeVars = computed(() => ({
   "--consent-bg": isDarkTheme.value
