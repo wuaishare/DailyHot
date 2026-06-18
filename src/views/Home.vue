@@ -16,7 +16,7 @@
         :key="`${store.activeCategory}-${item.name}`"
         :style="{ animationDelay: index / 10 + 0.2 + 's' }"
       >
-        <HotList :hotData="item" />
+        <HotList :hotData="item" :eager-load="Boolean(forcedCategoryName)" />
       </n-grid-item>
     </n-grid>
     <div class="error" v-if="renderNews[0] && filteredNews.length === 0">
@@ -49,10 +49,10 @@ const renderNews = computed(() => {
     .filter((item) => item.show)
     .sort((a, b) => a.order - b.order);
 });
+const forcedCategoryName = computed(() => getCategoryNameBySlug(route.params?.categorySlug));
 const filteredNews = computed(() => {
-  const forcedCategory = getCategoryNameBySlug(route.params?.categorySlug);
-  if (forcedCategory) {
-    return renderNews.value.filter((item) => item.category === forcedCategory);
+  if (forcedCategoryName.value) {
+    return renderNews.value.filter((item) => item.category === forcedCategoryName.value);
   }
   if (!store.categoryEnabled || store.activeCategory === "全部") {
     return renderNews.value;
