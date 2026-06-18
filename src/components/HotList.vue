@@ -336,6 +336,7 @@ const getHotListsData = async (name, isNew = false) => {
         {
           useApi2,
           disableFallback: shouldTranslate,
+          forceNoCache: shouldTranslate,
         }
       );
     if (usedFallback && fallbackSuccess && !useApi2) {

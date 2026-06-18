@@ -369,6 +369,7 @@ const getHotListsData = async (name, isNew = false) => {
   getHotListsWithFallback(item.name, isNew, params, {
     useApi2,
     disableFallback: shouldTranslate,
+    forceNoCache: shouldTranslate,
   })
     .then(({ result, usedFallback, fallbackSuccess }) => {
       if (requestId !== listRequestId) return;

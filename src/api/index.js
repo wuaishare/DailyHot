@@ -37,12 +37,13 @@ export const getHotLists = (type, isNew = false, params, options = {}) => {
   const apiBase = appApiBase;
   const apiBase2 = import.meta.env.VITE_GLOBAL_API2;
   const timeout = options?.timeout;
+  const forceNoCache = Boolean(options?.forceNoCache);
   return axios({
     method: "GET",
     url: `/${type}`,
     baseURL: useApi2 ? apiBase2 || apiBase : undefined,
     params: {
-      cache: !isNew,
+      cache: forceNoCache ? false : !isNew,
       ...params,
     },
     ...(timeout ? { timeout } : {}),
@@ -100,9 +101,10 @@ export const getHotListsWithFallback = async (
   const preferApi2 = Boolean(options?.useApi2 || API2_ONLY_SOURCES.has(type));
   const disableFallback = Boolean(options?.disableFallback);
   const timeout = options?.timeout;
+  const forceNoCache = Boolean(options?.forceNoCache);
   const fallbackDelay = options?.fallbackDelay ?? DEFAULT_FALLBACK_DELAY_MS;
   const run = (useApi2) =>
-    getHotLists(type, isNew, params, { useApi2, timeout });
+    getHotLists(type, isNew, params, { useApi2, timeout, forceNoCache });
 
   if (preferApi2 || !hasApi2 || disableFallback) {
     const useApi2 = preferApi2 && !disableFallback;
