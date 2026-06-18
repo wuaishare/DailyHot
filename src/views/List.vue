@@ -98,11 +98,8 @@
           <div class="all">
             <n-list hoverable style="width: 100%">
               <n-list-item
-                v-for="(item, index) in listData.data.slice(
-                  pageNumber * 20 - 20,
-                  pageNumber * 20
-                )"
-                :key="item"
+                v-for="(item, index) in currentPageItems"
+                :key="item.id || item.url || item.mobileUrl || `${listType}-${pageNumber}-${index}-${item.originalTitle}`"
               >
                 <template #prefix>
                   <n-text
@@ -126,6 +123,7 @@
                   :href="getItemLink(item)"
                   :target="linkTarget"
                   rel="noopener noreferrer nofollow"
+                  :title="item.translatedTitle ? item.originalTitle : undefined"
                   @click="trackEvent({
                     event: 'rank_item_click',
                     source: listType,
@@ -141,7 +139,11 @@
                 >
                   <div class="content">
                     <div class="copy">
-                      <n-text class="title" v-html="item.title" />
+                      <n-text
+                        class="title"
+                        :class="{ 'no-auto-translate': shouldEnhanceReadableTitles }"
+                        v-html="item.displayTitle"
+                      />
                       <n-text
                         v-if="item.desc"
                         class="desc"
@@ -210,6 +212,10 @@ import {
   getSourceSubtitleLabel,
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
+import {
+  shouldUseReadableTitleTranslation,
+  translateReadableTitles,
+} from "@/utils/readableTitles";
 
 const router = useRouter();
 const route = useRoute();
@@ -256,6 +262,7 @@ const pageNumber = ref(
     ? Number(router.currentRoute.value.query.page)
     : 1
 );
+const READABLE_TITLE_LIMIT = 8;
 const listData = ref(null);
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const typeTrackRef = ref(null);
@@ -283,6 +290,9 @@ const currentSourceMeta = computed(
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
+const shouldEnhanceReadableTitles = computed(() =>
+  shouldUseReadableTitleTranslation(listType.value, locale.value)
+);
 const listHeaderSubtitle = computed(() => {
   const rawSubtitle =
     currentSourceMeta.value &&
@@ -297,6 +307,39 @@ const listHeaderSubtitle = computed(() => {
   }
   return getSourceSubtitleLabel(rawSubtitle, locale.value);
 });
+let titleTranslationRequestId = 0;
+const currentPageItems = ref([]);
+const buildCurrentPageItems = (translatedTitles = {}) =>
+  (listData.value?.data || [])
+    .slice(pageNumber.value * 20 - 20, pageNumber.value * 20)
+    .map((item) => {
+      const originalTitle = String(item?.title || "").trim();
+      const translatedTitle = translatedTitles[originalTitle] || "";
+      return {
+        ...item,
+        originalTitle,
+        translatedTitle,
+        displayTitle: translatedTitle || originalTitle,
+      };
+    });
+const syncReadableTitleDom = (items = []) => {
+  nextTick(() => {
+    const rows = document.querySelectorAll(".all .n-list-item");
+    items.forEach((item, index) => {
+      const row = rows[index];
+      if (!row) return;
+      const titleNode = row.querySelector(".content .copy .title");
+      const linkNode = row.querySelector(".text");
+      if (!titleNode || !linkNode) return;
+      titleNode.textContent = item.translatedTitle || item.originalTitle || "";
+      if (item.translatedTitle) {
+        linkNode.setAttribute("title", item.originalTitle);
+      } else {
+        linkNode.removeAttribute("title");
+      }
+    });
+  });
+};
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };
@@ -497,6 +540,42 @@ watch(
       updateTime.value = formatTime(listData.value.updateTime, locale.value);
     }
   }
+);
+
+watch(
+  () => [listType.value, pageNumber.value, locale.value, listData.value?.data],
+  async () => {
+    const requestId = ++titleTranslationRequestId;
+    if (requestId === titleTranslationRequestId) {
+      currentPageItems.value = buildCurrentPageItems();
+    }
+    const titles = (listData.value?.data || [])
+      .slice(pageNumber.value * 20 - 20, pageNumber.value * 20)
+      .slice(0, READABLE_TITLE_LIMIT)
+      .map((item) => item?.title || "");
+    if (!shouldEnhanceReadableTitles.value || !titles.length) {
+      if (requestId === titleTranslationRequestId) {
+        currentPageItems.value = buildCurrentPageItems();
+      }
+      return;
+    }
+    const translatedTitles = await translateReadableTitles(
+      titles,
+      locale.value
+    );
+    if (requestId === titleTranslationRequestId) {
+      currentPageItems.value = buildCurrentPageItems(translatedTitles);
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => currentPageItems.value,
+  (items) => {
+    syncReadableTitleDom(items);
+  },
+  { immediate: true, deep: true }
 );
 
 // 页数变化

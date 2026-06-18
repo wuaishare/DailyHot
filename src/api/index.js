@@ -68,6 +68,20 @@ export const getAnalyticsDashboard = (days = 30) =>
       : {},
   });
 
+export const getReadableTranslations = (texts = [], locale = "zh-CN") =>
+  axios({
+    method: "POST",
+    url: "/readable-translate",
+    params: {
+      cache: false,
+    },
+    data: {
+      texts,
+      locale,
+    },
+    silent: true,
+  });
+
 /**
  * 获取热榜数据（主 API 失败时自动尝试备用 API）
  * @param {string} type 热榜分类名称

@@ -67,8 +67,8 @@
         <div v-else class="lists" :id="hotData.name + 'Lists'">
           <div
             class="item"
-            v-for="(item, index) in hotListData.data.slice(0, 15)"
-            :key="item"
+            v-for="(item, index) in visibleItems"
+            :key="item.id || item.url || item.mobileUrl || `${props.hotData.name}-${index}-${item.originalTitle}`"
             @mouseenter="showPreview(item, $event)"
             @pointerenter="showPreview(item, $event)"
             @mouseleave="hidePreview"
@@ -97,9 +97,15 @@
                 :href="getItemLink(item)"
                 :target="linkTarget"
                 rel="noopener noreferrer nofollow"
+                :title="item.translatedTitle ? item.originalTitle : undefined"
                 @click.stop
               >
-                <span class="title-text">{{ item.title }}</span>
+                <span
+                  class="title-text"
+                  :class="{ 'no-auto-translate': shouldEnhanceReadableTitles }"
+                >
+                  {{ item.displayTitle }}
+                </span>
               </n-a>
             </div>
           </div>
@@ -203,6 +209,10 @@ import {
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
+import {
+  shouldUseReadableTitleTranslation,
+  translateReadableTitles,
+} from "@/utils/readableTitles";
 
 const router = useRouter();
 const store = mainStore();
@@ -246,9 +256,13 @@ const linkTarget = computed(() =>
 );
 const previewMaxWidth = 260;
 const previewMaxHeight = 260;
+const READABLE_TITLE_LIMIT = 3;
 const showImages = computed(() => store.showImages);
 const sourceLabel = computed(() =>
   getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
+);
+const shouldEnhanceReadableTitles = computed(() =>
+  shouldUseReadableTitleTranslation(props.hotData.name, locale.value)
 );
 const cardSubtitle = computed(() => {
   const rawSubtitle =
@@ -260,6 +274,38 @@ const cardSubtitle = computed(() => {
   }
   return getSourceSubtitleLabel(rawSubtitle, locale.value);
 });
+let titleTranslationRequestId = 0;
+const visibleItems = ref([]);
+const buildVisibleItems = (translatedTitles = {}) =>
+  (hotListData.value?.data || []).slice(0, 15).map((item) => {
+    const originalTitle = String(item?.title || "").trim();
+    const translatedTitle = translatedTitles[originalTitle] || "";
+    return {
+      ...item,
+      originalTitle,
+      translatedTitle,
+      displayTitle: translatedTitle || originalTitle,
+    };
+  });
+const syncReadableTitleDom = (items = []) => {
+  nextTick(() => {
+    const root = document.getElementById(`hot-list-${props.hotData.name}`);
+    if (!root) return;
+    const links = root.querySelectorAll(".lists .item .text");
+    const titles = root.querySelectorAll(".lists .item .title-text");
+    items.forEach((item, index) => {
+      const titleNode = titles[index];
+      const linkNode = links[index];
+      if (!titleNode || !linkNode) return;
+      titleNode.textContent = item.translatedTitle || item.originalTitle || "";
+      if (item.translatedTitle) {
+        linkNode.setAttribute("title", item.originalTitle);
+      } else {
+        linkNode.removeAttribute("title");
+      }
+    });
+  });
+};
 const subtypeGroups = computed(() =>
   localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value)
 );
@@ -278,6 +324,41 @@ watch(
       options,
       readSourceSubtype(props.hotData.name)
     );
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => [props.hotData.name, locale.value, hotListData.value?.data],
+  async () => {
+    const requestId = ++titleTranslationRequestId;
+    if (requestId === titleTranslationRequestId) {
+      visibleItems.value = buildVisibleItems();
+    }
+    const titles = (hotListData.value?.data || [])
+      .slice(0, READABLE_TITLE_LIMIT)
+      .map((item) => item?.title || "");
+    if (!shouldEnhanceReadableTitles.value || !titles.length) {
+      if (requestId === titleTranslationRequestId) {
+        visibleItems.value = buildVisibleItems();
+      }
+      return;
+    }
+    const translatedTitles = await translateReadableTitles(
+      titles,
+      locale.value
+    );
+    if (requestId === titleTranslationRequestId) {
+      visibleItems.value = buildVisibleItems(translatedTitles);
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => visibleItems.value,
+  (items) => {
+    syncReadableTitleDom(items);
   },
   { immediate: true, deep: true }
 );
