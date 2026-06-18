@@ -4,6 +4,7 @@
       <div v-if="visible" class="analytics-consent-shell">
         <div
           class="analytics-consent"
+          :class="{ 'details-visible': detailsOpen }"
           :style="consentThemeVars"
         >
           <div class="copy">
@@ -128,14 +129,14 @@ const { t, locale } = useI18n({ useScope: "global" });
 const isDarkTheme = computed(() => store.siteTheme === "dark");
 const consentThemeVars = computed(() => ({
   "--consent-bg": isDarkTheme.value
-    ? "rgba(24, 26, 32, 0.9)"
-    : "rgba(255, 255, 255, 0.94)",
+    ? "rgba(17, 24, 39, 0.9)"
+    : "rgba(255, 255, 255, 0.96)",
   "--consent-border": isDarkTheme.value
     ? "rgba(255, 255, 255, 0.08)"
-    : "rgba(15, 23, 42, 0.08)",
+    : "rgba(15, 23, 42, 0.1)",
   "--consent-shadow": isDarkTheme.value
-    ? "0 22px 55px rgba(0, 0, 0, 0.34)"
-    : "0 20px 55px rgba(15, 23, 42, 0.16)",
+    ? "0 16px 42px rgba(0, 0, 0, 0.28)"
+    : "0 18px 40px rgba(15, 23, 42, 0.12)",
   "--consent-copy": isDarkTheme.value ? "#f8fafc" : "#0f172a",
   "--consent-eyebrow": isDarkTheme.value
     ? "rgba(226, 232, 240, 0.7)"
@@ -285,51 +286,64 @@ onBeforeUnmount(() => {
 }
 
 .analytics-consent {
-  width: min(880px, calc(100vw - 24px));
+  width: min(760px, calc(100vw - 28px));
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: 20px;
   background: var(--consent-bg);
   border: 1px solid var(--consent-border);
   box-shadow: var(--consent-shadow);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(18px);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px 16px;
-  align-items: end;
+  gap: 10px 14px;
+  align-items: center;
   pointer-events: auto;
 }
 
 .copy {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   color: var(--consent-copy);
 }
 
 .eyebrow {
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--consent-eyebrow) !important;
 }
 
 .title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.45;
   color: var(--consent-title) !important;
 }
 
 .desc {
+  font-size: 13px;
   line-height: 1.6;
   color: var(--consent-desc) !important;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.analytics-consent.details-visible .desc {
+  display: block;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   align-self: center;
+}
+
+.actions :deep(.n-button) {
+  min-width: 108px;
 }
 
 .details {
@@ -386,6 +400,7 @@ onBeforeUnmount(() => {
 
 .footer-text {
   max-width: 420px;
+  font-size: 13px;
   line-height: 1.6;
   color: var(--consent-desc) !important;
 }
@@ -428,14 +443,16 @@ onBeforeUnmount(() => {
     width: calc(100vw - 20px);
     border-radius: 16px;
     grid-template-columns: 1fr;
+    padding: 14px;
   }
 
   .actions {
-    justify-content: stretch;
+    justify-content: flex-start;
   }
 
   .actions :deep(.n-button) {
     flex: 1 1 calc(50% - 5px);
+    min-width: 0;
   }
 
   .details-footer,
