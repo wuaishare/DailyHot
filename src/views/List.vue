@@ -123,7 +123,7 @@
                   :href="getItemLink(item)"
                   :target="linkTarget"
                   rel="noopener noreferrer nofollow"
-                  :title="item.translatedTitle ? item.originalTitle : undefined"
+                  :title="item.originalTitle || undefined"
                   @click="trackEvent({
                     event: 'rank_item_click',
                     source: listType,
@@ -141,7 +141,7 @@
                     <div class="copy">
                       <n-text
                         class="title"
-                        :class="{ 'no-auto-translate': shouldEnhanceReadableTitles }"
+                        :class="{ 'no-auto-translate': Boolean(item.originalTitle) }"
                         v-html="item.displayTitle"
                       />
                       <n-text
@@ -212,10 +212,6 @@ import {
   getSourceSubtitleLabel,
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
-import {
-  shouldUseReadableTitleTranslation,
-  translateReadableTitles,
-} from "@/utils/readableTitles";
 
 const router = useRouter();
 const route = useRoute();
@@ -262,7 +258,6 @@ const pageNumber = ref(
     ? Number(router.currentRoute.value.query.page)
     : 1
 );
-const READABLE_TITLE_LIMIT = 8;
 const listData = ref(null);
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const typeTrackRef = ref(null);
@@ -290,9 +285,6 @@ const currentSourceMeta = computed(
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
-const shouldEnhanceReadableTitles = computed(() =>
-  shouldUseReadableTitleTranslation(listType.value, locale.value)
-);
 const listHeaderSubtitle = computed(() => {
   const rawSubtitle =
     currentSourceMeta.value &&
@@ -308,66 +300,18 @@ const listHeaderSubtitle = computed(() => {
   return getSourceSubtitleLabel(rawSubtitle, locale.value);
 });
 let listRequestId = 0;
-let titleTranslationRequestId = 0;
-const currentPageItems = ref([]);
-const buildCurrentPageItems = (translatedTitles = {}) =>
+const currentPageItems = computed(() =>
   (listData.value?.data || [])
     .slice(pageNumber.value * 20 - 20, pageNumber.value * 20)
     .map((item) => {
-      const originalTitle = String(item?.title || "").trim();
-      const translatedTitle = translatedTitles[originalTitle] || "";
+      const originalTitle = String(item?.originalTitle || "");
       return {
         ...item,
         originalTitle,
-        translatedTitle,
-        displayTitle: translatedTitle || originalTitle,
+        displayTitle: item?.title || originalTitle,
       };
-    });
-const syncReadableTitleDom = (items = []) => {
-  nextTick(() => {
-    const rows = document.querySelectorAll(".all .n-list-item");
-    items.forEach((item, index) => {
-      const row = rows[index];
-      if (!row) return;
-      const titleNode = row.querySelector(".content .copy .title");
-      const linkNode = row.querySelector(".text");
-      if (!titleNode || !linkNode) return;
-      titleNode.textContent = item.translatedTitle || item.originalTitle || "";
-      if (item.translatedTitle) {
-        linkNode.setAttribute("title", item.originalTitle);
-      } else {
-        linkNode.removeAttribute("title");
-      }
-    });
-  });
-};
-const updateCurrentPageItems = async (items = listData.value?.data || []) => {
-  const requestId = ++titleTranslationRequestId;
-  const initialItems = buildCurrentPageItems();
-  currentPageItems.value = initialItems;
-  syncReadableTitleDom(initialItems);
-  const titles = (items || [])
-    .slice(pageNumber.value * 20 - 20, pageNumber.value * 20)
-    .slice(0, READABLE_TITLE_LIMIT)
-    .map((item) => item?.title || "");
-  if (!shouldEnhanceReadableTitles.value || !titles.length) {
-    if (requestId === titleTranslationRequestId) {
-      const fallbackItems = buildCurrentPageItems();
-      currentPageItems.value = fallbackItems;
-      syncReadableTitleDom(fallbackItems);
-    }
-    return;
-  }
-  const translatedTitles = await translateReadableTitles(
-    titles,
-    locale.value
-  );
-  if (requestId === titleTranslationRequestId) {
-    const translatedItems = buildCurrentPageItems(translatedTitles);
-    currentPageItems.value = translatedItems;
-    syncReadableTitleDom(translatedItems);
-  }
-};
+    })
+);
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };
@@ -404,7 +348,6 @@ const getHotListsData = async (name, isNew = false) => {
     return;
   }
   listData.value = null;
-  currentPageItems.value = [];
   const item =
     store.newsArr.find((item) => item.name == name) ||
     store.defaultNewsArr.find((item) => item.name == name);
@@ -412,6 +355,9 @@ const getHotListsData = async (name, isNew = false) => {
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
   const params = {
     ...buildSourceSubtypeParams(item.name, listSubType.value),
+    locale: locale.value,
+    translate_limit: 20,
+    translate_offset: Math.max(0, (pageNumber.value - 1) * 20),
   };
   getHotListsWithFallback(item.name, isNew, params, { useApi2 })
     .then(({ result, usedFallback, fallbackSuccess }) => {
@@ -422,7 +368,6 @@ const getHotListsData = async (name, isNew = false) => {
       if (result.code === 200) {
         store.markAvailable(item.name);
         listData.value = result;
-        updateCurrentPageItems(result.data || []);
       } else {
         store.markUnavailable(item.name);
         $message.error(result.message);
@@ -573,14 +518,6 @@ watch(
       updateTime.value = formatTime(listData.value.updateTime, locale.value);
     }
   }
-);
-
-watch(
-  () => [pageNumber.value, locale.value],
-  () => {
-    updateCurrentPageItems();
-  },
-  { immediate: true }
 );
 
 // 页数变化

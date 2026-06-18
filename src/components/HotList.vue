@@ -97,13 +97,10 @@
                 :href="getItemLink(item)"
                 :target="linkTarget"
                 rel="noopener noreferrer nofollow"
-                :title="item.translatedTitle ? item.originalTitle : undefined"
+                :title="item.originalTitle || undefined"
                 @click.stop
               >
-                <span
-                  class="title-text"
-                  :class="{ 'no-auto-translate': shouldEnhanceReadableTitles }"
-                >
+                <span class="title-text" :class="{ 'no-auto-translate': Boolean(item.originalTitle) }">
                   {{ item.displayTitle }}
                 </span>
               </n-a>
@@ -209,10 +206,6 @@ import {
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
-import {
-  shouldUseReadableTitleTranslation,
-  translateReadableTitles,
-} from "@/utils/readableTitles";
 
 const router = useRouter();
 const store = mainStore();
@@ -260,13 +253,9 @@ const linkTarget = computed(() =>
 );
 const previewMaxWidth = 260;
 const previewMaxHeight = 260;
-const READABLE_TITLE_LIMIT = 3;
 const showImages = computed(() => store.showImages);
 const sourceLabel = computed(() =>
   getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
-);
-const shouldEnhanceReadableTitles = computed(() =>
-  shouldUseReadableTitleTranslation(props.hotData.name, locale.value)
 );
 const cardSubtitle = computed(() => {
   const rawSubtitle =
@@ -279,64 +268,16 @@ const cardSubtitle = computed(() => {
   return getSourceSubtitleLabel(rawSubtitle, locale.value);
 });
 let hotListRequestId = 0;
-let titleTranslationRequestId = 0;
-const visibleItems = ref([]);
-const buildVisibleItems = (translatedTitles = {}) =>
+const visibleItems = computed(() =>
   (hotListData.value?.data || []).slice(0, 15).map((item) => {
-    const originalTitle = String(item?.title || "").trim();
-    const translatedTitle = translatedTitles[originalTitle] || "";
+    const originalTitle = String(item?.originalTitle || "");
     return {
       ...item,
       originalTitle,
-      translatedTitle,
-      displayTitle: translatedTitle || originalTitle,
+      displayTitle: item?.title || originalTitle,
     };
-  });
-const syncReadableTitleDom = (items = []) => {
-  nextTick(() => {
-    const root = document.getElementById(`hot-list-${props.hotData.name}`);
-    if (!root) return;
-    const links = root.querySelectorAll(".lists .item .text");
-    const titles = root.querySelectorAll(".lists .item .title-text");
-    items.forEach((item, index) => {
-      const titleNode = titles[index];
-      const linkNode = links[index];
-      if (!titleNode || !linkNode) return;
-      titleNode.textContent = item.translatedTitle || item.originalTitle || "";
-      if (item.translatedTitle) {
-        linkNode.setAttribute("title", item.originalTitle);
-      } else {
-        linkNode.removeAttribute("title");
-      }
-    });
-  });
-};
-const updateVisibleItems = async (items = hotListData.value?.data || []) => {
-  const requestId = ++titleTranslationRequestId;
-  const initialItems = buildVisibleItems();
-  visibleItems.value = initialItems;
-  syncReadableTitleDom(initialItems);
-  const titles = (items || [])
-    .slice(0, READABLE_TITLE_LIMIT)
-    .map((item) => item?.title || "");
-  if (!shouldEnhanceReadableTitles.value || !titles.length) {
-    if (requestId === titleTranslationRequestId) {
-      const fallbackItems = buildVisibleItems();
-      visibleItems.value = fallbackItems;
-      syncReadableTitleDom(fallbackItems);
-    }
-    return;
-  }
-  const translatedTitles = await translateReadableTitles(
-    titles,
-    locale.value
-  );
-  if (requestId === titleTranslationRequestId) {
-    const translatedItems = buildVisibleItems(translatedTitles);
-    visibleItems.value = translatedItems;
-    syncReadableTitleDom(translatedItems);
-  }
-};
+  })
+);
 const subtypeGroups = computed(() =>
   localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value)
 );
@@ -359,14 +300,6 @@ watch(
   { immediate: true, deep: true }
 );
 
-watch(
-  () => locale.value,
-  () => {
-    updateVisibleItems();
-  },
-  { immediate: true }
-);
-
 const updateIsDesktop = () => {
   if (!isClient) return;
   isDesktop.value = window.innerWidth > 680;
@@ -387,7 +320,12 @@ const getHotListsData = async (name, isNew = false) => {
       await getHotListsWithFallback(
         item.name,
         isNew,
-        buildSourceSubtypeParams(item.name, activeSubType.value),
+        {
+          ...buildSourceSubtypeParams(item.name, activeSubType.value),
+          locale: locale.value,
+          translate_limit: 15,
+          translate_offset: 0,
+        },
         {
           useApi2,
         }
@@ -400,7 +338,6 @@ const getHotListsData = async (name, isNew = false) => {
       store.markAvailable(item.name);
       listLoading.value = false;
       hotListData.value = result;
-      await updateVisibleItems(result.data || []);
       // 滚动至顶部
       if (scrollbarRef.value) {
         scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
