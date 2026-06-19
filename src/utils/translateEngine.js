@@ -5,11 +5,14 @@ const TRANSLATE_REQUEST_TIMEOUT_MS = 8000;
 const GOOGLE_TRANSLATE_TIMEOUT_MS = 6000;
 const CLIENT_TRANSLATE_CONCURRENCY = 4;
 const GOOGLE_TRANSLATE_LANGUAGE_BY_LOCALE = {
+  "zh-CN": "zh-CN",
   en: "en",
   "zh-TW": "zh-TW",
   ja: "ja",
   ko: "ko",
 };
+const PROTECTED_TERM_PATTERN =
+  /\b(?:GPT(?:-\d+(?:\.\d+)*)?|ChatGPT|Claude|Sonnet|Opus|Haiku|Fable|Mythos|Gemini|Gemma|DiffusionGemma|GLM|Llama|Grok|Qwen|DeepSeek|Mistral|Mixtral|Kimi|ERNIE|Hunyuan|Doubao|Yi|Phi|Command|Aya|Cohere|Anthropic|OpenAI|DeepMind|Hugging Face|OpenRouter|xAI|DALL[·-]E|Sora|Codex|Copilot|JDK)(?:\s+\d+(?:\.\d+)*)?|\b(?:AI|AGI|API|MCP|LLM)\b/g;
 
 let translateLoadPromise = null;
 
@@ -45,11 +48,27 @@ const parseGoogleTranslateResponse = (payload) => {
     .trim();
 };
 
+const protectTranslationTerms = (text = "") => {
+  const terms = [];
+  const protectedText = String(text || "").replace(PROTECTED_TERM_PATTERN, (term) => {
+    const token = `DHTERM${terms.length}X`;
+    terms.push([token, term]);
+    return token;
+  });
+  const restore = (value = "") =>
+    terms.reduce(
+      (nextValue, [token, term]) => nextValue.replaceAll(token, term),
+      String(value || "")
+    );
+  return { protectedText, restore };
+};
+
 const fetchGoogleTranslation = async (text, locale) => {
   if (typeof fetch !== "function") return "";
   const targetLanguage =
     GOOGLE_TRANSLATE_LANGUAGE_BY_LOCALE[normalizeLocale(locale)];
   if (!targetLanguage) return "";
+  const { protectedText, restore } = protectTranslationTerms(text);
 
   const controller =
     typeof AbortController === "undefined" ? null : new AbortController();
@@ -61,7 +80,7 @@ const fetchGoogleTranslation = async (text, locale) => {
   url.searchParams.set("sl", "auto");
   url.searchParams.set("tl", targetLanguage);
   url.searchParams.set("dt", "t");
-  url.searchParams.set("q", text);
+  url.searchParams.set("q", protectedText);
 
   try {
     const response = await fetch(url.toString(), {
@@ -69,7 +88,7 @@ const fetchGoogleTranslation = async (text, locale) => {
       signal: controller?.signal,
     });
     if (!response.ok) return "";
-    return parseGoogleTranslateResponse(await response.json());
+    return restore(parseGoogleTranslateResponse(await response.json()));
   } catch {
     return "";
   } finally {
@@ -160,6 +179,7 @@ export const translatePlainTexts = async (texts = [], locale) => {
 
     configureTranslate(translate);
 
+    const protectedItems = uniqueTexts.map((text) => protectTranslationTerms(text));
     const result = await new Promise((resolve, reject) => {
       const timer = window.setTimeout(() => {
         reject(new Error("translate.js request timed out"));
@@ -169,7 +189,7 @@ export const translatePlainTexts = async (texts = [], locale) => {
         callback(value);
       };
       translate.js.transObject(
-        { items: uniqueTexts },
+        { items: protectedItems.map((item) => item.protectedText) },
         targetLanguage,
         finish(resolve),
         finish(reject)
@@ -179,7 +199,9 @@ export const translatePlainTexts = async (texts = [], locale) => {
     const translatedItems = Array.isArray(result?.items) ? result.items : [];
     const mapped = new Map();
     uniqueTexts.forEach((text, index) => {
-      const translated = String(translatedItems[index] || text).trim();
+      const translated = protectedItems[index]
+        .restore(String(translatedItems[index] || protectedItems[index].protectedText))
+        .trim();
       mapped.set(text, translated || text);
     });
     return mapped;

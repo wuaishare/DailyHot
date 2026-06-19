@@ -279,10 +279,7 @@ let hotListRequestId = 0;
 const visibleItems = computed(() =>
   (hotListData.value?.data || []).slice(0, HOT_LIST_VISIBLE_LIMIT).map((item) => {
     const originalTitle = String(item?.originalTitle || "");
-    const displayTitle =
-      locale.value === "zh-CN" && originalTitle
-        ? originalTitle
-        : item?.title || originalTitle;
+    const displayTitle = item?.title || originalTitle;
     return {
       ...item,
       originalTitle,
@@ -374,6 +371,7 @@ const enhanceHotListResult = (result, targetLocale = locale.value) =>
     ? enhanceReadableResultTitles(result, targetLocale, {
         limit: HOT_LIST_VISIBLE_LIMIT,
         offset: 0,
+        sourceName: props.hotData.name,
       })
     : Promise.resolve(result);
 

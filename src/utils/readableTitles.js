@@ -2,8 +2,23 @@ import { getLocaleMeta, normalizeLocale } from "@/utils/locale";
 import { getReadableTranslations } from "@/api";
 import { translatePlainTexts } from "@/utils/translateEngine";
 
-const READABLE_TRANSLATION_LOCALES = new Set(["en", "zh-TW", "ja", "ko"]);
-const CLIENT_FIRST_TRANSLATION_LOCALES = new Set(["en", "zh-TW", "ja", "ko"]);
+const READABLE_TRANSLATION_LOCALES = new Set(["zh-CN", "en", "zh-TW", "ja", "ko"]);
+const CLIENT_FIRST_TRANSLATION_LOCALES = new Set(["zh-CN", "en", "zh-TW", "ja", "ko"]);
+const ENTITY_TITLE_SOURCE_NAMES = new Set([
+  "openrouter-rankings",
+  "artificialanalysis",
+  "arena-ai",
+  "lmarena",
+  "designarena",
+  "aicpb-rankings",
+  "llm-stats",
+  "skills-rank",
+  "clawhub",
+  "clawhub-skills",
+  "clawhub-plugins",
+  "hf-models",
+  "producthunt-ai",
+]);
 
 const translationCache = new Map();
 const pendingCache = new Map();
@@ -27,6 +42,10 @@ const mergeTranslatedMap = (target, source) => {
     }
   });
 };
+const MODEL_NAME_MARKER_PATTERN =
+  /\b(?:GPT|ChatGPT|Claude|Sonnet|Opus|Haiku|Fable|Mythos|Gemini|Gemma|DiffusionGemma|GLM|Llama|Grok|Qwen|DeepSeek|Mistral|Mixtral|Kimi|ERNIE|Hunyuan|Doubao|Phi|Command|Aya|DALL[·-]E|Sora)\b/i;
+const SENTENCE_SIGNAL_PATTERN =
+  /\b(?:a|an|the|to|for|with|without|in|on|from|by|and|or|how|why|what|new|updated|introducing|launching|using|improving|securing|unlocking|building|expanding|investing|statement|research|program|community|grant|family|future|analytics|controls)\b/i;
 
 const getClientTranslatedMap = async (texts = [], locale) => {
   const clientMap = await translatePlainTexts(texts, locale);
@@ -91,19 +110,25 @@ const enqueueLocaleRequest = (locale, request) =>
 const hasLatinSentence = (text = "") => {
   if (!/[A-Za-z]/.test(text)) return false;
   if (/^[A-Za-z0-9._/-]+$/.test(text)) return false;
+  if (MODEL_NAME_MARKER_PATTERN.test(text) && !SENTENCE_SIGNAL_PATTERN.test(text)) {
+    return false;
+  }
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
-  return text.length >= 24 || wordCount >= 4;
+  return text.length >= 18 || wordCount >= 2;
 };
 
 const looksTranslatableSentence = (text = "", locale = "zh-CN") => {
   const normalizedLocale = normalizeLocale(locale);
   const value = String(text || "").trim();
-  if (!value || normalizedLocale === "zh-CN") return false;
+  if (!value) return false;
 
   const hasHan = /[\u3400-\u9fff]/.test(value);
   const hasKana = /[\u3040-\u30ff]/.test(value);
   const hasHangul = /[\uac00-\ud7af]/.test(value);
 
+  if (normalizedLocale === "zh-CN") {
+    return !hasHan && (hasKana || hasHangul || hasLatinSentence(value));
+  }
   if (normalizedLocale === "zh-TW") {
     return hasHan || hasLatinSentence(value);
   }
@@ -120,8 +145,11 @@ const looksTranslatableSentence = (text = "", locale = "zh-CN") => {
   return hasHan || hasKana || hasHangul || hasLatinSentence(value);
 };
 
-export const shouldUseReadableTitleTranslation = (_sourceName, locale) =>
-  READABLE_TRANSLATION_LOCALES.has(normalizeLocale(locale));
+export const shouldUseReadableTitleTranslation = (sourceName, locale) => {
+  const normalizedLocale = normalizeLocale(locale);
+  if (!READABLE_TRANSLATION_LOCALES.has(normalizedLocale)) return false;
+  return !ENTITY_TITLE_SOURCE_NAMES.has(sourceName);
+};
 
 export const translateReadableTitles = async (titles = [], locale) => {
   const normalizedLocale = normalizeLocale(locale);
@@ -210,10 +238,10 @@ export const translateReadableTitles = async (titles = [], locale) => {
 export const enhanceReadableResultTitles = async (
   result,
   locale,
-  { offset = 0, limit = 20 } = {}
+  { offset = 0, limit = 20, sourceName = "" } = {}
 ) => {
   const normalizedLocale = normalizeLocale(locale);
-  if (!READABLE_TRANSLATION_LOCALES.has(normalizedLocale)) return result;
+  if (!shouldUseReadableTitleTranslation(sourceName, normalizedLocale)) return result;
   if (!Array.isArray(result?.data) || !result.data.length) return result;
 
   const start = Math.max(0, Number(offset) || 0);

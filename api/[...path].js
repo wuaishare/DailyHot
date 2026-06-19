@@ -15,11 +15,14 @@ const readBody = async (req) => {
 };
 
 const GOOGLE_TRANSLATE_LANGUAGE_BY_LOCALE = {
+  "zh-CN": "zh-CN",
   en: "en",
   "zh-TW": "zh-TW",
   ja: "ja",
   ko: "ko",
 };
+const PROTECTED_TERM_PATTERN =
+  /\b(?:GPT(?:-\d+(?:\.\d+)*)?|ChatGPT|Claude|Sonnet|Opus|Haiku|Fable|Mythos|Gemini|Gemma|DiffusionGemma|GLM|Llama|Grok|Qwen|DeepSeek|Mistral|Mixtral|Kimi|ERNIE|Hunyuan|Doubao|Yi|Phi|Command|Aya|Cohere|Anthropic|OpenAI|DeepMind|Hugging Face|OpenRouter|xAI|DALL[·-]E|Sora|Codex|Copilot|JDK)(?:\s+\d+(?:\.\d+)*)?|\b(?:AI|AGI|API|MCP|LLM)\b/g;
 const READABLE_TRANSLATE_TIMEOUT_MS = 6000;
 const READABLE_TRANSLATE_CONCURRENCY = 4;
 const READABLE_TRANSLATE_MAX_TEXTS = 50;
@@ -28,6 +31,15 @@ const READABLE_TRANSLATE_MAX_CHARS = 500;
 const normalizeReadableLocale = (locale = "") => {
   const value = String(locale || "").toLowerCase();
   if (value === "zh-tw" || value === "zh_tw" || value === "zh-hant") return "zh-TW";
+  if (
+    value === "zh-cn" ||
+    value === "zh_cn" ||
+    value === "zh-hans" ||
+    value === "zh" ||
+    value.startsWith("zh-cn")
+  ) {
+    return "zh-CN";
+  }
   if (value.startsWith("en")) return "en";
   if (value.startsWith("ja") || value.startsWith("jp")) return "ja";
   if (value.startsWith("ko") || value.startsWith("kr")) return "ko";
@@ -42,9 +54,25 @@ const parseGoogleTranslateResponse = (payload) => {
     .trim();
 };
 
+const protectTranslationTerms = (text = "") => {
+  const terms = [];
+  const protectedText = String(text || "").replace(PROTECTED_TERM_PATTERN, (term) => {
+    const token = `DHTERM${terms.length}X`;
+    terms.push([token, term]);
+    return token;
+  });
+  const restore = (value = "") =>
+    terms.reduce(
+      (nextValue, [token, term]) => nextValue.replaceAll(token, term),
+      String(value || "")
+    );
+  return { protectedText, restore };
+};
+
 const translateReadableText = async (text, locale) => {
   const targetLanguage = GOOGLE_TRANSLATE_LANGUAGE_BY_LOCALE[locale];
   if (!targetLanguage || !text) return "";
+  const { protectedText, restore } = protectTranslationTerms(text);
 
   const controller =
     typeof AbortController === "undefined" ? null : new AbortController();
@@ -56,7 +84,7 @@ const translateReadableText = async (text, locale) => {
   url.searchParams.set("sl", "auto");
   url.searchParams.set("tl", targetLanguage);
   url.searchParams.set("dt", "t");
-  url.searchParams.set("q", text);
+  url.searchParams.set("q", protectedText);
 
   try {
     const response = await fetch(url.toString(), {
@@ -68,7 +96,7 @@ const translateReadableText = async (text, locale) => {
       },
     });
     if (!response.ok) return "";
-    return parseGoogleTranslateResponse(await response.json());
+    return restore(parseGoogleTranslateResponse(await response.json()));
   } catch {
     return "";
   } finally {

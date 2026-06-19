@@ -339,14 +339,8 @@ const currentPageItems = computed(() =>
     .map((item) => {
       const originalTitle = String(item?.originalTitle || "");
       const originalDesc = String(item?.originalDesc || "");
-      const displayTitle =
-        locale.value === "zh-CN" && originalTitle
-          ? originalTitle
-          : item?.title || originalTitle;
-      const rawDisplayDesc =
-        locale.value === "zh-CN" && originalDesc
-          ? originalDesc
-          : item?.desc || originalDesc;
+      const displayTitle = item?.title || originalTitle;
+      const rawDisplayDesc = item?.desc || originalDesc;
       const displayDesc =
         locale.value !== "zh-CN" &&
         isDuplicateDesc(rawDisplayDesc, originalTitle, item?.title, displayTitle)
@@ -405,6 +399,7 @@ const enhanceListResult = (result, targetLocale = locale.value) =>
     ? enhanceReadableResultTitles(result, targetLocale, {
         limit: 20,
         offset: Math.max(0, (pageNumber.value - 1) * 20),
+        sourceName: listType.value,
       })
     : Promise.resolve(result);
 
