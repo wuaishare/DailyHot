@@ -3,7 +3,7 @@ const https = require("node:https");
 const DEFAULT_SITE_URL = "https://hot.wuaishare.cn";
 const INDEXNOW_KEY = "45f2e0a6f5a34b8290c80c5e9d0f94ad";
 const INDEXNOW_ENDPOINT =
-  process.env.INDEXNOW_ENDPOINT || "https://api.indexnow.org/indexnow";
+  process.env.INDEXNOW_ENDPOINT || "https://www.bing.com/indexnow";
 const rawSiteUrl = process.env.VITE_SITE_URL || DEFAULT_SITE_URL;
 const siteUrl = rawSiteUrl.replace(/\/+$/, "");
 const sitemapUrl = process.env.SITEMAP_URL || `${siteUrl}/sitemap.xml`;
