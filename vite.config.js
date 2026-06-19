@@ -229,8 +229,8 @@ export default defineConfig(async ({ mode }) => {
           skipWaiting: true,
           cleanupOutdatedCaches: true,
           navigateFallbackDenylist: [
-            /^\/api(?:\/|$)/,
-            /\/[^/?]+\.[^/?]+$/,
+            /^\/api(?:[/?#]|$)/,
+            /\/[^/?]+\.[^/?]+(?:[?#].*)?$/,
           ],
           runtimeCaching: [
             {
