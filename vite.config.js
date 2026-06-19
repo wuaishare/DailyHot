@@ -228,7 +228,10 @@ export default defineConfig(async ({ mode }) => {
           clientsClaim: true,
           skipWaiting: true,
           cleanupOutdatedCaches: true,
-          navigateFallbackDenylist: [/^\/api(?:\/|$)/],
+          navigateFallbackDenylist: [
+            /^\/api(?:\/|$)/,
+            /\/[^/?]+\.[^/?]+$/,
+          ],
           runtimeCaching: [
             {
               urlPattern: /(.*?)\.(woff2|woff|ttf)/,
