@@ -283,11 +283,11 @@ const CLAWHUB_ZH_SUBTYPE_SEO = {
 
 const DESIGNARENA_ZH_SUBTYPE_SEO = {
   fullstack: {
-    titleSegment: "Full-Stack WebDev 模型榜",
-    intent: "Agentic全栈应用生成与后端能力模型排行",
+    titleSegment: "Agentic 全栈应用模型榜",
+    intent: "Agentic全栈应用生成、后端能力与完整产品化模型排行",
   },
   "fullstack-win-rate": {
-    titleSegment: "Full-Stack WebDev 胜率榜",
+    titleSegment: "Agentic 全栈应用胜率榜",
     intent: "Agentic全栈应用生成模型胜率排行",
   },
   agon_webapps: {

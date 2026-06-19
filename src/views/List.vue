@@ -240,6 +240,9 @@ const SOURCE_FAMILY_ALIASES = {
   "hf-papers": "huggingface",
 };
 const normalizeSourceFamily = (name = "") => SOURCE_FAMILY_ALIASES[name] || name;
+const API_LOCALIZED_SOURCE_NAMES = new Set(["designarena"]);
+const shouldReloadForLocaleChange = (name = "") =>
+  API_LOCALIZED_SOURCE_NAMES.has(name);
 
 const updateTime = ref(null);
 const availableNews = computed(() => {
@@ -655,6 +658,10 @@ watch(
   async (targetLocale) => {
     if (listData.value) {
       updateTime.value = formatTime(listData.value.updateTime, targetLocale);
+    }
+    if (listData.value && shouldReloadForLocaleChange(listType.value)) {
+      getHotListsData(listType.value);
+      return;
     }
     if (!listData.value || !shouldUseReadableTitleTranslation(listType.value, targetLocale)) {
       return;

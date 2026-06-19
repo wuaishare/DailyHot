@@ -368,11 +368,11 @@ Object.entries(SOURCE_LABEL_LOCALIZATIONS).forEach(([sourceName, labels]) => {
 
 const GROUP_LABEL_OVERRIDES = {
   agentic: {
-    "zh-CN": "Agentic WebDev",
-    "zh-TW": "Agentic WebDev",
-    en: "Agentic WebDev",
-    ja: "Agentic WebDev",
-    ko: "Agentic WebDev",
+    "zh-CN": "Web Dev (Agentic)",
+    "zh-TW": "Web Dev (Agentic)",
+    en: "Web Dev (Agentic)",
+    ja: "Web Dev (Agentic)",
+    ko: "Web Dev (Agentic)",
   },
   quality: {
     "zh-CN": "质量与使用",
@@ -756,18 +756,32 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ko: "WebDev 모델 랭킹",
   },
   "Full-Stack WebDev 模型榜": {
-    "zh-CN": "Full-Stack WebDev 模型榜",
-    "zh-TW": "Full-Stack WebDev 模型榜",
+    "zh-CN": "Agentic 全栈应用模型榜",
+    "zh-TW": "Agentic 全棧應用模型榜",
     en: "Full-Stack WebDev Model Rankings",
     ja: "Full-Stack WebDevモデルランキング",
     ko: "Full-Stack WebDev 모델 랭킹",
   },
   "Full-Stack WebDev 胜率榜": {
-    "zh-CN": "Full-Stack WebDev 胜率榜",
-    "zh-TW": "Full-Stack WebDev 勝率榜",
+    "zh-CN": "Agentic 全栈应用胜率榜",
+    "zh-TW": "Agentic 全棧應用勝率榜",
     en: "Full-Stack WebDev Win Rate Rankings",
     ja: "Full-Stack WebDev勝率ランキング",
     ko: "Full-Stack WebDev 승률 랭킹",
+  },
+  "Agentic 全栈应用模型榜": {
+    "zh-CN": "Agentic 全栈应用模型榜",
+    "zh-TW": "Agentic 全棧應用模型榜",
+    en: "Agentic Full-Stack App Model Rankings",
+    ja: "Agenticフルスタックアプリモデルランキング",
+    ko: "Agentic 풀스택 앱 모델 랭킹",
+  },
+  "Agentic 全栈应用胜率榜": {
+    "zh-CN": "Agentic 全栈应用胜率榜",
+    "zh-TW": "Agentic 全棧應用勝率榜",
+    en: "Agentic Full-Stack App Win Rate Rankings",
+    ja: "Agenticフルスタックアプリ勝率ランキング",
+    ko: "Agentic 풀스택 앱 승률 랭킹",
   },
   "Agentic Frontend 模型榜": {
     "zh-CN": "Agentic 前端模型榜",
@@ -1722,18 +1736,18 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ko: "채팅",
   },
   "Full-Stack ELO": {
-    "zh-CN": "Full-Stack ELO",
-    "zh-TW": "Full-Stack ELO",
+    "zh-CN": "全栈 ELO",
+    "zh-TW": "全棧 ELO",
     en: "Full-Stack ELO",
-    ja: "Full-Stack ELO",
-    ko: "Full-Stack ELO",
+    ja: "フルスタックELO",
+    ko: "풀스택 ELO",
   },
   "Full-Stack Win Rate": {
-    "zh-CN": "Full-Stack 胜率",
-    "zh-TW": "Full-Stack 勝率",
+    "zh-CN": "全栈胜率",
+    "zh-TW": "全棧勝率",
     en: "Full-Stack Win Rate",
-    ja: "Full-Stack勝率",
-    ko: "Full-Stack 승률",
+    ja: "フルスタック勝率",
+    ko: "풀스택 승률",
   },
   "Frontend ELO": {
     "zh-CN": "前端 ELO",
@@ -2213,6 +2227,13 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     en: "Hot Search",
     ja: "急上昇検索",
     ko: "인기 검색어",
+  },
+  热门榜: {
+    "zh-CN": "热门榜",
+    "zh-TW": "熱門榜",
+    en: "Popular Rankings",
+    ja: "人気ランキング",
+    ko: "인기 랭킹",
   },
   热议榜: {
     "zh-CN": "热议榜",
@@ -2788,6 +2809,11 @@ Object.assign(SUBTYPE_LABEL_OVERRIDES, COMMON_SUBTYPE_LABEL_OVERRIDES);
 const containsNonLatin = (value = "") =>
   /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(value);
 
+const normalizeLookupLabel = (value = "") =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const titleCaseToken = (token = "") =>
   token
     .split(" ")
@@ -2825,8 +2851,8 @@ export const getSourceLabel = (
 
 export const getSubtypeLabel = (item, locale = "zh-CN") => {
   const normalizedLocale = normalizeLocale(locale);
-  const rawLabel = item?.label || "";
-  const fallbackKey = item?.value || rawLabel;
+  const rawLabel = normalizeLookupLabel(item?.label || "");
+  const fallbackKey = normalizeLookupLabel(item?.value || rawLabel);
   const override =
     SUBTYPE_LABEL_OVERRIDES[fallbackKey] || SUBTYPE_LABEL_OVERRIDES[rawLabel];
   if (override?.[normalizedLocale]) {
@@ -2842,24 +2868,27 @@ export const getSubtypeLabel = (item, locale = "zh-CN") => {
 
 export const getSourceSubtitleLabel = (label = "", locale = "zh-CN") => {
   const normalizedLocale = normalizeLocale(locale);
-  const override = SUBTYPE_LABEL_OVERRIDES[label];
+  const rawLabel = normalizeLookupLabel(label);
+  const override = SUBTYPE_LABEL_OVERRIDES[rawLabel];
   if (override?.[normalizedLocale]) {
     return override[normalizedLocale];
   }
-  if (!label) return "";
+  if (!rawLabel) return "";
   if (normalizedLocale === "zh-CN" || normalizedLocale === "zh-TW") {
-    return label;
+    return rawLabel;
   }
-  if (!containsNonLatin(label)) {
-    return label;
+  if (!containsNonLatin(rawLabel)) {
+    return rawLabel;
   }
-  return prettifySlug(label);
+  return prettifySlug(rawLabel);
 };
 
 export const getSubtypeGroupLabel = (group, locale = "zh-CN") => {
   const normalizedLocale = normalizeLocale(locale);
-  const rawLabel = group?.label || "";
-  const groupKey = group?.key || rawLabel || group?.items?.[0]?.value || "";
+  const rawLabel = normalizeLookupLabel(group?.label || "");
+  const groupKey = normalizeLookupLabel(
+    group?.key || rawLabel || group?.items?.[0]?.value || ""
+  );
   const override = GROUP_LABEL_OVERRIDES[groupKey];
   if (override?.[normalizedLocale]) return override[normalizedLocale];
   const rawOverride = GROUP_LABEL_OVERRIDES[rawLabel];

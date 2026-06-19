@@ -34,20 +34,20 @@ const DESIGNARENA_JUDGE_SCORES_URL =
 const DESIGNARENA_BASE_URL = "https://www.designarena.ai";
 const DESIGNARENA_LEADERBOARD_TYPES = {
   fullstack: {
-    title: "Full-Stack WebDev 模型榜",
+    title: "Agentic 全栈应用模型榜",
     category: "fullstack",
     arenaType: "agents",
     href: "/leaderboard/fullstack",
     metric: "elo",
-    description: "DesignArena Agentic Full-Stack WebDev 模型排行榜",
+    description: "DesignArena Agentic 全栈应用生成与后端能力模型排行",
   },
   "fullstack-win-rate": {
-    title: "Full-Stack WebDev 胜率榜",
+    title: "Agentic 全栈应用胜率榜",
     category: "fullstack",
     arenaType: "agents",
     href: "/leaderboard/fullstack",
     metric: "winRate",
-    description: "DesignArena Agentic Full-Stack WebDev 模型胜率排行",
+    description: "DesignArena Agentic 全栈应用生成模型胜率排行",
   },
   agon_webapps: {
     title: "Agentic Frontend 模型榜",
@@ -318,6 +318,369 @@ const DESIGNARENA_SIGNAL_TYPES = {
       `${labels.downloadsDeviation} ${formatSignedPercent(value)} · ${labels.downloadRate} ${item.rate || 0}% · ${labels.margin} ±${formatNumber(item.margin, 1)}%`,
   },
 };
+const DESIGNARENA_RESPONSE_LOCALIZATIONS = {
+  fullstack: {
+    title: {
+      "zh-CN": "Agentic 全栈应用模型榜",
+      "zh-TW": "Agentic 全棧應用模型榜",
+      en: "Agentic Full-Stack App Models",
+      ja: "Agenticフルスタックアプリモデル",
+      ko: "Agentic 풀스택 앱 모델",
+    },
+    description: {
+      "zh-CN": "DesignArena Agentic 全栈应用生成与后端能力模型排行",
+      "zh-TW": "DesignArena Agentic 全棧應用生成與後端能力模型排行",
+      en: "DesignArena rankings for agentic full-stack app generation and backend capability.",
+      ja: "DesignArenaのAgenticフルスタックアプリ生成とバックエンド能力ランキング。",
+      ko: "DesignArena Agentic 풀스택 앱 생성 및 백엔드 역량 랭킹.",
+    },
+  },
+  "fullstack-win-rate": {
+    title: {
+      "zh-CN": "Agentic 全栈应用胜率榜",
+      "zh-TW": "Agentic 全棧應用勝率榜",
+      en: "Agentic Full-Stack App Win Rate",
+      ja: "Agenticフルスタックアプリ勝率",
+      ko: "Agentic 풀스택 앱 승률",
+    },
+    description: {
+      "zh-CN": "DesignArena Agentic 全栈应用生成模型胜率排行",
+      "zh-TW": "DesignArena Agentic 全棧應用生成模型勝率排行",
+      en: "DesignArena win-rate rankings for agentic full-stack app generation models.",
+      ja: "DesignArenaのAgenticフルスタックアプリ生成モデル勝率ランキング。",
+      ko: "DesignArena Agentic 풀스택 앱 생성 모델 승률 랭킹.",
+    },
+  },
+  agon_webapps: {
+    title: {
+      "zh-CN": "Agentic 前端模型榜",
+      "zh-TW": "Agentic 前端模型榜",
+      en: "Agentic Frontend Models",
+      ja: "Agenticフロントエンドモデル",
+      ko: "Agentic 프론트엔드 모델",
+    },
+    description: {
+      "zh-CN": "DesignArena Agentic 前端 WebDev 模型排行榜",
+      "zh-TW": "DesignArena Agentic 前端 WebDev 模型排行榜",
+      en: "DesignArena rankings for agentic frontend WebDev models.",
+      ja: "DesignArenaのAgenticフロントエンドWebDevモデルランキング。",
+      ko: "DesignArena Agentic 프론트엔드 WebDev 모델 랭킹.",
+    },
+  },
+  "agon_webapps-win-rate": {
+    title: {
+      "zh-CN": "Agentic 前端胜率榜",
+      "zh-TW": "Agentic 前端勝率榜",
+      en: "Agentic Frontend Win Rate",
+      ja: "Agenticフロントエンド勝率",
+      ko: "Agentic 프론트엔드 승률",
+    },
+    description: {
+      "zh-CN": "DesignArena Agentic 前端 WebDev 模型胜率排行",
+      "zh-TW": "DesignArena Agentic 前端 WebDev 模型勝率排行",
+      en: "DesignArena win-rate rankings for agentic frontend WebDev models.",
+      ja: "DesignArenaのAgenticフロントエンドWebDevモデル勝率ランキング。",
+      ko: "DesignArena Agentic 프론트엔드 WebDev 모델 승률 랭킹.",
+    },
+  },
+  "fullstack-quality": {
+    title: {
+      "zh-CN": "Fullstack App 质量榜",
+      "zh-TW": "Fullstack App 品質榜",
+      en: "Fullstack App Quality",
+      ja: "Fullstack App品質",
+      ko: "Fullstack App 품질",
+    },
+  },
+  "fullstack-backend": {
+    title: {
+      "zh-CN": "后端评分榜",
+      "zh-TW": "後端評分榜",
+      en: "Backend Scores",
+      ja: "バックエンドスコア",
+      ko: "백엔드 점수",
+    },
+  },
+  "real-world-reach": {
+    title: {
+      "zh-CN": "真实触达榜",
+      "zh-TW": "真實觸達榜",
+      en: "Real-World Reach",
+      ja: "実利用リーチ",
+      ko: "실사용 도달",
+    },
+  },
+  "daily-usage": {
+    title: {
+      "zh-CN": "日活使用榜",
+      "zh-TW": "日活使用榜",
+      en: "Daily Usage",
+      ja: "デイリー利用",
+      ko: "일일 사용량",
+    },
+  },
+  retention: {
+    title: {
+      "zh-CN": "回访用户榜",
+      "zh-TW": "回訪使用者榜",
+      en: "Returning Users",
+      ja: "リピート利用者",
+      ko: "재방문 사용자",
+    },
+  },
+  downloads: {
+    title: {
+      "zh-CN": "应用下载榜",
+      "zh-TW": "應用下載榜",
+      en: "App Downloads",
+      ja: "アプリダウンロード",
+      ko: "앱 다운로드",
+    },
+  },
+  mobileapps: {
+    title: {
+      "zh-CN": "移动 App 模型榜",
+      "zh-TW": "行動 App 模型榜",
+      en: "Mobile App Model Rankings",
+      ja: "モバイルAppモデルランキング",
+      ko: "모바일 앱 모델 랭킹",
+    },
+  },
+  nativeapps: {
+    title: {
+      "zh-CN": "原生 App 模型榜",
+      "zh-TW": "原生 App 模型榜",
+      en: "Native App Model Rankings",
+      ja: "ネイティブAppモデルランキング",
+      ko: "네이티브 앱 모델 랭킹",
+    },
+  },
+  agentic_gamedev: {
+    title: {
+      "zh-CN": "Agentic 游戏开发模型榜",
+      "zh-TW": "Agentic 遊戲開發模型榜",
+      en: "Agentic Game Dev Model Rankings",
+      ja: "Agenticゲーム開発モデルランキング",
+      ko: "Agentic 게임 개발 모델 랭킹",
+    },
+  },
+  website: {
+    title: {
+      "zh-CN": "网站模型榜",
+      "zh-TW": "網站模型榜",
+      en: "Website Model Rankings",
+      ja: "Webサイトモデルランキング",
+      ko: "웹사이트 모델 랭킹",
+    },
+  },
+  "website-win-rate": {
+    title: {
+      "zh-CN": "网站胜率榜",
+      "zh-TW": "網站勝率榜",
+      en: "Website Win Rate Rankings",
+      ja: "Webサイト勝率ランキング",
+      ko: "웹사이트 승률 랭킹",
+    },
+  },
+  uicomponent: {
+    title: {
+      "zh-CN": "UI 组件模型榜",
+      "zh-TW": "UI 元件模型榜",
+      en: "UI Component Model Rankings",
+      ja: "UIコンポーネントモデルランキング",
+      ko: "UI 컴포넌트 모델 랭킹",
+    },
+  },
+  dataviz: {
+    title: {
+      "zh-CN": "数据可视化模型榜",
+      "zh-TW": "資料視覺化模型榜",
+      en: "Data Visualization Model Rankings",
+      ja: "データ可視化モデルランキング",
+      ko: "데이터 시각화 모델 랭킹",
+    },
+  },
+  gamedev: {
+    title: {
+      "zh-CN": "游戏开发模型榜",
+      "zh-TW": "遊戲開發模型榜",
+      en: "Game Dev Model Rankings",
+      ja: "ゲーム開発モデルランキング",
+      ko: "게임 개발 모델 랭킹",
+    },
+  },
+  "3d": {
+    title: {
+      "zh-CN": "3D 设计模型榜",
+      "zh-TW": "3D 設計模型榜",
+      en: "3D Design Model Rankings",
+      ja: "3Dデザインモデルランキング",
+      ko: "3D 디자인 모델 랭킹",
+    },
+  },
+  svg: {
+    title: {
+      "zh-CN": "SVG 模型榜",
+      "zh-TW": "SVG 模型榜",
+      en: "SVG Model Rankings",
+      ja: "SVGモデルランキング",
+      ko: "SVG 모델 랭킹",
+    },
+  },
+  ascii: {
+    title: {
+      "zh-CN": "ASCII Art 模型榜",
+      "zh-TW": "ASCII Art 模型榜",
+      en: "ASCII Art Model Rankings",
+      ja: "ASCII Artモデルランキング",
+      ko: "ASCII Art 모델 랭킹",
+    },
+  },
+  agon_slides: {
+    title: {
+      "zh-CN": "Agentic 演示文稿模型榜",
+      "zh-TW": "Agentic 簡報模型榜",
+      en: "Agentic Slides Model Rankings",
+      ja: "Agenticスライドモデルランキング",
+      ko: "Agentic 슬라이드 모델 랭킹",
+    },
+  },
+  agon_slides_html: {
+    title: {
+      "zh-CN": "Agentic HTML 演示文稿模型榜",
+      "zh-TW": "Agentic HTML 簡報模型榜",
+      en: "Agentic HTML Slides Model Rankings",
+      ja: "Agentic HTMLスライドモデルランキング",
+      ko: "Agentic HTML 슬라이드 모델 랭킹",
+    },
+  },
+  slides: {
+    title: {
+      "zh-CN": "演示文稿模型榜",
+      "zh-TW": "簡報模型榜",
+      en: "Slides Model Rankings",
+      ja: "スライドモデルランキング",
+      ko: "슬라이드 모델 랭킹",
+    },
+  },
+  image: {
+    title: {
+      "zh-CN": "图像生成模型榜",
+      "zh-TW": "圖像生成模型榜",
+      en: "Image Generation Model Rankings",
+      ja: "画像生成モデルランキング",
+      ko: "이미지 생성 모델 랭킹",
+    },
+  },
+  imagetoimage: {
+    title: {
+      "zh-CN": "图像编辑模型榜",
+      "zh-TW": "圖像編輯模型榜",
+      en: "Image Editing Model Rankings",
+      ja: "画像編集モデルランキング",
+      ko: "이미지 편집 모델 랭킹",
+    },
+  },
+  graphicdesign: {
+    title: {
+      "zh-CN": "平面设计模型榜",
+      "zh-TW": "平面設計模型榜",
+      en: "Graphic Design Model Rankings",
+      ja: "グラフィックデザインモデルランキング",
+      ko: "그래픽 디자인 모델 랭킹",
+    },
+  },
+  logo: {
+    title: {
+      "zh-CN": "Logo 模型榜",
+      "zh-TW": "Logo 模型榜",
+      en: "Logo Model Rankings",
+      ja: "Logoモデルランキング",
+      ko: "Logo 모델 랭킹",
+    },
+  },
+  video: {
+    title: {
+      "zh-CN": "视频生成模型榜",
+      "zh-TW": "影片生成模型榜",
+      en: "Video Model Rankings",
+      ja: "動画生成モデルランキング",
+      ko: "비디오 생성 모델 랭킹",
+    },
+  },
+  videotovideo: {
+    title: {
+      "zh-CN": "视频编辑模型榜",
+      "zh-TW": "影片編輯模型榜",
+      en: "Video Editing Model Rankings",
+      ja: "動画編集モデルランキング",
+      ko: "비디오 편집 모델 랭킹",
+    },
+  },
+  imagetovideo: {
+    title: {
+      "zh-CN": "图像转视频模型榜",
+      "zh-TW": "圖像轉影片模型榜",
+      en: "Image to Video Model Rankings",
+      ja: "画像から動画モデルランキング",
+      ko: "이미지 비디오 모델 랭킹",
+    },
+  },
+  multitovideo: {
+    title: {
+      "zh-CN": "多输入转视频模型榜",
+      "zh-TW": "多輸入轉影片模型榜",
+      en: "Multi to Video Model Rankings",
+      ja: "マルチ入力動画モデルランキング",
+      ko: "멀티 입력 비디오 모델 랭킹",
+    },
+  },
+  multimodaltovideo: {
+    title: {
+      "zh-CN": "多模态转视频模型榜",
+      "zh-TW": "多模態轉影片模型榜",
+      en: "Multimodal to Video Model Rankings",
+      ja: "マルチモーダル動画モデルランキング",
+      ko: "멀티모달 비디오 모델 랭킹",
+    },
+  },
+  tts: {
+    title: {
+      "zh-CN": "TTS 模型榜",
+      "zh-TW": "TTS 模型榜",
+      en: "TTS Model Rankings",
+      ja: "TTSモデルランキング",
+      ko: "TTS 모델 랭킹",
+    },
+  },
+  builders: {
+    title: {
+      "zh-CN": "AI 构建器榜",
+      "zh-TW": "AI 建構器榜",
+      en: "AI Builder Rankings",
+      ja: "AIビルダーランキング",
+      ko: "AI 빌더 랭킹",
+    },
+  },
+};
+const DESIGNARENA_PARAM_NAME_BY_LOCALE = {
+  "zh-CN": "榜单分类",
+  "zh-TW": "榜單分類",
+  en: "Leaderboard Type",
+  ja: "ランキング分類",
+  ko: "랭킹 분류",
+};
+const getGenericDesignArenaDescription = (
+  title = "DesignArena",
+  locale = "zh-CN",
+  fallback = ""
+) => {
+  if (locale === "zh-CN") return fallback || "DesignArena AI 模型排行榜";
+  if (locale === "zh-TW") return `DesignArena ${title}。`;
+  if (locale === "ja") return `DesignArenaの${title}。`;
+  if (locale === "ko") return `DesignArena ${title}.`;
+  return `DesignArena ${title}.`;
+};
 const DESIGNARENA_METRIC_LABELS = {
   "zh-CN": {
     winRate: "胜率",
@@ -574,12 +937,27 @@ const absoluteDesignArenaUrl = (href = "/leaderboard") =>
     ? href
     : `${DESIGNARENA_BASE_URL}${href.startsWith("/") ? href : `/${href}`}`;
 
-const getDesignArenaTypeParams = () =>
+const getLocalizedDesignArenaMeta = (type, meta = {}, locale = "zh-CN") => {
+  const localized = DESIGNARENA_RESPONSE_LOCALIZATIONS[type] || {};
+  const title = localized.title?.[locale] || meta.title;
+  return {
+    ...meta,
+    title,
+    description:
+      localized.description?.[locale] ||
+      getGenericDesignArenaDescription(title, locale, meta.description),
+  };
+};
+
+const getDesignArenaTypeParams = (locale = "zh-CN") =>
   Object.fromEntries(
     [
       ...Object.entries(DESIGNARENA_LEADERBOARD_TYPES),
       ...Object.entries(DESIGNARENA_SIGNAL_TYPES),
-    ].map(([key, meta]) => [key, meta.title])
+    ].map(([key, meta]) => [
+      key,
+      getLocalizedDesignArenaMeta(key, meta, locale).title,
+    ])
   );
 
 const getDesignArenaBackendScore = (item = {}) => {
@@ -658,26 +1036,31 @@ const normalizeDesignArenaSignalData = (items = [], meta = {}, locale = "zh-CN")
     });
 };
 
-const buildDesignArenaResponse = ({ type, meta, data, updateTime }) => ({
-  code: 200,
-  name: "designarena",
-  title: "DesignArena",
-  type: meta.title,
-  description: meta.description || "DesignArena AI 模型排行榜",
-  link: absoluteDesignArenaUrl(meta.href || "/leaderboard"),
-  params: {
-    type: {
-      name: "榜单分类",
-      type: getDesignArenaTypeParams(),
+const buildDesignArenaResponse = ({ type, meta, data, updateTime, locale }) => {
+  const localizedMeta = getLocalizedDesignArenaMeta(type, meta, locale);
+  return {
+    code: 200,
+    name: "designarena",
+    title: "DesignArena",
+    type: localizedMeta.title,
+    description: localizedMeta.description || "DesignArena AI 模型排行榜",
+    link: absoluteDesignArenaUrl(meta.href || "/leaderboard"),
+    params: {
+      type: {
+        name:
+          DESIGNARENA_PARAM_NAME_BY_LOCALE[locale] ||
+          DESIGNARENA_PARAM_NAME_BY_LOCALE.en,
+        type: getDesignArenaTypeParams(locale),
+      },
     },
-  },
-  subtype: meta.title,
-  total: data.length,
-  fromCache: false,
-  updateTime: updateTime || new Date().toISOString(),
-  data,
-  selectedType: type,
-});
+    subtype: localizedMeta.title,
+    total: data.length,
+    fromCache: false,
+    updateTime: updateTime || new Date().toISOString(),
+    data,
+    selectedType: type,
+  };
+};
 
 const fetchDesignArenaLeaderboard = async (type, meta, locale = "zh-CN") => {
   const response = await fetch(DESIGNARENA_LEADERBOARD_URL, {
@@ -707,6 +1090,7 @@ const fetchDesignArenaLeaderboard = async (type, meta, locale = "zh-CN") => {
     meta,
     data: normalizeDesignArenaLeaderboardData(payload.data, meta, locale),
     updateTime: payload.timestamp || new Date().toISOString(),
+    locale,
   });
 };
 
@@ -731,6 +1115,7 @@ const fetchDesignArenaSignals = async (type, meta, locale = "zh-CN") => {
     type,
     meta,
     data: normalizeDesignArenaSignalData(items, meta, locale),
+    locale,
   });
 };
 
@@ -754,7 +1139,12 @@ const handleDesignArena = async (req, res) => {
       code: 502,
       name: "designarena",
       title: "DesignArena",
-      type: (leaderboardMeta || signalMeta)?.title || "DesignArena",
+      type:
+        getLocalizedDesignArenaMeta(
+          type,
+          leaderboardMeta || signalMeta || {},
+          locale
+        )?.title || "DesignArena",
       total: 0,
       fromCache: false,
       updateTime: new Date().toISOString(),

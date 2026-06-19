@@ -266,6 +266,9 @@ const shouldProtectEntityTitles = computed(() =>
   shouldProtectEntityTitleTranslation(props.hotData.name)
 );
 const HOT_LIST_VISIBLE_LIMIT = 15;
+const API_LOCALIZED_SOURCE_NAMES = new Set(["designarena"]);
+const shouldReloadForLocaleChange = (name = "") =>
+  API_LOCALIZED_SOURCE_NAMES.has(name);
 const sourceLabel = computed(() =>
   getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
 );
@@ -661,6 +664,11 @@ watch(
     }
     if (!hotListData.value) {
       listLoading.value = false;
+      return;
+    }
+    if (shouldReloadForLocaleChange(props.hotData.name)) {
+      listLoading.value = true;
+      getHotListsData(props.hotData.name);
       return;
     }
     if (!shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)) {

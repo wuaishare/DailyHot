@@ -82,7 +82,7 @@ const SOURCE_SUBTYPE_GROUPS = {
   designarena: [
     {
       key: "agentic",
-      label: "Agentic WebDev",
+      label: "Web Dev (Agentic)",
       items: [
         { label: "Full-Stack ELO", value: "fullstack" },
         { label: "Full-Stack Win Rate", value: "fullstack-win-rate" },
