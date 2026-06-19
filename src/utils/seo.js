@@ -10,6 +10,7 @@ import {
   normalizeLocale,
 } from "@/utils/locale";
 import { getSourceSubtypeOptions } from "@/utils/sourceSubtypes";
+import { getSubtypeLabel as getLocalizedSubtypeLabel } from "@/utils/sourceLabels";
 
 const DEFAULT_SEO = {
   title: "吾爱热榜 - 全网热点排行榜聚合与实时趋势追踪",
@@ -141,6 +142,12 @@ const stripLeadingPhrases = (value = "", phrases = []) =>
     )
     .trim();
 
+const stripLeadingZhPossessive = (value = "") =>
+  String(value)
+    .trim()
+    .replace(/^的[\s·:：-]*/u, "")
+    .trim();
+
 const normalizeTitleLabel = (value = "") =>
   String(value)
     .replace(/\s*·\s*/g, " ")
@@ -163,13 +170,25 @@ const buildZhTitle = (main, detail) =>
     ? `${normalizeTitleLabel(main)} - ${detail} | ${SEO_BRAND_NAME_ZH}`
     : `${normalizeTitleLabel(main)} | ${SEO_BRAND_NAME_ZH}`;
 
+const appendZhPageSuffix = (label = "") =>
+  /[A-Za-z0-9]$/u.test(String(label).trim())
+    ? `${String(label).trim()} 页面`
+    : `${String(label).trim()}页面`;
+
+const joinZhVerbObject = (verb, object = "") =>
+  /^[A-Za-z0-9]/u.test(String(object).trim())
+    ? `${verb} ${String(object).trim()}`
+    : `${verb}${String(object).trim()}`;
+
 const buildZhListIntent = ({
   sourceLabel,
   subtypeLabel,
   meta,
 }) => {
   const rawDescription = trimTerminalPunctuation(meta?.description || "");
-  const stripped = stripLeadingPhrases(rawDescription, [sourceLabel, subtypeLabel]);
+  const stripped = stripLeadingZhPossessive(
+    stripLeadingPhrases(rawDescription, [sourceLabel, subtypeLabel])
+  );
   return stripped || "实时热榜与趋势榜";
 };
 
@@ -575,11 +594,8 @@ const getSubtypeLabel = (sourceSlug, subtypeSlug, locale = "zh-CN") => {
   const rawLabel = subtype?.label || "";
   const normalizedLocale = normalizeLocale(locale);
   if (!rawLabel) return prettifySlug(subtypeSlug);
-  if (normalizedLocale === "zh-CN" || normalizedLocale === "zh-TW") {
-    return rawLabel;
-  }
-  if (!containsNonLatin(rawLabel)) return rawLabel;
-  return prettifySlug(subtypeSlug);
+  const localizedLabel = getLocalizedSubtypeLabel(subtype, normalizedLocale);
+  return localizedLabel || prettifySlug(subtypeSlug);
 };
 
 const normalizeSiteUrl = (url) => {
@@ -836,7 +852,10 @@ const getListSeo = (route, siteUrl, canonical) => {
       : `${label} - ${localizedSiteName}`;
   const finalDescription =
     locale === "zh-CN"
-      ? `${titleLabel}页面，聚合${zhIntent}、对应平台最新数据与原站入口，支持实时浏览、榜单切换、分页跳转与一键直达。`
+      ? `${appendZhPageSuffix(titleLabel)}，${joinZhVerbObject(
+          "聚合",
+          zhIntent
+        )}、对应平台最新数据与原站入口，支持实时浏览、榜单切换、分页跳转与一键直达。`
       : description || localizedDefaultDescription;
   const finalKeywords =
     locale === "zh-CN"

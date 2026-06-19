@@ -29,9 +29,10 @@
             round
             size="large"
             class="tag"
+            :class="{ 'is-active-source': isActiveSource(item.name) }"
             v-for="item in row"
             :key="item.name"
-            :type="item.name === listType ? 'primary' : 'default'"
+            :type="isActiveSource(item.name) ? 'primary' : 'default'"
             @click="changeType(item.name, $event)"
           >
             {{ getSourceDisplayLabel(item) }}
@@ -223,6 +224,17 @@ const cacheVersion = getCacheVersion();
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
+const SOURCE_FAMILY_ALIASES = {
+  "clawhub-skills": "clawhub",
+  "clawhub-plugins": "clawhub",
+  "openai-news": "openai",
+  "openai-research": "openai",
+  lmarena: "arena-ai",
+  "huggingface-blog": "huggingface",
+  "hf-models": "huggingface",
+  "hf-papers": "huggingface",
+};
+const normalizeSourceFamily = (name = "") => SOURCE_FAMILY_ALIASES[name] || name;
 
 const updateTime = ref(null);
 const availableNews = computed(() => {
@@ -275,6 +287,8 @@ const linkTarget = computed(() =>
 );
 const showImages = computed(() => store.showImages);
 const logoSrc = (name) => getSourceLogo(name, cacheVersion);
+const isActiveSource = (name) =>
+  normalizeSourceFamily(name) === normalizeSourceFamily(listType.value);
 const getSourceDisplayLabel = (item) =>
   getSourceLabel(item?.name, locale.value, item?.label || item?.name);
 const currentSourceMeta = computed(
@@ -435,6 +449,35 @@ const updateTypeShadow = () => {
   typeCanScrollRight.value = maxScrollLeft - track.scrollLeft > 1;
 };
 
+const alignActiveTypeIntoView = () => {
+  const track = getTypeTrackElement();
+  const activeTag = track?.querySelector?.(".tag.is-active-source");
+  if (!track || !activeTag) return;
+  const trackRect = track.getBoundingClientRect();
+  const activeRect = activeTag.getBoundingClientRect();
+  const padding = 18;
+  let nextScrollLeft = track.scrollLeft;
+  if (activeRect.left < trackRect.left + padding) {
+    nextScrollLeft -= trackRect.left + padding - activeRect.left;
+  } else if (activeRect.right > trackRect.right - padding) {
+    nextScrollLeft += activeRect.right - (trackRect.right - padding);
+  }
+  if (nextScrollLeft !== track.scrollLeft) {
+    track.scrollTo({ left: Math.max(0, nextScrollLeft), behavior: "auto" });
+  }
+  updateTypeShadow();
+};
+
+const scrollActiveTypeIntoView = () => {
+  nextTick(() => {
+    alignActiveTypeIntoView();
+    if (!isClient) return;
+    window.requestAnimationFrame(() => alignActiveTypeIntoView());
+    window.setTimeout(() => alignActiveTypeIntoView(), 120);
+    window.setTimeout(() => alignActiveTypeIntoView(), 600);
+  });
+};
+
 const updateTypeRowCount = () => {
   const container = typeContainerRef.value;
   const track = getTypeTrackElement();
@@ -464,6 +507,7 @@ const refreshTypeScrollState = () => {
     }
     updateTypeRowCount();
     updateTypeShadow();
+    scrollActiveTypeIntoView();
   });
 };
 
@@ -610,6 +654,7 @@ watch(
     const nextSubtype = resolveSubType(router.currentRoute.value);
     if (nextSubtype === listSubType.value) return;
     listSubType.value = nextSubtype;
+    refreshTypeScrollState();
   },
   { deep: true }
 );
@@ -703,15 +748,20 @@ onBeforeUnmount(() => {
     }
   }
 
-  .type-row {
-    display: flex;
-    width: max-content;
-    min-width: 100%;
-    gap: 8px;
+    .type-row {
+      display: flex;
+      width: max-content;
+      min-width: 100%;
+      gap: 8px;
 
-    & + .type-row {
-      margin-top: 6px;
-    }
+      &::after {
+        content: "";
+        flex: 0 0 42px;
+      }
+
+      & + .type-row {
+        margin-top: 6px;
+      }
 
     .tag {
       flex: 0 0 auto;

@@ -54,8 +54,23 @@ const headerExpanded = ref(!store.headerCollapsed);
 const collapseTimer = ref(null);
 const autoRefreshTimer = ref(null);
 const autoRefreshPausedByRoute = ref(false);
+const routePausedRemainingMs = ref(null);
+const lastAutoRefreshIntervalMs = ref(Number(store.autoRefreshInterval) * 1000);
+const settingRouteNames = new Set(["setting", "setting-locale"]);
+const autoRefreshRouteNames = new Set([
+  "home",
+  "home-locale",
+  "category",
+  "category-locale",
+  "list",
+  "list-locale",
+  "list-legacy",
+]);
 const isSettingRoute = computed(
-  () => router.currentRoute.value?.name === "setting"
+  () => settingRouteNames.has(router.currentRoute.value?.name)
+);
+const isAutoRefreshRoute = computed(
+  () => autoRefreshRouteNames.has(router.currentRoute.value?.name)
 );
 
 // 回顶按钮显隐
@@ -104,38 +119,112 @@ const handleOutsideClick = (e) => {
   }
 };
 
-const clearAutoRefresh = () => {
+const getAutoRefreshIntervalMs = () => {
+  const seconds = Number(store.autoRefreshInterval);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 0;
+};
+
+const clearRoutePauseState = () => {
+  autoRefreshPausedByRoute.value = false;
+  routePausedRemainingMs.value = null;
+  store.autoRefreshRoutePaused = false;
+  store.autoRefreshRemainingMs = null;
+  if (typeof window !== "undefined") {
+    window.$autoRefreshPausedByRoute = false;
+    window.$autoRefreshRemainingMs = null;
+  }
+};
+
+const clearAutoRefresh = ({ clearTarget = false } = {}) => {
   if (autoRefreshTimer.value) {
-    clearInterval(autoRefreshTimer.value);
+    clearTimeout(autoRefreshTimer.value);
     autoRefreshTimer.value = null;
   }
   if (typeof window !== "undefined") {
     window.$autoRefreshTimer = null;
+    if (clearTarget) {
+      window.$nextAutoRefreshAt = null;
+    }
   }
 };
 
-const setupAutoRefresh = () => {
+const freezeAutoRefreshForRoute = (forcedRemainingMs = null) => {
   clearAutoRefresh();
-  if (!store.autoRefreshEnabled || store.autoRefreshPaused) {
-    if (typeof window !== "undefined") {
-      window.$nextAutoRefreshAt = null;
-    }
-    return;
-  }
-  const intervalSeconds = Number(store.autoRefreshInterval);
-  if (!intervalSeconds || intervalSeconds <= 0) {
-    if (typeof window !== "undefined") {
-      window.$nextAutoRefreshAt = null;
-    }
-    return;
-  }
+  if (typeof window === "undefined") return;
+  const intervalMs = getAutoRefreshIntervalMs();
+  const existingTarget = Number(window.$nextAutoRefreshAt);
+  const remainingMs =
+    forcedRemainingMs ??
+    (existingTarget ? Math.max(existingTarget - Date.now(), 0) : intervalMs);
+  routePausedRemainingMs.value = remainingMs || intervalMs;
+  autoRefreshPausedByRoute.value = true;
+  store.autoRefreshRoutePaused = true;
+  store.autoRefreshRemainingMs = routePausedRemainingMs.value;
+  window.$autoRefreshPausedByRoute = true;
+  window.$autoRefreshRemainingMs = routePausedRemainingMs.value;
+  window.$nextAutoRefreshAt = null;
+};
+
+const setupAutoRefresh = (preferredDelayMs = null) => {
+  clearAutoRefresh();
   if (typeof window !== "undefined") {
-    window.$nextAutoRefreshAt = Date.now() + intervalSeconds * 1000;
-    window.$autoRefreshTimer = autoRefreshTimer.value = setInterval(() => {
+    const intervalMs = getAutoRefreshIntervalMs();
+    if (
+      !store.autoRefreshEnabled ||
+      store.autoRefreshPaused ||
+      !isAutoRefreshRoute.value ||
+      intervalMs <= 0
+    ) {
+      window.$nextAutoRefreshAt = null;
+      return;
+    }
+    const existingTarget = Number(window.$nextAutoRefreshAt);
+    const delayMs =
+      preferredDelayMs ??
+      (existingTarget ? Math.max(existingTarget - Date.now(), 0) : intervalMs);
+    store.autoRefreshRoutePaused = false;
+    store.autoRefreshRemainingMs = null;
+    window.$autoRefreshPausedByRoute = false;
+    window.$autoRefreshRemainingMs = null;
+    window.$nextAutoRefreshAt = Date.now() + delayMs;
+    window.$autoRefreshTimer = autoRefreshTimer.value = setTimeout(() => {
       router.go(0);
-      window.$nextAutoRefreshAt = Date.now() + intervalSeconds * 1000;
-    }, intervalSeconds * 1000);
+      window.$nextAutoRefreshAt = Date.now() + intervalMs;
+      setupAutoRefresh(intervalMs);
+    }, delayMs);
   }
+};
+
+const reconcileAutoRefresh = () => {
+  const intervalMs = getAutoRefreshIntervalMs();
+  const intervalChanged = intervalMs !== lastAutoRefreshIntervalMs.value;
+
+  if (!store.autoRefreshEnabled || intervalMs <= 0) {
+    clearAutoRefresh({ clearTarget: true });
+    clearRoutePauseState();
+    lastAutoRefreshIntervalMs.value = intervalMs;
+    return;
+  }
+
+  if (store.autoRefreshPaused) {
+    clearAutoRefresh({ clearTarget: true });
+    clearRoutePauseState();
+    lastAutoRefreshIntervalMs.value = intervalMs;
+    return;
+  }
+
+  if (isSettingRoute.value) {
+    freezeAutoRefreshForRoute(intervalChanged ? intervalMs : null);
+    lastAutoRefreshIntervalMs.value = intervalMs;
+    return;
+  }
+
+  const resumedDelayMs = autoRefreshPausedByRoute.value
+    ? store.autoRefreshRemainingMs || routePausedRemainingMs.value || intervalMs
+    : null;
+  clearRoutePauseState();
+  setupAutoRefresh(intervalChanged ? intervalMs : resumedDelayMs);
+  lastAutoRefreshIntervalMs.value = intervalMs;
 };
 
 // 默认折叠设置变化时同步状态
@@ -147,28 +236,13 @@ watch(
 );
 
 watch(
-  () => [store.autoRefreshEnabled, store.autoRefreshInterval, store.autoRefreshPaused],
-  () => {
-    setupAutoRefresh();
-  },
-  { immediate: true }
-);
-
-watch(
-  () => [isSettingRoute.value, store.autoRefreshEnabled],
-  () => {
-    if (isSettingRoute.value) {
-      if (store.autoRefreshEnabled && !store.autoRefreshPaused) {
-        store.autoRefreshPaused = true;
-        autoRefreshPausedByRoute.value = true;
-      }
-      return;
-    }
-    if (autoRefreshPausedByRoute.value) {
-      store.autoRefreshPaused = false;
-      autoRefreshPausedByRoute.value = false;
-    }
-  },
+  () => [
+    store.autoRefreshEnabled,
+    store.autoRefreshInterval,
+    store.autoRefreshPaused,
+    router.currentRoute.value?.name,
+  ],
+  reconcileAutoRefresh,
   { immediate: true }
 );
 

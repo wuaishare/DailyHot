@@ -256,7 +256,17 @@ const isSettingPage = computed(
   () => ["setting", "setting-locale"].includes(router.currentRoute.value?.name)
 );
 const isRefreshEnabledRoute = (routeName) =>
-  ["home", "home-locale", "category", "category-locale"].includes(routeName);
+  [
+    "home",
+    "home-locale",
+    "category",
+    "category-locale",
+    "list",
+    "list-locale",
+    "list-legacy",
+    "setting",
+    "setting-locale",
+  ].includes(routeName);
 const currentLocaleMeta = computed(
   () =>
     getSupportedLocales().find((item) => item.code === locale.value) ||
@@ -490,7 +500,12 @@ const closeMobileMenu = () => {
 
 const manualRefresh = () => {
   router.go(0);
-  if (typeof window !== "undefined" && store.autoRefreshEnabled && !store.autoRefreshPaused) {
+  if (
+    typeof window !== "undefined" &&
+    store.autoRefreshEnabled &&
+    !store.autoRefreshPaused &&
+    !window.$autoRefreshPausedByRoute
+  ) {
     const seconds = Number(store.autoRefreshInterval);
     if (seconds > 0) {
       window.$nextAutoRefreshAt = Date.now() + seconds * 1000;
@@ -538,7 +553,17 @@ const applyAutoInterval = () => {
     return;
   }
   store.autoRefreshInterval = seconds;
-  if (typeof window !== "undefined" && store.autoRefreshEnabled && !store.autoRefreshPaused) {
+  if (
+    typeof window !== "undefined" &&
+    store.autoRefreshEnabled &&
+    !store.autoRefreshPaused
+  ) {
+    if (store.autoRefreshRoutePaused || window.$autoRefreshPausedByRoute) {
+      store.autoRefreshRemainingMs = seconds * 1000;
+      window.$autoRefreshRemainingMs = seconds * 1000;
+      window.$nextAutoRefreshAt = null;
+      return;
+    }
     window.$nextAutoRefreshAt = Date.now() + seconds * 1000;
   }
 };
@@ -552,11 +577,21 @@ const formatCountdown = (remainMs) => {
 };
 
 const updateCountdown = () => {
-  if (
-    typeof window === "undefined" ||
-    !store.autoRefreshEnabled ||
-    store.autoRefreshPaused
-  ) {
+  if (typeof window === "undefined" || !store.autoRefreshEnabled) {
+    countdownText.value = "";
+    return;
+  }
+  if (store.autoRefreshRoutePaused || window.$autoRefreshPausedByRoute) {
+    const remainingMs = Number(
+      store.autoRefreshRemainingMs ?? window.$autoRefreshRemainingMs
+    );
+    countdownText.value =
+      Number.isFinite(remainingMs) && remainingMs >= 0
+        ? formatCountdown(remainingMs)
+        : "";
+    return;
+  }
+  if (store.autoRefreshPaused) {
     countdownText.value = "";
     return;
   }

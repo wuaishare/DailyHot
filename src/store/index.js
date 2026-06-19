@@ -626,6 +626,8 @@ export const mainStore = defineStore("mainData", {
       // 自动刷新
       autoRefreshEnabled: false,
       autoRefreshPaused: false,
+      autoRefreshRoutePaused: false,
+      autoRefreshRemainingMs: null,
       autoRefreshInterval: 1800,
       // 是否显示封面图片
       showImages: true,
