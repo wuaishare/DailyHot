@@ -15,10 +15,29 @@ import { registerSW } from "virtual:pwa-register";
 import "@/style/global.scss";
 
 let updateServiceWorker = () => {};
+const reloadOnceForServiceWorkerUpdate = () => {
+  if (typeof window === "undefined") return;
+  const marker = `sw-reload:${__APP_VERSION__.buildNumber}`;
+  try {
+    if (sessionStorage.getItem("DAILYHOT_SW_RELOAD") === marker) return;
+    sessionStorage.setItem("DAILYHOT_SW_RELOAD", marker);
+  } catch {
+    // Service worker updates should still reload when session storage is blocked.
+  }
+  window.location.reload();
+};
+
+if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    reloadOnceForServiceWorkerUpdate();
+  });
+}
+
 updateServiceWorker = registerSW({
   immediate: true,
   onNeedRefresh() {
     updateServiceWorker(true);
+    reloadOnceForServiceWorkerUpdate();
   },
   onRegisteredSW(_swUrl, registration) {
     registration?.update();
