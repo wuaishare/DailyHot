@@ -150,6 +150,36 @@ const joinZhVerbObject = (verb, object = "") =>
     ? `${verb} ${String(object).trim()}`
     : `${verb}${String(object).trim()}`;
 
+const getClawHubSubtypeSeoKey = (sourceName, subtypeValue) => {
+  if (!subtypeValue) return "";
+  if (sourceName === "clawhub") return subtypeValue;
+  if (sourceName === "clawhub-skills") return `skills-${subtypeValue}`;
+  if (sourceName === "clawhub-plugins") return `plugins-${subtypeValue}`;
+  return "";
+};
+
+const getClawHubZhRouteSeo = ({
+  sourceName,
+  subtypeValue,
+  clawHubZhBaseSeo,
+  clawHubZhSubtypeSeo,
+}) => {
+  const baseSeo = clawHubZhBaseSeo?.[sourceName];
+  if (!baseSeo) return null;
+
+  const subtypeSeo = clawHubZhSubtypeSeo?.[
+    getClawHubSubtypeSeoKey(sourceName, subtypeValue)
+  ];
+  if (subtypeSeo) {
+    return {
+      titleLabel: normalizeTitleLabel(`ClawHub ${subtypeSeo.titleSegment}`),
+      intent: subtypeSeo.intent,
+    };
+  }
+
+  return baseSeo;
+};
+
 const prettifySlug = (value = "") =>
   String(value)
     .replace(/[-_]+/g, " ")
@@ -354,6 +384,8 @@ function main() {
 
   const categorySeoMap = parseConstant(seoSource, "CATEGORY_SEO_MAP");
   const listSeoMap = parseConstant(seoSource, "LIST_SEO_MAP");
+  const clawHubZhBaseSeo = parseConstant(seoSource, "CLAWHUB_ZH_BASE_SEO");
+  const clawHubZhSubtypeSeo = parseConstant(seoSource, "CLAWHUB_ZH_SUBTYPE_SEO");
   const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
   const sourceLabelOverrides = parseConstant(sourceLabelsSource, "SOURCE_LABEL_OVERRIDES");
   const subtypeLabelOverrides = parseConstant(sourceLabelsSource, "SUBTYPE_LABEL_OVERRIDES");
@@ -485,14 +517,23 @@ function main() {
     const baseIntent =
       stripLeadingZhPossessive(stripLeadingPhrases(rawDescription, [sourceLabel])) ||
       "实时热榜与趋势榜";
-    const titleLabel = subtypeLabel
-      ? normalizeTitleLabel(`${sourceLabel} ${subtypeLabel}`)
-      : sourceLabel;
-    const intent = subtypeLabel
-      ? stripLeadingZhPossessive(
-          stripLeadingPhrases(rawDescription, [sourceLabel, subtypeLabel])
-        ) || baseIntent
-      : baseIntent;
+    const zhRouteSeo = getClawHubZhRouteSeo({
+      sourceName,
+      subtypeValue,
+      clawHubZhBaseSeo,
+      clawHubZhSubtypeSeo,
+    });
+    const titleLabel =
+      zhRouteSeo?.titleLabel ||
+      (subtypeLabel ? normalizeTitleLabel(`${sourceLabel} ${subtypeLabel}`) : sourceLabel);
+    const intent =
+      zhRouteSeo?.intent ||
+      (subtypeLabel
+        ? stripLeadingZhPossessive(
+            stripLeadingPhrases(rawDescription, [sourceLabel, subtypeLabel])
+          ) || baseIntent
+        : baseIntent);
+    const listName = titleLabel;
     const title = buildZhTitle(titleLabel, intent);
     const description = `${appendZhPageSuffix(titleLabel)}，${joinZhVerbObject(
       "聚合",
@@ -516,7 +557,7 @@ function main() {
         description,
         canonical,
         htmlLang,
-        listName: subtypeLabel ? `${sourceLabel} · ${subtypeLabel}` : sourceLabel,
+        listName,
       }),
     };
   };

@@ -180,6 +180,129 @@ const joinZhVerbObject = (verb, object = "") =>
     ? `${verb} ${String(object).trim()}`
     : `${verb}${String(object).trim()}`;
 
+const CLAWHUB_ZH_BASE_SEO = {
+  clawhub: {
+    titleLabel: "ClawHub",
+    intent: "OpenClaw技能与插件聚合榜单入口",
+  },
+  "clawhub-skills": {
+    titleLabel: "ClawHub 技能",
+    intent: "OpenClaw技能推荐、安装、星标与分类榜单",
+  },
+  "clawhub-plugins": {
+    titleLabel: "ClawHub 插件",
+    intent: "OpenClaw插件推荐、精选、安装与分类榜单",
+  },
+};
+
+const CLAWHUB_ZH_SUBTYPE_SEO = {
+  "skills-recommended": {
+    titleSegment: "推荐技能榜",
+    intent: "OpenClaw技能推荐与精选方案榜单",
+  },
+  "skills-featured": {
+    titleSegment: "精选技能榜",
+    intent: "OpenClaw精选技能与高质量方案榜单",
+  },
+  "skills-stars": {
+    titleSegment: "星标最多技能榜",
+    intent: "OpenClaw技能星标热度与社区关注排行",
+  },
+  "skills-installs": {
+    titleSegment: "安装最多技能榜",
+    intent: "OpenClaw技能安装量与流行度排行",
+  },
+  "skills-updated": {
+    titleSegment: "最近更新技能榜",
+    intent: "OpenClaw技能更新动态与维护活跃榜单",
+  },
+  "skills-newest": {
+    titleSegment: "最新发布技能榜",
+    intent: "OpenClaw新发布技能与生态新增榜单",
+  },
+  "skills-name": {
+    titleSegment: "技能名称索引",
+    intent: "OpenClaw技能名称索引与快速查找入口",
+  },
+  "skills-mcp-tools": {
+    titleSegment: "MCP 工具技能分类",
+    intent: "OpenClaw MCP工具技能分类与工具生态榜单",
+  },
+  "skills-prompts": {
+    titleSegment: "提示词技能分类",
+    intent: "OpenClaw提示词技能分类与提示工程资源榜单",
+  },
+  "skills-workflows": {
+    titleSegment: "工作流技能分类",
+    intent: "OpenClaw工作流技能分类与自动化流程榜单",
+  },
+  "skills-dev-tools": {
+    titleSegment: "开发工具技能分类",
+    intent: "OpenClaw开发工具技能分类与工程效率榜单",
+  },
+  "skills-data": {
+    titleSegment: "数据与 API 技能分类",
+    intent: "OpenClaw数据与API技能分类和集成资源榜单",
+  },
+  "skills-security": {
+    titleSegment: "安全技能分类",
+    intent: "OpenClaw安全技能分类与风险防护工具榜单",
+  },
+  "skills-automation": {
+    titleSegment: "自动化技能分类",
+    intent: "OpenClaw自动化技能分类与任务执行工具榜单",
+  },
+  "skills-other": {
+    titleSegment: "其他技能分类",
+    intent: "OpenClaw其他技能分类与补充生态资源榜单",
+  },
+  "plugins-recommended": {
+    titleSegment: "推荐插件榜",
+    intent: "OpenClaw插件推荐与工具生态榜单",
+  },
+  "plugins-featured": {
+    titleSegment: "精选插件榜",
+    intent: "OpenClaw精选插件与高质量扩展榜单",
+  },
+  "plugins-installs": {
+    titleSegment: "安装最多插件榜",
+    intent: "OpenClaw插件安装量与流行度排行",
+  },
+  "plugins-updated": {
+    titleSegment: "最近更新插件榜",
+    intent: "OpenClaw插件更新动态与维护活跃榜单",
+  },
+  "plugins-data": {
+    titleSegment: "数据与 API 插件分类",
+    intent: "OpenClaw数据与API插件分类和集成资源榜单",
+  },
+};
+
+const getClawHubSubtypeSeoKey = (sourceKey, subtypeSlug) => {
+  if (!subtypeSlug) return "";
+  if (sourceKey === "clawhub") return subtypeSlug;
+  if (sourceKey === "clawhub-skills") return `skills-${subtypeSlug}`;
+  if (sourceKey === "clawhub-plugins") return `plugins-${subtypeSlug}`;
+  return "";
+};
+
+const getClawHubZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
+  const baseSeo = CLAWHUB_ZH_BASE_SEO[sourceKey];
+  if (!baseSeo) return null;
+
+  const subtypeSeo = CLAWHUB_ZH_SUBTYPE_SEO[
+    getClawHubSubtypeSeoKey(sourceKey, subtypeSlug)
+  ];
+  if (subtypeSeo) {
+    return {
+      titleLabel: normalizeTitleLabel(`ClawHub ${subtypeSeo.titleSegment}`),
+      intent: subtypeSeo.intent,
+    };
+  }
+
+  return baseSeo;
+};
+
 const buildZhListIntent = ({
   sourceLabel,
   subtypeLabel,
@@ -429,19 +552,19 @@ const LIST_SEO_MAP = {
     description: "Hacker News 中与 AI 相关的热门讨论。",
   },
   "clawhub-skills": {
-    label: "ClawHub Skills",
-    keywords: "ClawHub Skills,AI 技能榜,Agent Skills",
-    description: "ClawHub Skills 推荐、安装、星标与分类榜单。",
+    label: "ClawHub 技能",
+    keywords: "ClawHub 技能,OpenClaw技能,AI 技能榜,Agent Skills",
+    description: "ClawHub 的 OpenClaw技能推荐、安装、星标与分类榜单。",
   },
   clawhub: {
     label: "ClawHub",
-    keywords: "ClawHub,AI 技能与插件榜,Agent Skills,Agent Plugins",
-    description: "ClawHub 的 Skills 与 Plugins 聚合榜单入口。",
+    keywords: "ClawHub,OpenClaw,OpenClaw技能,OpenClaw插件,AI 技能与插件榜",
+    description: "ClawHub 的 OpenClaw技能与插件聚合榜单入口。",
   },
   "clawhub-plugins": {
-    label: "ClawHub Plugins",
-    keywords: "ClawHub Plugins,AI 插件榜,Agent 插件",
-    description: "ClawHub Plugins 推荐、精选、官方与分类榜单。",
+    label: "ClawHub 插件",
+    keywords: "ClawHub 插件,OpenClaw插件,AI 插件榜,Agent 插件",
+    description: "ClawHub 的 OpenClaw插件推荐、精选、安装与分类榜单。",
   },
   "sina-ai": {
     label: "新浪 AI 热榜",
@@ -801,9 +924,12 @@ const getListSeo = (route, siteUrl, canonical) => {
     : route?.params?.subtypeSlug;
   const subtypeLabel = getSubtypeLabel(sourceKey, subtypeSlug, locale);
   const label = subtypeLabel ? `${sourceLabel} · ${subtypeLabel}` : sourceLabel;
-  const titleLabel = normalizeTitleLabel(
+  const defaultTitleLabel = normalizeTitleLabel(
     subtypeLabel ? `${sourceLabel} ${subtypeLabel}` : sourceLabel
   );
+  const zhRouteSeo =
+    locale === "zh-CN" ? getClawHubZhRouteSeo({ sourceKey, subtypeSlug }) : null;
+  const titleLabel = zhRouteSeo?.titleLabel || defaultTitleLabel;
   const localizedDefaultDescription = i18n.global.t(
     "seo.listDescription",
     {},
@@ -841,11 +967,14 @@ const getListSeo = (route, siteUrl, canonical) => {
         ? meta.keywords
         : i18n.global.t("seo.sourceKeywords", { label: sourceLabel }, { locale });
   const localizedSiteName = i18n.global.t("common.siteName", {}, { locale });
-  const zhIntent = buildZhListIntent({
-    sourceLabel,
-    subtypeLabel,
-    meta,
-  });
+  const zhIntent =
+    zhRouteSeo?.intent ||
+    buildZhListIntent({
+      sourceLabel,
+      subtypeLabel,
+      meta,
+    });
+  const listName = locale === "zh-CN" ? titleLabel : label;
   const title =
     locale === "zh-CN"
       ? buildZhTitle(titleLabel, zhIntent)
@@ -883,13 +1012,13 @@ const getListSeo = (route, siteUrl, canonical) => {
       isPartOf: siteUrl || undefined,
       mainEntity: {
         "@type": "ItemList",
-        name: label,
+        name: listName,
         itemListOrder: "Descending",
         itemListElement: [
           {
             "@type": "ListItem",
             position: 1,
-            name: label,
+            name: listName,
             url: canonical,
           },
         ],

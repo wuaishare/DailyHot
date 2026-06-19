@@ -19,7 +19,9 @@
 - [ ] Import or mirror localized subtype labels.
 - [ ] Build Chinese rank titles with localized subtype labels.
 - [ ] Strip leading `的` after source-label removal.
+- [ ] Add a ClawHub-specific Chinese SEO intent map that mentions OpenClaw and distinguishes skill/plugin subtypes.
 - [ ] Verify ClawHub route shell title no longer contains untranslated subtype words.
+- [ ] Verify ClawHub route shell title no longer reuses one fixed `Skills 与 Plugins` tail.
 
 ### Task 2: ClawHub Active State
 
@@ -45,5 +47,5 @@
 
 **Commands and checks:**
 - [ ] Run `pnpm build`.
-- [ ] Inspect `dist/rank/clawhub/plugins-recommended/index.html`.
+- [ ] Inspect `dist/rank/clawhub/index.html`, `dist/rank/clawhub/plugins-recommended/index.html`, and `dist/rank/clawhub/skills-installs/index.html`.
 - [ ] Use the Codex in-app browser to verify category, rank detail, and settings routes.
