@@ -8,6 +8,14 @@ const resolvedSiteUrl = siteUrl || fallbackUrl;
 const lastmod = new Date().toISOString();
 const publicDir = path.resolve(process.cwd(), "public");
 
+const escapeXml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+
 const extractLiteral = (source, constName) => {
   const marker = `const ${constName} =`;
   const markerIndex = source.indexOf(marker);
@@ -79,7 +87,6 @@ async function main() {
   const newsSectionMatch = storeSource.match(/defaultNewsArr:\s*\[(.*?)\n\s*\],\n\s*newsArr:/s);
   const newsSection = newsSectionMatch?.[1] || "";
 
-  const localePrefixes = SUPPORTED_LOCALES.map((item) => item.routePrefix || "");
   const categorySlugs = BUILTIN_CATEGORIES.map((item) => item.slug).filter(Boolean);
   const sourceNames = [...newsSection.matchAll(/name:\s*"([^"]+)"/g)].map((m) => m[1]);
   const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
@@ -91,27 +98,81 @@ async function main() {
     subtypeMap.set(sourceName, values);
   }
 
-  const routes = new Set();
-  localePrefixes.forEach((prefix) => {
-    routes.add(prefix ? `${prefix}/` : "/");
-    categorySlugs.forEach((slug) => {
-      routes.add(`${prefix}/category/${slug}`.replace("//", "/"));
+  const withLocalePrefix = (localeMeta, pathname) => {
+    const normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
+    const prefix = localeMeta?.routePrefix || "";
+    if (!prefix) return normalizedPath;
+    return normalizedPath === "/" ? `${prefix}/` : `${prefix}${normalizedPath}`;
+  };
+
+  const absoluteUrl = (pathname) => `${resolvedSiteUrl}${pathname}`;
+
+  const buildAlternateLinks = (basePathname) => {
+    const defaultLocale = SUPPORTED_LOCALES.find((locale) => !locale.routePrefix);
+    const alternates = SUPPORTED_LOCALES.map((localeMeta) => ({
+      hreflang: localeMeta.htmlLang,
+      href: absoluteUrl(withLocalePrefix(localeMeta, basePathname)),
+    }));
+    if (defaultLocale) {
+      alternates.push({
+        hreflang: "x-default",
+        href: absoluteUrl(withLocalePrefix(defaultLocale, basePathname)),
+      });
+    }
+    return alternates;
+  };
+
+  const routeEntries = [];
+  const addLocalizedRouteGroup = (basePathname, { changefreq, priority }) => {
+    const alternates = buildAlternateLinks(basePathname);
+    SUPPORTED_LOCALES.forEach((localeMeta) => {
+      const pathname = withLocalePrefix(localeMeta, basePathname);
+      routeEntries.push({
+        loc: absoluteUrl(pathname),
+        changefreq,
+        priority,
+        alternates,
+      });
     });
-    sourceNames.forEach((source) => {
-      routes.add(`${prefix}/rank/${source}`.replace("//", "/"));
-      (subtypeMap.get(source) || []).forEach((subtype) => {
-        routes.add(`${prefix}/rank/${source}/${subtype}`.replace("//", "/"));
+  };
+
+  addLocalizedRouteGroup("/", { changefreq: "hourly", priority: "1.0" });
+  categorySlugs.forEach((slug) => {
+    addLocalizedRouteGroup(`/category/${slug}`, {
+      changefreq: "hourly",
+      priority: slug === "ai" ? "0.9" : "0.8",
+    });
+  });
+  sourceNames.forEach((source) => {
+    addLocalizedRouteGroup(`/rank/${source}`, {
+      changefreq: "hourly",
+      priority: "0.7",
+    });
+    (subtypeMap.get(source) || []).forEach((subtype) => {
+      addLocalizedRouteGroup(`/rank/${source}/${subtype}`, {
+        changefreq: "hourly",
+        priority: "0.6",
       });
     });
   });
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${[...routes]
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+${routeEntries
   .map(
-    (route) => `  <url>
-    <loc>${resolvedSiteUrl}${route}</loc>
+    (entry) => `  <url>
+    <loc>${escapeXml(entry.loc)}</loc>
+${entry.alternates
+  .map(
+    (alternate) =>
+      `    <xhtml:link rel="alternate" hreflang="${escapeXml(
+        alternate.hreflang
+      )}" href="${escapeXml(alternate.href)}" />`
+  )
+  .join("\n")}
     <lastmod>${lastmod}</lastmod>
+    <changefreq>${entry.changefreq}</changefreq>
+    <priority>${entry.priority}</priority>
   </url>`
   )
   .join("\n")}

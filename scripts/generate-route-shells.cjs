@@ -242,9 +242,15 @@ const getLocalizedSourceLabel = (
   return prettifySlug(sourceName || fallbackLabel || "rankings");
 };
 
-const getSourceNames = (storeText) => [
-  ...new Set([...storeText.matchAll(/name:\s*"([^"]+)"/g)].map((match) => match[1])),
-];
+const getSourceNames = (storeText) => {
+  const newsSectionMatch = storeText.match(
+    /defaultNewsArr:\s*\[(.*?)\n\s*\],\n\s*newsArr:/s
+  );
+  const source = newsSectionMatch?.[1] || storeText;
+  return [
+    ...new Set([...source.matchAll(/name:\s*"([^"]+)"/g)].map((match) => match[1])),
+  ];
+};
 
 const getSubtypeValues = (sourceSubtypeGroups) => {
   const result = new Map();
@@ -280,7 +286,30 @@ const setRouteJsonLd = (html, jsonLd) => {
   );
 };
 
-const setHtmlMeta = (html, { title, description, keywords, canonical, htmlLang, jsonLd }) => {
+const setAlternateLinks = (html, alternateLinks = []) => {
+  const withoutAlternates = html.replace(
+    /\n?\s*<link\s+rel="alternate"\s+hreflang="[^"]+"\s+href="[^"]+"\s*\/?>/g,
+    ""
+  );
+  if (!alternateLinks.length) return withoutAlternates;
+
+  const tags = alternateLinks
+    .map(
+      ({ hreflang, href }) =>
+        `<link rel="alternate" hreflang="${hreflang}" href="${href}" />`
+    )
+    .join("\n  ");
+  const canonicalMatcher = /(<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>)/;
+  if (canonicalMatcher.test(withoutAlternates)) {
+    return withoutAlternates.replace(canonicalMatcher, `$1\n  ${tags}`);
+  }
+  return withoutAlternates.replace("</head>", `  ${tags}\n  </head>`);
+};
+
+const setHtmlMeta = (
+  html,
+  { title, description, keywords, canonical, htmlLang, alternateLinks, jsonLd }
+) => {
   let next = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
   if (htmlLang) {
     next = next.replace(/<html\s+lang="[^"]*"/, `<html lang="${htmlLang}"`);
@@ -329,6 +358,7 @@ const setHtmlMeta = (html, { title, description, keywords, canonical, htmlLang, 
     );
   }
 
+  next = setAlternateLinks(next, alternateLinks);
   next = setRouteJsonLd(next, jsonLd);
   return next;
 };
@@ -343,6 +373,22 @@ const withLocalePrefix = (localeMeta, pathname) => {
   const prefix = localeMeta?.routePrefix || "";
   if (!prefix) return normalizedPath;
   return normalizedPath === "/" ? `${prefix}/` : `${prefix}${normalizedPath}`;
+};
+
+const buildAlternateLinks = (basePathname, supportedLocales) => {
+  if (!siteUrl) return [];
+  const defaultLocale = supportedLocales.find((locale) => !locale.routePrefix);
+  const links = supportedLocales.map((localeMeta) => ({
+    hreflang: localeMeta.htmlLang,
+    href: buildAbsoluteUrl(withLocalePrefix(localeMeta, basePathname)),
+  }));
+  if (defaultLocale) {
+    links.push({
+      hreflang: "x-default",
+      href: buildAbsoluteUrl(withLocalePrefix(defaultLocale, basePathname)),
+    });
+  }
+  return links;
 };
 
 const getSeoMessages = (messages, locale) =>
@@ -363,6 +409,16 @@ const buildCollectionJsonLd = ({ title, description, canonical, htmlLang, listNa
     name: listName,
     itemListOrder: "Descending",
   },
+});
+
+const buildWebsiteJsonLd = ({ siteName, title, description, canonical, htmlLang }) => ({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: siteName || brandNameZh,
+  alternateName: title,
+  url: canonical || undefined,
+  description,
+  inLanguage: htmlLang || "zh-CN",
 });
 
 function main() {
@@ -407,9 +463,37 @@ function main() {
     writtenShellCount += 1;
   };
 
+  const buildHomeMeta = (localeMeta, pathname) => {
+    const locale = localeMeta.code;
+    const htmlLang = localeMeta.htmlLang;
+    const seoMessages = getSeoMessages(messages, locale);
+    const siteName = getSiteName(messages, locale);
+    const title = seoMessages.homeTitle || `${siteName} - Hot Rankings`;
+    const description =
+      seoMessages.homeDescription ||
+      "Browse cross-platform trending topics and real-time hot rankings.";
+    const canonical = buildAbsoluteUrl(pathname);
+    return {
+      title,
+      description,
+      keywords: seoMessages.homeKeywords || siteName,
+      canonical,
+      htmlLang,
+      alternateLinks: buildAlternateLinks("/", supportedLocales),
+      jsonLd: buildWebsiteJsonLd({
+        siteName,
+        title,
+        description,
+        canonical,
+        htmlLang,
+      }),
+    };
+  };
+
   const buildCategoryMeta = (category, localeMeta, pathname) => {
     const locale = localeMeta.code;
     const canonical = buildAbsoluteUrl(pathname);
+    const basePathname = `/category/${category.slug}`;
     const htmlLang = localeMeta.htmlLang;
     const categoryConfig = categoryConfigBySlug.get(category.slug);
     if (locale === "zh-CN") {
@@ -423,6 +507,7 @@ function main() {
         keywords: mergeKeywords(meta.keywords, category.name, brandNameZh),
         canonical,
         htmlLang,
+        alternateLinks: buildAlternateLinks(basePathname, supportedLocales),
         jsonLd: buildCollectionJsonLd({
           title,
           description,
@@ -444,6 +529,7 @@ function main() {
       keywords: interpolate(seoMessages.categoryKeywords, { category: categoryLabel }),
       canonical,
       htmlLang,
+      alternateLinks: buildAlternateLinks(basePathname, supportedLocales),
       jsonLd: buildCollectionJsonLd({
         title,
         description,
@@ -458,6 +544,9 @@ function main() {
     const locale = localeMeta.code;
     const meta = listSeoMap[sourceName] || listSeoMap.default || {};
     const canonical = buildAbsoluteUrl(pathname);
+    const basePathname = subtypeValue
+      ? `/rank/${sourceName}/${subtypeValue}`
+      : `/rank/${sourceName}`;
     const htmlLang = localeMeta.htmlLang;
     const rawSubtypeLabel = subtypeValue
       ? subtypeLabelMap.get(sourceName)?.get(subtypeValue) || ""
@@ -503,6 +592,7 @@ function main() {
         keywords,
         canonical,
         htmlLang,
+        alternateLinks: buildAlternateLinks(basePathname, supportedLocales),
         jsonLd: buildCollectionJsonLd({
           title,
           description,
@@ -552,6 +642,7 @@ function main() {
       ),
       canonical,
       htmlLang,
+      alternateLinks: buildAlternateLinks(basePathname, supportedLocales),
       jsonLd: buildCollectionJsonLd({
         title,
         description,
@@ -563,6 +654,9 @@ function main() {
   };
 
   supportedLocales.forEach((localeMeta) => {
+    const homePathname = withLocalePrefix(localeMeta, "/");
+    writeRouteShell(homePathname, buildHomeMeta(localeMeta, homePathname));
+
     CATEGORY_ROUTES.forEach((category) => {
       const pathname = withLocalePrefix(localeMeta, `/category/${category.slug}`);
       const meta = buildCategoryMeta(category, localeMeta, pathname);
