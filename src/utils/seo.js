@@ -299,12 +299,12 @@ const DESIGNARENA_ZH_SUBTYPE_SEO = {
     intent: "Agentic前端与React应用生成模型胜率排行",
   },
   "fullstack-quality": {
-    titleSegment: "Fullstack App 质量榜",
-    intent: "Fullstack App质量、数据建模与交互完成度评分排行",
+    titleSegment: "全栈应用质量榜",
+    intent: "全栈应用质量、数据建模与交互完成度评分排行",
   },
   "fullstack-backend": {
     titleSegment: "后端评分榜",
-    intent: "Fullstack App后端能力、API、认证与持久化评分排行",
+    intent: "全栈应用后端能力、API、认证与持久化评分排行",
   },
   "daily-usage": {
     titleSegment: "日活使用榜",

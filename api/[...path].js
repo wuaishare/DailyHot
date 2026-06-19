@@ -270,18 +270,18 @@ const DESIGNARENA_LEADERBOARD_TYPES = {
 };
 const DESIGNARENA_SIGNAL_TYPES = {
   "fullstack-quality": {
-    title: "Fullstack App Quality 榜",
+    title: "全栈应用质量榜",
     dataset: "judge_fullstack",
     metric: "avg_composite",
-    description: "DesignArena Fullstack App 质量综合评分榜",
+    description: "DesignArena 全栈应用质量综合评分榜",
     descBuilder: (item, value, labels) =>
       `${labels.composite} ${formatNumber(value, 2)} · ${labels.samples} ${formatInteger(item.scored_generations)}`,
   },
   "fullstack-backend": {
-    title: "Backend Scores 榜",
+    title: "后端评分榜",
     dataset: "judge_fullstack",
     metric: "backendScore",
-    description: "DesignArena Fullstack App 后端能力评分榜",
+    description: "DesignArena 全栈应用后端能力评分榜",
     descBuilder: (item, value, labels) =>
       `${labels.backend} ${formatNumber(value, 2)} · API ${formatNumber(item.avg_api_functionality, 2)} · Auth ${formatNumber(item.avg_auth_implementation, 2)} · ${labels.persistence} ${formatNumber(item.avg_e2e_persistence, 2)}`,
   },
@@ -385,11 +385,18 @@ const DESIGNARENA_RESPONSE_LOCALIZATIONS = {
   },
   "fullstack-quality": {
     title: {
-      "zh-CN": "Fullstack App 质量榜",
-      "zh-TW": "Fullstack App 品質榜",
+      "zh-CN": "全栈应用质量榜",
+      "zh-TW": "全棧應用品質榜",
       en: "Fullstack App Quality",
-      ja: "Fullstack App品質",
-      ko: "Fullstack App 품질",
+      ja: "フルスタックアプリ品質",
+      ko: "풀스택 앱 품질",
+    },
+    description: {
+      "zh-CN": "DesignArena 全栈应用质量、数据建模与交互完成度评分排行",
+      "zh-TW": "DesignArena 全棧應用品質、資料建模與互動完成度評分排行",
+      en: "DesignArena quality rankings for full-stack app output, data modeling, and interaction completeness.",
+      ja: "DesignArenaのフルスタックアプリ出力品質、データモデリング、インタラクション完成度ランキング。",
+      ko: "DesignArena 풀스택 앱 출력 품질, 데이터 모델링, 상호작용 완성도 랭킹.",
     },
   },
   "fullstack-backend": {
@@ -399,6 +406,13 @@ const DESIGNARENA_RESPONSE_LOCALIZATIONS = {
       en: "Backend Scores",
       ja: "バックエンドスコア",
       ko: "백엔드 점수",
+    },
+    description: {
+      "zh-CN": "DesignArena 全栈应用后端能力、API、认证与持久化评分排行",
+      "zh-TW": "DesignArena 全棧應用後端能力、API、認證與持久化評分排行",
+      en: "DesignArena backend capability scores for full-stack apps, including APIs, auth, and persistence.",
+      ja: "DesignArenaのフルスタックアプリにおけるバックエンド能力、API、認証、永続化スコアランキング。",
+      ko: "DesignArena 풀스택 앱의 백엔드 역량, API, 인증, 지속성 점수 랭킹.",
     },
   },
   "real-world-reach": {
