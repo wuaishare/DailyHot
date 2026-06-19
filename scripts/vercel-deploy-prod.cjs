@@ -22,6 +22,7 @@ const result = spawnSync(
     "deploy",
     "--prod",
     "--yes",
+    "--archive=tgz",
     "-b",
     `VITE_BUILD_NUMBER=${value}`,
     "-b",
@@ -32,6 +33,7 @@ const result = spawnSync(
     stdio: "inherit",
     env: {
       ...process.env,
+      VERCEL_TELEMETRY_DISABLED: "1",
       VITE_BUILD_NUMBER: value,
       VITE_SITE_URL: siteUrl,
     },
