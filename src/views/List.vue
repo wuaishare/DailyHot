@@ -33,6 +33,7 @@
             v-for="item in row"
             :key="item.name"
             :type="isActiveSource(item.name) ? 'primary' : 'default'"
+            :aria-current="isActiveSource(item.name) ? 'page' : undefined"
             @click="changeType(item.name, $event)"
           >
             {{ getSourceDisplayLabel(item) }}
@@ -852,8 +853,13 @@ onBeforeUnmount(() => {
       &.is-active-source {
         background: rgba(234, 68, 77, 0.12);
         box-shadow: 0 0 0 2px rgba(234, 68, 77, 0.18);
+        color: #ea444d;
         font-weight: 700;
         transform: translateY(-1px);
+
+        :deep(.n-tag__content) {
+          color: #ea444d;
+        }
       }
 
       .logo {

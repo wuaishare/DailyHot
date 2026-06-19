@@ -585,7 +585,7 @@ const saveSoreData = (name = null, open = false) => {
 // 重置数据
 const reset = () => {
   if (typeof $timeInterval !== "undefined") clearInterval($timeInterval);
-  if (typeof $autoRefreshTimer !== "undefined") clearInterval($autoRefreshTimer);
+  if (typeof $autoRefreshTimer !== "undefined") clearTimeout($autoRefreshTimer);
   localStorage.clear();
   location.reload();
 };

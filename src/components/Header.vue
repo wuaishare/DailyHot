@@ -94,7 +94,13 @@
                 <n-text>{{ t("header.refreshControl") }}</n-text>
                 <n-text depth="3" v-if="countdownText">{{ t("header.nextRefresh") }}：{{ countdownText }}</n-text>
               </div>
-              <n-button block type="primary" dashed @click="manualRefresh">
+              <n-button
+                block
+                type="primary"
+                dashed
+                :disabled="!canManualRefresh"
+                @click="manualRefresh"
+              >
                 <template #icon>
                   <n-icon :component="Refresh" />
                 </template>
@@ -292,6 +298,9 @@ const refreshButtonLabel = computed(() =>
     ? `${t("header.refreshPage")} ${countdownText.value}`
     : t("header.refreshPage")
 );
+const canManualRefresh = computed(
+  () => showRefresh.value && !isSettingPage.value
+);
 const themeToggleLabel = computed(() =>
   store.siteTheme === "light" ? t("common.darkMode") : t("common.lightMode")
 );
@@ -457,8 +466,11 @@ const menuOptions = computed(() => [
     type: "divider",
   },
   {
-    label: t("header.refreshPage"),
+    label: countdownText.value
+      ? `${t("header.refreshPage")} ${countdownText.value}`
+      : t("header.refreshPage"),
     key: "refresh",
+    disabled: !canManualRefresh.value,
     icon: () => {
       return h(NIcon, null, {
         default: () => h(Refresh),
@@ -522,6 +534,7 @@ const closeMobileMenu = () => {
 };
 
 const manualRefresh = () => {
+  if (!canManualRefresh.value) return;
   router.go(0);
   if (
     typeof window !== "undefined" &&
@@ -652,7 +665,10 @@ watch(
   () => [
     store.autoRefreshEnabled,
     store.autoRefreshPaused,
+    store.autoRefreshRoutePaused,
+    store.autoRefreshRemainingMs,
     store.autoRefreshInterval,
+    router.currentRoute.value?.name,
   ],
   () => {
     autoEnabled.value = store.autoRefreshEnabled;
@@ -670,7 +686,8 @@ watch(
     store.setActiveCategory(categoryName || "全部");
     locale.value = getLocaleFromRoute(val);
     showRefresh.value = isRefreshEnabledRoute(val?.name);
-  }
+  },
+  { immediate: true }
 );
 
 onMounted(() => {

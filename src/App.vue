@@ -148,13 +148,32 @@ const clearAutoRefresh = ({ clearTarget = false } = {}) => {
   }
 };
 
+const getPausedRemainingMs = () => {
+  const candidates = [
+    routePausedRemainingMs.value,
+    store.autoRefreshRemainingMs,
+    typeof window !== "undefined" ? window.$autoRefreshRemainingMs : null,
+  ];
+  for (const value of candidates) {
+    const number = Number(value);
+    if (Number.isFinite(number) && number >= 0) {
+      return number;
+    }
+  }
+  return null;
+};
+
 const freezeAutoRefreshForRoute = (forcedRemainingMs = null) => {
   clearAutoRefresh();
   if (typeof window === "undefined") return;
   const intervalMs = getAutoRefreshIntervalMs();
   const existingTarget = Number(window.$nextAutoRefreshAt);
+  const pausedRemainingMs = getPausedRemainingMs();
   const remainingMs =
     forcedRemainingMs ??
+    (autoRefreshPausedByRoute.value || store.autoRefreshRoutePaused
+      ? pausedRemainingMs
+      : null) ??
     (existingTarget ? Math.max(existingTarget - Date.now(), 0) : intervalMs);
   routePausedRemainingMs.value = remainingMs || intervalMs;
   autoRefreshPausedByRoute.value = true;
@@ -219,7 +238,8 @@ const reconcileAutoRefresh = () => {
     return;
   }
 
-  const resumedDelayMs = autoRefreshPausedByRoute.value
+  const hasRoutePause = autoRefreshPausedByRoute.value || store.autoRefreshRoutePaused;
+  const resumedDelayMs = hasRoutePause
     ? store.autoRefreshRemainingMs || routePausedRemainingMs.value || intervalMs
     : null;
   clearRoutePauseState();
