@@ -7,7 +7,27 @@ const versionSourcePaths = [
   "index.html",
   "package.json",
   "vercel.json",
+  "vite.config.js",
+  "scripts/generate-route-shells.cjs",
+  "scripts/generate-seo-files.js",
+  "scripts/resolve-code-build-date.cjs",
+  "scripts/vercel-deploy-prod.cjs",
 ];
+const buildNumberTimeZone = "Asia/Shanghai";
+
+function formatBuildNumber(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: buildNumberTimeZone,
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}${values.month}${values.day}${values.hour}${values.minute}`;
+}
 
 function readGitValue(args, fallback = "") {
   const result = spawnSync("git", args, {
@@ -19,24 +39,14 @@ function readGitValue(args, fallback = "") {
     : fallback;
 }
 
-function formatDateFallback() {
-  const date = new Date();
-  const year = String(date.getFullYear()).slice(-2);
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}${month}${day}${hours}${minutes}`;
-}
-
 const dates = versionSourcePaths
-  .map((pathName) =>
-    readGitValue(
-      ["log", "-1", "--format=%cd", "--date=format:%y%m%d%H%M", "--", pathName],
-      ""
-    )
-  )
+  .map((pathName) => readGitValue(["log", "-1", "--format=%cI", "--", pathName], ""))
+  .filter(Boolean)
+  .map((value) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : formatBuildNumber(date);
+  })
   .filter(Boolean)
   .sort();
 
-process.stdout.write(dates[dates.length - 1] || formatDateFallback());
+process.stdout.write(dates[dates.length - 1] || formatBuildNumber());

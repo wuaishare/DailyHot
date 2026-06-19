@@ -119,7 +119,7 @@ pnpm build
 
 ## 缓存版本
 
-展示版本来自 `package.json`，格式为 `v1.4.4 (YYMMDDHHMM)`；括号内版本号默认取最近一次前端代码提交时间，例如 `2606102007`。这里的“代码提交”只统计 `src/`、`public/`、`api/`、`index.html`、`package.json`、`vercel.json` 等实际影响站点产物的路径，不会因为单纯修改 `README` 或构建脚本说明文字而改变页脚版本。若本地或 CI 无法读取 Git 提交时间，则退回到构建当下的 `YYMMDDHHMM`，避免出现 `00.0000.000000` 或时间戳样式的难读版本号。
+展示版本来自 `package.json`，格式为 `v1.4.4 (YYMMDDHHMM)`；括号内版本号默认取最近一次前端代码提交时间，并统一按北京时间（Asia/Shanghai）格式化，例如 `2606102007`。这里的“代码提交”只统计 `src/`、`public/`、`api/`、`index.html`、`package.json`、`vercel.json`、`vite.config.js` 以及构建/SEO/部署相关脚本等实际影响站点产物的路径，不会因为单纯修改 `README` 说明文字而改变页脚版本。若本地或 CI 无法读取 Git 提交时间，则退回到构建当下的北京时间 `YYMMDDHHMM`，避免出现 `00.0000.000000`、UTC 前一天日期或时间戳样式的难读版本号。
 
 ## Vercel 部署
 
