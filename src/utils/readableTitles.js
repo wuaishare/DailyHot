@@ -151,6 +151,9 @@ export const shouldUseReadableTitleTranslation = (sourceName, locale) => {
   return !ENTITY_TITLE_SOURCE_NAMES.has(sourceName);
 };
 
+export const shouldProtectEntityTitleTranslation = (sourceName) =>
+  ENTITY_TITLE_SOURCE_NAMES.has(sourceName);
+
 export const translateReadableTitles = async (titles = [], locale) => {
   const normalizedLocale = normalizeLocale(locale);
   const filtered = Array.from(

@@ -451,7 +451,7 @@ export const mainStore = defineStore("mainData", {
           order: 60,
           show: true,
           category: "AI",
-          subtype: "WebDev 模型榜",
+          subtype: "Full-Stack WebDev 模型榜",
         },
         {
           label: "AICPB",

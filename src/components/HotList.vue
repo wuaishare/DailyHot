@@ -208,6 +208,7 @@ import {
 import { buildRankPath } from "@/utils/locale";
 import {
   enhanceReadableResultTitles,
+  shouldProtectEntityTitleTranslation,
   shouldUseReadableTitleTranslation,
 } from "@/utils/readableTitles";
 
@@ -261,6 +262,9 @@ const showImages = computed(() => store.showImages);
 const shouldEnhanceReadableTitles = computed(() =>
   shouldUseReadableTitleTranslation(props.hotData.name, locale.value)
 );
+const shouldProtectEntityTitles = computed(() =>
+  shouldProtectEntityTitleTranslation(props.hotData.name)
+);
 const HOT_LIST_VISIBLE_LIMIT = 15;
 const sourceLabel = computed(() =>
   getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
@@ -285,9 +289,11 @@ const visibleItems = computed(() =>
       originalTitle,
       displayTitle,
       hasReadableTranslation:
-        Boolean(originalTitle) &&
-        Boolean(displayTitle) &&
-        displayTitle.trim() !== originalTitle.trim(),
+        shouldProtectEntityTitles.value ||
+        Boolean(item?.noAutoTranslate) ||
+        (Boolean(originalTitle) &&
+          Boolean(displayTitle) &&
+          displayTitle.trim() !== originalTitle.trim()),
     };
   })
 );
@@ -347,19 +353,26 @@ const updateIsDesktop = () => {
   isDesktop.value = window.innerWidth > 680;
 };
 
+const buildHotListRequestParams = (item, shouldTranslate) => {
+  const params = buildSourceSubtypeParams(item.name, activeSubType.value);
+  if (item.name === "designarena") {
+    params.locale = locale.value;
+  }
+  if (!shouldTranslate) return params;
+  return {
+    ...params,
+    locale: locale.value,
+    translate_limit: HOT_LIST_VISIBLE_LIMIT,
+    translate_offset: 0,
+    translate_nonce: Date.now(),
+  };
+};
+
 const requestHotListResult = (item, isNew, shouldTranslate, useApi2) =>
   getHotListsWithFallback(
     item.name,
     isNew,
-    shouldTranslate
-      ? {
-          ...buildSourceSubtypeParams(item.name, activeSubType.value),
-          locale: locale.value,
-          translate_limit: HOT_LIST_VISIBLE_LIMIT,
-          translate_offset: 0,
-          translate_nonce: Date.now(),
-    }
-      : buildSourceSubtypeParams(item.name, activeSubType.value),
+    buildHotListRequestParams(item, shouldTranslate),
     {
       useApi2,
       forceNoCache: Boolean(isNew),

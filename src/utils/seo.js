@@ -282,9 +282,53 @@ const CLAWHUB_ZH_SUBTYPE_SEO = {
 };
 
 const DESIGNARENA_ZH_SUBTYPE_SEO = {
+  fullstack: {
+    titleSegment: "Full-Stack WebDev 模型榜",
+    intent: "Agentic全栈应用生成与后端能力模型排行",
+  },
+  "fullstack-win-rate": {
+    titleSegment: "Full-Stack WebDev 胜率榜",
+    intent: "Agentic全栈应用生成模型胜率排行",
+  },
+  agon_webapps: {
+    titleSegment: "Agentic 前端模型榜",
+    intent: "Agentic前端与React应用生成模型排行",
+  },
+  "agon_webapps-win-rate": {
+    titleSegment: "Agentic 前端胜率榜",
+    intent: "Agentic前端与React应用生成模型胜率排行",
+  },
+  "fullstack-quality": {
+    titleSegment: "Fullstack App 质量榜",
+    intent: "Fullstack App质量、数据建模与交互完成度评分排行",
+  },
+  "fullstack-backend": {
+    titleSegment: "后端评分榜",
+    intent: "Fullstack App后端能力、API、认证与持久化评分排行",
+  },
+  "daily-usage": {
+    titleSegment: "日活使用榜",
+    intent: "模型生成应用日活用户与真实使用表现排行",
+  },
+  "real-world-reach": {
+    titleSegment: "真实触达榜",
+    intent: "模型生成应用真实用户触达与传播表现排行",
+  },
+  retention: {
+    titleSegment: "回访用户榜",
+    intent: "模型生成应用用户回访率与留存表现排行",
+  },
+  downloads: {
+    titleSegment: "应用下载榜",
+    intent: "模型生成应用源码下载率与保存价值排行",
+  },
   website: {
-    titleSegment: "WebDev 模型榜",
+    titleSegment: "Website 模型榜",
     intent: "WebDev网站生成与前端设计模型排行",
+  },
+  "website-win-rate": {
+    titleSegment: "Website 胜率榜",
+    intent: "WebDev网站生成与前端设计模型胜率排行",
   },
   uicomponent: {
     titleSegment: "UI 组件模型榜",
@@ -302,9 +346,33 @@ const DESIGNARENA_ZH_SUBTYPE_SEO = {
     titleSegment: "游戏开发模型榜",
     intent: "游戏开发与互动场景生成模型排行",
   },
+  agentic_gamedev: {
+    titleSegment: "Agentic 游戏开发模型榜",
+    intent: "Agentic游戏开发与可交互玩法生成模型排行",
+  },
+  mobileapps: {
+    titleSegment: "移动 App 模型榜",
+    intent: "移动App生成与移动端应用开发模型排行",
+  },
+  nativeapps: {
+    titleSegment: "原生 App 模型榜",
+    intent: "原生App生成与端侧应用开发模型排行",
+  },
   "3d": {
     titleSegment: "3D 设计模型榜",
     intent: "3D设计与空间生成模型排行",
+  },
+  ascii: {
+    titleSegment: "ASCII Art 模型榜",
+    intent: "ASCII Art字符画与文本视觉生成模型排行",
+  },
+  agon_slides: {
+    titleSegment: "Agentic 演示文稿模型榜",
+    intent: "Agentic演示文稿与幻灯片生成模型排行",
+  },
+  agon_slides_html: {
+    titleSegment: "Agentic HTML 演示文稿模型榜",
+    intent: "Agentic HTML演示文稿与网页幻灯片生成模型排行",
   },
   slides: {
     titleSegment: "演示文稿模型榜",
@@ -314,9 +382,45 @@ const DESIGNARENA_ZH_SUBTYPE_SEO = {
     titleSegment: "图像生成模型榜",
     intent: "图像生成与视觉创作模型排行",
   },
+  imagetoimage: {
+    titleSegment: "图像编辑模型榜",
+    intent: "图像编辑、图生图与视觉修改模型排行",
+  },
+  graphicdesign: {
+    titleSegment: "平面设计模型榜",
+    intent: "平面设计与视觉创意生成模型排行",
+  },
+  logo: {
+    titleSegment: "Logo 模型榜",
+    intent: "Logo生成与品牌视觉设计模型排行",
+  },
   video: {
     titleSegment: "视频生成模型榜",
     intent: "视频生成与动态内容创作模型排行",
+  },
+  videotovideo: {
+    titleSegment: "视频编辑模型榜",
+    intent: "视频编辑、视频重绘与视频到视频模型排行",
+  },
+  imagetovideo: {
+    titleSegment: "图像转视频模型榜",
+    intent: "图像转视频与动态镜头生成模型排行",
+  },
+  multitovideo: {
+    titleSegment: "多输入转视频模型榜",
+    intent: "多输入视频生成与复合素材转视频模型排行",
+  },
+  multimodaltovideo: {
+    titleSegment: "多模态转视频模型榜",
+    intent: "多模态视频生成与图文音视频综合生成模型排行",
+  },
+  tts: {
+    titleSegment: "TTS 模型榜",
+    intent: "文本转语音与音频生成模型排行",
+  },
+  builders: {
+    titleSegment: "AI 构建器榜",
+    intent: "AI应用构建器、建站工具与产品化能力排行",
   },
 };
 
@@ -515,8 +619,8 @@ const LIST_SEO_MAP = {
   },
   designarena: {
     label: "DesignArena 排行榜",
-    keywords: "DesignArena,AI 设计榜单,WebDev模型排行榜,AI创意生成榜",
-    description: "DesignArena WebDev、UI组件、数据可视化、图像、视频与创意生成类 AI 模型排行榜。",
+    keywords: "DesignArena,AI 设计榜单,Agentic WebDev,Full-Stack模型榜,AI创意生成榜,Daily Usage",
+    description: "DesignArena Agentic Full-Stack、Frontend、模型胜率、App质量、真实使用信号、图像、视频与创意生成类 AI 模型排行榜。",
   },
   "aicpb-rankings": {
     label: "AICPB 全球 AI 排行榜",

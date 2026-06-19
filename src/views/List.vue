@@ -215,6 +215,7 @@ import {
 } from "@/utils/sourceLabels";
 import {
   enhanceReadableResultTitles,
+  shouldProtectEntityTitleTranslation,
   shouldUseReadableTitleTranslation,
 } from "@/utils/readableTitles";
 
@@ -306,6 +307,9 @@ const listHeaderTitle = computed(
 const shouldEnhanceReadableTitles = computed(() =>
   shouldUseReadableTitleTranslation(listType.value, locale.value)
 );
+const shouldProtectEntityTitles = computed(() =>
+  shouldProtectEntityTitleTranslation(listType.value)
+);
 const listHeaderSubtitle = computed(() => {
   const rawSubtitle =
     currentSourceMeta.value &&
@@ -353,9 +357,11 @@ const currentPageItems = computed(() =>
         displayTitle,
         displayDesc,
         hasReadableTranslation:
-          Boolean(originalTitle) &&
-          Boolean(displayTitle) &&
-          displayTitle.trim() !== originalTitle.trim(),
+          shouldProtectEntityTitles.value ||
+          Boolean(item?.noAutoTranslate) ||
+          (Boolean(originalTitle) &&
+            Boolean(displayTitle) &&
+            displayTitle.trim() !== originalTitle.trim()),
       };
     })
 );
@@ -428,20 +434,24 @@ const getHotListsData = async (name, isNew = false) => {
   if (!item) return;
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
   const shouldTranslate = shouldEnhanceReadableTitles.value;
-  const params = shouldTranslate
+  const params = buildSourceSubtypeParams(item.name, listSubType.value);
+  if (item.name === "designarena") {
+    params.locale = locale.value;
+  }
+  const requestParams = shouldTranslate
     ? {
-        ...buildSourceSubtypeParams(item.name, listSubType.value),
+        ...params,
         locale: locale.value,
         translate_limit: 20,
         translate_offset: Math.max(0, (pageNumber.value - 1) * 20),
         translate_nonce: `${pageNumber.value}-${Date.now()}`,
       }
-    : buildSourceSubtypeParams(item.name, listSubType.value);
+    : params;
   try {
     const { result, usedFallback, fallbackSuccess } = await getHotListsWithFallback(
       item.name,
       isNew,
-      params,
+      requestParams,
       {
         useApi2,
         forceNoCache: Boolean(isNew),
