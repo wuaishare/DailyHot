@@ -94,6 +94,19 @@ const extractLiteral = (source, constName) => {
 const parseConstant = (source, constName) =>
   Function(`"use strict"; return (${extractLiteral(source, constName)});`)();
 
+const mergeOverrideMaps = (...maps) => {
+  const merged = {};
+  maps.forEach((map) => {
+    Object.entries(map || {}).forEach(([key, value]) => {
+      merged[key] = {
+        ...(merged[key] || {}),
+        ...(value || {}),
+      };
+    });
+  });
+  return merged;
+};
+
 const trimTerminalPunctuation = (value = "") =>
   String(value)
     .trim()
@@ -443,8 +456,14 @@ function main() {
   const clawHubZhBaseSeo = parseConstant(seoSource, "CLAWHUB_ZH_BASE_SEO");
   const clawHubZhSubtypeSeo = parseConstant(seoSource, "CLAWHUB_ZH_SUBTYPE_SEO");
   const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
-  const sourceLabelOverrides = parseConstant(sourceLabelsSource, "SOURCE_LABEL_OVERRIDES");
-  const subtypeLabelOverrides = parseConstant(sourceLabelsSource, "SUBTYPE_LABEL_OVERRIDES");
+  const sourceLabelOverrides = mergeOverrideMaps(
+    parseConstant(sourceLabelsSource, "SOURCE_LABEL_OVERRIDES"),
+    parseConstant(sourceLabelsSource, "SOURCE_LABEL_LOCALIZATIONS")
+  );
+  const subtypeLabelOverrides = mergeOverrideMaps(
+    parseConstant(sourceLabelsSource, "SUBTYPE_LABEL_OVERRIDES"),
+    parseConstant(sourceLabelsSource, "COMMON_SUBTYPE_LABEL_OVERRIDES")
+  );
   const messages = parseConstant(messagesSource, "messages");
   const supportedLocales = parseConstant(siteMetadataSource, "SUPPORTED_LOCALES");
   const builtinCategories = parseConstant(siteMetadataSource, "BUILTIN_CATEGORIES");

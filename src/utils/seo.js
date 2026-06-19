@@ -10,7 +10,10 @@ import {
   normalizeLocale,
 } from "@/utils/locale";
 import { getSourceSubtypeOptions } from "@/utils/sourceSubtypes";
-import { getSubtypeLabel as getLocalizedSubtypeLabel } from "@/utils/sourceLabels";
+import {
+  getSourceLabel as getLocalizedSourceLabel,
+  getSubtypeLabel as getLocalizedSubtypeLabel,
+} from "@/utils/sourceLabels";
 
 const DEFAULT_SEO = {
   title: "吾爱热榜 - 全网热点排行榜聚合与实时趋势追踪",
@@ -583,77 +586,6 @@ const LIST_SEO_MAP = {
   },
 };
 
-const SOURCE_LABEL_OVERRIDES = {
-  weibo: { en: "Weibo Hot Search" },
-  zhihu: { en: "Zhihu Hot List" },
-  douyin: { en: "Douyin Hot List" },
-  bilibili: { en: "Bilibili Trending" },
-  toutiao: { en: "Toutiao Hot List" },
-  baidu: { en: "Baidu Hot Search" },
-  kuaishou: { en: "Kuaishou Trending" },
-  "36kr": { en: "36Kr Trending" },
-  "qq-news": { en: "Tencent News Trending" },
-  "netease-news": { en: "Netease News Trending" },
-  "sina-news": { en: "Sina News Trending" },
-  ithome: { en: "ITHome Trending" },
-  sspai: { en: "SSPAI Trending" },
-  thepaper: { en: "The Paper Trending" },
-  tieba: { en: "Baidu Tieba Trending" },
-  smzdm: { en: "SMZDM Trending" },
-  nytimes: { en: "The New York Times" },
-  "douban-group": { en: "Douban Groups" },
-  "douban-movie": { en: "Douban Movies & TV" },
-  weread: { en: "WeRead Trending" },
-  csdn: { en: "CSDN Trending" },
-  juejin: { en: "Juejin Trending" },
-  hupu: { en: "Hupu Trending" },
-  coolapk: { en: "Coolapk Trending" },
-  v2ex: { en: "V2EX Trending" },
-  github: { en: "GitHub Trending" },
-  gameres: { en: "GameRes Trending" },
-  yystv: { en: "Yystv Trending" },
-  miyoushe: { en: "Miyoushe Trending" },
-  genshin: { en: "Genshin Impact" },
-  starrail: { en: "Honkai: Star Rail" },
-  honkai: { en: "Honkai Impact 3rd" },
-  lol: { en: "League of Legends" },
-  huxiu: { en: "Huxiu Trending" },
-  sina: { en: "Sina Hot List" },
-  tianya: { en: "Tianya Curated" },
-  ngabbs: { en: "NGA Trending" },
-  hellogithub: { en: "HelloGitHub Trending" },
-  jianshu: { en: "Jianshu Trending" },
-  "zhihu-daily": { en: "Zhihu Daily" },
-  "openrouter-rankings": { en: "OpenRouter" },
-  artificialanalysis: { en: "Artificial Analysis" },
-  lmarena: { en: "Arena AI" },
-  "arena-ai": { en: "Arena AI" },
-  designarena: { en: "DesignArena" },
-  "aicpb-rankings": { en: "AICPB Global AI Rankings" },
-  "llm-stats": { en: "LLM Stats" },
-  "skills-rank": { en: "Skills Rank" },
-  openai: { en: "OpenAI" },
-  "openai-news": { en: "OpenAI" },
-  "openai-research": { en: "OpenAI" },
-  "anthropic-news": { en: "Anthropic" },
-  "deepmind-blog": { en: "DeepMind" },
-  "meta-ai-blog": { en: "Meta AI" },
-  huggingface: { en: "Hugging Face" },
-  "huggingface-blog": { en: "Hugging Face" },
-  "mistral-news": { en: "Mistral" },
-  "cohere-blog": { en: "Cohere" },
-  "hf-models": { en: "Hugging Face" },
-  "hf-papers": { en: "Hugging Face" },
-  paperswithcode: { en: "Papers with Code" },
-  "producthunt-ai": { en: "Product Hunt" },
-  "hackernews-ai": { en: "Hacker News" },
-  "clawhub-skills": { en: "ClawHub Skills" },
-  clawhub: { en: "ClawHub" },
-  "clawhub-plugins": { en: "ClawHub Plugins" },
-  "sina-ai": { en: "Sina AI" },
-  default: { en: "Cross-platform Rankings" },
-};
-
 const SYSTEM_ROUTE_SEO_KEY_MAP = {
   setting: "setting",
   "setting-locale": "setting",
@@ -693,20 +625,8 @@ const prettifySlug = (value = "") =>
   );
 
 const getSourceLabel = (typeKey, locale = "zh-CN") => {
-  const normalizedLocale = normalizeLocale(locale);
-  const overrides = SOURCE_LABEL_OVERRIDES[typeKey] || SOURCE_LABEL_OVERRIDES.default;
-  if (overrides?.[normalizedLocale]) return overrides[normalizedLocale];
-  if (normalizedLocale === "zh-CN" && LIST_SEO_MAP[typeKey]?.label) {
-    return LIST_SEO_MAP[typeKey].label;
-  }
-  if (normalizedLocale === "zh-TW" && LIST_SEO_MAP[typeKey]?.label) {
-    return LIST_SEO_MAP[typeKey].label;
-  }
-  if (overrides?.en) return overrides.en;
-  if (LIST_SEO_MAP[typeKey]?.label && !containsNonLatin(LIST_SEO_MAP[typeKey].label)) {
-    return LIST_SEO_MAP[typeKey].label;
-  }
-  return prettifySlug(typeKey || "rankings");
+  const fallbackLabel = LIST_SEO_MAP[typeKey]?.label || "";
+  return getLocalizedSourceLabel(typeKey, locale, fallbackLabel);
 };
 
 const getSubtypeLabel = (sourceSlug, subtypeSlug, locale = "zh-CN") => {

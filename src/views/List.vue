@@ -146,10 +146,10 @@
                         v-html="item.displayTitle"
                       />
                       <n-text
-                        v-if="item.desc"
+                        v-if="item.displayDesc"
                         class="desc"
                         :depth="3"
-                        v-html="item.desc"
+                        v-html="item.displayDesc"
                       />
                       <div class="message">
                         <div class="hot" v-if="item.hot">
@@ -213,7 +213,10 @@ import {
   getSourceSubtitleLabel,
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
-import { shouldUseReadableTitleTranslation } from "@/utils/readableTitles";
+import {
+  enhanceReadableResultTitles,
+  shouldUseReadableTitleTranslation,
+} from "@/utils/readableTitles";
 
 const router = useRouter();
 const route = useRoute();
@@ -318,15 +321,43 @@ const listHeaderSubtitle = computed(() => {
   return getSourceSubtitleLabel(rawSubtitle, locale.value);
 });
 let listRequestId = 0;
+const normalizeComparableText = (value = "") =>
+  String(value || "")
+    .replace(/[^\p{L}\p{N}]+/gu, "")
+    .trim();
+const isDuplicateDesc = (desc = "", ...titles) => {
+  const normalizedDesc = normalizeComparableText(desc);
+  if (!normalizedDesc) return true;
+  return titles.some((title) => {
+    const normalizedTitle = normalizeComparableText(title);
+    return normalizedTitle && normalizedDesc === normalizedTitle;
+  });
+};
 const currentPageItems = computed(() =>
   (listData.value?.data || [])
     .slice(pageNumber.value * 20 - 20, pageNumber.value * 20)
     .map((item) => {
       const originalTitle = String(item?.originalTitle || "");
+      const originalDesc = String(item?.originalDesc || "");
+      const displayTitle =
+        locale.value === "zh-CN" && originalTitle
+          ? originalTitle
+          : item?.title || originalTitle;
+      const rawDisplayDesc =
+        locale.value === "zh-CN" && originalDesc
+          ? originalDesc
+          : item?.desc || originalDesc;
+      const displayDesc =
+        locale.value !== "zh-CN" &&
+        isDuplicateDesc(rawDisplayDesc, originalTitle, item?.title, displayTitle)
+          ? ""
+          : rawDisplayDesc;
       return {
         ...item,
         originalTitle,
-        displayTitle: item?.title || originalTitle,
+        originalDesc,
+        displayTitle,
+        displayDesc,
       };
     })
 );
@@ -365,6 +396,23 @@ const resolveSubType = (route) => {
   return resolveSourceSubtype(options, candidate || stored);
 };
 
+const enhanceListResult = (result, targetLocale = locale.value) =>
+  shouldUseReadableTitleTranslation(listType.value, targetLocale)
+    ? enhanceReadableResultTitles(result, targetLocale, {
+        limit: 20,
+        offset: Math.max(0, (pageNumber.value - 1) * 20),
+      })
+    : Promise.resolve(result);
+
+const scheduleListEnhancement = (result, requestId, targetLocale = locale.value) => {
+  if (!shouldUseReadableTitleTranslation(listType.value, targetLocale)) return;
+  enhanceListResult(result, targetLocale).then((enhancedResult) => {
+    if (requestId === listRequestId && locale.value === targetLocale) {
+      listData.value = enhancedResult;
+    }
+  }).catch(() => {});
+};
+
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (!name) return;
@@ -399,28 +447,33 @@ const getHotListsData = async (name, isNew = false) => {
         translate_nonce: `${pageNumber.value}-${Date.now()}`,
       }
     : buildSourceSubtypeParams(item.name, listSubType.value);
-  getHotListsWithFallback(item.name, isNew, params, {
-    useApi2,
-    forceNoCache: Boolean(isNew),
-  })
-    .then(({ result, usedFallback, fallbackSuccess }) => {
-      if (requestId !== listRequestId) return;
-      if (usedFallback && fallbackSuccess && !useApi2) {
-        store.setSourceApi2(item.name, true);
+  try {
+    const { result, usedFallback, fallbackSuccess } = await getHotListsWithFallback(
+      item.name,
+      isNew,
+      params,
+      {
+        useApi2,
+        forceNoCache: Boolean(isNew),
       }
-      if (result.code === 200) {
-        store.markAvailable(item.name);
-        listData.value = result;
-      } else {
-        store.markUnavailable(item.name);
-        $message.error(result.message);
-      }
-    })
-    .catch(() => {
-      if (requestId !== listRequestId) return;
+    );
+    if (requestId !== listRequestId) return;
+    if (usedFallback && fallbackSuccess && !useApi2) {
+      store.setSourceApi2(item.name, true);
+    }
+    if (result.code === 200) {
+      store.markAvailable(item.name);
+      listData.value = result;
+      scheduleListEnhancement(result, requestId);
+    } else {
       store.markUnavailable(item.name);
-      $message.error(t("list.loadFailedMessage"));
-    });
+      $message.error(result.message);
+    }
+  } catch {
+    if (requestId !== listRequestId) return;
+    store.markUnavailable(item.name);
+    $message.error(t("list.loadFailedMessage"));
+  }
 };
 
 const updateIsDesktop = () => {
@@ -590,6 +643,20 @@ watch(
     if (listData.value) {
       updateTime.value = formatTime(listData.value.updateTime, locale.value);
     }
+  }
+);
+
+watch(
+  () => locale.value,
+  async (targetLocale) => {
+    if (listData.value) {
+      updateTime.value = formatTime(listData.value.updateTime, targetLocale);
+    }
+    if (!listData.value || !shouldUseReadableTitleTranslation(listType.value, targetLocale)) {
+      return;
+    }
+    const requestId = listRequestId;
+    scheduleListEnhancement(listData.value, requestId, targetLocale);
   }
 );
 

@@ -1,6 +1,15 @@
-import { getLocaleMeta } from "@/utils/locale";
+import { getLocaleMeta, normalizeLocale } from "@/utils/locale";
 
 const TRANSLATE_SCRIPT_ID = "dailyhot-translate-js";
+const TRANSLATE_REQUEST_TIMEOUT_MS = 8000;
+const GOOGLE_TRANSLATE_TIMEOUT_MS = 6000;
+const CLIENT_TRANSLATE_CONCURRENCY = 4;
+const GOOGLE_TRANSLATE_LANGUAGE_BY_LOCALE = {
+  en: "en",
+  "zh-TW": "zh-TW",
+  ja: "ja",
+  ko: "ko",
+};
 
 let translateLoadPromise = null;
 
@@ -27,6 +36,67 @@ const configureTranslate = (translate) => {
 
 const buildFallbackTranslationMap = (texts = []) =>
   new Map(texts.map((text) => [text, text]));
+
+const parseGoogleTranslateResponse = (payload) => {
+  const segments = Array.isArray(payload?.[0]) ? payload[0] : [];
+  return segments
+    .map((segment) => String(segment?.[0] || ""))
+    .join("")
+    .trim();
+};
+
+const fetchGoogleTranslation = async (text, locale) => {
+  if (typeof fetch !== "function") return "";
+  const targetLanguage =
+    GOOGLE_TRANSLATE_LANGUAGE_BY_LOCALE[normalizeLocale(locale)];
+  if (!targetLanguage) return "";
+
+  const controller =
+    typeof AbortController === "undefined" ? null : new AbortController();
+  const timeout = controller
+    ? window.setTimeout(() => controller.abort(), GOOGLE_TRANSLATE_TIMEOUT_MS)
+    : null;
+  const url = new URL("https://translate.googleapis.com/translate_a/single");
+  url.searchParams.set("client", "gtx");
+  url.searchParams.set("sl", "auto");
+  url.searchParams.set("tl", targetLanguage);
+  url.searchParams.set("dt", "t");
+  url.searchParams.set("q", text);
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      signal: controller?.signal,
+    });
+    if (!response.ok) return "";
+    return parseGoogleTranslateResponse(await response.json());
+  } catch {
+    return "";
+  } finally {
+    if (timeout) window.clearTimeout(timeout);
+  }
+};
+
+const translatePlainTextsWithGoogle = async (texts = [], locale) => {
+  const mapped = buildFallbackTranslationMap(texts);
+  let cursor = 0;
+
+  const runWorker = async () => {
+    while (cursor < texts.length) {
+      const index = cursor;
+      cursor += 1;
+      const original = texts[index];
+      const translated = await fetchGoogleTranslation(original, locale);
+      if (translated && translated !== original) {
+        mapped.set(original, translated);
+      }
+    }
+  };
+
+  const workerCount = Math.min(CLIENT_TRANSLATE_CONCURRENCY, texts.length);
+  await Promise.all(Array.from({ length: workerCount }, runWorker));
+  return mapped;
+};
 
 export const ensureTranslateJs = () => {
   if (typeof window === "undefined") return Promise.resolve(null);
@@ -68,6 +138,15 @@ export const translatePlainTexts = async (texts = [], locale) => {
     return new Map();
   }
 
+  const googleMap = await translatePlainTextsWithGoogle(uniqueTexts, locale);
+  if (
+    [...googleMap.entries()].some(
+      ([original, translated]) => translated !== original
+    )
+  ) {
+    return googleMap;
+  }
+
   const targetLanguage = getLocaleMeta(locale)?.translateJs;
   if (!targetLanguage) {
     return buildFallbackTranslationMap(uniqueTexts);
@@ -82,11 +161,18 @@ export const translatePlainTexts = async (texts = [], locale) => {
     configureTranslate(translate);
 
     const result = await new Promise((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        reject(new Error("translate.js request timed out"));
+      }, TRANSLATE_REQUEST_TIMEOUT_MS);
+      const finish = (callback) => (value) => {
+        window.clearTimeout(timer);
+        callback(value);
+      };
       translate.js.transObject(
         { items: uniqueTexts },
         targetLanguage,
-        resolve,
-        reject
+        finish(resolve),
+        finish(reject)
       );
     });
 

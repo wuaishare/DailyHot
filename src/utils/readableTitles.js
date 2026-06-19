@@ -1,29 +1,8 @@
 import { getLocaleMeta, normalizeLocale } from "@/utils/locale";
 import { getReadableTranslations } from "@/api";
+import { translatePlainTexts } from "@/utils/translateEngine";
 
-const READABLE_TRANSLATION_LOCALES = new Set(["zh-CN", "zh-TW"]);
-
-const READABLE_TRANSLATION_SOURCES = new Set([
-  "openai",
-  "anthropic-news",
-  "deepmind-blog",
-  "meta-ai-blog",
-  "huggingface",
-  "mistral-news",
-  "cohere-blog",
-  "arena-ai",
-  "hf-papers",
-  "paperswithcode",
-  "hackernews",
-  "producthunt-ai",
-  "hackernews-ai",
-  "sina-ai",
-  "perplexity-blog",
-  "xai-news",
-  "reddit-localllama",
-  "reddit-machinelearning",
-  "reddit-artificial",
-]);
+const READABLE_TRANSLATION_LOCALES = new Set(["en", "zh-TW", "ja", "ko"]);
 
 const translationCache = new Map();
 const pendingCache = new Map();
@@ -73,17 +52,40 @@ const enqueueLocaleRequest = (locale, request) =>
     pool.queue.push(run);
   });
 
-const looksTranslatableSentence = (text = "") => {
+const hasLatinSentence = (text = "") => {
   if (!/[A-Za-z]/.test(text)) return false;
-  if (/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(text)) return false;
   if (/^[A-Za-z0-9._/-]+$/.test(text)) return false;
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
   return text.length >= 24 || wordCount >= 4;
 };
 
-export const shouldUseReadableTitleTranslation = (sourceName, locale) =>
-  READABLE_TRANSLATION_LOCALES.has(normalizeLocale(locale)) &&
-  READABLE_TRANSLATION_SOURCES.has(sourceName);
+const looksTranslatableSentence = (text = "", locale = "zh-CN") => {
+  const normalizedLocale = normalizeLocale(locale);
+  const value = String(text || "").trim();
+  if (!value || normalizedLocale === "zh-CN") return false;
+
+  const hasHan = /[\u3400-\u9fff]/.test(value);
+  const hasKana = /[\u3040-\u30ff]/.test(value);
+  const hasHangul = /[\uac00-\ud7af]/.test(value);
+
+  if (normalizedLocale === "zh-TW") {
+    return hasHan || hasLatinSentence(value);
+  }
+  if (normalizedLocale === "en") {
+    return hasHan || hasKana || hasHangul;
+  }
+  if (normalizedLocale === "ja") {
+    return (hasHan && !hasKana) || hasHangul || hasLatinSentence(value);
+  }
+  if (normalizedLocale === "ko") {
+    return !hasHangul && (hasHan || hasKana || hasLatinSentence(value));
+  }
+
+  return hasHan || hasKana || hasHangul || hasLatinSentence(value);
+};
+
+export const shouldUseReadableTitleTranslation = (_sourceName, locale) =>
+  READABLE_TRANSLATION_LOCALES.has(normalizeLocale(locale));
 
 export const translateReadableTitles = async (titles = [], locale) => {
   const normalizedLocale = normalizeLocale(locale);
@@ -91,7 +93,7 @@ export const translateReadableTitles = async (titles = [], locale) => {
     new Set(
       titles
         .map((title) => String(title || "").trim())
-        .filter((title) => title && looksTranslatableSentence(title))
+        .filter((title) => title && looksTranslatableSentence(title, normalizedLocale))
     )
   );
 
@@ -142,6 +144,15 @@ export const translateReadableTitles = async (titles = [], locale) => {
               });
             }
 
+            const unresolved = missing.filter((title) => !backendMap.has(title));
+            if (unresolved.length) {
+              const clientMap = await translatePlainTexts(unresolved, normalizedLocale);
+              const usableClientMap = toTranslatedMap([...clientMap.entries()]);
+              usableClientMap.forEach((translated, original) => {
+                backendMap.set(original, translated);
+              });
+            }
+
             return {
               success: backendMap.size > 0,
               map: backendMap,
@@ -149,9 +160,11 @@ export const translateReadableTitles = async (titles = [], locale) => {
           });
         } catch (error) {
           console.warn("readable title translation failed", error);
+          const clientMap = await translatePlainTexts(missing, normalizedLocale);
+          const usableClientMap = toTranslatedMap([...clientMap.entries()]);
           return {
-            success: false,
-            map: new Map(),
+            success: usableClientMap.size > 0,
+            map: usableClientMap,
           };
         }
       })().finally(() => {
@@ -172,4 +185,45 @@ export const translateReadableTitles = async (titles = [], locale) => {
   });
 
   return ready;
+};
+
+export const enhanceReadableResultTitles = async (
+  result,
+  locale,
+  { offset = 0, limit = 20 } = {}
+) => {
+  const normalizedLocale = normalizeLocale(locale);
+  if (!READABLE_TRANSLATION_LOCALES.has(normalizedLocale)) return result;
+  if (!Array.isArray(result?.data) || !result.data.length) return result;
+
+  const start = Math.max(0, Number(offset) || 0);
+  const end = Math.min(
+    result.data.length,
+    start + Math.max(1, Number(limit) || result.data.length)
+  );
+  const scopedItems = result.data.slice(start, end);
+  const sourceTitles = scopedItems
+    .map((item) => String(item?.originalTitle || item?.title || "").trim())
+    .filter((title) => looksTranslatableSentence(title, normalizedLocale));
+
+  if (!sourceTitles.length) return result;
+
+  const translatedMap = await translateReadableTitles(sourceTitles, normalizedLocale);
+  if (!Object.keys(translatedMap).length) return result;
+
+  let changed = false;
+  const nextData = result.data.slice();
+  scopedItems.forEach((item, index) => {
+    const sourceTitle = String(item?.originalTitle || item?.title || "").trim();
+    const translatedTitle = String(translatedMap[sourceTitle] || "").trim();
+    if (!translatedTitle || translatedTitle === item?.title) return;
+    changed = true;
+    nextData[start + index] = {
+      ...item,
+      originalTitle: item?.originalTitle || item?.title || sourceTitle,
+      title: translatedTitle,
+    };
+  });
+
+  return changed ? { ...result, data: nextData } : result;
 };

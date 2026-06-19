@@ -206,7 +206,10 @@ import {
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
-import { shouldUseReadableTitleTranslation } from "@/utils/readableTitles";
+import {
+  enhanceReadableResultTitles,
+  shouldUseReadableTitleTranslation,
+} from "@/utils/readableTitles";
 
 const router = useRouter();
 const store = mainStore();
@@ -276,10 +279,14 @@ let hotListRequestId = 0;
 const visibleItems = computed(() =>
   (hotListData.value?.data || []).slice(0, HOT_LIST_VISIBLE_LIMIT).map((item) => {
     const originalTitle = String(item?.originalTitle || "");
+    const displayTitle =
+      locale.value === "zh-CN" && originalTitle
+        ? originalTitle
+        : item?.title || originalTitle;
     return {
       ...item,
       originalTitle,
-      displayTitle: item?.title || originalTitle,
+      displayTitle,
     };
   })
 );
@@ -358,6 +365,23 @@ const requestHotListResult = (item, isNew, shouldTranslate, useApi2) =>
     }
   );
 
+const enhanceHotListResult = (result, targetLocale = locale.value) =>
+  shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)
+    ? enhanceReadableResultTitles(result, targetLocale, {
+        limit: HOT_LIST_VISIBLE_LIMIT,
+        offset: 0,
+      })
+    : Promise.resolve(result);
+
+const scheduleHotListEnhancement = (result, requestId, targetLocale = locale.value) => {
+  if (!shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)) return;
+  enhanceHotListResult(result, targetLocale).then((enhancedResult) => {
+    if (requestId === hotListRequestId && locale.value === targetLocale) {
+      hotListData.value = enhancedResult;
+    }
+  }).catch(() => {});
+};
+
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (isPrerender) return;
@@ -384,6 +408,7 @@ const getHotListsData = async (name, isNew = false) => {
       store.markAvailable(item.name);
       listLoading.value = false;
       hotListData.value = result;
+      scheduleHotListEnhancement(result, requestId);
       // 滚动至顶部
       if (scrollbarRef.value) {
         scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
@@ -407,6 +432,7 @@ const getHotListsData = async (name, isNew = false) => {
           store.markAvailable(item.name);
           listLoading.value = false;
           hotListData.value = retryResponse.result;
+          scheduleHotListEnhancement(retryResponse.result, requestId);
           if (scrollbarRef.value) {
             scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
           }
@@ -612,6 +638,20 @@ watch(
     if (hotListData.value) {
       updateTime.value = formatTime(hotListData.value.updateTime, locale.value);
     }
+  }
+);
+
+watch(
+  () => locale.value,
+  async (targetLocale) => {
+    if (hotListData.value) {
+      updateTime.value = formatTime(hotListData.value.updateTime, targetLocale);
+    }
+    if (!hotListData.value || !shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)) {
+      return;
+    }
+    const requestId = hotListRequestId;
+    scheduleHotListEnhancement(hotListData.value, requestId, targetLocale);
   }
 );
 
