@@ -81,21 +81,21 @@ const SOURCE_SUBTYPE_GROUPS = {
   ],
   designarena: [
     {
-      key: "frontend",
-      label: "前端",
+      key: "code",
+      label: "Code",
       items: [
-        { label: "Website", value: "website" },
+        { label: "WebDev", value: "website" },
         { label: "UI Component", value: "uicomponent" },
-        { label: "DataViz", value: "dataviz" },
+        { label: "Data Visualization", value: "dataviz" },
+        { label: "Game Dev", value: "gamedev" },
+        { label: "3D Design", value: "3d" },
         { label: "SVG", value: "svg" },
       ],
     },
     {
-      key: "creative",
-      label: "创意",
+      key: "media",
+      label: "Media",
       items: [
-        { label: "Game Dev", value: "gamedev" },
-        { label: "3D", value: "3d" },
         { label: "Slides", value: "slides" },
         { label: "Image", value: "image" },
         { label: "Video", value: "video" },

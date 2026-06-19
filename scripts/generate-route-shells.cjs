@@ -193,6 +193,40 @@ const getClawHubZhRouteSeo = ({
   return baseSeo;
 };
 
+const getDesignArenaZhRouteSeo = ({
+  sourceName,
+  subtypeValue,
+  designArenaZhSubtypeSeo,
+}) => {
+  if (sourceName !== "designarena" || !subtypeValue) return null;
+  const subtypeSeo = designArenaZhSubtypeSeo?.[subtypeValue];
+  if (!subtypeSeo) return null;
+
+  return {
+    titleLabel: normalizeTitleLabel(`DesignArena ${subtypeSeo.titleSegment}`),
+    intent: subtypeSeo.intent,
+  };
+};
+
+const getZhRouteSeo = ({
+  sourceName,
+  subtypeValue,
+  clawHubZhBaseSeo,
+  clawHubZhSubtypeSeo,
+  designArenaZhSubtypeSeo,
+}) =>
+  getClawHubZhRouteSeo({
+    sourceName,
+    subtypeValue,
+    clawHubZhBaseSeo,
+    clawHubZhSubtypeSeo,
+  }) ||
+  getDesignArenaZhRouteSeo({
+    sourceName,
+    subtypeValue,
+    designArenaZhSubtypeSeo,
+  });
+
 const prettifySlug = (value = "") =>
   String(value)
     .replace(/[-_]+/g, " ")
@@ -455,6 +489,10 @@ function main() {
   const listSeoMap = parseConstant(seoSource, "LIST_SEO_MAP");
   const clawHubZhBaseSeo = parseConstant(seoSource, "CLAWHUB_ZH_BASE_SEO");
   const clawHubZhSubtypeSeo = parseConstant(seoSource, "CLAWHUB_ZH_SUBTYPE_SEO");
+  const designArenaZhSubtypeSeo = parseConstant(
+    seoSource,
+    "DESIGNARENA_ZH_SUBTYPE_SEO"
+  );
   const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
   const sourceLabelOverrides = mergeOverrideMaps(
     parseConstant(sourceLabelsSource, "SOURCE_LABEL_OVERRIDES"),
@@ -626,11 +664,12 @@ function main() {
     const baseIntent =
       stripLeadingZhPossessive(stripLeadingPhrases(rawDescription, [sourceLabel])) ||
       "实时热榜与趋势榜";
-    const zhRouteSeo = getClawHubZhRouteSeo({
+    const zhRouteSeo = getZhRouteSeo({
       sourceName,
       subtypeValue,
       clawHubZhBaseSeo,
       clawHubZhSubtypeSeo,
+      designArenaZhSubtypeSeo,
     });
     const titleLabel =
       zhRouteSeo?.titleLabel ||

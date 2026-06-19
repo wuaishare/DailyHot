@@ -281,6 +281,45 @@ const CLAWHUB_ZH_SUBTYPE_SEO = {
   },
 };
 
+const DESIGNARENA_ZH_SUBTYPE_SEO = {
+  website: {
+    titleSegment: "WebDev 模型榜",
+    intent: "WebDev网站生成与前端设计模型排行",
+  },
+  uicomponent: {
+    titleSegment: "UI 组件模型榜",
+    intent: "UI组件生成与界面设计模型排行",
+  },
+  dataviz: {
+    titleSegment: "数据可视化模型榜",
+    intent: "数据可视化与图表生成模型排行",
+  },
+  svg: {
+    titleSegment: "SVG 模型榜",
+    intent: "SVG生成与矢量设计模型排行",
+  },
+  gamedev: {
+    titleSegment: "游戏开发模型榜",
+    intent: "游戏开发与互动场景生成模型排行",
+  },
+  "3d": {
+    titleSegment: "3D 设计模型榜",
+    intent: "3D设计与空间生成模型排行",
+  },
+  slides: {
+    titleSegment: "演示文稿模型榜",
+    intent: "演示文稿与幻灯片生成模型排行",
+  },
+  image: {
+    titleSegment: "图像生成模型榜",
+    intent: "图像生成与视觉创作模型排行",
+  },
+  video: {
+    titleSegment: "视频生成模型榜",
+    intent: "视频生成与动态内容创作模型排行",
+  },
+};
+
 const getClawHubSubtypeSeoKey = (sourceKey, subtypeSlug) => {
   if (!subtypeSlug) return "";
   if (sourceKey === "clawhub") return subtypeSlug;
@@ -305,6 +344,21 @@ const getClawHubZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
 
   return baseSeo;
 };
+
+const getDesignArenaZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
+  if (sourceKey !== "designarena" || !subtypeSlug) return null;
+  const subtypeSeo = DESIGNARENA_ZH_SUBTYPE_SEO[subtypeSlug];
+  if (!subtypeSeo) return null;
+
+  return {
+    titleLabel: normalizeTitleLabel(`DesignArena ${subtypeSeo.titleSegment}`),
+    intent: subtypeSeo.intent,
+  };
+};
+
+const getZhRouteSeo = ({ sourceKey, subtypeSlug }) =>
+  getClawHubZhRouteSeo({ sourceKey, subtypeSlug }) ||
+  getDesignArenaZhRouteSeo({ sourceKey, subtypeSlug });
 
 const buildZhListIntent = ({
   sourceLabel,
@@ -461,8 +515,8 @@ const LIST_SEO_MAP = {
   },
   designarena: {
     label: "DesignArena 排行榜",
-    keywords: "DesignArena,AI 设计榜单,前端模型排行榜",
-    description: "DesignArena 前端、设计与创意类 AI 模型排行榜。",
+    keywords: "DesignArena,AI 设计榜单,WebDev模型排行榜,AI创意生成榜",
+    description: "DesignArena WebDev、UI组件、数据可视化、图像、视频与创意生成类 AI 模型排行榜。",
   },
   "aicpb-rankings": {
     label: "AICPB 全球 AI 排行榜",
@@ -848,7 +902,7 @@ const getListSeo = (route, siteUrl, canonical) => {
     subtypeLabel ? `${sourceLabel} ${subtypeLabel}` : sourceLabel
   );
   const zhRouteSeo =
-    locale === "zh-CN" ? getClawHubZhRouteSeo({ sourceKey, subtypeSlug }) : null;
+    locale === "zh-CN" ? getZhRouteSeo({ sourceKey, subtypeSlug }) : null;
   const titleLabel = zhRouteSeo?.titleLabel || defaultTitleLabel;
   const localizedDefaultDescription = i18n.global.t(
     "seo.listDescription",
