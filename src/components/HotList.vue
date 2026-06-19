@@ -100,7 +100,7 @@
                 :title="item.originalTitle || undefined"
                 @click.stop
               >
-                <span class="title-text" :class="{ 'no-auto-translate': Boolean(item.originalTitle) }">
+                <span class="title-text" :class="{ 'no-auto-translate': item.hasReadableTranslation }">
                   {{ item.displayTitle }}
                 </span>
               </n-a>
@@ -287,6 +287,10 @@ const visibleItems = computed(() =>
       ...item,
       originalTitle,
       displayTitle,
+      hasReadableTranslation:
+        Boolean(originalTitle) &&
+        Boolean(displayTitle) &&
+        displayTitle.trim() !== originalTitle.trim(),
     };
   })
 );
@@ -373,15 +377,6 @@ const enhanceHotListResult = (result, targetLocale = locale.value) =>
       })
     : Promise.resolve(result);
 
-const scheduleHotListEnhancement = (result, requestId, targetLocale = locale.value) => {
-  if (!shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)) return;
-  enhanceHotListResult(result, targetLocale).then((enhancedResult) => {
-    if (requestId === hotListRequestId && locale.value === targetLocale) {
-      hotListData.value = enhancedResult;
-    }
-  }).catch(() => {});
-};
-
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (isPrerender) return;
@@ -406,9 +401,12 @@ const getHotListsData = async (name, isNew = false) => {
     if (requestId !== hotListRequestId) return;
     if (result.code === 200) {
       store.markAvailable(item.name);
+      const nextResult = shouldTranslate
+        ? await enhanceHotListResult(result)
+        : result;
+      if (requestId !== hotListRequestId) return;
       listLoading.value = false;
-      hotListData.value = result;
-      scheduleHotListEnhancement(result, requestId);
+      hotListData.value = nextResult;
       // 滚动至顶部
       if (scrollbarRef.value) {
         scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
@@ -430,9 +428,12 @@ const getHotListsData = async (name, isNew = false) => {
         if (requestId !== hotListRequestId) return;
         if (retryResponse?.result?.code === 200) {
           store.markAvailable(item.name);
+          const nextResult = shouldTranslate
+            ? await enhanceHotListResult(retryResponse.result)
+            : retryResponse.result;
+          if (requestId !== hotListRequestId) return;
           listLoading.value = false;
-          hotListData.value = retryResponse.result;
-          scheduleHotListEnhancement(retryResponse.result, requestId);
+          hotListData.value = nextResult;
           if (scrollbarRef.value) {
             scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
           }
@@ -647,11 +648,27 @@ watch(
     if (hotListData.value) {
       updateTime.value = formatTime(hotListData.value.updateTime, targetLocale);
     }
-    if (!hotListData.value || !shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)) {
+    if (!hotListData.value) {
+      listLoading.value = false;
+      return;
+    }
+    if (!shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)) {
+      listLoading.value = false;
       return;
     }
     const requestId = hotListRequestId;
-    scheduleHotListEnhancement(hotListData.value, requestId, targetLocale);
+    const sourceResult = hotListData.value;
+    listLoading.value = true;
+    try {
+      const enhancedResult = await enhanceHotListResult(sourceResult, targetLocale);
+      if (requestId === hotListRequestId && locale.value === targetLocale) {
+        hotListData.value = enhancedResult;
+      }
+    } finally {
+      if (requestId === hotListRequestId && locale.value === targetLocale) {
+        listLoading.value = false;
+      }
+    }
   }
 );
 

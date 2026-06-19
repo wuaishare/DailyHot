@@ -3,6 +3,7 @@ import { getReadableTranslations } from "@/api";
 import { translatePlainTexts } from "@/utils/translateEngine";
 
 const READABLE_TRANSLATION_LOCALES = new Set(["en", "zh-TW", "ja", "ko"]);
+const CLIENT_FIRST_TRANSLATION_LOCALES = new Set(["en", "zh-TW", "ja", "ko"]);
 
 const translationCache = new Map();
 const pendingCache = new Map();
@@ -19,6 +20,41 @@ const toTranslatedMap = (entries = []) =>
   new Map(
     entries.filter(([original, translated]) => translated && translated !== original)
   );
+const mergeTranslatedMap = (target, source) => {
+  source.forEach((translated, original) => {
+    if (!target.has(original)) {
+      target.set(original, translated);
+    }
+  });
+};
+
+const getClientTranslatedMap = async (texts = [], locale) => {
+  const clientMap = await translatePlainTexts(texts, locale);
+  return toTranslatedMap([...clientMap.entries()]);
+};
+
+const getBackendTranslatedMap = async (texts = [], locale) => {
+  const backendMap = new Map();
+  const titleChunks = chunkTitles(texts);
+
+  for (const titleChunk of titleChunks) {
+    try {
+      const response = await getReadableTranslations(titleChunk, locale);
+      const data = Array.isArray(response?.data) ? response.data : [];
+      const chunkMap = toTranslatedMap(
+        data.map((item) => {
+          const translated = String(item.translated || "").trim();
+          return [item.original, translated];
+        })
+      );
+      mergeTranslatedMap(backendMap, chunkMap);
+    } catch (error) {
+      console.warn("readable title backend translation failed", error);
+    }
+  }
+
+  return backendMap;
+};
 
 const enqueueLocaleRequest = (locale, request) =>
   new Promise((resolve, reject) => {
@@ -125,48 +161,32 @@ export const translateReadableTitles = async (titles = [], locale) => {
           };
         }
 
-        try {
-          return await enqueueLocaleRequest(normalizedLocale, async () => {
-            const backendMap = new Map();
-            const titleChunks = chunkTitles(missing);
+        return await enqueueLocaleRequest(normalizedLocale, async () => {
+          const translatedMap = new Map();
+          const preferClient = CLIENT_FIRST_TRANSLATION_LOCALES.has(normalizedLocale);
 
-            for (const titleChunk of titleChunks) {
-              const response = await getReadableTranslations(titleChunk, normalizedLocale);
-              const data = Array.isArray(response?.data) ? response.data : [];
-              const chunkMap = toTranslatedMap(
-                data.map((item) => {
-                  const translated = String(item.translated || "").trim();
-                  return [item.original, translated];
-                })
-              );
-              chunkMap.forEach((translated, original) => {
-                backendMap.set(original, translated);
-              });
-            }
+          if (preferClient) {
+            const clientMap = await getClientTranslatedMap(missing, normalizedLocale);
+            mergeTranslatedMap(translatedMap, clientMap);
+          }
 
-            const unresolved = missing.filter((title) => !backendMap.has(title));
-            if (unresolved.length) {
-              const clientMap = await translatePlainTexts(unresolved, normalizedLocale);
-              const usableClientMap = toTranslatedMap([...clientMap.entries()]);
-              usableClientMap.forEach((translated, original) => {
-                backendMap.set(original, translated);
-              });
-            }
+          let unresolved = missing.filter((title) => !translatedMap.has(title));
+          if (unresolved.length) {
+            const backendMap = await getBackendTranslatedMap(unresolved, normalizedLocale);
+            mergeTranslatedMap(translatedMap, backendMap);
+          }
 
-            return {
-              success: backendMap.size > 0,
-              map: backendMap,
-            };
-          });
-        } catch (error) {
-          console.warn("readable title translation failed", error);
-          const clientMap = await translatePlainTexts(missing, normalizedLocale);
-          const usableClientMap = toTranslatedMap([...clientMap.entries()]);
+          unresolved = missing.filter((title) => !translatedMap.has(title));
+          if (!preferClient && unresolved.length) {
+            const clientMap = await getClientTranslatedMap(unresolved, normalizedLocale);
+            mergeTranslatedMap(translatedMap, clientMap);
+          }
+
           return {
-            success: usableClientMap.size > 0,
-            map: usableClientMap,
+            success: translatedMap.size > 0,
+            map: translatedMap,
           };
-        }
+        });
       })().finally(() => {
         pendingCache.delete(batchKey);
       })
@@ -202,27 +222,43 @@ export const enhanceReadableResultTitles = async (
     start + Math.max(1, Number(limit) || result.data.length)
   );
   const scopedItems = result.data.slice(start, end);
-  const sourceTitles = scopedItems
-    .map((item) => String(item?.originalTitle || item?.title || "").trim())
-    .filter((title) => looksTranslatableSentence(title, normalizedLocale));
+  const sourceTexts = scopedItems.flatMap((item) => [
+    String(item?.originalTitle || item?.title || "").trim(),
+    String(item?.originalDesc || item?.desc || "").trim(),
+  ]).filter((text) => looksTranslatableSentence(text, normalizedLocale));
 
-  if (!sourceTitles.length) return result;
+  if (!sourceTexts.length) return result;
 
-  const translatedMap = await translateReadableTitles(sourceTitles, normalizedLocale);
+  const translatedMap = await translateReadableTitles(sourceTexts, normalizedLocale);
   if (!Object.keys(translatedMap).length) return result;
 
   let changed = false;
   const nextData = result.data.slice();
   scopedItems.forEach((item, index) => {
     const sourceTitle = String(item?.originalTitle || item?.title || "").trim();
+    const sourceDesc = String(item?.originalDesc || item?.desc || "").trim();
     const translatedTitle = String(translatedMap[sourceTitle] || "").trim();
-    if (!translatedTitle || translatedTitle === item?.title) return;
-    changed = true;
-    nextData[start + index] = {
+    const translatedDesc = String(translatedMap[sourceDesc] || "").trim();
+    const nextItem = {
       ...item,
-      originalTitle: item?.originalTitle || item?.title || sourceTitle,
-      title: translatedTitle,
     };
+    let itemChanged = false;
+
+    if (translatedTitle && translatedTitle !== item?.title) {
+      nextItem.originalTitle = item?.originalTitle || item?.title || sourceTitle;
+      nextItem.title = translatedTitle;
+      itemChanged = true;
+    }
+
+    if (translatedDesc && translatedDesc !== item?.desc) {
+      nextItem.originalDesc = item?.originalDesc || item?.desc || sourceDesc;
+      nextItem.desc = translatedDesc;
+      itemChanged = true;
+    }
+
+    if (!itemChanged) return;
+    changed = true;
+    nextData[start + index] = nextItem;
   });
 
   return changed ? { ...result, data: nextData } : result;

@@ -142,7 +142,7 @@
                     <div class="copy">
                       <n-text
                         class="title"
-                        :class="{ 'no-auto-translate': Boolean(item.originalTitle) }"
+                        :class="{ 'no-auto-translate': item.hasReadableTranslation }"
                         v-html="item.displayTitle"
                       />
                       <n-text
@@ -358,6 +358,10 @@ const currentPageItems = computed(() =>
         originalDesc,
         displayTitle,
         displayDesc,
+        hasReadableTranslation:
+          Boolean(originalTitle) &&
+          Boolean(displayTitle) &&
+          displayTitle.trim() !== originalTitle.trim(),
       };
     })
 );
@@ -403,15 +407,6 @@ const enhanceListResult = (result, targetLocale = locale.value) =>
         offset: Math.max(0, (pageNumber.value - 1) * 20),
       })
     : Promise.resolve(result);
-
-const scheduleListEnhancement = (result, requestId, targetLocale = locale.value) => {
-  if (!shouldUseReadableTitleTranslation(listType.value, targetLocale)) return;
-  enhanceListResult(result, targetLocale).then((enhancedResult) => {
-    if (requestId === listRequestId && locale.value === targetLocale) {
-      listData.value = enhancedResult;
-    }
-  }).catch(() => {});
-};
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
@@ -463,8 +458,11 @@ const getHotListsData = async (name, isNew = false) => {
     }
     if (result.code === 200) {
       store.markAvailable(item.name);
-      listData.value = result;
-      scheduleListEnhancement(result, requestId);
+      const nextResult = shouldTranslate
+        ? await enhanceListResult(result)
+        : result;
+      if (requestId !== listRequestId) return;
+      listData.value = nextResult;
     } else {
       store.markUnavailable(item.name);
       $message.error(result.message);
@@ -656,7 +654,17 @@ watch(
       return;
     }
     const requestId = listRequestId;
-    scheduleListEnhancement(listData.value, requestId, targetLocale);
+    const sourceResult = listData.value;
+    try {
+      const enhancedResult = await enhanceListResult(sourceResult, targetLocale);
+      if (requestId === listRequestId && locale.value === targetLocale) {
+        listData.value = enhancedResult;
+      }
+    } catch {
+      if (requestId === listRequestId && locale.value === targetLocale) {
+        listData.value = sourceResult;
+      }
+    }
   }
 );
 
