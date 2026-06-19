@@ -76,7 +76,13 @@
             style="max-width: 320px"
           >
             <template #trigger>
-              <n-button secondary strong round>
+              <n-button
+                secondary
+                strong
+                round
+                :aria-label="refreshButtonLabel"
+                :title="refreshButtonLabel"
+              >
                 <template #icon>
                   <n-icon :component="Refresh" />
                 </template>
@@ -155,6 +161,8 @@
                 secondary
                 strong
                 round
+                :aria-label="themeToggleLabel"
+                :title="themeToggleLabel"
                 @click="
                   store.setSiteTheme(
                     store.siteTheme === 'light' ? 'dark' : 'light'
@@ -172,7 +180,14 @@
           </n-popover>
           <n-popover>
             <template #trigger>
-              <n-button secondary strong round @click="router.push(buildFixedLocalePath(locale, '/setting'))">
+              <n-button
+                secondary
+                strong
+                round
+                :aria-label="t('common.settings')"
+                :title="t('common.settings')"
+                @click="router.push(buildFixedLocalePath(locale, '/setting'))"
+              >
                 <template #icon>
                   <n-icon :component="SettingTwo" />
                 </template>
@@ -271,6 +286,14 @@ const currentLocaleMeta = computed(
   () =>
     getSupportedLocales().find((item) => item.code === locale.value) ||
     getSupportedLocales()[0]
+);
+const refreshButtonLabel = computed(() =>
+  countdownText.value
+    ? `${t("header.refreshPage")} ${countdownText.value}`
+    : t("header.refreshPage")
+);
+const themeToggleLabel = computed(() =>
+  store.siteTheme === "light" ? t("common.darkMode") : t("common.lightMode")
 );
 const buildCalendarDate = (timeData) => {
   if (!timeData?.time) return null;

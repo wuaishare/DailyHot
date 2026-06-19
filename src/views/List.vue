@@ -767,6 +767,15 @@ onBeforeUnmount(() => {
       flex: 0 0 auto;
       width: max-content;
       cursor: pointer;
+      transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+
+      &.is-active-source {
+        background: rgba(234, 68, 77, 0.12);
+        box-shadow: 0 0 0 2px rgba(234, 68, 77, 0.18);
+        font-weight: 700;
+        transform: translateY(-1px);
+      }
+
       .logo {
         height: 22px;
         width: 22px;
