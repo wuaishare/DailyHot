@@ -3,6 +3,7 @@ import { getAdminToken } from "@/utils/adminAuth";
 
 const DEFAULT_FALLBACK_DELAY_MS = 1200;
 const API2_ONLY_SOURCES = new Set(["tianya"]);
+const SAME_ORIGIN_API_SOURCES = new Set(["designarena"]);
 const appApiBase = import.meta.env.VITE_GLOBAL_API;
 const analyticsApiBases = import.meta.env.PROD
   ? ["/api", import.meta.env.VITE_GLOBAL_API].filter(Boolean)
@@ -33,7 +34,9 @@ const requestAnalytics = async (config) => {
  * @returns
  */
 export const getHotLists = (type, isNew = false, params, options = {}) => {
-  const useApi2 = options?.useApi2 || API2_ONLY_SOURCES.has(type);
+  const useSameOriginApi = SAME_ORIGIN_API_SOURCES.has(type);
+  const useApi2 =
+    !useSameOriginApi && (options?.useApi2 || API2_ONLY_SOURCES.has(type));
   const apiBase = appApiBase;
   const apiBase2 = import.meta.env.VITE_GLOBAL_API2;
   const timeout = options?.timeout;
@@ -41,7 +44,11 @@ export const getHotLists = (type, isNew = false, params, options = {}) => {
   return axios({
     method: "GET",
     url: `/${type}`,
-    baseURL: useApi2 ? apiBase2 || apiBase : undefined,
+    baseURL: useSameOriginApi
+      ? "/api"
+      : useApi2
+      ? apiBase2 || apiBase
+      : undefined,
     params: {
       cache: forceNoCache ? false : !isNew,
       ...params,
@@ -73,6 +80,7 @@ export const getReadableTranslations = (texts = [], locale = "zh-CN") =>
   axios({
     method: "POST",
     url: "/readable-translate",
+    baseURL: import.meta.env.PROD ? "/api" : undefined,
     params: {
       cache: false,
     },
@@ -97,9 +105,12 @@ export const getHotListsWithFallback = async (
   params,
   options = {}
 ) => {
-  const hasApi2 = Boolean(import.meta.env.VITE_GLOBAL_API2);
-  const preferApi2 = Boolean(options?.useApi2 || API2_ONLY_SOURCES.has(type));
-  const disableFallback = Boolean(options?.disableFallback);
+  const useSameOriginApi = SAME_ORIGIN_API_SOURCES.has(type);
+  const hasApi2 = Boolean(import.meta.env.VITE_GLOBAL_API2) && !useSameOriginApi;
+  const preferApi2 = Boolean(
+    !useSameOriginApi && (options?.useApi2 || API2_ONLY_SOURCES.has(type))
+  );
+  const disableFallback = Boolean(options?.disableFallback || useSameOriginApi);
   const timeout = options?.timeout;
   const forceNoCache = Boolean(options?.forceNoCache);
   const fallbackDelay = options?.fallbackDelay ?? DEFAULT_FALLBACK_DELAY_MS;
