@@ -64,5 +64,7 @@
 
 ### Latest Verification
 
-- `VERIFY=2606210310 AUDIT_TIMEOUT_MS=30000 pnpm audit:live` passed `21` checks for production, including localized home shells, route JSON-LD, `hreflang`, sitemap `xhtml:link`, `changefreq`, `priority`, and the IndexNow key file.
+- Production deployment `dpl_CwuVeFjksFyHUvGwzcbMgmy8NTLF` is aliased to `https://hot.wuaishare.cn` with visible build number `2606210407`.
+- `VERIFY=2606210407 AUDIT_TIMEOUT_MS=30000 pnpm audit:live` passed `25` checks for production, including localized home shells, route JSON-LD, `hreflang`, sitemap `xhtml:link`, route-level `changefreq` and `priority`, Bilibili canonical `/rank/bilibili/all`, ClawHub OpenClaw route SEO, and the IndexNow key file.
+- The live sitemap contains `1545` same-host URLs and representative localized URL groups such as `/`, `/en/`, `/category/ai`, `/en/category/ai`, `/rank/bilibili/all`, and `/ko/rank/clawhub/plugins-recommended`, each with `6` alternates.
 - `pnpm submit:indexnow -- --dry-run` found `1545` same-host URLs from the live sitemap and the production key file `https://hot.wuaishare.cn/45f2e0a6f5a34b8290c80c5e9d0f94ad.txt`.

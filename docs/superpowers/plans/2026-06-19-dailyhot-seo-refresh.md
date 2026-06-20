@@ -52,12 +52,15 @@
 
 ### Latest Verification
 
-- `VERIFY=2606210310 AUDIT_TIMEOUT_MS=30000 pnpm audit:live` passed `24` production checks, including ClawHub OpenClaw route SEO, Bilibili default-to-popular SEO, concise Toutiao SEO, localized route shell metadata, AI route SEO, localized AI API labels, AI ranking endpoints, readable-title translation, and model-term preservation.
-- Browser automation on production verified visible version `2606210310`, AI news title translation, model-name preservation, Korean header/subtype localization, and AcFun subtype menu/drag behavior.
-- `VERIFY=2606210310 pnpm audit:subtypes` passed all configured/default subtype data checks for `139` cases, including Bilibili popular tabs, IT之家 day/week/month, DesignArena full-stack/front-end/quality/usage categories, OpenRouter, ClawHub, Arena AI, LLM Stats, AICPB, GitHub, and Tianya.
+- Production deployment `dpl_CwuVeFjksFyHUvGwzcbMgmy8NTLF` is aliased to `https://hot.wuaishare.cn` with visible build number `2606210407` and main asset `/assets/index-1a205e49.js`.
+- `VERIFY=2606210407 AUDIT_TIMEOUT_MS=30000 pnpm audit:live` passed `25` production checks, including ClawHub OpenClaw route SEO, Bilibili default-to-popular SEO, concise Toutiao SEO, localized route shell metadata, sitemap/IndexNow discovery, AI route SEO, localized AI API labels, AI ranking endpoints, readable-title translation, zh-CN-to-target translation behavior, and model-term preservation.
+- `VERIFY=2606210407 AUDIT_TIMEOUT_MS=30000 pnpm audit:subtypes` passed all configured/default subtype data checks for `139` cases, including Bilibili popular tabs, IT之家 day/week/month, DesignArena full-stack/front-end/quality/usage categories, OpenRouter, ClawHub, Arena AI, LLM Stats, AICPB, GitHub, Tianya, and the hardened retry path for transient upstream 5xx responses.
+- Direct production API probes returned HTTP 200 for `bilibili?type=all`, `clawhub-skills`, and `clawhub?type=plugins-recommended&locale=ko`; the Korean ClawHub response labels were localized as `추천 플러그인`.
+- Production raw HTML for `/rank/bilibili` contains `哔哩哔哩综合热门 - 全站热视频、UP主内容与流行视频趋势 | 吾爱热榜`, canonicalizes to `/rank/bilibili/all`, and includes route JSON-LD.
+- Browser automation on production verified visible version `2606210407`, Bilibili card tabs `综合热门 / 每周必看 / 入站必刷 / 排行榜 / 全站音乐榜`, AI news title translation, model-name preservation, Korean header/subtype localization, and AcFun subtype menu/drag behavior.
 - Codex in-app browser connection failed with `codex/sandbox-state-meta: missing field sandboxPolicy`; fallback Playwright automation on production verified:
   - `/category/general` header shows category nav, language, refresh countdown, theme, and settings controls.
   - `/setting` keeps refresh controls visible, freezes the countdown, and preserves `dailyhot:autoRefreshPause`.
   - Returning to `/category/general` resumes from the frozen remaining time instead of resetting to the full interval.
   - Category-page card drag changes visible order and persists the scoped order to `mainData.newsArr`.
-  - The AcFun right-edge subtype menu remains inside the viewport and subtype interaction does not trigger card drag.
+  - At `1530x820`, the AcFun right-edge subtype menu stayed inside the viewport (`right=1505.875 <= 1530`) and subtype interaction emitted the `dailyhot:subtype-interaction` lock/unlock sequence instead of triggering card drag.
