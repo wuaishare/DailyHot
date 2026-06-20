@@ -631,9 +631,9 @@ const LIST_SEO_MAP = {
     description: "Arena AI 多模态、Agent、WebDev、图像与视频对战排行榜。",
   },
   designarena: {
-    label: "DesignArena 排行榜",
+    label: "DesignArena",
     keywords: "DesignArena,AI 设计榜单,Agentic WebDev,Full-Stack模型榜,AI创意生成榜,Daily Usage",
-    description: "DesignArena Agentic Full-Stack、Frontend、模型胜率、App质量、真实使用信号、图像、视频与创意生成类 AI 模型排行榜。",
+    description: "DesignArena AI 模型与应用生成榜单入口。",
   },
   "aicpb-rankings": {
     label: "AICPB 全球 AI 排行榜",

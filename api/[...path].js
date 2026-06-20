@@ -940,6 +940,257 @@ const normalizeQueryValue = (value, fallback = "") => {
   return value || fallback;
 };
 
+const CLAWHUB_TYPE_LABELS = {
+  "skills-recommended": {
+    "zh-CN": "推荐技能榜",
+    "zh-TW": "推薦技能榜",
+    en: "Recommended Skills",
+    ja: "おすすめスキル",
+    ko: "추천 스킬",
+  },
+  "skills-featured": {
+    "zh-CN": "精选技能榜",
+    "zh-TW": "精選技能榜",
+    en: "Featured Skills",
+    ja: "注目スキル",
+    ko: "추천 선정 스킬",
+  },
+  "skills-stars": {
+    "zh-CN": "星标最多技能榜",
+    "zh-TW": "星標最多技能榜",
+    en: "Most Starred Skills",
+    ja: "スター最多スキル",
+    ko: "별표 많은 스킬",
+  },
+  "skills-installs": {
+    "zh-CN": "安装最多技能榜",
+    "zh-TW": "安裝最多技能榜",
+    en: "Most Installed Skills",
+    ja: "インストール最多スキル",
+    ko: "설치 많은 스킬",
+  },
+  "skills-updated": {
+    "zh-CN": "最近更新技能榜",
+    "zh-TW": "最近更新技能榜",
+    en: "Recently Updated Skills",
+    ja: "最近更新されたスキル",
+    ko: "최근 업데이트된 스킬",
+  },
+  "skills-newest": {
+    "zh-CN": "最新发布技能榜",
+    "zh-TW": "最新發布技能榜",
+    en: "Newest Skills",
+    ja: "新着スキル",
+    ko: "최신 스킬",
+  },
+  "skills-name": {
+    "zh-CN": "技能名称索引",
+    "zh-TW": "技能名稱索引",
+    en: "Skill Name Index",
+    ja: "スキル名索引",
+    ko: "스킬 이름 색인",
+  },
+  "skills-mcp-tools": {
+    "zh-CN": "MCP 工具技能榜",
+    "zh-TW": "MCP 工具技能榜",
+    en: "MCP Tool Skills",
+    ja: "MCPツールスキル",
+    ko: "MCP 도구 스킬",
+  },
+  "skills-prompts": {
+    "zh-CN": "提示词技能榜",
+    "zh-TW": "提示詞技能榜",
+    en: "Prompt Skills",
+    ja: "プロンプトスキル",
+    ko: "프롬프트 스킬",
+  },
+  "skills-workflows": {
+    "zh-CN": "工作流技能榜",
+    "zh-TW": "工作流程技能榜",
+    en: "Workflow Skills",
+    ja: "ワークフロースキル",
+    ko: "워크플로 스킬",
+  },
+  "skills-dev-tools": {
+    "zh-CN": "开发工具技能榜",
+    "zh-TW": "開發工具技能榜",
+    en: "Developer Tool Skills",
+    ja: "開発ツールスキル",
+    ko: "개발 도구 스킬",
+  },
+  "skills-data": {
+    "zh-CN": "数据与 API 技能榜",
+    "zh-TW": "資料與 API 技能榜",
+    en: "Data & API Skills",
+    ja: "データ・APIスキル",
+    ko: "데이터 및 API 스킬",
+  },
+  "skills-security": {
+    "zh-CN": "安全技能榜",
+    "zh-TW": "安全技能榜",
+    en: "Security Skills",
+    ja: "セキュリティスキル",
+    ko: "보안 스킬",
+  },
+  "skills-automation": {
+    "zh-CN": "自动化技能榜",
+    "zh-TW": "自動化技能榜",
+    en: "Automation Skills",
+    ja: "自動化スキル",
+    ko: "자동화 스킬",
+  },
+  "skills-other": {
+    "zh-CN": "其他技能榜",
+    "zh-TW": "其他技能榜",
+    en: "Other Skills",
+    ja: "その他のスキル",
+    ko: "기타 스킬",
+  },
+  "plugins-recommended": {
+    "zh-CN": "推荐插件榜",
+    "zh-TW": "推薦外掛榜",
+    en: "Recommended Plugins",
+    ja: "おすすめプラグイン",
+    ko: "추천 플러그인",
+  },
+  "plugins-featured": {
+    "zh-CN": "精选插件榜",
+    "zh-TW": "精選外掛榜",
+    en: "Featured Plugins",
+    ja: "注目プラグイン",
+    ko: "추천 선정 플러그인",
+  },
+  "plugins-installs": {
+    "zh-CN": "安装最多插件榜",
+    "zh-TW": "安裝最多外掛榜",
+    en: "Most Installed Plugins",
+    ja: "インストール最多プラグイン",
+    ko: "설치 많은 플러그인",
+  },
+  "plugins-updated": {
+    "zh-CN": "最近更新插件榜",
+    "zh-TW": "最近更新外掛榜",
+    en: "Recently Updated Plugins",
+    ja: "最近更新されたプラグイン",
+    ko: "최근 업데이트된 플러그인",
+  },
+  "plugins-data": {
+    "zh-CN": "数据与 API 插件榜",
+    "zh-TW": "資料與 API 外掛榜",
+    en: "Data & API Plugins",
+    ja: "データ・APIプラグイン",
+    ko: "데이터 및 API 플러그인",
+  },
+};
+
+const CLAWHUB_DESCRIPTION_LABELS = {
+  skills: {
+    "zh-CN": "ClawHub 的 OpenClaw技能推荐、安装、星标与分类榜单。",
+    "zh-TW": "ClawHub 的 OpenClaw技能推薦、安裝、星標與分類榜單。",
+    en: "ClawHub rankings for OpenClaw skills, installs, stars, and categories.",
+    ja: "OpenClawスキルのおすすめ、インストール、スター、カテゴリを集約するClawHubランキング。",
+    ko: "OpenClaw 스킬의 추천, 설치, 별표, 분류를 모은 ClawHub 랭킹입니다.",
+  },
+  plugins: {
+    "zh-CN": "ClawHub 的 OpenClaw插件推荐、精选、安装与分类榜单。",
+    "zh-TW": "ClawHub 的 OpenClaw外掛推薦、精選、安裝與分類榜單。",
+    en: "ClawHub rankings for OpenClaw plugins, featured tools, installs, and categories.",
+    ja: "OpenClawプラグインのおすすめ、注目、インストール、カテゴリを集約するClawHubランキング。",
+    ko: "OpenClaw 플러그인의 추천, 선정, 설치, 분류를 모은 ClawHub 랭킹입니다.",
+  },
+};
+
+const CLAWHUB_DESC_TERMS = {
+  "zh-CN": {
+    codePlugin: "代码插件",
+    bundlePlugin: "组合插件",
+    install: "安装",
+    downloads: "下载",
+    official: "官方",
+    star: "星标",
+  },
+  "zh-TW": {
+    codePlugin: "程式碼外掛",
+    bundlePlugin: "組合外掛",
+    install: "安裝",
+    downloads: "下載",
+    official: "官方",
+    star: "星標",
+  },
+  en: {
+    codePlugin: "Code Plugin",
+    bundlePlugin: "Bundle Plugin",
+    install: "Installs",
+    downloads: "Downloads",
+    official: "Official",
+    star: "Stars",
+  },
+  ja: {
+    codePlugin: "コードプラグイン",
+    bundlePlugin: "バンドルプラグイン",
+    install: "インストール",
+    downloads: "ダウンロード",
+    official: "公式",
+    star: "スター",
+  },
+  ko: {
+    codePlugin: "코드 플러그인",
+    bundlePlugin: "번들 플러그인",
+    install: "설치",
+    downloads: "다운로드",
+    official: "공식",
+    star: "별표",
+  },
+};
+
+const getClawHubKind = (type = "", result = {}) => {
+  const normalizedType = String(type || "").toLowerCase();
+  if (normalizedType.startsWith("plugins")) return "plugins";
+  if (normalizedType.startsWith("skills")) return "skills";
+  const text = `${result?.type || ""} ${result?.description || ""}`;
+  return /plugin|插件|外掛/i.test(text) ? "plugins" : "skills";
+};
+
+const localizeClawHubDesc = (desc = "", locale = "zh-CN") => {
+  const labels = CLAWHUB_DESC_TERMS[locale] || CLAWHUB_DESC_TERMS["zh-CN"];
+  return String(desc || "")
+    .replace(/\bCode Plugin\b/g, labels.codePlugin)
+    .replace(/\bBundle Plugin\b/g, labels.bundlePlugin)
+    .replace(/安装/g, labels.install)
+    .replace(/安裝/g, labels.install)
+    .replace(/下載/g, labels.downloads)
+    .replace(/下载/g, labels.downloads)
+    .replace(/官方/g, labels.official)
+    .replace(/\bStar\b/g, labels.star);
+};
+
+const localizeClawHubProxyResult = (result, locale = "zh-CN", type = "") => {
+  if (!result || typeof result !== "object" || result.name !== "clawhub") return result;
+  const normalizedLocale = locale || "zh-CN";
+  const selectedType = type || "";
+  const kind = getClawHubKind(selectedType, result);
+  const localizedType =
+    CLAWHUB_TYPE_LABELS[selectedType]?.[normalizedLocale] ||
+    localizeClawHubDesc(result.type || result.subtitle || "", normalizedLocale);
+  const description =
+    CLAWHUB_DESCRIPTION_LABELS[kind]?.[normalizedLocale] ||
+    result.description ||
+    "";
+  return {
+    ...result,
+    type: localizedType || result.type,
+    subtitle: localizedType || result.subtitle,
+    description,
+    data: Array.isArray(result.data)
+      ? result.data.map((item) => ({
+          ...item,
+          desc: localizeClawHubDesc(item?.desc || "", normalizedLocale),
+          noAutoTranslate: true,
+        }))
+      : result.data,
+  };
+};
+
 function formatNumber(value, digits = 0) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "0";
@@ -1274,5 +1525,15 @@ export default async function handler(req, res) {
   }
   res.status(response.status);
   res.setHeader("content-type", contentType);
+  if (pathValue === "clawhub") {
+    try {
+      const locale =
+        normalizeReadableLocale(normalizeQueryValue(req.query.locale, "zh-CN")) ||
+        "zh-CN";
+      const type = normalizeQueryValue(req.query.type, "");
+      res.send(JSON.stringify(localizeClawHubProxyResult(JSON.parse(text), locale, type)));
+      return;
+    } catch {}
+  }
   res.send(text);
 }

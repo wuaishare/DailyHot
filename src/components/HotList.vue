@@ -274,7 +274,12 @@ const shouldProtectEntityTitles = computed(() =>
   shouldProtectEntityTitleTranslation(props.hotData.name)
 );
 const HOT_LIST_VISIBLE_LIMIT = 15;
-const API_LOCALIZED_SOURCE_NAMES = new Set(["designarena"]);
+const API_LOCALIZED_SOURCE_NAMES = new Set([
+  "designarena",
+  "clawhub",
+  "clawhub-skills",
+  "clawhub-plugins",
+]);
 const shouldReloadForLocaleChange = (name = "") =>
   API_LOCALIZED_SOURCE_NAMES.has(name);
 const sourceLabel = computed(() =>
@@ -367,7 +372,7 @@ const updateIsDesktop = () => {
 
 const buildHotListRequestParams = (item, shouldTranslate) => {
   const params = buildSourceSubtypeParams(item.name, activeSubType.value);
-  if (item.name === "designarena") {
+  if (API_LOCALIZED_SOURCE_NAMES.has(item.name)) {
     params.locale = locale.value;
   }
   if (!shouldTranslate) return params;

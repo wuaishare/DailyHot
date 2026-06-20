@@ -245,7 +245,12 @@ const SOURCE_FAMILY_ALIASES = {
   "hf-papers": "huggingface",
 };
 const normalizeSourceFamily = (name = "") => SOURCE_FAMILY_ALIASES[name] || name;
-const API_LOCALIZED_SOURCE_NAMES = new Set(["designarena"]);
+const API_LOCALIZED_SOURCE_NAMES = new Set([
+  "designarena",
+  "clawhub",
+  "clawhub-skills",
+  "clawhub-plugins",
+]);
 const shouldReloadForLocaleChange = (name = "") =>
   API_LOCALIZED_SOURCE_NAMES.has(name);
 
@@ -466,7 +471,7 @@ const getHotListsData = async (name, isNew = false) => {
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
   const shouldTranslate = shouldEnhanceReadableTitles.value;
   const params = buildSourceSubtypeParams(item.name, listSubType.value);
-  if (item.name === "designarena") {
+  if (API_LOCALIZED_SOURCE_NAMES.has(item.name)) {
     params.locale = locale.value;
   }
   const requestParams = shouldTranslate
