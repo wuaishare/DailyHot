@@ -501,8 +501,8 @@ const getHotListsData = async (name, isNew = false) => {
       store.setSourceApi2(item.name, true);
     }
     if (result.code === 200) {
-      store.markAvailable(item.name);
       applyListResult(result);
+      store.markAvailable(item.name);
       if (!shouldTranslate) return;
       try {
         const nextResult = await enhanceListResult(result);
@@ -526,8 +526,8 @@ const getHotListsData = async (name, isNew = false) => {
       });
       if (!isCurrentListRequest(requestId, item.name)) return;
       if (retryResponse?.result?.code === 200) {
-        store.markAvailable(item.name);
         applyListResult(retryResponse.result);
+        store.markAvailable(item.name);
         return;
       }
       store.markUnavailable(item.name);

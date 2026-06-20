@@ -445,8 +445,8 @@ const getHotListsData = async (name, isNew = false) => {
     }
     if (requestId !== hotListRequestId) return;
     if (result.code === 200) {
-      store.markAvailable(item.name);
       await enhanceAndApplyHotListResult(result, requestId, shouldTranslate);
+      store.markAvailable(item.name);
     } else {
       store.markUnavailable(item.name);
       loadingError.value = true;
@@ -458,12 +458,12 @@ const getHotListsData = async (name, isNew = false) => {
         const retryResponse = await requestHotListResult(item, true, shouldTranslate, useApi2);
         if (requestId !== hotListRequestId) return;
         if (retryResponse?.result?.code === 200) {
-          store.markAvailable(item.name);
           await enhanceAndApplyHotListResult(
             retryResponse.result,
             requestId,
             shouldTranslate
           );
+          store.markAvailable(item.name);
           return;
         }
       } catch {}
