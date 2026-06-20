@@ -96,6 +96,28 @@ const addCheck = (name, run) => checks.push({ name, run });
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
+const hasHan = (value = "") => /[\u3400-\u9fff]/.test(String(value || ""));
+const hasKana = (value = "") => /[\u3040-\u30ff]/.test(String(value || ""));
+const hasHangul = (value = "") => /[\uac00-\ud7af]/.test(String(value || ""));
+
+const assertLocaleText = (value, locale, context) => {
+  const text = String(value || "");
+  if (locale === "ko") {
+    assert(hasHangul(text), `${context}: expected Hangul text, got ${text}`);
+    assert(!hasHan(text), `${context}: leaked Han text in Korean label: ${text}`);
+    return;
+  }
+  if (locale === "ja") {
+    assert(hasKana(text), `${context}: expected Kana text, got ${text}`);
+    return;
+  }
+  if (locale === "en") {
+    assert(
+      !hasHan(text) && !hasKana(text) && !hasHangul(text),
+      `${context}: leaked CJK text in English label: ${text}`
+    );
+  }
+};
 
 const assertHtml = async (path, expectations) => {
   const response = await requestWithRetry(withVerify(path));
@@ -122,6 +144,14 @@ const assertHtml = async (path, expectations) => {
     assert(
       title.includes(expectations.titleIncludes),
       `title mismatch: ${title}`
+    );
+  }
+  if (expectations.titleExcludes) {
+    const blocked = Array.isArray(expectations.titleExcludes)
+      ? expectations.titleExcludes
+      : [expectations.titleExcludes];
+    blocked.forEach((item) =>
+      assert(!title.includes(item), `title unexpectedly contains ${item}: ${title}`)
     );
   }
   if (expectations.descriptionIncludes) {
@@ -197,6 +227,22 @@ addCheck("route SEO: designarena base canonicalizes to fullstack", () =>
   assertHtml("/rank/designarena", {
     titleIncludes: "DesignArena Agentic 全栈应用模型榜",
     canonical: "/rank/designarena/fullstack",
+  })
+);
+
+addCheck("route SEO: bilibili base canonicalizes to popular all", () =>
+  assertHtml("/rank/bilibili", {
+    titleIncludes: "哔哩哔哩综合热门",
+    canonical: "/rank/bilibili/all",
+    descriptionIncludes: "全站热视频",
+  })
+);
+
+addCheck("route SEO: toutiao title remains concise", () =>
+  assertHtml("/rank/toutiao", {
+    titleIncludes: "今日头条热榜 - 时事热点",
+    titleExcludes: ["今日头条热榜 热榜", "今日头条热榜 - 热榜"],
+    canonical: "/rank/toutiao",
   })
 );
 
@@ -412,6 +458,36 @@ addCheck("api: AI ranking endpoints are available", async () => {
       `${source}/${type}: empty data`
     );
     results.push(`${source}/${type}:${payload.subtitle || payload.type}:${payload.data.length}`);
+  }
+  return results;
+});
+
+addCheck("api: localized AI ranking labels are language-specific", async () => {
+  const cases = [
+    ["designarena", "fullstack", "ko", ["type", "description"]],
+    ["designarena", "fullstack", "ja", ["type", "description"]],
+    ["clawhub", "plugins-recommended", "ko", ["type", "subtitle", "description"]],
+    ["clawhub", "skills-installs", "ja", ["type", "subtitle", "description"]],
+    ["clawhub", "plugins-recommended", "en", ["type", "subtitle", "description"]],
+  ];
+  const results = [];
+  for (const [source, type, locale, fields] of cases) {
+    const url = new URL(`${siteUrl}/api/${source}`);
+    url.searchParams.set("cache", "false");
+    url.searchParams.set("type", type);
+    url.searchParams.set("locale", locale);
+    const response = await requestWithRetry(url.toString(), {}, 3);
+    assert(response.statusCode === 200, `${source}/${type}/${locale}: HTTP ${response.statusCode}`);
+    const payload = JSON.parse(response.body);
+    assert(payload.code === 200, `${source}/${type}/${locale}: API code ${payload.code}`);
+    assert(
+      Array.isArray(payload.data) && payload.data.length > 0,
+      `${source}/${type}/${locale}: empty data`
+    );
+    fields.forEach((field) =>
+      assertLocaleText(payload[field], locale, `${source}/${type}/${locale}.${field}`)
+    );
+    results.push(`${source}/${type}/${locale}:${payload.subtitle || payload.type}`);
   }
   return results;
 });

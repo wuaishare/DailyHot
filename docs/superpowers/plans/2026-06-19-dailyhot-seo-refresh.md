@@ -52,7 +52,7 @@
 
 ### Latest Verification
 
-- `VERIFY=2606210310 AUDIT_TIMEOUT_MS=30000 pnpm audit:live` passed `21` production checks, including ClawHub OpenClaw route SEO, localized route shell metadata, AI route SEO, AI ranking endpoints, readable-title translation, and model-term preservation.
+- `VERIFY=2606210310 AUDIT_TIMEOUT_MS=30000 pnpm audit:live` passed `24` production checks, including ClawHub OpenClaw route SEO, Bilibili default-to-popular SEO, concise Toutiao SEO, localized route shell metadata, AI route SEO, localized AI API labels, AI ranking endpoints, readable-title translation, and model-term preservation.
 - Browser automation on production verified visible version `2606210310`, AI news title translation, model-name preservation, Korean header/subtype localization, and AcFun subtype menu/drag behavior.
 - `VERIFY=2606210310 pnpm audit:subtypes` passed all configured/default subtype data checks for `139` cases, including Bilibili popular tabs, IT之家 day/week/month, DesignArena full-stack/front-end/quality/usage categories, OpenRouter, ClawHub, Arena AI, LLM Stats, AICPB, GitHub, and Tianya.
 - Codex in-app browser connection failed with `codex/sandbox-state-meta: missing field sandboxPolicy`; fallback Playwright automation on production verified:
