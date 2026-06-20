@@ -3,7 +3,7 @@ import { getAdminToken } from "@/utils/adminAuth";
 
 const DEFAULT_FALLBACK_DELAY_MS = 1200;
 const API2_ONLY_SOURCES = new Set(["tianya"]);
-const SAME_ORIGIN_API_SOURCES = new Set(["designarena"]);
+const SAME_ORIGIN_API_SOURCES = new Set(["designarena", "clawhub"]);
 const appApiBase = import.meta.env.VITE_GLOBAL_API;
 const analyticsApiBases = import.meta.env.PROD
   ? ["/api", import.meta.env.VITE_GLOBAL_API].filter(Boolean)
