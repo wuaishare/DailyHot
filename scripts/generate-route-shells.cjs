@@ -20,6 +20,15 @@ const CATEGORY_ROUTES = [
   { name: "AI", slug: "ai" },
 ];
 
+const SYSTEM_ROUTES = [
+  { pathname: "/setting", seoKey: "setting", robots: "noindex,nofollow" },
+  { pathname: "/analytics", seoKey: "analytics", robots: "noindex,nofollow" },
+  { pathname: "/privacy", seoKey: "privacy", robots: "noindex,nofollow" },
+  { pathname: "/403", seoKey: "forbidden", robots: "noindex,nofollow" },
+  { pathname: "/404", seoKey: "notFound", robots: "noindex,nofollow" },
+  { pathname: "/500", seoKey: "serverError", robots: "noindex,nofollow" },
+];
+
 const normalizeSiteUrl = (value = "") => String(value).replace(/\/+$/, "");
 const siteUrl = normalizeSiteUrl(process.env.VITE_SITE_URL || "");
 const brandNameZh = "吾爱热榜";
@@ -407,7 +416,17 @@ const setAlternateLinks = (html, alternateLinks = []) => {
 
 const setHtmlMeta = (
   html,
-  { title, description, keywords, canonical, htmlLang, alternateLinks, jsonLd }
+  {
+    title,
+    description,
+    keywords,
+    canonical,
+    htmlLang,
+    ogLocale,
+    robots,
+    alternateLinks,
+    jsonLd,
+  }
 ) => {
   let next = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
   if (htmlLang) {
@@ -423,6 +442,13 @@ const setHtmlMeta = (
     /<meta\s+name="keywords"\s+content="[^"]*"\s*\/?>/,
     `<meta name="keywords" content="${keywords}" />`
   );
+  if (robots) {
+    next = ensureMetaTag(
+      next,
+      /<meta\s+name="robots"\s+content="[^"]*"\s*\/?>/,
+      `<meta name="robots" content="${robots}" />`
+    );
+  }
   next = ensureMetaTag(
     next,
     /<meta\s+property="og:title"\s+content="[^"]*"\s*\/?>/,
@@ -443,6 +469,13 @@ const setHtmlMeta = (
     /<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/?>/,
     `<meta name="twitter:description" content="${description}" />`
   );
+  if (ogLocale) {
+    next = ensureMetaTag(
+      next,
+      /<meta\s+property="og:locale"\s+content="[^"]*"\s*\/?>/,
+      `<meta property="og:locale" content="${ogLocale}" />`
+    );
+  }
 
   if (canonical) {
     next = ensureMetaTag(
@@ -520,6 +553,15 @@ const buildWebsiteJsonLd = ({ siteName, title, description, canonical, htmlLang 
   inLanguage: htmlLang || "zh-CN",
 });
 
+const buildWebPageJsonLd = ({ title, description, canonical, htmlLang }) => ({
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: title,
+  description,
+  inLanguage: htmlLang || "zh-CN",
+  url: canonical || undefined,
+});
+
 function main() {
   ensureFile(indexHtmlPath);
   ensureFile(seoSourcePath);
@@ -576,7 +618,13 @@ function main() {
   const writeRouteShell = (pathname, meta) => {
     const outputPath = path.join(distDir, pathname.replace(/^\/+/, ""), "index.html");
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.writeFileSync(outputPath, setHtmlMeta(template, meta));
+    fs.writeFileSync(
+      outputPath,
+      setHtmlMeta(template, {
+        ogLocale: meta.htmlLang ? meta.htmlLang.replace("-", "_") : undefined,
+        ...meta,
+      })
+    );
     writtenShellCount += 1;
   };
 
@@ -653,6 +701,35 @@ function main() {
         canonical,
         htmlLang,
         listName: categoryLabel,
+      }),
+    };
+  };
+
+  const buildSystemRouteMeta = (systemRoute, localeMeta, pathname) => {
+    const locale = localeMeta.code;
+    const htmlLang = localeMeta.htmlLang;
+    const seoMessages = getSeoMessages(messages, locale);
+    const siteName = getSiteName(messages, locale);
+    const canonical = buildAbsoluteUrl(pathname);
+    const title =
+      seoMessages[`${systemRoute.seoKey}Title`] ||
+      `${systemRoute.seoKey} - ${siteName}`;
+    const description =
+      seoMessages[`${systemRoute.seoKey}Description`] ||
+      `${title} page.`;
+    return {
+      title,
+      description,
+      keywords: mergeKeywords(title, siteName),
+      canonical,
+      htmlLang,
+      robots: systemRoute.robots,
+      alternateLinks: buildAlternateLinks(systemRoute.pathname, supportedLocales),
+      jsonLd: buildWebPageJsonLd({
+        title,
+        description,
+        canonical,
+        htmlLang,
       }),
     };
   };
@@ -802,6 +879,14 @@ function main() {
       const pathname = withLocalePrefix(localeMeta, `/category/${category.slug}`);
       const meta = buildCategoryMeta(category, localeMeta, pathname);
       if (meta) writeRouteShell(pathname, meta);
+    });
+
+    SYSTEM_ROUTES.forEach((systemRoute) => {
+      const pathname = withLocalePrefix(localeMeta, systemRoute.pathname);
+      writeRouteShell(
+        pathname,
+        buildSystemRouteMeta(systemRoute, localeMeta, pathname)
+      );
     });
 
     sourceNames.forEach((sourceName) => {
