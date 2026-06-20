@@ -10,6 +10,8 @@
       :class="{ 'is-compact': store.compactMode }"
       item-key="name"
       :animation="180"
+      filter=".no-card-drag, .no-card-drag *"
+      :prevent-on-filter="false"
       ghost-class="news-card-ghost"
       chosen-class="news-card-chosen"
       drag-class="news-card-drag"

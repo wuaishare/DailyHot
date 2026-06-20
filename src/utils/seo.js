@@ -502,6 +502,29 @@ const ITHOME_ZH_SUBTYPE_SEO = {
   },
 };
 
+const BILIBILI_ZH_SUBTYPE_SEO = {
+  all: {
+    titleSegment: "综合热门",
+    intent: "全站热视频、UP主内容与流行视频趋势",
+  },
+  weekly: {
+    titleSegment: "每周必看",
+    intent: "哔哩哔哩每周必看精选视频与高质量内容推荐",
+  },
+  history: {
+    titleSegment: "入站必刷",
+    intent: "哔哩哔哩入站必刷经典视频与宝藏内容合集",
+  },
+  rank: {
+    titleSegment: "排行榜",
+    intent: "哔哩哔哩全站视频排行榜、播放热度与内容趋势",
+  },
+  music: {
+    titleSegment: "全站音乐榜",
+    intent: "哔哩哔哩全站音乐视频排行、翻唱演奏与热门音乐内容",
+  },
+};
+
 const getClawHubSubtypeSeoKey = (sourceKey, subtypeSlug) => {
   if (!subtypeSlug) return "";
   if (sourceKey === "clawhub") return subtypeSlug;
@@ -549,10 +572,22 @@ const getIthomeZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
   };
 };
 
+const getBilibiliZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
+  if (sourceKey !== "bilibili" || !subtypeSlug) return null;
+  const subtypeSeo = BILIBILI_ZH_SUBTYPE_SEO[subtypeSlug];
+  if (!subtypeSeo) return null;
+
+  return {
+    titleLabel: normalizeTitleLabel(`哔哩哔哩${subtypeSeo.titleSegment}`),
+    intent: subtypeSeo.intent,
+  };
+};
+
 const getZhRouteSeo = ({ sourceKey, subtypeSlug }) =>
   getClawHubZhRouteSeo({ sourceKey, subtypeSlug }) ||
   getDesignArenaZhRouteSeo({ sourceKey, subtypeSlug }) ||
-  getIthomeZhRouteSeo({ sourceKey, subtypeSlug });
+  getIthomeZhRouteSeo({ sourceKey, subtypeSlug }) ||
+  getBilibiliZhRouteSeo({ sourceKey, subtypeSlug });
 
 const buildZhListIntent = ({
   sourceLabel,
@@ -584,8 +619,8 @@ const LIST_SEO_MAP = {
   },
   bilibili: {
     label: "B站热榜",
-    keywords: "B站热榜,哔哩哔哩热门,视频热榜",
-    description: "哔哩哔哩热门榜单，聚合全站高热度视频与话题。",
+    keywords: "B站热榜,哔哩哔哩热门,综合热门,每周必看,入站必刷,视频排行榜",
+    description: "哔哩哔哩综合热门、每周必看、入站必刷、排行榜与全站音乐榜聚合。",
   },
   toutiao: {
     label: "今日头条热榜",

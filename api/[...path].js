@@ -36,10 +36,34 @@ const PUBLIC_API_DEFAULT_FALLBACK_BASE_URL = "https://hotapi2.wuaishare.cn";
 const PUBLIC_API_FALLBACK_BASE_URL =
   process.env.INTERNAL_API_FALLBACK_BASE_URL || PUBLIC_API_DEFAULT_FALLBACK_BASE_URL;
 const PUBLIC_API_FALLBACK_PATHS = new Set([
+  "bilibili",
   "clawhub",
   "ithome",
   "openrouter-rankings",
 ]);
+const BILIBILI_API_BASE_URL = "https://api.bilibili.com";
+const BILIBILI_WEB_BASE_URL = "https://www.bilibili.com";
+const BILIBILI_TYPE_LABELS = {
+  all: "综合热门",
+  weekly: "每周必看",
+  history: "入站必刷",
+  rank: "排行榜",
+  music: "全站音乐榜",
+};
+const BILIBILI_LINKS = {
+  all: `${BILIBILI_WEB_BASE_URL}/v/popular/all`,
+  weekly: `${BILIBILI_WEB_BASE_URL}/v/popular/weekly/`,
+  history: `${BILIBILI_WEB_BASE_URL}/v/popular/history`,
+  rank: `${BILIBILI_WEB_BASE_URL}/v/popular/rank/all`,
+  music: `${BILIBILI_WEB_BASE_URL}/v/popular/music`,
+};
+const BILIBILI_COMMON_HEADERS = {
+  Accept: "application/json",
+  Referer: `${BILIBILI_WEB_BASE_URL}/`,
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 DailyHot/1.0",
+  Cookie: "buvid3=00000000-0000-4000-8000-000000000000infoc",
+};
 const ITHOME_XCVTS_URL = "https://api.xcvts.cn/api/hotlist/ithome";
 const ITHOME_OFFICIAL_RANK_URL = "https://m.ithome.com/rankm/";
 const ITHOME_DIRECT_FETCH_TIMEOUT_MS = 6000;
@@ -987,6 +1011,140 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = ITHOME_DIRECT_FET
   }
 };
 
+const getBilibiliType = (type = "") =>
+  Object.prototype.hasOwnProperty.call(BILIBILI_TYPE_LABELS, type) ? type : "all";
+
+const normalizeBilibiliImage = (value = "") =>
+  String(value || "").replace(/^http:\/\//, "https://");
+
+const formatBilibiliCount = (value) => {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return "";
+  if (number >= 10000) return `${(number / 10000).toFixed(number >= 100000 ? 0 : 1)}万`;
+  return String(Math.round(number));
+};
+
+const getBilibiliVideoUrl = (item = {}) => {
+  if (item.redirect_url) return item.redirect_url;
+  if (item.uri) return item.uri;
+  if (item.short_link_v2) return item.short_link_v2;
+  if (item.bvid) return `${BILIBILI_WEB_BASE_URL}/video/${item.bvid}`;
+  if (item.aid) return `${BILIBILI_WEB_BASE_URL}/video/av${item.aid}`;
+  return BILIBILI_WEB_BASE_URL;
+};
+
+const normalizeBilibiliItems = (items = []) =>
+  items.map((item, index) => {
+    const stat = item?.stat || {};
+    const ownerName = item?.owner?.name || item?.author || "";
+    const viewCount = formatBilibiliCount(stat.view);
+    const danmakuCount = formatBilibiliCount(stat.danmaku);
+    const descParts = [
+      ownerName,
+      item?.tname,
+      viewCount ? `播放 ${viewCount}` : "",
+      danmakuCount ? `弹幕 ${danmakuCount}` : "",
+    ].filter(Boolean);
+    const url = getBilibiliVideoUrl(item);
+    return {
+      id: String(item?.bvid || item?.aid || index + 1),
+      title: decodeHtmlText(item?.title || ""),
+      desc: descParts.join(" · "),
+      hot: Number(stat.view) || Math.max(items.length - index, 0),
+      timestamp: Number(item?.pubdate || item?.ctime)
+        ? new Date(Number(item?.pubdate || item?.ctime) * 1000).toISOString()
+        : new Date().toISOString(),
+      url,
+      mobileUrl: url,
+      cover: normalizeBilibiliImage(item?.pic || item?.cover || ""),
+    };
+  });
+
+const buildBilibiliResponse = ({ type, items, updateTime = new Date().toISOString() }) => ({
+  code: 200,
+  name: "bilibili",
+  title: "哔哩哔哩",
+  type: BILIBILI_TYPE_LABELS[type],
+  subtitle: BILIBILI_TYPE_LABELS[type],
+  description: "哔哩哔哩综合热门、每周必看、入站必刷、排行榜与全站音乐榜。",
+  params: {
+    type: {
+      name: "榜单",
+      type: BILIBILI_TYPE_LABELS,
+    },
+  },
+  link: BILIBILI_LINKS[type] || BILIBILI_LINKS.all,
+  total: items.length,
+  fromCache: false,
+  updateTime,
+  data: normalizeBilibiliItems(items),
+});
+
+const fetchBilibiliJson = async (url) => {
+  const response = await fetchWithTimeout(url, {
+    method: "GET",
+    headers: BILIBILI_COMMON_HEADERS,
+  });
+  if (!response.ok) throw new Error(`Bilibili ${response.status}`);
+  const payload = await response.json();
+  if (payload?.code !== 0) {
+    throw new Error(`Bilibili API code ${payload?.code ?? "unknown"}`);
+  }
+  return payload;
+};
+
+const fetchBilibiliWeeklyItems = async () => {
+  const listPayload = await fetchBilibiliJson(
+    `${BILIBILI_API_BASE_URL}/x/web-interface/popular/series/list`
+  );
+  const latest = (listPayload?.data?.list || []).find((item) => Number(item?.status) === 2);
+  const number = latest?.number || listPayload?.data?.list?.[0]?.number;
+  if (!number) throw new Error("Bilibili weekly series number is missing");
+  const payload = await fetchBilibiliJson(
+    `${BILIBILI_API_BASE_URL}/x/web-interface/popular/series/one?number=${number}`
+  );
+  return {
+    items: payload?.data?.list || [],
+    updateTime: Number(payload?.data?.config?.etime)
+      ? new Date(Number(payload.data.config.etime) * 1000).toISOString()
+      : new Date().toISOString(),
+  };
+};
+
+const fetchBilibiliItems = async (type) => {
+  if (type === "weekly") return fetchBilibiliWeeklyItems();
+
+  const urlMap = {
+    all: `${BILIBILI_API_BASE_URL}/x/web-interface/popular?pn=1&ps=50`,
+    history: `${BILIBILI_API_BASE_URL}/x/web-interface/popular/precious?page_size=50&page=1`,
+    rank: `${BILIBILI_API_BASE_URL}/x/web-interface/ranking/v2?rid=0&type=all`,
+    music: `${BILIBILI_API_BASE_URL}/x/web-interface/ranking/v2?rid=3&type=all`,
+  };
+  const payload = await fetchBilibiliJson(urlMap[type] || urlMap.all);
+  return {
+    items: payload?.data?.list || [],
+    updateTime: new Date().toISOString(),
+  };
+};
+
+const handleBilibili = async (req, res) => {
+  if (req.method !== "GET") return false;
+  const type = getBilibiliType(normalizeQueryValue(req.query.type, "all"));
+  try {
+    const result = await fetchBilibiliItems(type);
+    const response = buildBilibiliResponse({
+      type,
+      items: result.items,
+      updateTime: result.updateTime,
+    });
+    res.status(200).json(response);
+    return true;
+  } catch (error) {
+    console.warn("Bilibili direct fetch failed", error);
+    return false;
+  }
+};
+
 const getIthomeCacheStore = () => {
   if (!globalThis.__dailyhotIthomeCache) {
     globalThis.__dailyhotIthomeCache = new Map();
@@ -1767,6 +1925,11 @@ export default async function handler(req, res) {
 
   if (pathValue === "readable-translate" && req.method === "POST") {
     const handled = await handleReadableTranslate(body, res);
+    if (handled) return;
+  }
+
+  if (pathValue === "bilibili") {
+    const handled = await handleBilibili(req, res);
     if (handled) return;
   }
 

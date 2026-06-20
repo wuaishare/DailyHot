@@ -246,6 +246,21 @@ const getIthomeZhRouteSeo = ({
   };
 };
 
+const getBilibiliZhRouteSeo = ({
+  sourceName,
+  subtypeValue,
+  bilibiliZhSubtypeSeo,
+}) => {
+  if (sourceName !== "bilibili" || !subtypeValue) return null;
+  const subtypeSeo = bilibiliZhSubtypeSeo?.[subtypeValue];
+  if (!subtypeSeo) return null;
+
+  return {
+    titleLabel: normalizeTitleLabel(`哔哩哔哩${subtypeSeo.titleSegment}`),
+    intent: subtypeSeo.intent,
+  };
+};
+
 const getZhRouteSeo = ({
   sourceName,
   subtypeValue,
@@ -253,6 +268,7 @@ const getZhRouteSeo = ({
   clawHubZhSubtypeSeo,
   designArenaZhSubtypeSeo,
   ithomeZhSubtypeSeo,
+  bilibiliZhSubtypeSeo,
 }) =>
   getClawHubZhRouteSeo({
     sourceName,
@@ -269,6 +285,11 @@ const getZhRouteSeo = ({
     sourceName,
     subtypeValue,
     ithomeZhSubtypeSeo,
+  }) ||
+  getBilibiliZhRouteSeo({
+    sourceName,
+    subtypeValue,
+    bilibiliZhSubtypeSeo,
   });
 
 const prettifySlug = (value = "") =>
@@ -622,6 +643,7 @@ function main() {
     "DESIGNARENA_ZH_SUBTYPE_SEO"
   );
   const ithomeZhSubtypeSeo = parseConstant(seoSource, "ITHOME_ZH_SUBTYPE_SEO");
+  const bilibiliZhSubtypeSeo = parseConstant(seoSource, "BILIBILI_ZH_SUBTYPE_SEO");
   const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
   const aggregateSubtypeSources = new Set(
     parseConstant(subtypeSource, "AGGREGATE_SUBTYPE_SOURCES")
@@ -889,6 +911,7 @@ function main() {
       clawHubZhSubtypeSeo,
       designArenaZhSubtypeSeo,
       ithomeZhSubtypeSeo,
+      bilibiliZhSubtypeSeo,
     });
     const titleLabel =
       zhRouteSeo?.titleLabel ||

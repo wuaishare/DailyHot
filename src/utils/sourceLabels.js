@@ -779,6 +779,13 @@ const GROUP_LABEL_OVERRIDES = {
     ja: "利用状況",
     ko: "사용량",
   },
+  popular: {
+    "zh-CN": "热门",
+    "zh-TW": "熱門",
+    en: "Popular",
+    ja: "人気",
+    ko: "인기",
+  },
   ecosystem: {
     "zh-CN": "生态",
     "zh-TW": "生態",
@@ -1026,6 +1033,34 @@ const SUBTYPE_LABEL_OVERRIDES = {
     en: "Rankings",
     ja: "ランキング",
     ko: "랭킹",
+  },
+  综合热门: {
+    "zh-CN": "综合热门",
+    "zh-TW": "綜合熱門",
+    en: "Popular",
+    ja: "総合人気",
+    ko: "종합 인기",
+  },
+  每周必看: {
+    "zh-CN": "每周必看",
+    "zh-TW": "每週必看",
+    en: "Weekly Must-Watch",
+    ja: "週間必見",
+    ko: "주간 필수 시청",
+  },
+  入站必刷: {
+    "zh-CN": "入站必刷",
+    "zh-TW": "入站必刷",
+    en: "All-Time Essentials",
+    ja: "殿堂入り必見",
+    ko: "입문 필수 영상",
+  },
+  全站音乐榜: {
+    "zh-CN": "全站音乐榜",
+    "zh-TW": "全站音樂榜",
+    en: "Sitewide Music",
+    ja: "全体音楽ランキング",
+    ko: "전체 음악 랭킹",
   },
   "模型周度热度榜": {
     "zh-CN": "模型周度热度榜",

@@ -14,6 +14,7 @@ const concurrency = Number(process.env.SUBTYPE_AUDIT_CONCURRENCY || 6);
 const dataSourceEnv = process.env.SUBTYPE_DATA_SOURCES || "";
 
 const DEFAULT_DATA_SOURCES = [
+  "bilibili",
   "ithome",
   "designarena",
   "arena-ai",

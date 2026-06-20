@@ -4,6 +4,7 @@ import { getAdminToken } from "@/utils/adminAuth";
 const DEFAULT_FALLBACK_DELAY_MS = 1200;
 const API2_ONLY_SOURCES = new Set(["tianya"]);
 const SAME_ORIGIN_API_SOURCES = new Set([
+  "bilibili",
   "designarena",
   "ithome",
   "clawhub",

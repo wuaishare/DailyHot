@@ -1,12 +1,19 @@
 <template>
   <div
     v-if="groups.length"
-    class="subtype-bar"
+    class="subtype-bar no-card-drag"
     :class="{
       'has-left-shadow': canScrollLeft,
       'has-right-shadow': canScrollRight,
       'is-dragging': isDragging,
     }"
+    data-no-card-drag
+    @pointerdown.stop
+    @pointermove.stop
+    @pointerup.stop
+    @pointercancel.stop
+    @mousedown.stop
+    @touchstart.stop
     @click.stop
   >
     <div class="scroll-shell">
@@ -50,6 +57,9 @@
                 class="subtype-menu"
                 :class="{ 'is-dark': isDarkTheme }"
                 :style="menuStyle"
+                data-no-card-drag
+                @pointerdown.stop
+                @mousedown.stop
                 @mouseenter="keepMenuOpen"
                 @mouseleave="scheduleCloseGroup"
               >
@@ -121,6 +131,7 @@ const store = mainStore();
 
 const openGroupKey = ref(null);
 const menuStyle = ref({});
+const activeMenuTarget = ref(null);
 const trackRef = ref(null);
 const canScrollLeft = ref(false);
 const canScrollRight = ref(false);
@@ -249,10 +260,17 @@ const handleTrackScroll = () => {
 const positionMenu = (target) => {
   if (typeof window === "undefined" || !target) return;
   const rect = target.getBoundingClientRect();
-  const width = Math.min(420, window.innerWidth - 24);
+  const menu = document.querySelector(".subtype-menu");
+  const measuredWidth = menu?.getBoundingClientRect?.().width || 0;
+  const width = Math.min(
+    Math.max(measuredWidth || 0, rect.width, 120),
+    420,
+    window.innerWidth - 24
+  );
+  const preferredLeft = rect.left + rect.width / 2 - width / 2;
   const left = Math.min(
     window.innerWidth - width - 12,
-    Math.max(12, rect.left)
+    Math.max(12, preferredLeft)
   );
   const top = rect.bottom + 6;
   const maxHeight = Math.min(240, window.innerHeight - 24);
@@ -267,11 +285,18 @@ const positionMenu = (target) => {
   };
 };
 
+const updateOpenMenuPosition = () => {
+  if (!openGroupKey.value || !activeMenuTarget.value) return;
+  positionMenu(activeMenuTarget.value);
+};
+
 const openGroup = (group, event) => {
   if ((group.items || []).length <= 1 || isDragging.value) return;
   clearCloseTimer();
+  activeMenuTarget.value = event?.currentTarget || null;
   openGroupKey.value = getGroupKey(group);
-  positionMenu(event?.currentTarget);
+  positionMenu(activeMenuTarget.value);
+  nextTick(updateOpenMenuPosition);
 };
 
 const keepMenuOpen = () => {
@@ -288,14 +313,21 @@ const clearCloseTimer = () => {
 const closeGroup = () => {
   clearCloseTimer();
   openGroupKey.value = null;
+  activeMenuTarget.value = null;
 };
 
 const scheduleCloseGroup = () => {
   clearCloseTimer();
   closeTimer = setTimeout(() => {
     openGroupKey.value = null;
+    activeMenuTarget.value = null;
     closeTimer = null;
   }, 120);
+};
+
+const handleWindowResize = () => {
+  updateScrollShadow();
+  updateOpenMenuPosition();
 };
 
 const selectItem = (value) => {
@@ -327,7 +359,9 @@ const handleGroupClick = (group, event) => {
   openGroupKey.value =
     openGroupKey.value === getGroupKey(group) ? null : getGroupKey(group);
   if (openGroupKey.value) {
-    positionMenu(event?.currentTarget);
+    activeMenuTarget.value = event?.currentTarget || null;
+    positionMenu(activeMenuTarget.value);
+    nextTick(updateOpenMenuPosition);
   }
 
   if (!isGroupActive(group)) {
@@ -346,7 +380,8 @@ onMounted(() => {
     document.addEventListener("click", closeGroup);
   }
   if (typeof window !== "undefined") {
-    window.addEventListener("resize", updateScrollShadow);
+    window.addEventListener("resize", handleWindowResize);
+    window.addEventListener("scroll", updateOpenMenuPosition, true);
   }
   refreshScrollState();
 });
@@ -356,7 +391,8 @@ onBeforeUnmount(() => {
     document.removeEventListener("click", closeGroup);
   }
   if (typeof window !== "undefined") {
-    window.removeEventListener("resize", updateScrollShadow);
+    window.removeEventListener("resize", handleWindowResize);
+    window.removeEventListener("scroll", updateOpenMenuPosition, true);
   }
   if (resizeObserver) {
     resizeObserver.disconnect();

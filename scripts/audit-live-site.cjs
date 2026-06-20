@@ -284,6 +284,23 @@ addCheck("api: ithome subtype coverage", async () => {
   return results;
 });
 
+addCheck("api: bilibili popular coverage", async () => {
+  const subtypes = ["all", "weekly", "history", "rank", "music"];
+  const results = [];
+  for (const type of subtypes) {
+    const url = new URL(`${siteUrl}/api/bilibili`);
+    url.searchParams.set("cache", "false");
+    url.searchParams.set("type", type);
+    const response = await requestWithRetry(url.toString(), {}, 3);
+    assert(response.statusCode === 200, `${type}: HTTP ${response.statusCode}`);
+    const payload = JSON.parse(response.body);
+    assert(payload.code === 200, `${type}: API code ${payload.code}`);
+    assert(Array.isArray(payload.data) && payload.data.length > 0, `${type}: empty data`);
+    results.push(`${type}:${payload.subtitle || payload.type}:${payload.data.length}`);
+  }
+  return results;
+});
+
 addCheck("api: AI ranking endpoints are available", async () => {
   const cases = [
     ["openrouter-rankings", "models-week"],
