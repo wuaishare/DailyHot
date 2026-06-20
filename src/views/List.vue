@@ -425,6 +425,18 @@ const applyListResult = (result) => {
   updateTime.value = formatTime(result?.updateTime, locale.value);
 };
 
+const applyListFailureResult = (item, result = {}) => {
+  applyListResult({
+    code: result.code || 500,
+    name: item?.name || listType.value,
+    title: item?.label || result.title || listType.value,
+    subtitle: result.message || result.title || t("list.loadFailedMessage"),
+    total: 0,
+    updateTime: new Date().toISOString(),
+    data: [],
+  });
+};
+
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (!name) return;
@@ -464,7 +476,7 @@ const getHotListsData = async (name, isNew = false) => {
       }
     : params;
   try {
-    const { result, usedFallback, fallbackSuccess } = await getHotListsWithFallback(
+    let response = await getHotListsWithFallback(
       item.name,
       isNew,
       requestParams,
@@ -473,6 +485,14 @@ const getHotListsData = async (name, isNew = false) => {
         forceNoCache: Boolean(isNew),
       }
     );
+    if (response?.result?.code !== 200 && requestId === listRequestId) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      response = await getHotListsWithFallback(item.name, true, requestParams, {
+        useApi2,
+        forceNoCache: true,
+      });
+    }
+    const { result, usedFallback, fallbackSuccess } = response;
     if (requestId !== listRequestId) return;
     if (usedFallback && fallbackSuccess && !useApi2) {
       store.setSourceApi2(item.name, true);
@@ -491,11 +511,29 @@ const getHotListsData = async (name, isNew = false) => {
       }
     } else {
       store.markUnavailable(item.name);
+      applyListFailureResult(item, result);
       $message.error(result.message);
     }
   } catch {
     if (requestId !== listRequestId) return;
-    store.markUnavailable(item.name);
+    try {
+      const retryResponse = await getHotListsWithFallback(item.name, true, requestParams, {
+        useApi2,
+        forceNoCache: true,
+      });
+      if (requestId !== listRequestId) return;
+      if (retryResponse?.result?.code === 200) {
+        store.markAvailable(item.name);
+        applyListResult(retryResponse.result);
+        return;
+      }
+      store.markUnavailable(item.name);
+      applyListFailureResult(item, retryResponse?.result);
+    } catch {
+      if (requestId !== listRequestId) return;
+      store.markUnavailable(item.name);
+      applyListFailureResult(item);
+    }
     $message.error(t("list.loadFailedMessage"));
   }
 };
