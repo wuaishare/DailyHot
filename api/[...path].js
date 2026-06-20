@@ -1616,11 +1616,11 @@ const localizeClawHubProxyResult = (result, locale = "zh-CN", type = "") => {
   };
 };
 
-const sendLocalizedClawHubUnavailable = (req, res, message) => {
+const sendLocalizedClawHubUnavailable = (req, res, message, typeOverride = "") => {
   const locale =
     normalizeReadableLocale(normalizeQueryValue(req.query.locale, "zh-CN")) ||
     "zh-CN";
-  const type = normalizeQueryValue(req.query.type, "");
+  const type = typeOverride || normalizeQueryValue(req.query.type, "");
   res.status(502).json(
     localizeClawHubProxyResult(
       {
@@ -1937,6 +1937,86 @@ const fetchProxyTarget = async ({ targetUrl, req, body, proxyToken }) => {
   return { response, contentType, text };
 };
 
+const getLegacyClawHubAggregateType = (pathValue, rawType = "") => {
+  const value = normalizeQueryValue(rawType, "").toLowerCase();
+  if (pathValue === "clawhub-skills") {
+    if (!value) return "skills-recommended";
+    if (value.startsWith("skills-")) return value;
+    return `skills-${value}`;
+  }
+  if (pathValue === "clawhub-plugins") {
+    if (!value) return "plugins-recommended";
+    if (value.startsWith("plugins-")) return value;
+    return `plugins-${value}`;
+  }
+  return "";
+};
+
+const handleLegacyClawHub = async ({
+  req,
+  res,
+  body,
+  pathValue,
+  baseUrl,
+  proxyToken,
+  hasProxyConfig,
+}) => {
+  const type = getLegacyClawHubAggregateType(pathValue, req.query.type);
+  const query = {
+    ...req.query,
+    type,
+  };
+  const proxyBaseUrlCandidates = hasProxyConfig
+    ? getProxyBaseUrlCandidates("clawhub", baseUrl)
+    : getProxyBaseUrlCandidates("clawhub", PUBLIC_API_FALLBACK_BASE_URL);
+  let proxyResult;
+
+  for (const candidateBaseUrl of proxyBaseUrlCandidates) {
+    try {
+      const result = await fetchProxyTarget({
+        targetUrl: buildProxyTargetUrl(candidateBaseUrl, "clawhub", query),
+        req,
+        body,
+        proxyToken,
+      });
+      if (result.contentType.includes("application/json") && result.response.ok) {
+        proxyResult = result;
+        break;
+      }
+    } catch {
+      // Try the next configured ClawHub proxy target.
+    }
+  }
+
+  if (!proxyResult) {
+    sendLocalizedClawHubUnavailable(
+      req,
+      res,
+      "ClawHub legacy upstream unavailable",
+      type
+    );
+    return;
+  }
+
+  const locale =
+    normalizeReadableLocale(normalizeQueryValue(req.query.locale, "zh-CN")) ||
+    "zh-CN";
+  try {
+    res.status(proxyResult.response.status);
+    res.setHeader("content-type", proxyResult.contentType);
+    res.send(
+      JSON.stringify(localizeClawHubProxyResult(JSON.parse(proxyResult.text), locale, type))
+    );
+  } catch {
+    sendLocalizedClawHubUnavailable(
+      req,
+      res,
+      "ClawHub legacy upstream returned invalid JSON",
+      type
+    );
+  }
+};
+
 export default async function handler(req, res) {
   const queryPath = Array.isArray(req.query.path)
     ? req.query.path.join("/")
@@ -2004,6 +2084,19 @@ export default async function handler(req, res) {
   const baseUrl = process.env.INTERNAL_API_BASE_URL;
   const proxyToken = process.env.INTERNAL_PROXY_TOKEN;
   const hasProxyConfig = Boolean(baseUrl && proxyToken);
+
+  if (pathValue === "clawhub-skills" || pathValue === "clawhub-plugins") {
+    await handleLegacyClawHub({
+      req,
+      res,
+      body,
+      pathValue,
+      baseUrl,
+      proxyToken,
+      hasProxyConfig,
+    });
+    return;
+  }
 
   if (!hasProxyConfig && !PUBLIC_API_FALLBACK_PATHS.has(pathValue)) {
     res.status(500).json({ code: 500, message: "API proxy is not configured" });
