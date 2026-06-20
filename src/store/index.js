@@ -831,6 +831,25 @@ export const mainStore = defineStore("mainData", {
     setActiveCategory(name) {
       this.activeCategory = name;
     },
+    reorderVisibleNews(orderedNames = [], scopedNames = orderedNames) {
+      const scopedSet = new Set(scopedNames.filter(Boolean));
+      const orderedItems = orderedNames
+        .map((name) => this.newsArr.find((item) => item.name === name))
+        .filter(Boolean);
+      if (!scopedSet.size || !orderedItems.length) return;
+
+      let scopedIndex = 0;
+      this.newsArr = this.newsArr
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map((item) =>
+          scopedSet.has(item.name) ? orderedItems[scopedIndex++] || item : item
+        )
+        .map((item, index) => ({
+          ...item,
+          order: index,
+        }));
+    },
     setAnalyticsConsent(value) {
       this.analyticsConsent = value;
     },

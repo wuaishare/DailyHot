@@ -32,6 +32,9 @@ const PROXY_LOCAL_QUERY_PARAMS = new Set([
   "verify",
   "browserVerify",
 ]);
+const PUBLIC_API_FALLBACK_BASE_URL =
+  process.env.INTERNAL_API_FALLBACK_BASE_URL || "https://hotapi2.wuaishare.cn";
+const PUBLIC_API_FALLBACK_PATHS = new Set(["clawhub", "openrouter-rankings"]);
 const DESIGNARENA_LEADERBOARD_URL =
   "https://www.designarena.ai/api/leaderboard";
 const DESIGNARENA_JUDGE_SCORES_URL =
@@ -1437,6 +1440,48 @@ const handleDesignArena = async (req, res) => {
   }
 };
 
+const buildProxyTargetUrl = (baseUrl, pathValue, query) => {
+  const targetUrl = new URL(`${baseUrl.replace(/\/+$/, "")}/${pathValue}`);
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (PROXY_LOCAL_QUERY_PARAMS.has(key)) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => targetUrl.searchParams.append(key, item));
+      return;
+    }
+    if (typeof value === "string") {
+      targetUrl.searchParams.set(key, value);
+    }
+  });
+
+  return targetUrl;
+};
+
+const getProxyBaseUrlCandidates = (pathValue, baseUrl) => {
+  const candidates = [baseUrl];
+  if (PUBLIC_API_FALLBACK_PATHS.has(pathValue) && PUBLIC_API_FALLBACK_BASE_URL) {
+    candidates.push(PUBLIC_API_FALLBACK_BASE_URL);
+  }
+  return [...new Set(candidates.map((url) => url?.replace(/\/+$/, "")).filter(Boolean))];
+};
+
+const fetchProxyTarget = async ({ targetUrl, req, body, proxyToken }) => {
+  const response = await fetch(targetUrl, {
+    method: req.method,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": req.headers["content-type"] || "application/json",
+      Authorization: req.headers.authorization || "",
+      "User-Agent": "DailyHot-Internal-Proxy/1.0",
+      ...(proxyToken ? { "X-Internal-Proxy-Token": proxyToken } : {}),
+    },
+    body,
+  });
+  const contentType = response.headers.get("content-type") || "application/json";
+  const text = await response.text();
+  return { response, contentType, text };
+};
+
 export default async function handler(req, res) {
   const queryPath = Array.isArray(req.query.path)
     ? req.query.path.join("/")
@@ -1479,39 +1524,42 @@ export default async function handler(req, res) {
 
   const baseUrl = process.env.INTERNAL_API_BASE_URL;
   const proxyToken = process.env.INTERNAL_PROXY_TOKEN;
+  const hasProxyConfig = Boolean(baseUrl && proxyToken);
 
-  if (!baseUrl || !proxyToken) {
+  if (!hasProxyConfig && !PUBLIC_API_FALLBACK_PATHS.has(pathValue)) {
     res.status(500).json({ code: 500, message: "API proxy is not configured" });
     return;
   }
 
-  const targetUrl = new URL(`${baseUrl.replace(/\/+$/, "")}/${pathValue}`);
+  const proxyBaseUrlCandidates = hasProxyConfig
+    ? getProxyBaseUrlCandidates(pathValue, baseUrl)
+    : getProxyBaseUrlCandidates(pathValue, PUBLIC_API_FALLBACK_BASE_URL);
+  let proxyResult;
 
-  Object.entries(req.query).forEach(([key, value]) => {
-    if (PROXY_LOCAL_QUERY_PARAMS.has(key)) return;
-    if (Array.isArray(value)) {
-      value.forEach((item) => targetUrl.searchParams.append(key, item));
-      return;
-    }
-    if (typeof value === "string") {
-      targetUrl.searchParams.set(key, value);
-    }
-  });
+  for (const candidateBaseUrl of proxyBaseUrlCandidates) {
+    try {
+      const result = await fetchProxyTarget({
+        targetUrl: buildProxyTargetUrl(candidateBaseUrl, pathValue, req.query),
+        req,
+        body,
+        proxyToken,
+      });
+      const isJson = result.contentType.includes("application/json");
+      const shouldTryNext =
+        PUBLIC_API_FALLBACK_PATHS.has(pathValue) &&
+        proxyBaseUrlCandidates[proxyBaseUrlCandidates.length - 1] !== candidateBaseUrl &&
+        (!isJson || !result.response.ok);
 
-  let response;
-  try {
-    response = await fetch(targetUrl, {
-      method: req.method,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": req.headers["content-type"] || "application/json",
-        Authorization: req.headers.authorization || "",
-        "User-Agent": "DailyHot-Internal-Proxy/1.0",
-        "X-Internal-Proxy-Token": proxyToken,
-      },
-      body,
-    });
-  } catch (error) {
+      if (!shouldTryNext) {
+        proxyResult = result;
+        break;
+      }
+    } catch {
+      // Try the public fallback below for supported ranking sources.
+    }
+  }
+
+  if (!proxyResult) {
     res.status(502).json({
       code: 502,
       message: "API proxy upstream unavailable",
@@ -1519,8 +1567,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const contentType = response.headers.get("content-type") || "application/json";
-  const text = await response.text();
+  const { response, contentType, text } = proxyResult;
   if (!contentType.includes("application/json")) {
     res.status(502).json({
       code: 502,

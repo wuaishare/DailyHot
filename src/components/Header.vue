@@ -868,8 +868,9 @@ onBeforeUnmount(() => {
 
   .category-select {
     display: flex;
+    align-self: stretch;
     justify-content: center;
-    padding: 8px 0;
+    padding: 0;
     :deep(.n-select) {
       min-width: 240px;
     }
@@ -880,9 +881,20 @@ onBeforeUnmount(() => {
     }
     .category-nav {
       display: flex;
+      align-items: stretch;
       justify-content: center;
       width: 100%;
+      :deep(.n-space) {
+        min-height: 56px;
+        align-items: stretch !important;
+      }
+      :deep(.n-space > div) {
+        display: flex;
+        align-items: stretch;
+      }
       .cat-btn {
+        height: 100%;
+        padding: 0 2px;
         font-weight: 700;
         font-size: 18px;
       }
@@ -929,6 +941,9 @@ onBeforeUnmount(() => {
     .category-select {
       .category-nav .cat-btn {
         font-size: 16px;
+      }
+      .category-nav :deep(.n-space) {
+        min-height: 39px;
       }
     }
   }
