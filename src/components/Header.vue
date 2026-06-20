@@ -21,24 +21,31 @@
       </div>
       <div v-else class="category-select">
         <div v-if="isSettingPage" class="category-back">
-          <n-button size="small" type="primary" strong @click="router.push(buildHomePath(locale))">
-            {{ t("common.backHome") }}
-          </n-button>
+          <div class="category-hit-area" @click="goHome">
+            <n-button size="small" type="primary" strong @click.stop="goHome">
+              {{ t("common.backHome") }}
+            </n-button>
+          </div>
         </div>
         <div v-else-if="!isSmallScreen" class="category-nav">
           <n-space align="center" justify="center" wrap>
-            <n-button
+            <div
               v-for="cat in categoryNavOptions"
               :key="cat.value"
-              size="small"
-              text
-              strong
-              :type="cat.value === activeCategoryLocal ? 'primary' : 'default'"
-              class="cat-btn"
-              @click="activeCategoryLocal = cat.value"
+              class="category-hit-area"
+              @click="selectCategory(cat.value)"
             >
-              {{ cat.label }}
-            </n-button>
+              <n-button
+                size="small"
+                text
+                strong
+                :type="cat.value === activeCategoryLocal ? 'primary' : 'default'"
+                class="cat-btn"
+                @click.stop="selectCategory(cat.value)"
+              >
+                {{ cat.label }}
+              </n-button>
+            </div>
           </n-space>
         </div>
         <n-select
@@ -348,6 +355,12 @@ const activeCategoryLocal = computed({
     }
   },
 });
+const selectCategory = (value) => {
+  activeCategoryLocal.value = value;
+};
+const goHome = () => {
+  router.push(buildHomePath(locale.value));
+};
 const availableCategorySet = computed(() => {
   const availableNews = store.newsArr.filter((item) => item.show);
   return new Set(availableNews.map((item) => item.category || "综合"));
@@ -877,6 +890,7 @@ onBeforeUnmount(() => {
     .category-back {
       display: flex;
       justify-content: center;
+      align-items: stretch;
       width: 100%;
     }
     .category-nav {
@@ -892,11 +906,30 @@ onBeforeUnmount(() => {
         display: flex;
         align-items: stretch;
       }
+      .category-hit-area {
+        min-height: 56px;
+      }
       .cat-btn {
         height: 100%;
         padding: 0 2px;
         font-weight: 700;
         font-size: 18px;
+      }
+    }
+    .category-hit-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: stretch;
+      cursor: pointer;
+    }
+  }
+
+  &.expanded {
+    .category-select {
+      .category-hit-area {
+        margin-block: -16px;
+        padding-block: 16px;
       }
     }
   }
