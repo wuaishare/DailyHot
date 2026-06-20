@@ -27,6 +27,11 @@ const READABLE_TRANSLATE_TIMEOUT_MS = 6000;
 const READABLE_TRANSLATE_CONCURRENCY = 4;
 const READABLE_TRANSLATE_MAX_TEXTS = 50;
 const READABLE_TRANSLATE_MAX_CHARS = 500;
+const PROXY_LOCAL_QUERY_PARAMS = new Set([
+  "path",
+  "verify",
+  "browserVerify",
+]);
 const DESIGNARENA_LEADERBOARD_URL =
   "https://www.designarena.ai/api/leaderboard";
 const DESIGNARENA_JUDGE_SCORES_URL =
@@ -1483,7 +1488,7 @@ export default async function handler(req, res) {
   const targetUrl = new URL(`${baseUrl.replace(/\/+$/, "")}/${pathValue}`);
 
   Object.entries(req.query).forEach(([key, value]) => {
-    if (key === "path") return;
+    if (PROXY_LOCAL_QUERY_PARAMS.has(key)) return;
     if (Array.isArray(value)) {
       value.forEach((item) => targetUrl.searchParams.append(key, item));
       return;
