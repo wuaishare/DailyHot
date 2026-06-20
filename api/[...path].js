@@ -32,8 +32,9 @@ const PROXY_LOCAL_QUERY_PARAMS = new Set([
   "verify",
   "browserVerify",
 ]);
+const PUBLIC_API_DEFAULT_FALLBACK_BASE_URL = "https://hotapi2.wuaishare.cn";
 const PUBLIC_API_FALLBACK_BASE_URL =
-  process.env.INTERNAL_API_FALLBACK_BASE_URL || "https://hotapi2.wuaishare.cn";
+  process.env.INTERNAL_API_FALLBACK_BASE_URL || PUBLIC_API_DEFAULT_FALLBACK_BASE_URL;
 const PUBLIC_API_FALLBACK_PATHS = new Set(["clawhub", "openrouter-rankings"]);
 const DESIGNARENA_LEADERBOARD_URL =
   "https://www.designarena.ai/api/leaderboard";
@@ -1461,6 +1462,7 @@ const getProxyBaseUrlCandidates = (pathValue, baseUrl) => {
   const candidates = [baseUrl];
   if (PUBLIC_API_FALLBACK_PATHS.has(pathValue) && PUBLIC_API_FALLBACK_BASE_URL) {
     candidates.push(PUBLIC_API_FALLBACK_BASE_URL);
+    candidates.push(PUBLIC_API_DEFAULT_FALLBACK_BASE_URL);
   }
   return [...new Set(candidates.map((url) => url?.replace(/\/+$/, "")).filter(Boolean))];
 };
