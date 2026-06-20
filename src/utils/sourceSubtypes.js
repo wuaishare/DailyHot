@@ -22,6 +22,8 @@ const SOURCE_SUBTYPE_GROUPS = {
       items: [
         { label: "最新回复", value: "new" },
         { label: "最新发表", value: "newthread" },
+        { label: "最新热门", value: "hot" },
+        { label: "最新精华", value: "digest" },
       ],
     },
   ],
@@ -32,6 +34,251 @@ const SOURCE_SUBTYPE_GROUPS = {
       items: [
         { label: "首页", value: "index" },
         { label: "精品", value: "featured" },
+        { label: "默认", value: "default" },
+        { label: "排行", value: "rank" },
+        { label: "最新", value: "latest" },
+      ],
+    },
+  ],
+  ithome: [
+    {
+      key: "period",
+      label: "周期",
+      items: [
+        { label: "日榜", value: "day" },
+        { label: "周榜", value: "week" },
+        { label: "热评榜", value: "comments" },
+        { label: "月榜", value: "month" },
+      ],
+    },
+    {
+      key: "feed",
+      label: "资讯",
+      items: [
+        { label: "资讯热榜", value: "hot" },
+        { label: "滚动新闻", value: "list" },
+      ],
+    },
+  ],
+  "sina-news": [
+    {
+      key: "rank",
+      label: "榜单",
+      items: [
+        { label: "总排行", value: "1" },
+        { label: "视频排行", value: "2" },
+        { label: "图片排行", value: "3" },
+        { label: "国内新闻", value: "4" },
+        { label: "国际新闻", value: "5" },
+        { label: "社会新闻", value: "6" },
+        { label: "体育新闻", value: "7" },
+        { label: "财经新闻", value: "8" },
+        { label: "娱乐新闻", value: "9" },
+        { label: "科技新闻", value: "10" },
+        { label: "军事新闻", value: "11" },
+      ],
+    },
+  ],
+  bilibili: [
+    {
+      key: "partition",
+      label: "分区",
+      items: [
+        { label: "全站", value: "0" },
+        { label: "动画", value: "1" },
+        { label: "音乐", value: "3" },
+        { label: "游戏", value: "4" },
+        { label: "娱乐", value: "5" },
+        { label: "鬼畜", value: "119" },
+        { label: "舞蹈", value: "129" },
+        { label: "时尚", value: "155" },
+        { label: "生活", value: "160" },
+        { label: "国创相关", value: "168" },
+        { label: "影视", value: "181" },
+        { label: "科技", value: "188" },
+      ],
+    },
+  ],
+  smzdm: [
+    {
+      key: "period",
+      label: "周期",
+      items: [
+        { label: "今日热门", value: "1" },
+        { label: "周热门", value: "7" },
+        { label: "月热门", value: "30" },
+      ],
+    },
+  ],
+  sina: [
+    {
+      key: "rank",
+      label: "榜单",
+      items: [
+        { label: "新浪热榜", value: "all" },
+        { label: "热议榜", value: "hotcmnt" },
+        { label: "视频热榜", value: "minivideo" },
+        { label: "娱乐热榜", value: "ent" },
+        { label: "AI热榜", value: "ai" },
+        { label: "汽车热榜", value: "auto" },
+        { label: "育儿热榜", value: "mother" },
+        { label: "时尚热榜", value: "fashion" },
+        { label: "旅游热榜", value: "travel" },
+        { label: "ESG热榜", value: "esg" },
+      ],
+    },
+  ],
+  weread: [
+    {
+      key: "rank",
+      label: "榜单",
+      items: [
+        { label: "飙升榜", value: "rising" },
+        { label: "热搜榜", value: "hot_search" },
+        { label: "新书榜", value: "newbook" },
+        { label: "小说榜", value: "general_novel_rising" },
+        { label: "总榜", value: "all" },
+      ],
+    },
+  ],
+  "36kr": [
+    {
+      key: "rank",
+      label: "榜单",
+      items: [
+        { label: "人气榜", value: "hot" },
+        { label: "视频榜", value: "video" },
+        { label: "热议榜", value: "comment" },
+        { label: "收藏榜", value: "collect" },
+      ],
+    },
+  ],
+  hupu: [
+    {
+      key: "board",
+      label: "板块",
+      items: [
+        { label: "主干道", value: "1" },
+        { label: "恋爱区", value: "6" },
+        { label: "校园区", value: "11" },
+        { label: "历史区", value: "12" },
+        { label: "摄影区", value: "612" },
+      ],
+    },
+  ],
+  juejin: [
+    {
+      key: "category",
+      label: "分类",
+      items: [
+        { label: "综合", value: "1" },
+        { label: "后端", value: "6809637769959178254" },
+        { label: "前端", value: "6809637767543259144" },
+        { label: "Android", value: "6809635626879549454" },
+        { label: "iOS", value: "6809635626661445640" },
+        { label: "人工智能", value: "6809637773935378440" },
+        { label: "开发工具", value: "6809637771511070734" },
+        { label: "代码人生", value: "6809637776263217160" },
+        { label: "阅读", value: "6809637772874219534" },
+      ],
+    },
+  ],
+  v2ex: [
+    {
+      key: "topic",
+      label: "主题",
+      items: [
+        { label: "最热主题", value: "hot" },
+        { label: "最新主题", value: "latest" },
+      ],
+    },
+  ],
+  miyoushe: [
+    {
+      key: "news",
+      label: "动态",
+      items: [
+        { label: "公告", value: "1" },
+        { label: "活动", value: "2" },
+        { label: "资讯", value: "3" },
+      ],
+    },
+  ],
+  genshin: [
+    {
+      key: "news",
+      label: "动态",
+      items: [
+        { label: "公告", value: "1" },
+        { label: "活动", value: "2" },
+        { label: "资讯", value: "3" },
+      ],
+    },
+  ],
+  starrail: [
+    {
+      key: "news",
+      label: "动态",
+      items: [
+        { label: "公告", value: "1" },
+        { label: "活动", value: "2" },
+        { label: "资讯", value: "3" },
+      ],
+    },
+  ],
+  honkai: [
+    {
+      key: "news",
+      label: "动态",
+      items: [
+        { label: "公告", value: "1" },
+        { label: "活动", value: "2" },
+        { label: "资讯", value: "3" },
+      ],
+    },
+  ],
+  sspai: [
+    {
+      key: "channel",
+      label: "频道",
+      items: [
+        { label: "热门文章", value: "0" },
+        { label: "应用推荐", value: "1" },
+        { label: "生活方式", value: "2" },
+        { label: "效率技巧", value: "3" },
+        { label: "少数派播客", value: "4" },
+      ],
+    },
+  ],
+  acfun: [
+    {
+      key: "partition",
+      label: "分区",
+      items: [
+        { label: "综合", value: "-1" },
+        { label: "动画", value: "1" },
+        { label: "音乐", value: "58" },
+        { label: "游戏", value: "59" },
+        { label: "娱乐", value: "60" },
+        { label: "影视", value: "68" },
+        { label: "体育", value: "69" },
+        { label: "科技", value: "70" },
+        { label: "舞蹈·偶像", value: "123" },
+        { label: "鱼塘", value: "125" },
+        { label: "番剧", value: "155" },
+        { label: "生活", value: "201" },
+      ],
+    },
+  ],
+  "52pojie": [
+    {
+      key: "topic",
+      label: "主题",
+      items: [
+        { label: "最新精华", value: "digest" },
+        { label: "最新热门", value: "hot" },
+        { label: "最新回复", value: "new" },
+        { label: "最新发表", value: "newthread" },
       ],
     },
   ],

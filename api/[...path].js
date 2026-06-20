@@ -35,7 +35,28 @@ const PROXY_LOCAL_QUERY_PARAMS = new Set([
 const PUBLIC_API_DEFAULT_FALLBACK_BASE_URL = "https://hotapi2.wuaishare.cn";
 const PUBLIC_API_FALLBACK_BASE_URL =
   process.env.INTERNAL_API_FALLBACK_BASE_URL || PUBLIC_API_DEFAULT_FALLBACK_BASE_URL;
-const PUBLIC_API_FALLBACK_PATHS = new Set(["clawhub", "openrouter-rankings"]);
+const PUBLIC_API_FALLBACK_PATHS = new Set([
+  "clawhub",
+  "ithome",
+  "openrouter-rankings",
+]);
+const ITHOME_XCVTS_URL = "https://api.xcvts.cn/api/hotlist/ithome";
+const ITHOME_OFFICIAL_RANK_URL = "https://m.ithome.com/rankm/";
+const ITHOME_TYPE_LABELS = {
+  day: "日榜",
+  week: "周榜",
+  comments: "热评榜",
+  month: "月榜",
+  hot: "资讯热榜",
+  list: "滚动新闻",
+};
+const ITHOME_OFFICIAL_RANK_TYPES = {
+  day: "day-rank",
+  week: "week-rank",
+  comments: "hot-comment-rank",
+  month: "month-rank",
+};
+const ITHOME_CACHE_TTL_MS = 10 * 60 * 1000;
 const DESIGNARENA_LEADERBOARD_URL =
   "https://www.designarena.ai/api/leaderboard";
 const DESIGNARENA_JUDGE_SCORES_URL =
@@ -949,6 +970,211 @@ const normalizeQueryValue = (value, fallback = "") => {
   return value || fallback;
 };
 
+const getIthomeType = (type = "") =>
+  Object.prototype.hasOwnProperty.call(ITHOME_TYPE_LABELS, type) ? type : "day";
+
+const getIthomeCacheStore = () => {
+  if (!globalThis.__dailyhotIthomeCache) {
+    globalThis.__dailyhotIthomeCache = new Map();
+  }
+  return globalThis.__dailyhotIthomeCache;
+};
+
+const parseChinaDateTime = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return new Date().toISOString();
+  const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+  const withTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized)
+    ? normalized
+    : `${normalized}+08:00`;
+  const date = new Date(withTimezone);
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+};
+
+const decodeHtmlText = (value = "") =>
+  String(value)
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) =>
+      String.fromCharCode(parseInt(code, 16))
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+
+const buildIthomeResponse = ({ type, data, updateTime, fromCache = false }) => {
+  const timestamp = Date.parse(updateTime) || Date.now();
+  return {
+    code: 200,
+    name: "ithome",
+    title: "IT之家",
+    type: `IT之家${ITHOME_TYPE_LABELS[type]}`,
+    subtitle: ITHOME_TYPE_LABELS[type],
+    description: "IT之家科技数码资讯、日榜、周榜、热评榜、月榜与滚动新闻聚合。",
+    params: {
+      type: {
+        name: "榜单",
+        type: ITHOME_TYPE_LABELS,
+      },
+    },
+    link: type === "list" ? "https://www.ithome.com/" : ITHOME_OFFICIAL_RANK_URL,
+    total: data.length,
+    fromCache,
+    updateTime,
+    data: data.map((item, index) => {
+      const url = item?.url || item?.link || ITHOME_OFFICIAL_RANK_URL;
+      return {
+        id: String(item?.id ?? index + 1),
+        title: decodeHtmlText(item?.title || ""),
+        desc: decodeHtmlText(item?.desc || ""),
+        hot: Number(item?.hot) || Math.max(data.length - index, 0),
+        timestamp,
+        url,
+        mobileUrl: url,
+      };
+    }),
+  };
+};
+
+const normalizeIthomeXcvtsResponse = (payload, type) => {
+  const updateTime = parseChinaDateTime(
+    payload?.update_time || payload?.cache_time || payload?.time
+  );
+  const data = Array.isArray(payload?.data) ? payload.data : [];
+  return buildIthomeResponse({
+    type,
+    updateTime,
+    fromCache: true,
+    data: data.map((item, index) => ({
+      id: item?.id ?? index + 1,
+      title: item?.title || "",
+      desc: item?.category || "",
+      hot: Math.max(data.length - index, 0),
+      url: item?.link,
+    })),
+  });
+};
+
+const parseIthomeOfficialRankItems = (html, type) => {
+  const rankType = ITHOME_OFFICIAL_RANK_TYPES[type];
+  if (!rankType) return [];
+  const marker = `<div class="rank-name" data-rank-type="${rankType}">`;
+  const markerIndex = html.indexOf(marker);
+  if (markerIndex < 0) return [];
+  const boxIndex = html.indexOf('<div class="rank-box"', markerIndex);
+  if (boxIndex < 0) return [];
+  const contentIndex = html.indexOf(">", boxIndex) + 1;
+  const nextMarkerIndex = html.indexOf('<div class="rank-name"', contentIndex);
+  const section = html.slice(
+    contentIndex,
+    nextMarkerIndex > contentIndex ? nextMarkerIndex : undefined
+  );
+  const items = [];
+  const itemPattern = /<div class="placeholder\b[\s\S]*?(?=<div class="placeholder\b|$)/g;
+  for (const match of section.matchAll(itemPattern)) {
+    const block = match[0];
+    const id = block.match(/data-news-id="([^"]+)"/)?.[1];
+    const url = block.match(/<a\s+href="([^"]+)"/)?.[1];
+    const rank = block.match(/<span class="rank-num">([\s\S]*?)<\/span>/)?.[1];
+    const title = block.match(/<p class="plc-title">([\s\S]*?)<\/p>/)?.[1];
+    const time = block.match(/<span class="post-time">([\s\S]*?)<\/span>/)?.[1];
+    const reviews = block.match(/<span class="review-num">([\s\S]*?)<\/span>/)?.[1];
+    if (!title || !url) continue;
+    items.push({
+      id,
+      title,
+      desc: [time, reviews].map(decodeHtmlText).filter(Boolean).join(" · "),
+      hot: Number(decodeHtmlText(rank)) || Math.max(20 - items.length, 1),
+      url,
+    });
+  }
+  return items;
+};
+
+const fetchIthomeOfficialRanking = async (type) => {
+  const response = await fetch(ITHOME_OFFICIAL_RANK_URL, {
+    method: "GET",
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent": "DailyHot-ITHome/1.0",
+    },
+  });
+  if (!response.ok) throw new Error(`ITHome official ${response.status}`);
+  const html = await response.text();
+  const data = parseIthomeOfficialRankItems(html, type);
+  if (!data.length) throw new Error("ITHome official rank section is empty");
+  return buildIthomeResponse({
+    type,
+    data,
+    updateTime: new Date().toISOString(),
+  });
+};
+
+const fetchIthomeXcvtsRanking = async (type) => {
+  const cache = getIthomeCacheStore();
+  const cached = cache.get(type);
+  if (cached && Date.now() - cached.cachedAt < ITHOME_CACHE_TTL_MS) {
+    return { ...cached.value, fromCache: true };
+  }
+
+  const targetUrl = new URL(ITHOME_XCVTS_URL);
+  targetUrl.searchParams.set("type", type);
+  const response = await fetch(targetUrl, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "DailyHot-ITHome/1.0",
+    },
+  });
+  if (!response.ok) throw new Error(`ITHome xcvts ${response.status}`);
+  const payload = await response.json();
+  if (payload?.code !== 200 || !Array.isArray(payload?.data)) {
+    throw new Error("ITHome xcvts response is invalid");
+  }
+  const result = normalizeIthomeXcvtsResponse(payload, type);
+  cache.set(type, { cachedAt: Date.now(), value: result });
+  return result;
+};
+
+const fetchIthomeRanking = async (type) => {
+  const cache = getIthomeCacheStore();
+  const cached = cache.get(type);
+  if (cached && Date.now() - cached.cachedAt < ITHOME_CACHE_TTL_MS) {
+    return { ...cached.value, fromCache: true };
+  }
+
+  if (ITHOME_OFFICIAL_RANK_TYPES[type]) {
+    try {
+      const result = await fetchIthomeOfficialRanking(type);
+      cache.set(type, { cachedAt: Date.now(), value: result });
+      return result;
+    } catch (error) {
+      if (!["day", "week", "month"].includes(type)) throw error;
+      console.warn("ITHome official fetch failed", error);
+    }
+  }
+  return fetchIthomeXcvtsRanking(type);
+};
+
+const handleIthome = async (req, res) => {
+  if (req.method !== "GET") return false;
+  const type = getIthomeType(normalizeQueryValue(req.query.type, "day"));
+
+  try {
+    const result = await fetchIthomeRanking(type);
+    res.status(200).json(result);
+    return true;
+  } catch (error) {
+    console.warn("ITHome direct fetch failed", error);
+    return false;
+  }
+};
+
 const CLAWHUB_TYPE_LABELS = {
   "skills-recommended": {
     "zh-CN": "推荐技能榜",
@@ -1527,6 +1753,11 @@ export default async function handler(req, res) {
 
   if (pathValue === "readable-translate" && req.method === "POST") {
     const handled = await handleReadableTranslate(body, res);
+    if (handled) return;
+  }
+
+  if (pathValue === "ithome") {
+    const handled = await handleIthome(req, res);
     if (handled) return;
   }
 
