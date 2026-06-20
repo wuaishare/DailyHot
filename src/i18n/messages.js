@@ -1075,9 +1075,9 @@ export const messages = {
       categoryKeywords:
         "{category},ランキング,トレンド,リアルタイム,DailyHot",
       sourceDescription:
-        "{label} の最新ランキングをすばやく閲覧できる一覧ページです。",
+        "{label}の最新ランキングをすばやく閲覧できる一覧ページです。",
       sourceSubtypeDescription:
-        "{label} の {subtype} ランキングをすばやく閲覧できる一覧ページです。",
+        "{label}の{subtype}をすばやく閲覧できる一覧ページです。",
       sourceKeywords:
         "{label},ランキング,トレンド,リアルタイム,DailyHot",
       sourceSubtypeKeywords:
@@ -1364,7 +1364,7 @@ export const messages = {
       sourceDescription:
         "{label}의 최신 랭킹을 빠르게 탐색할 수 있는 페이지입니다.",
       sourceSubtypeDescription:
-        "{label}의 {subtype} 랭킹을 빠르게 탐색할 수 있는 페이지입니다.",
+        "{label} · {subtype} 페이지에서 최신 흐름을 빠르게 확인할 수 있습니다.",
       sourceKeywords:
         "{label},랭킹,트렌드,실시간,DailyHot",
       sourceSubtypeKeywords:
