@@ -2168,6 +2168,13 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "注目",
     ko: "추천작",
   },
+  精选: {
+    "zh-CN": "精选",
+    "zh-TW": "精選",
+    en: "Featured",
+    ja: "注目",
+    ko: "추천",
+  },
   "Featured Skills": {
     "zh-CN": "精选技能榜",
     "zh-TW": "精選技能榜",
