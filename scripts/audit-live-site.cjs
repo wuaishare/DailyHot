@@ -15,7 +15,7 @@ const withVerify = (path) => {
   return url.toString();
 };
 
-const request = (url, options = {}) =>
+const request = (url, options = {}, redirectCount = 0) =>
   new Promise((resolve, reject) => {
     const body = options.body ? Buffer.from(options.body) : null;
     const req = https.request(
@@ -38,6 +38,21 @@ const request = (url, options = {}) =>
         const chunks = [];
         res.on("data", (chunk) => chunks.push(chunk));
         res.on("end", () => {
+          if (
+            res.statusCode >= 300 &&
+            res.statusCode < 400 &&
+            res.headers.location &&
+            redirectCount < 5
+          ) {
+            resolve(
+              request(
+                new URL(res.headers.location, url).toString(),
+                options,
+                redirectCount + 1
+              )
+            );
+            return;
+          }
           resolve({
             statusCode: res.statusCode,
             headers: res.headers,
@@ -52,6 +67,27 @@ const request = (url, options = {}) =>
     req.end();
   });
 
+const requestWithRetry = async (url, options = {}, attempts = 2) => {
+  let lastResponse;
+  let lastError;
+  for (let index = 0; index < attempts; index += 1) {
+    try {
+      const response = await request(url, options);
+      lastResponse = response;
+      if (response.statusCode < 500 && response.statusCode !== 429) {
+        return response;
+      }
+    } catch (error) {
+      lastError = error;
+    }
+    if (index < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
+  }
+  if (lastResponse) return lastResponse;
+  throw lastError;
+};
+
 const extract = (html, pattern) => html.match(pattern)?.[1] || "";
 
 const checks = [];
@@ -62,7 +98,7 @@ const assert = (condition, message) => {
 };
 
 const assertHtml = async (path, expectations) => {
-  const response = await request(withVerify(path));
+  const response = await requestWithRetry(withVerify(path));
   assert(response.statusCode === 200, `HTTP ${response.statusCode}`);
   const title = extract(response.body, /<title>(.*?)<\/title>/);
   const canonical = extract(
@@ -204,7 +240,7 @@ addCheck("route SEO: clawhub skill installs mention OpenClaw", () =>
 );
 
 addCheck("sitemap canonical route set", async () => {
-  const response = await request(withVerify("/sitemap.xml"));
+  const response = await requestWithRetry(withVerify("/sitemap.xml"));
   assert(response.statusCode === 200, `HTTP ${response.statusCode}`);
   const xml = response.body;
   const expectations = {
@@ -238,7 +274,7 @@ addCheck("api: ithome subtype coverage", async () => {
     const url = new URL(`${siteUrl}/api/ithome`);
     url.searchParams.set("cache", "false");
     url.searchParams.set("type", type);
-    const response = await request(url.toString());
+    const response = await requestWithRetry(url.toString(), {}, 3);
     assert(response.statusCode === 200, `${type}: HTTP ${response.statusCode}`);
     const payload = JSON.parse(response.body);
     assert(payload.code === 200, `${type}: API code ${payload.code}`);
@@ -262,7 +298,7 @@ addCheck("api: AI ranking endpoints are available", async () => {
     const url = new URL(`${siteUrl}/api/${source}`);
     url.searchParams.set("cache", "false");
     url.searchParams.set("type", type);
-    const response = await request(url.toString());
+    const response = await requestWithRetry(url.toString(), {}, 3);
     assert(response.statusCode === 200, `${source}/${type}: HTTP ${response.statusCode}`);
     const payload = JSON.parse(response.body);
     assert(payload.code === 200, `${source}/${type}: API code ${payload.code}`);
@@ -279,16 +315,20 @@ addCheck("api: readable translation preserves model terms", async () => {
   const locales = ["zh-CN", "zh-TW", "ja", "ko"];
   const results = [];
   for (const locale of locales) {
-    const response = await request(`${siteUrl}/api/readable-translate`, {
-      method: "POST",
-      body: JSON.stringify({
-        locale,
-        texts: [
-          "Statement on the US government directive to suspend access to Fable 5",
-          "Introducing Claude Opus 4.8",
-        ],
-      }),
-    });
+    const response = await requestWithRetry(
+      `${siteUrl}/api/readable-translate`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          locale,
+          texts: [
+            "Statement on the US government directive to suspend access to Fable 5",
+            "Introducing Claude Opus 4.8",
+          ],
+        }),
+      },
+      3
+    );
     assert(response.statusCode === 200, `${locale}: HTTP ${response.statusCode}`);
     const payload = JSON.parse(response.body);
     assert(payload.success, `${locale}: translation API did not report success`);
