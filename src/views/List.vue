@@ -412,8 +412,7 @@ const activeTypeOptions = computed(() =>
 const resolveSubType = (route) => {
   const options = activeTypeOptions.value;
   const candidate = route?.params?.subtypeSlug || route?.query?.subtype;
-  const stored = readSourceSubtype(listType.value);
-  return resolveSourceSubtype(options, candidate || stored);
+  return resolveSourceSubtype(options, candidate);
 };
 
 const enhanceListResult = (result, targetLocale = locale.value) =>

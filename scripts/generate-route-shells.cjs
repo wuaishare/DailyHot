@@ -157,6 +157,7 @@ const normalizeTitleLabel = (value = "") =>
   String(value)
     .replace(/\s*·\s*/g, " ")
     .replace(/\s+/g, " ")
+    .replace(/([\u4e00-\u9fff])\s+([\u4e00-\u9fff])/gu, "$1$2")
     .trim();
 
 const keywordTokensFrom = (value) =>
