@@ -42,6 +42,7 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
 ]);
 const ITHOME_XCVTS_URL = "https://api.xcvts.cn/api/hotlist/ithome";
 const ITHOME_OFFICIAL_RANK_URL = "https://m.ithome.com/rankm/";
+const ITHOME_DIRECT_FETCH_TIMEOUT_MS = 6000;
 const ITHOME_TYPE_LABELS = {
   day: "日榜",
   week: "周榜",
@@ -973,6 +974,19 @@ const normalizeQueryValue = (value, fallback = "") => {
 const getIthomeType = (type = "") =>
   Object.prototype.hasOwnProperty.call(ITHOME_TYPE_LABELS, type) ? type : "day";
 
+const fetchWithTimeout = async (url, options = {}, timeoutMs = ITHOME_DIRECT_FETCH_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 const getIthomeCacheStore = () => {
   if (!globalThis.__dailyhotIthomeCache) {
     globalThis.__dailyhotIthomeCache = new Map();
@@ -1097,7 +1111,7 @@ const parseIthomeOfficialRankItems = (html, type) => {
 };
 
 const fetchIthomeOfficialRanking = async (type) => {
-  const response = await fetch(ITHOME_OFFICIAL_RANK_URL, {
+  const response = await fetchWithTimeout(ITHOME_OFFICIAL_RANK_URL, {
     method: "GET",
     headers: {
       Accept: "text/html,application/xhtml+xml",
@@ -1124,7 +1138,7 @@ const fetchIthomeXcvtsRanking = async (type) => {
 
   const targetUrl = new URL(ITHOME_XCVTS_URL);
   targetUrl.searchParams.set("type", type);
-  const response = await fetch(targetUrl, {
+  const response = await fetchWithTimeout(targetUrl, {
     method: "GET",
     headers: {
       Accept: "application/json",

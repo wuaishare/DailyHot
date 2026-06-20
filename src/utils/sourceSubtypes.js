@@ -33,10 +33,8 @@ const SOURCE_SUBTYPE_GROUPS = {
       label: "",
       items: [
         { label: "首页", value: "index" },
-        { label: "精品", value: "featured" },
         { label: "默认", value: "default" },
         { label: "排行", value: "rank" },
-        { label: "最新", value: "latest" },
       ],
     },
   ],
@@ -259,19 +257,6 @@ const SOURCE_SUBTYPE_GROUPS = {
         { label: "公告", value: "1" },
         { label: "活动", value: "2" },
         { label: "资讯", value: "3" },
-      ],
-    },
-  ],
-  sspai: [
-    {
-      key: "channel",
-      label: "频道",
-      items: [
-        { label: "热门文章", value: "0" },
-        { label: "应用推荐", value: "1" },
-        { label: "生活方式", value: "2" },
-        { label: "效率技巧", value: "3" },
-        { label: "少数派播客", value: "4" },
       ],
     },
   ],
@@ -558,7 +543,6 @@ const SOURCE_SUBTYPE_GROUPS = {
         { label: "工具调用", value: "best-ai-for-tool-calling" },
         { label: "推理", value: "best-ai-for-reasoning" },
         { label: "图像生成", value: "best-ai-for-image-generation" },
-        { label: "视频生成", value: "best-ai-for-video-generation" },
       ],
     },
   ],
