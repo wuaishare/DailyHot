@@ -285,9 +285,15 @@ addCheck("api: ithome subtype coverage", async () => {
 });
 
 addCheck("api: bilibili popular coverage", async () => {
-  const subtypes = ["all", "weekly", "history", "rank", "music"];
+  const subtypes = {
+    all: "综合热门",
+    weekly: "每周必看",
+    history: "入站必刷",
+    rank: "排行榜",
+    music: "全站音乐榜",
+  };
   const results = [];
-  for (const type of subtypes) {
+  for (const [type, expectedLabel] of Object.entries(subtypes)) {
     const url = new URL(`${siteUrl}/api/bilibili`);
     url.searchParams.set("cache", "false");
     url.searchParams.set("type", type);
@@ -296,7 +302,12 @@ addCheck("api: bilibili popular coverage", async () => {
     const payload = JSON.parse(response.body);
     assert(payload.code === 200, `${type}: API code ${payload.code}`);
     assert(Array.isArray(payload.data) && payload.data.length > 0, `${type}: empty data`);
-    results.push(`${type}:${payload.subtitle || payload.type}:${payload.data.length}`);
+    const actualLabel = payload.subtitle || payload.type || "";
+    assert(
+      actualLabel === expectedLabel,
+      `${type}: subtype mismatch, expected ${expectedLabel}, got ${actualLabel}`
+    );
+    results.push(`${type}:${actualLabel}:${payload.data.length}`);
   }
   return results;
 });
@@ -360,6 +371,38 @@ addCheck("api: readable translation preserves model terms", async () => {
     results.push(`${locale}:${translated.replace(/\n/g, " | ")}`);
   }
   return results;
+});
+
+addCheck("api: readable translation localizes zh-CN news titles", async () => {
+  const response = await requestWithRetry(
+    `${siteUrl}/api/readable-translate`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        locale: "zh-CN",
+        texts: [
+          "New usage analytics and updated spend controls for enterprises",
+          "Hyundai buys Boston Dynamics",
+          "Securing the future of AI agents",
+        ],
+      }),
+    },
+    3
+  );
+  assert(response.statusCode === 200, `HTTP ${response.statusCode}`);
+  const payload = JSON.parse(response.body);
+  assert(payload.success, "translation API did not report success");
+  const translatedItems = payload.data || payload.items || [];
+  const translated = translatedItems.map((item) => item.translated || "");
+  assert(translated.length === 3, `unexpected translated item count: ${translated.length}`);
+  translated.forEach((value, index) => {
+    assert(/[\u3400-\u9fff]/.test(value), `item ${index} has no zh-CN text: ${value}`);
+    assert(
+      value !== translatedItems[index]?.original,
+      `item ${index} was not translated: ${value}`
+    );
+  });
+  return translated;
 });
 
 const main = async () => {

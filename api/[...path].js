@@ -43,6 +43,7 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
 ]);
 const BILIBILI_API_BASE_URL = "https://api.bilibili.com";
 const BILIBILI_WEB_BASE_URL = "https://www.bilibili.com";
+const BILIBILI_RANK_REFERER = `${BILIBILI_WEB_BASE_URL}/v/popular/rank/all`;
 const BILIBILI_TYPE_LABELS = {
   all: "综合热门",
   weekly: "每周必看",
@@ -1080,10 +1081,13 @@ const buildBilibiliResponse = ({ type, items, updateTime = new Date().toISOStrin
   data: normalizeBilibiliItems(items),
 });
 
-const fetchBilibiliJson = async (url) => {
+const fetchBilibiliJson = async (url, options = {}) => {
   const response = await fetchWithTimeout(url, {
     method: "GET",
-    headers: BILIBILI_COMMON_HEADERS,
+    headers: {
+      ...BILIBILI_COMMON_HEADERS,
+      ...(options.referer ? { Referer: options.referer } : {}),
+    },
   });
   if (!response.ok) throw new Error(`Bilibili ${response.status}`);
   const payload = await response.json();
@@ -1117,10 +1121,12 @@ const fetchBilibiliItems = async (type) => {
   const urlMap = {
     all: `${BILIBILI_API_BASE_URL}/x/web-interface/popular?pn=1&ps=50`,
     history: `${BILIBILI_API_BASE_URL}/x/web-interface/popular/precious?page_size=50&page=1`,
-    rank: `${BILIBILI_API_BASE_URL}/x/web-interface/ranking/v2?rid=0&type=all`,
-    music: `${BILIBILI_API_BASE_URL}/x/web-interface/ranking/v2?rid=3&type=all`,
+    rank: `${BILIBILI_API_BASE_URL}/x/web-interface/ranking/v2?rid=0&type=all&web_location=333.934`,
+    music: `${BILIBILI_API_BASE_URL}/x/web-interface/ranking/v2?rid=3&type=all&web_location=333.934`,
   };
-  const payload = await fetchBilibiliJson(urlMap[type] || urlMap.all);
+  const payload = await fetchBilibiliJson(urlMap[type] || urlMap.all, {
+    referer: type === "rank" || type === "music" ? BILIBILI_RANK_REFERER : undefined,
+  });
   return {
     items: payload?.data?.list || [],
     updateTime: new Date().toISOString(),

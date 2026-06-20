@@ -14,7 +14,11 @@
     @pointercancel.stop
     @mousedown.stop
     @touchstart.stop
+    @touchmove.stop
+    @touchend.stop
+    @touchcancel.stop
     @click.stop
+    @dragstart.prevent
   >
     <div class="scroll-shell">
       <div

@@ -5,7 +5,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const sourceLabelsPath = path.join(repoRoot, "src", "utils", "sourceLabels.js");
 const sourceSubtypesPath = path.join(repoRoot, "src", "utils", "sourceSubtypes.js");
 const storePath = path.join(repoRoot, "src", "store", "index.js");
-const locales = ["en", "zh-TW", "ja", "ko"];
+const locales = ["zh-CN", "en", "zh-TW", "ja", "ko"];
 
 const read = (filePath) => fs.readFileSync(filePath, "utf8");
 
@@ -60,6 +60,18 @@ const normalizeLabel = (value = "") =>
     .trim();
 
 const containsHan = (value = "") => /[\u3400-\u9fff]/.test(String(value || ""));
+const containsLatin = (value = "") => /[A-Za-z]/.test(String(value || ""));
+
+const isAuditableEnglishPhrase = (value = "") => {
+  const normalized = normalizeLabel(value);
+  if (!containsLatin(normalized)) return false;
+  const words = normalized.match(/[A-Za-z]+(?:[/-][A-Za-z]+)*/g) || [];
+  if (words.length >= 2) return true;
+  return /[&/()]/.test(normalized);
+};
+
+const needsLocaleAudit = (value = "") =>
+  containsHan(value) || isAuditableEnglishPhrase(value);
 
 const hasLocaleLabel = (map, key, locale) =>
   Boolean(map?.[normalizeLabel(key)]?.[locale]);
@@ -71,7 +83,7 @@ const addMissingLocaleIssues = ({
   label,
   context,
 }) => {
-  if (!containsHan(label)) return;
+  if (!needsLocaleAudit(label)) return;
   locales.forEach((locale) => {
     const hasAnyKey = keys.some((key) => hasLocaleLabel(map, key, locale));
     if (!hasAnyKey) {

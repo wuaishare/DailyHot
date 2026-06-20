@@ -12,6 +12,8 @@
       :animation="180"
       filter=".no-card-drag, .no-card-drag *"
       :prevent-on-filter="false"
+      :fallback-tolerance="8"
+      :touch-start-threshold="8"
       ghost-class="news-card-ghost"
       chosen-class="news-card-chosen"
       drag-class="news-card-drag"
