@@ -182,12 +182,7 @@ ${entry.alternates
 
   const robots = `User-agent: *
 Allow: /
-Disallow: /setting
-Disallow: /analytics
-Disallow: /test
-Disallow: /403
-Disallow: /404
-Disallow: /500
+Disallow: /api/
 Sitemap: ${resolvedSiteUrl}/sitemap.xml
 `;
 

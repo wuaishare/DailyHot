@@ -24,6 +24,7 @@ const SYSTEM_ROUTES = [
   { pathname: "/setting", seoKey: "setting", robots: "noindex,nofollow" },
   { pathname: "/analytics", seoKey: "analytics", robots: "noindex,nofollow" },
   { pathname: "/privacy", seoKey: "privacy", robots: "noindex,nofollow" },
+  { pathname: "/test", seoKey: "test", robots: "noindex,nofollow" },
   { pathname: "/403", seoKey: "forbidden", robots: "noindex,nofollow" },
   { pathname: "/404", seoKey: "notFound", robots: "noindex,nofollow" },
   { pathname: "/500", seoKey: "serverError", robots: "noindex,nofollow" },
