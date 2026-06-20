@@ -143,7 +143,11 @@
                     <div class="copy">
                       <n-text
                         class="title"
-                        :class="{ 'no-auto-translate': item.hasReadableTranslation }"
+                        :class="{
+                          'no-auto-translate': item.hasReadableTranslation,
+                          notranslate: item.hasReadableTranslation,
+                        }"
+                        :translate="item.hasReadableTranslation ? 'no' : undefined"
                         v-html="item.displayTitle"
                       />
                       <n-text

@@ -31,6 +31,7 @@ const configureTranslate = (translate) => {
       "flag-icon",
       "locale-option",
       "no-auto-translate",
+      "notranslate",
       "n-icon",
       "n-avatar",
     ]),

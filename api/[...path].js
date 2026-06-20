@@ -278,7 +278,7 @@ const DESIGNARENA_SIGNAL_TYPES = {
       `${labels.composite} ${formatNumber(value, 2)} · ${labels.samples} ${formatInteger(item.scored_generations)}`,
   },
   "fullstack-backend": {
-    title: "后端评分榜",
+    title: "后端能力评分榜",
     dataset: "judge_fullstack",
     metric: "backendScore",
     description: "DesignArena 全栈应用后端能力评分榜",
@@ -401,8 +401,8 @@ const DESIGNARENA_RESPONSE_LOCALIZATIONS = {
   },
   "fullstack-backend": {
     title: {
-      "zh-CN": "后端评分榜",
-      "zh-TW": "後端評分榜",
+      "zh-CN": "后端能力评分榜",
+      "zh-TW": "後端能力評分榜",
       en: "Backend Scores",
       ja: "バックエンドスコア",
       ko: "백엔드 점수",

@@ -100,7 +100,14 @@
                 :title="item.originalTitle || undefined"
                 @click.stop
               >
-                <span class="title-text" :class="{ 'no-auto-translate': item.hasReadableTranslation }">
+                <span
+                  class="title-text"
+                  :class="{
+                    'no-auto-translate': item.hasReadableTranslation,
+                    notranslate: item.hasReadableTranslation,
+                  }"
+                  :translate="item.hasReadableTranslation ? 'no' : undefined"
+                >
                   {{ item.displayTitle }}
                 </span>
               </n-a>
