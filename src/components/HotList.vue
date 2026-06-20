@@ -400,18 +400,40 @@ const enhanceHotListResult = (result, targetLocale = locale.value) =>
       })
     : Promise.resolve(result);
 
+const applyHotListResult = (result) => {
+  listLoading.value = false;
+  hotListData.value = result;
+  updateTime.value = formatTime(result?.updateTime, locale.value);
+  if (scrollbarRef.value) {
+    scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
+  }
+};
+
+const enhanceAndApplyHotListResult = async (result, requestId, shouldTranslate) => {
+  applyHotListResult(result);
+  if (!shouldTranslate) return;
+  try {
+    const nextResult = await enhanceHotListResult(result);
+    if (requestId !== hotListRequestId) return;
+    applyHotListResult(nextResult);
+  } catch {
+    if (requestId !== hotListRequestId) return;
+    applyHotListResult(result);
+  }
+};
+
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (isPrerender) return;
+  const item =
+    store.newsArr.find((item) => item.name == name) ||
+    store.defaultNewsArr.find((item) => item.name == name);
+  if (!item) return;
   const requestId = ++hotListRequestId;
+  const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
+  const shouldTranslate = shouldEnhanceReadableTitles.value;
   try {
     loadingError.value = false;
-    const item =
-      store.newsArr.find((item) => item.name == name) ||
-      store.defaultNewsArr.find((item) => item.name == name);
-    if (!item) return;
-    const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
-    const shouldTranslate = shouldEnhanceReadableTitles.value;
     let response = await requestHotListResult(item, isNew, shouldTranslate, useApi2);
     if (response?.result?.code !== 200 && requestId === hotListRequestId) {
       await new Promise((resolve) => setTimeout(resolve, 800));
@@ -424,42 +446,24 @@ const getHotListsData = async (name, isNew = false) => {
     if (requestId !== hotListRequestId) return;
     if (result.code === 200) {
       store.markAvailable(item.name);
-      const nextResult = shouldTranslate
-        ? await enhanceHotListResult(result)
-        : result;
-      if (requestId !== hotListRequestId) return;
-      listLoading.value = false;
-      hotListData.value = nextResult;
-      // 滚动至顶部
-      if (scrollbarRef.value) {
-        scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
-      }
+      await enhanceAndApplyHotListResult(result, requestId, shouldTranslate);
     } else {
       store.markUnavailable(item.name);
       loadingError.value = true;
       $message.error(result.title + result.message);
     }
   } catch (error) {
-    const item =
-      store.newsArr.find((item) => item.name == name) ||
-      store.defaultNewsArr.find((item) => item.name == name);
-    const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
-    const shouldTranslate = shouldEnhanceReadableTitles.value;
     if (item && requestId === hotListRequestId) {
       try {
         const retryResponse = await requestHotListResult(item, true, shouldTranslate, useApi2);
         if (requestId !== hotListRequestId) return;
         if (retryResponse?.result?.code === 200) {
           store.markAvailable(item.name);
-          const nextResult = shouldTranslate
-            ? await enhanceHotListResult(retryResponse.result)
-            : retryResponse.result;
-          if (requestId !== hotListRequestId) return;
-          listLoading.value = false;
-          hotListData.value = nextResult;
-          if (scrollbarRef.value) {
-            scrollbarRef.value.scrollTo({ position: "top", behavior: "smooth" });
-          }
+          await enhanceAndApplyHotListResult(
+            retryResponse.result,
+            requestId,
+            shouldTranslate
+          );
           return;
         }
       } catch {}

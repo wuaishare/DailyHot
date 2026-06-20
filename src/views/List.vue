@@ -420,10 +420,14 @@ const enhanceListResult = (result, targetLocale = locale.value) =>
       })
     : Promise.resolve(result);
 
+const applyListResult = (result) => {
+  listData.value = result;
+  updateTime.value = formatTime(result?.updateTime, locale.value);
+};
+
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (!name) return;
-  const requestId = ++listRequestId;
   if (isPrerender) {
     const label = getSourceDisplayLabel(
       store.newsArr.find((item) => item.name === name) ||
@@ -438,11 +442,12 @@ const getHotListsData = async (name, isNew = false) => {
     updateTime.value = formatTime(new Date().toISOString(), locale.value);
     return;
   }
-  listData.value = null;
   const item =
     store.newsArr.find((item) => item.name == name) ||
     store.defaultNewsArr.find((item) => item.name == name);
   if (!item) return;
+  const requestId = ++listRequestId;
+  listData.value = null;
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
   const shouldTranslate = shouldEnhanceReadableTitles.value;
   const params = buildSourceSubtypeParams(item.name, listSubType.value);
@@ -474,11 +479,16 @@ const getHotListsData = async (name, isNew = false) => {
     }
     if (result.code === 200) {
       store.markAvailable(item.name);
-      const nextResult = shouldTranslate
-        ? await enhanceListResult(result)
-        : result;
-      if (requestId !== listRequestId) return;
-      listData.value = nextResult;
+      applyListResult(result);
+      if (!shouldTranslate) return;
+      try {
+        const nextResult = await enhanceListResult(result);
+        if (requestId !== listRequestId) return;
+        applyListResult(nextResult);
+      } catch {
+        if (requestId !== listRequestId) return;
+        applyListResult(result);
+      }
     } else {
       store.markUnavailable(item.name);
       $message.error(result.message);
