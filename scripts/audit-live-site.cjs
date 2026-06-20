@@ -109,6 +109,11 @@ const assertHtml = async (path, expectations) => {
     response.body,
     /<meta\s+name="description"\s+content="([^"]+)"/
   );
+  const htmlLang = extract(response.body, /<html\s+lang="([^"]+)"/);
+  const alternateCount =
+    response.body.match(/<link\s+rel="alternate"\s+hreflang="[^"]+"\s+href="[^"]+"\s*\/?>/g)
+      ?.length || 0;
+  const hasRouteJsonLd = response.body.includes('id="dailyhot-route-jsonld"');
   const asset = extract(
     response.body,
     /<script\s+type="module"\s+crossorigin\s+src="(\/assets\/index-[^"]+\.js)"/
@@ -136,9 +141,43 @@ const assertHtml = async (path, expectations) => {
       `canonical mismatch: ${canonical}`
     );
   }
+  if (expectations.htmlLang) {
+    assert(htmlLang === expectations.htmlLang, `html lang mismatch: ${htmlLang}`);
+  }
+  if (expectations.alternateCount) {
+    assert(
+      alternateCount === expectations.alternateCount,
+      `alternate count mismatch: ${alternateCount}`
+    );
+  }
+  if (expectations.jsonLd) {
+    assert(hasRouteJsonLd, "missing route JSON-LD");
+  }
   assert(asset, "missing main asset");
-  return { title, canonical, description, asset };
+  return { title, canonical, description, htmlLang, alternateCount, hasRouteJsonLd, asset };
 };
+
+addCheck("localized home SEO shells include hreflang and JSON-LD", async () => {
+  const cases = [
+    ["/", "zh-CN", "吾爱热榜", "/"],
+    ["/en/", "en", "DailyHot - Cross-platform", "/en/"],
+    ["/zh-tw/", "zh-TW", "吾愛熱榜", "/zh-tw/"],
+    ["/ja/", "ja", "DailyHot - 複数", "/ja/"],
+    ["/ko/", "ko", "DailyHot - 여러", "/ko/"],
+  ];
+  const results = [];
+  for (const [path, htmlLang, titleIncludes, canonical] of cases) {
+    const result = await assertHtml(path, {
+      titleIncludes,
+      canonical,
+      htmlLang,
+      alternateCount: 6,
+      jsonLd: true,
+    });
+    results.push(`${path}:${result.htmlLang}:${result.alternateCount}`);
+  }
+  return results;
+});
 
 addCheck("route SEO: ithome base canonicalizes to day", () =>
   assertHtml("/rank/ithome", {
@@ -243,6 +282,10 @@ addCheck("sitemap canonical route set", async () => {
   const response = await requestWithRetry(withVerify("/sitemap.xml"));
   assert(response.statusCode === 200, `HTTP ${response.statusCode}`);
   const xml = response.body;
+  assert(
+    xml.includes('xmlns:xhtml="http://www.w3.org/1999/xhtml"'),
+    "missing sitemap xhtml namespace"
+  );
   const expectations = {
     "/rank/ithome": false,
     "/rank/ithome/day": true,
@@ -264,7 +307,41 @@ addCheck("sitemap canonical route set", async () => {
   );
   const count = xml.match(/<url>/g)?.length || 0;
   assert(count >= 1500, `unexpected sitemap url count: ${count}`);
-  return { urlCount: count };
+  const routeExpectations = [
+    ["/", "hourly", "1.0"],
+    ["/en/", "hourly", "1.0"],
+    ["/category/ai", "hourly", "0.9"],
+    ["/en/category/ai", "hourly", "0.9"],
+    ["/rank/bilibili/all", "hourly", "0.6"],
+    ["/ko/rank/clawhub/plugins-recommended", "hourly", "0.6"],
+  ];
+  const routeDetails = routeExpectations.map(([path, changefreq, priority]) => {
+    const loc = `<loc>${siteUrl}${path}</loc>`;
+    const index = xml.indexOf(loc);
+    assert(index >= 0, `missing sitemap loc ${loc}`);
+    const urlEnd = xml.indexOf("</url>", index);
+    const block = xml.slice(index, urlEnd);
+    const alternateCount = block.match(/<xhtml:link\s+/g)?.length || 0;
+    assert(alternateCount === 6, `${path}: alternate count ${alternateCount}`);
+    assert(
+      block.includes(`<changefreq>${changefreq}</changefreq>`),
+      `${path}: missing changefreq ${changefreq}`
+    );
+    assert(
+      block.includes(`<priority>${priority}</priority>`),
+      `${path}: missing priority ${priority}`
+    );
+    return `${path}:${alternateCount}:${changefreq}:${priority}`;
+  });
+  return { urlCount: count, routeDetails };
+});
+
+addCheck("indexnow key file is reachable", async () => {
+  const key = "45f2e0a6f5a34b8290c80c5e9d0f94ad";
+  const response = await requestWithRetry(withVerify(`/${key}.txt`));
+  assert(response.statusCode === 200, `HTTP ${response.statusCode}`);
+  assert(response.body.trim() === key, `unexpected key body: ${response.body}`);
+  return { key };
 });
 
 addCheck("api: ithome subtype coverage", async () => {

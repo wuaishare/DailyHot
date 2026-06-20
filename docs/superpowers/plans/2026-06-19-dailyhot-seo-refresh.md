@@ -16,21 +16,21 @@
 - Modify: `src/utils/seo.js`
 - Modify: `scripts/generate-route-shells.cjs`
 
-- [ ] Import or mirror localized subtype labels.
-- [ ] Build Chinese rank titles with localized subtype labels.
-- [ ] Strip leading `的` after source-label removal.
-- [ ] Add a ClawHub-specific Chinese SEO intent map that mentions OpenClaw and distinguishes skill/plugin subtypes.
-- [ ] Verify ClawHub route shell title no longer contains untranslated subtype words.
-- [ ] Verify ClawHub route shell title no longer reuses one fixed `Skills 与 Plugins` tail.
+- [x] Import or mirror localized subtype labels.
+- [x] Build Chinese rank titles with localized subtype labels.
+- [x] Strip leading `的` after source-label removal.
+- [x] Add a ClawHub-specific Chinese SEO intent map that mentions OpenClaw and distinguishes skill/plugin subtypes.
+- [x] Verify ClawHub route shell title no longer contains untranslated subtype words.
+- [x] Verify ClawHub route shell title no longer reuses one fixed `Skills 与 Plugins` tail.
 
 ### Task 2: ClawHub Active State
 
 **Files:**
 - Modify: `src/views/List.vue`
 
-- [ ] Add source-family normalization for `clawhub-skills` and `clawhub-plugins`.
-- [ ] Use normalized source comparison for top-strip tag active state.
-- [ ] Keep click behavior unchanged.
+- [x] Add source-family normalization for `clawhub-skills` and `clawhub-plugins`.
+- [x] Use normalized source comparison for top-strip tag active state.
+- [x] Keep click behavior unchanged.
 
 ### Task 3: Auto Refresh State
 
@@ -38,14 +38,19 @@
 - Modify: `src/App.vue`
 - Modify: `src/components/Header.vue`
 
-- [ ] Include `list`, `list-locale`, `setting`, and `setting-locale` in refresh-control visibility.
-- [ ] Preserve `window.$nextAutoRefreshAt` when entering settings by storing remaining milliseconds.
-- [ ] Restore the target from frozen remaining time when leaving settings.
-- [ ] Avoid auto-resuming user manual pauses.
+- [x] Include `list`, `list-locale`, `setting`, and `setting-locale` in refresh-control visibility.
+- [x] Preserve `window.$nextAutoRefreshAt` when entering settings by storing remaining milliseconds.
+- [x] Restore the target from frozen remaining time when leaving settings.
+- [x] Avoid auto-resuming user manual pauses.
 
 ### Task 4: Verification
 
 **Commands and checks:**
-- [ ] Run `pnpm build`.
-- [ ] Inspect `dist/rank/clawhub/index.html`, `dist/rank/clawhub/plugins-recommended/index.html`, and `dist/rank/clawhub/skills-installs/index.html`.
-- [ ] Use the Codex in-app browser to verify category, rank detail, and settings routes.
+- [x] Run `pnpm build`.
+- [x] Inspect `dist/rank/clawhub/index.html`, `dist/rank/clawhub/plugins-recommended/index.html`, and `dist/rank/clawhub/skills-installs/index.html`.
+- [x] Use browser automation to verify category, rank detail, and settings routes.
+
+### Latest Verification
+
+- `VERIFY=2606210310 AUDIT_TIMEOUT_MS=30000 pnpm audit:live` passed `21` production checks, including ClawHub OpenClaw route SEO, localized route shell metadata, AI route SEO, AI ranking endpoints, readable-title translation, and model-term preservation.
+- Browser automation on production verified visible version `2606210310`, AI news title translation, model-name preservation, Korean header/subtype localization, and AcFun subtype menu/drag behavior.

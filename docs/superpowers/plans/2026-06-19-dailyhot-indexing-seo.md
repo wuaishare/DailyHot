@@ -24,21 +24,21 @@
 **Files:**
 - Modify: `scripts/generate-route-shells.cjs`
 
-- [ ] Generate home route shells for every supported locale.
-- [ ] Use localized `seo.homeTitle`, `seo.homeDescription`, and `seo.homeKeywords`.
-- [ ] Add WebSite JSON-LD for home routes.
-- [ ] Extract rank sources only from `defaultNewsArr`.
-- [ ] Add `hreflang` alternates to generated route shells.
+- [x] Generate home route shells for every supported locale.
+- [x] Use localized `seo.homeTitle`, `seo.homeDescription`, and `seo.homeKeywords`.
+- [x] Add WebSite JSON-LD for home routes.
+- [x] Extract rank sources only from `defaultNewsArr`.
+- [x] Add `hreflang` alternates to generated route shells.
 
 ### Task 3: Sitemap Quality
 
 **Files:**
 - Modify: `scripts/generate-seo-files.js`
 
-- [ ] Add `xhtml:link` alternate entries for every localized URL group.
-- [ ] Add route-appropriate `changefreq` and `priority` values.
-- [ ] Keep sitemap host based on `VITE_SITE_URL`.
-- [ ] Keep noindex utility routes out of the sitemap.
+- [x] Add `xhtml:link` alternate entries for every localized URL group.
+- [x] Add route-appropriate `changefreq` and `priority` values.
+- [x] Keep sitemap host based on `VITE_SITE_URL`.
+- [x] Keep noindex utility routes out of the sitemap.
 
 ### Task 4: IndexNow
 
@@ -47,17 +47,22 @@
 - Create: `scripts/submit-indexnow.cjs`
 - Modify: `package.json`
 
-- [ ] Add a public IndexNow key file at the site root.
-- [ ] Add a script that fetches the live sitemap, extracts same-host URLs, and submits them to IndexNow.
-- [ ] Add `submit:indexnow` to `package.json`.
-- [ ] Run the script after production deployment.
+- [x] Add a public IndexNow key file at the site root.
+- [x] Add a script that fetches the live sitemap, extracts same-host URLs, and submits them to IndexNow.
+- [x] Add `submit:indexnow` to `package.json`.
+- [x] Run the script after production deployment.
 
 ### Task 5: Verification
 
 **Commands and checks:**
-- [ ] Run `pnpm build`.
-- [ ] Verify raw HTML for `/`, `/en/`, `/zh-tw/`, `/category/ai`, and `/rank/clawhub/plugins-recommended`.
-- [ ] Count sitemap URLs and compare with generated static shell count.
-- [ ] Deploy production.
-- [ ] Verify production `robots.txt`, `sitemap.xml`, and representative raw HTML.
-- [ ] Run `pnpm submit:indexnow`.
+- [x] Run `pnpm build`.
+- [x] Verify raw HTML for `/`, `/en/`, `/zh-tw/`, `/category/ai`, and `/rank/clawhub/plugins-recommended`.
+- [x] Count sitemap URLs and compare with generated static shell count.
+- [x] Deploy production.
+- [x] Verify production `robots.txt`, `sitemap.xml`, and representative raw HTML.
+- [x] Run `pnpm submit:indexnow`.
+
+### Latest Verification
+
+- `VERIFY=2606210310 AUDIT_TIMEOUT_MS=30000 pnpm audit:live` passed `21` checks for production, including localized home shells, route JSON-LD, `hreflang`, sitemap `xhtml:link`, `changefreq`, `priority`, and the IndexNow key file.
+- `pnpm submit:indexnow -- --dry-run` found `1545` same-host URLs from the live sitemap and the production key file `https://hot.wuaishare.cn/45f2e0a6f5a34b8290c80c5e9d0f94ad.txt`.
