@@ -56,6 +56,8 @@ const autoRefreshTimer = ref(null);
 const autoRefreshPausedByRoute = ref(false);
 const routePausedRemainingMs = ref(null);
 const lastAutoRefreshIntervalMs = ref(Number(store.autoRefreshInterval) * 1000);
+let removeAutoRefreshRouteGuard = null;
+const AUTO_REFRESH_PAUSE_KEY = "dailyhot:autoRefreshPause";
 const settingRouteNames = new Set(["setting", "setting-locale"]);
 const autoRefreshRouteNames = new Set([
   "home",
@@ -67,10 +69,26 @@ const autoRefreshRouteNames = new Set([
   "list-legacy",
 ]);
 const isSettingRoute = computed(
-  () => settingRouteNames.has(router.currentRoute.value?.name)
+  () => {
+    const currentRoute = router.currentRoute.value;
+    const path = currentRoute?.path || "";
+    return (
+      settingRouteNames.has(currentRoute?.name) ||
+      path === "/setting" ||
+      /\/setting$/.test(path)
+    );
+  }
 );
 const isAutoRefreshRoute = computed(
-  () => autoRefreshRouteNames.has(router.currentRoute.value?.name)
+  () => {
+    const currentRoute = router.currentRoute.value;
+    const path = currentRoute?.path || "/";
+    return (
+      autoRefreshRouteNames.has(currentRoute?.name) ||
+      path === "/" ||
+      /\/(category|rank)(\/|$)/.test(path)
+    );
+  }
 );
 
 // 回顶按钮显隐
@@ -124,19 +142,95 @@ const getAutoRefreshIntervalMs = () => {
   return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 0;
 };
 
+const normalizeRemainingMs = (value) => {
+  if (value === null || typeof value === "undefined" || value === "") {
+    return null;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+};
+
+const isDocumentHidden = () =>
+  typeof document !== "undefined" && document.visibilityState === "hidden";
+
+const readStorageValue = (key) => {
+  if (typeof window === "undefined") return null;
+  try {
+    return (
+      window.sessionStorage?.getItem(key) ??
+      window.localStorage?.getItem(key) ??
+      null
+    );
+  } catch {
+    return null;
+  }
+};
+
+const writeStorageValue = (key, value) => {
+  if (typeof window === "undefined") return;
+  try {
+    if (value === null || typeof value === "undefined") {
+      window.sessionStorage?.removeItem(key);
+      window.localStorage?.removeItem(key);
+      return;
+    }
+    window.sessionStorage?.setItem(key, value);
+    window.localStorage?.setItem(key, value);
+  } catch {
+    // Web storage may be blocked in private or restricted browser modes.
+  }
+};
+
+const readPersistedPauseRemainingMs = () => {
+  const rawValue = readStorageValue(AUTO_REFRESH_PAUSE_KEY);
+  if (!rawValue) return null;
+  try {
+    const parsed = JSON.parse(rawValue);
+    return normalizeRemainingMs(parsed?.remainingMs);
+  } catch {
+    return normalizeRemainingMs(rawValue);
+  }
+};
+
+const writePersistedPauseRemainingMs = (remainingMs) => {
+  const normalizedRemainingMs = normalizeRemainingMs(remainingMs);
+  if (normalizedRemainingMs === null) {
+    writeStorageValue(AUTO_REFRESH_PAUSE_KEY, null);
+    return;
+  }
+  writeStorageValue(
+    AUTO_REFRESH_PAUSE_KEY,
+    JSON.stringify({
+      remainingMs: normalizedRemainingMs,
+      savedAt: Date.now(),
+    })
+  );
+};
+
+const writeAutoRefreshRemaining = (remainingMs) => {
+  const normalizedRemainingMs = normalizeRemainingMs(remainingMs);
+  store.autoRefreshRemainingMs = normalizedRemainingMs;
+  if (typeof window !== "undefined") {
+    window.$autoRefreshRemainingMs = normalizedRemainingMs;
+    window.$nextAutoRefreshAt =
+      normalizedRemainingMs === null ? null : Date.now() + normalizedRemainingMs;
+  }
+};
+
 const clearRoutePauseState = () => {
   autoRefreshPausedByRoute.value = false;
   routePausedRemainingMs.value = null;
   store.autoRefreshRoutePaused = false;
-  store.autoRefreshRemainingMs = null;
+  writeAutoRefreshRemaining(null);
+  writePersistedPauseRemainingMs(null);
   if (typeof window !== "undefined") {
     window.$autoRefreshPausedByRoute = false;
-    window.$autoRefreshRemainingMs = null;
   }
 };
 
 const clearAutoRefresh = ({ clearTarget = false } = {}) => {
   if (autoRefreshTimer.value) {
+    clearInterval(autoRefreshTimer.value);
     clearTimeout(autoRefreshTimer.value);
     autoRefreshTimer.value = null;
   }
@@ -155,6 +249,9 @@ const getPausedRemainingMs = () => {
     typeof window !== "undefined" ? window.$autoRefreshRemainingMs : null,
   ];
   for (const value of candidates) {
+    if (value === null || typeof value === "undefined" || value === "") {
+      continue;
+    }
     const number = Number(value);
     if (Number.isFinite(number) && number >= 0) {
       return number;
@@ -175,13 +272,12 @@ const freezeAutoRefreshForRoute = (forcedRemainingMs = null) => {
       ? pausedRemainingMs
       : null) ??
     (existingTarget ? Math.max(existingTarget - Date.now(), 0) : intervalMs);
-  routePausedRemainingMs.value = remainingMs || intervalMs;
+  routePausedRemainingMs.value = remainingMs ?? intervalMs;
   autoRefreshPausedByRoute.value = true;
   store.autoRefreshRoutePaused = true;
-  store.autoRefreshRemainingMs = routePausedRemainingMs.value;
   window.$autoRefreshPausedByRoute = true;
-  window.$autoRefreshRemainingMs = routePausedRemainingMs.value;
-  window.$nextAutoRefreshAt = null;
+  writeAutoRefreshRemaining(routePausedRemainingMs.value);
+  writePersistedPauseRemainingMs(routePausedRemainingMs.value);
 };
 
 const setupAutoRefresh = (preferredDelayMs = null) => {
@@ -192,25 +288,37 @@ const setupAutoRefresh = (preferredDelayMs = null) => {
       !store.autoRefreshEnabled ||
       store.autoRefreshPaused ||
       !isAutoRefreshRoute.value ||
+      isDocumentHidden() ||
       intervalMs <= 0
     ) {
       window.$nextAutoRefreshAt = null;
       return;
     }
-    const existingTarget = Number(window.$nextAutoRefreshAt);
-    const delayMs =
-      preferredDelayMs ??
-      (existingTarget ? Math.max(existingTarget - Date.now(), 0) : intervalMs);
+    let remainingMs =
+      normalizeRemainingMs(preferredDelayMs) ??
+      normalizeRemainingMs(store.autoRefreshRemainingMs) ??
+      normalizeRemainingMs(window.$autoRefreshRemainingMs) ??
+      readPersistedPauseRemainingMs() ??
+      intervalMs;
     store.autoRefreshRoutePaused = false;
-    store.autoRefreshRemainingMs = null;
     window.$autoRefreshPausedByRoute = false;
-    window.$autoRefreshRemainingMs = null;
-    window.$nextAutoRefreshAt = Date.now() + delayMs;
-    window.$autoRefreshTimer = autoRefreshTimer.value = setTimeout(() => {
-      router.go(0);
-      window.$nextAutoRefreshAt = Date.now() + intervalMs;
-      setupAutoRefresh(intervalMs);
-    }, delayMs);
+    writeAutoRefreshRemaining(remainingMs);
+    writePersistedPauseRemainingMs(null);
+
+    let lastTickAt = Date.now();
+    window.$autoRefreshTimer = autoRefreshTimer.value = setInterval(() => {
+      const now = Date.now();
+      remainingMs = Math.max(remainingMs - (now - lastTickAt), 0);
+      lastTickAt = now;
+      writeAutoRefreshRemaining(remainingMs);
+
+      if (remainingMs <= 0) {
+        router.go(0);
+        remainingMs = intervalMs;
+        lastTickAt = Date.now();
+        writeAutoRefreshRemaining(remainingMs);
+      }
+    }, 1000);
   }
 };
 
@@ -238,13 +346,34 @@ const reconcileAutoRefresh = () => {
     return;
   }
 
-  const hasRoutePause = autoRefreshPausedByRoute.value || store.autoRefreshRoutePaused;
+  const pausedRemainingMs =
+    getPausedRemainingMs() ?? readPersistedPauseRemainingMs();
+  const hasRoutePause =
+    autoRefreshPausedByRoute.value ||
+    store.autoRefreshRoutePaused ||
+    pausedRemainingMs !== null;
   const resumedDelayMs = hasRoutePause
-    ? store.autoRefreshRemainingMs || routePausedRemainingMs.value || intervalMs
+    ? pausedRemainingMs ?? intervalMs
     : null;
   clearRoutePauseState();
   setupAutoRefresh(intervalChanged ? intervalMs : resumedDelayMs);
   lastAutoRefreshIntervalMs.value = intervalMs;
+};
+
+const reconcileAutoRefreshAfterVisibilityChange = () => {
+  if (isDocumentHidden()) {
+    if (store.autoRefreshEnabled && !store.autoRefreshPaused && isAutoRefreshRoute.value) {
+      freezeAutoRefreshForRoute();
+    }
+    return;
+  }
+  nextTick(reconcileAutoRefresh);
+};
+
+const handleFreezeAutoRefreshRoute = () => {
+  if (store.autoRefreshEnabled && !store.autoRefreshPaused) {
+    freezeAutoRefreshForRoute();
+  }
 };
 
 // 默认折叠设置变化时同步状态
@@ -261,15 +390,32 @@ watch(
     store.autoRefreshInterval,
     store.autoRefreshPaused,
     router.currentRoute.value?.name,
+    router.currentRoute.value?.fullPath,
   ],
   reconcileAutoRefresh,
   { immediate: true }
 );
 
 onMounted(() => {
+  removeAutoRefreshRouteGuard = router.afterEach(() => {
+    nextTick(reconcileAutoRefresh);
+  });
+  reconcileAutoRefresh();
   store.checkNewsUpdate();
   if (typeof document !== "undefined") {
     document.addEventListener("click", handleOutsideClick);
+    document.addEventListener(
+      "visibilitychange",
+      reconcileAutoRefreshAfterVisibilityChange
+    );
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener("pageshow", reconcileAutoRefreshAfterVisibilityChange);
+    window.addEventListener("popstate", reconcileAutoRefreshAfterVisibilityChange);
+    window.addEventListener(
+      "dailyhot:freeze-auto-refresh-route",
+      handleFreezeAutoRefreshRoute
+    );
   }
   nextTick(() => {
     if (store.newsArr.length === 0) {
@@ -283,8 +429,24 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearTimeout(collapseTimer.value);
+  if (removeAutoRefreshRouteGuard) {
+    removeAutoRefreshRouteGuard();
+    removeAutoRefreshRouteGuard = null;
+  }
   if (typeof document !== "undefined") {
     document.removeEventListener("click", handleOutsideClick);
+    document.removeEventListener(
+      "visibilitychange",
+      reconcileAutoRefreshAfterVisibilityChange
+    );
+  }
+  if (typeof window !== "undefined") {
+    window.removeEventListener("pageshow", reconcileAutoRefreshAfterVisibilityChange);
+    window.removeEventListener("popstate", reconcileAutoRefreshAfterVisibilityChange);
+    window.removeEventListener(
+      "dailyhot:freeze-auto-refresh-route",
+      handleFreezeAutoRefreshRoute
+    );
   }
   clearAutoRefresh();
 });

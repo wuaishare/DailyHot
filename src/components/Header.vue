@@ -192,7 +192,7 @@
                 round
                 :aria-label="t('common.settings')"
                 :title="t('common.settings')"
-                @click="router.push(buildFixedLocalePath(locale, '/setting'))"
+                @click="goSetting"
               >
                 <template #icon>
                   <n-icon :component="SettingTwo" />
@@ -520,9 +520,16 @@ const menuOptionsSelect = (val) => {
   } else if (val === "changeTheme") {
     store.setSiteTheme(store.siteTheme === "light" ? "dark" : "light");
   } else if (val === "setting") {
-    router.push(buildFixedLocalePath(locale.value, "/setting"));
+    goSetting();
   }
   mobileMenuOpen.value = false;
+};
+
+const goSetting = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("dailyhot:freeze-auto-refresh-route"));
+  }
+  router.push(buildFixedLocalePath(locale.value, "/setting"));
 };
 
 const toggleMobileMenu = () => {
@@ -612,15 +619,25 @@ const formatCountdown = (remainMs) => {
   return `${h}${t("header.hour")}${m}${t("header.minute")}${s}${t("header.second")}`;
 };
 
+const normalizeRemainingMs = (value) => {
+  if (value === null || typeof value === "undefined" || value === "") {
+    return null;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+};
+
+const getSyncedAutoRefreshRemainingMs = () =>
+  normalizeRemainingMs(store.autoRefreshRemainingMs) ??
+  normalizeRemainingMs(window.$autoRefreshRemainingMs);
+
 const updateCountdown = () => {
   if (typeof window === "undefined" || !store.autoRefreshEnabled) {
     countdownText.value = "";
     return;
   }
   if (store.autoRefreshRoutePaused || window.$autoRefreshPausedByRoute) {
-    const remainingMs = Number(
-      store.autoRefreshRemainingMs ?? window.$autoRefreshRemainingMs
-    );
+    const remainingMs = getSyncedAutoRefreshRemainingMs();
     countdownText.value =
       Number.isFinite(remainingMs) && remainingMs >= 0
         ? formatCountdown(remainingMs)
@@ -629,6 +646,11 @@ const updateCountdown = () => {
   }
   if (store.autoRefreshPaused) {
     countdownText.value = "";
+    return;
+  }
+  const syncedRemainingMs = getSyncedAutoRefreshRemainingMs();
+  if (syncedRemainingMs !== null) {
+    countdownText.value = formatCountdown(syncedRemainingMs);
     return;
   }
   const target = window.$nextAutoRefreshAt;
