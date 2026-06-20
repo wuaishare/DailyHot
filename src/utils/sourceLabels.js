@@ -2943,8 +2943,12 @@ export const getSourceDisplayLabel = (
   fallbackLabel = "",
 ) => {
   const normalizedLocale = normalizeLocale(locale);
+  const fallbackDisplayLabel = stripDisplaySuffix(fallbackLabel, normalizedLocale);
   const overrides = SOURCE_DISPLAY_LABEL_OVERRIDES[sourceName] || null;
   if (overrides?.[normalizedLocale]) return overrides[normalizedLocale];
+  if (normalizedLocale === "zh-CN" && fallbackDisplayLabel) {
+    return fallbackDisplayLabel;
+  }
   if (overrides?.en) return overrides.en;
   return stripDisplaySuffix(
     getSourceLabel(sourceName, normalizedLocale, fallbackLabel),
