@@ -45,7 +45,7 @@ const mergeTranslatedMap = (target, source) => {
 const MODEL_NAME_MARKER_PATTERN =
   /\b(?:GPT|ChatGPT|Claude|Sonnet|Opus|Haiku|Fable|Mythos|Gemini|Gemma|DiffusionGemma|GLM|Llama|Grok|Qwen|DeepSeek|Mistral|Mixtral|Kimi|ERNIE|Hunyuan|Doubao|Phi|Command|Aya|DALL[·-]E|Sora)\b/i;
 const SENTENCE_SIGNAL_PATTERN =
-  /\b(?:a|an|the|to|for|with|without|in|on|from|by|and|or|how|why|what|new|updated|introducing|launching|using|improving|securing|unlocking|building|expanding|investing|statement|research|program|community|grant|family|future|analytics|controls)\b/i;
+  /\b(?:a|an|the|to|for|with|without|in|on|from|by|and|or|how|why|what|new|updated|introducing|launching|using|improving|securing|unlocking|building|expanding|investing|powering|measuring|statement|research|program|community|grant|family|future|analytics|controls|safety|agents?|generation|translation|voice|natural|faster|multimodal|encoder|robotics|learning|impact)\b/i;
 
 const getClientTranslatedMap = async (texts = [], locale) => {
   const clientMap = await translatePlainTexts(texts, locale);

@@ -3283,6 +3283,13 @@ export const getSourceSubtitleLabel = (label = "", locale = "zh-CN") => {
     return override[normalizedLocale];
   }
   if (!rawLabel) return "";
+  const subtypeLabel = getSubtypeLabel(
+    { label: rawLabel, value: rawLabel },
+    normalizedLocale
+  );
+  if (subtypeLabel && subtypeLabel !== rawLabel) {
+    return subtypeLabel;
+  }
   if (normalizedLocale === "zh-CN" || normalizedLocale === "zh-TW") {
     return rawLabel;
   }
