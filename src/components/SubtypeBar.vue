@@ -32,9 +32,16 @@
             type="button"
             class="subtype-chip group-tab"
             :class="{ active: isGroupActive(group) }"
+            :title="getGroupButtonTitle(group)"
             @click="handleGroupClick(group, $event)"
           >
-            {{ group.label || group.items?.[0]?.label }}
+            <span class="group-tab-label">{{ getGroupBaseLabel(group) }}</span>
+            <span
+              v-if="getGroupActiveLabel(group)"
+              class="group-tab-active-label"
+            >
+              {{ getGroupActiveLabel(group) }}
+            </span>
           </button>
           <Teleport to="body">
             <Transition name="subtype-menu">
@@ -140,6 +147,25 @@ const getGroupKey = (group) =>
 
 const getActiveGroupItem = (group) =>
   (group.items || []).find((item) => item.value === props.activeValue);
+
+const getGroupBaseLabel = (group) =>
+  group.label || group.items?.[0]?.label || "";
+
+const getGroupActiveLabel = (group) => {
+  const items = group.items || [];
+  const activeItem = getActiveGroupItem(group);
+  const baseLabel = getGroupBaseLabel(group);
+  if (!activeItem?.label || items.length <= 1 || activeItem.label === baseLabel) {
+    return "";
+  }
+  return activeItem.label;
+};
+
+const getGroupButtonTitle = (group) => {
+  const baseLabel = getGroupBaseLabel(group);
+  const activeLabel = getGroupActiveLabel(group);
+  return activeLabel ? `${baseLabel} · ${activeLabel}` : baseLabel;
+};
 
 const isGroupActive = (group) => Boolean(getActiveGroupItem(group));
 
@@ -452,7 +478,35 @@ onBeforeUnmount(() => {
 .group-tab {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 0;
+  max-width: min(320px, 76vw);
+  overflow: hidden;
+}
+
+.group-tab-label,
+.group-tab-active-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-tab-label {
+  flex: 0 1 auto;
+}
+
+.group-tab-active-label {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  font-weight: 700;
+
+  &::before {
+    content: "·";
+    flex: 0 0 auto;
+    margin-right: 6px;
+    font-weight: 500;
+    opacity: 0.72;
+  }
 }
 
 .subtype-menu {

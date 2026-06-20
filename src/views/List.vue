@@ -880,6 +880,7 @@ onBeforeUnmount(() => {
         height: 22px;
         width: 22px;
         margin-left: 6px;
+        object-fit: contain;
       }
     }
   }
@@ -929,6 +930,7 @@ onBeforeUnmount(() => {
         img {
           height: 42px;
           width: 42px;
+          object-fit: contain;
         }
       }
       .name {

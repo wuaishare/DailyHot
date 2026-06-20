@@ -898,6 +898,7 @@ watch(
             width: 40px;
             height: 40px;
             margin-right: 12px;
+            object-fit: contain;
           }
 
           .news-name {

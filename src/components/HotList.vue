@@ -744,6 +744,10 @@ onBeforeUnmount(() => {
         height: 25px;
         margin-right: 8px;
         flex: 0 0 auto;
+
+        :deep(img) {
+          object-fit: contain;
+        }
       }
 
       .name-text {
