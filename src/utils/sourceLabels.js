@@ -420,6 +420,14 @@ const SOURCE_DISPLAY_SUFFIXES = {
   ],
 };
 
+const GENERIC_SOURCE_SUBTITLE_LABELS = {
+  "zh-CN": ["热榜"],
+  "zh-TW": ["熱榜"],
+  en: ["Hot List"],
+  ja: ["人気ランキング"],
+  ko: ["인기 랭킹"],
+};
+
 Object.entries(SOURCE_LABEL_LOCALIZATIONS).forEach(([sourceName, labels]) => {
   SOURCE_LABEL_OVERRIDES[sourceName] = {
     ...(SOURCE_LABEL_OVERRIDES[sourceName] || {}),
@@ -2988,6 +2996,15 @@ export const getSourceSubtitleLabel = (label = "", locale = "zh-CN") => {
     return rawLabel;
   }
   return prettifySlug(rawLabel);
+};
+
+export const isGenericSourceSubtitleLabel = (label = "", locale = "zh-CN") => {
+  const normalizedLocale = normalizeLocale(locale);
+  const normalizedLabel = normalizeLookupLabel(label);
+  if (!normalizedLabel) return false;
+  return (GENERIC_SOURCE_SUBTITLE_LABELS[normalizedLocale] || []).includes(
+    normalizedLabel
+  );
 };
 
 export const getSubtypeGroupLabel = (group, locale = "zh-CN") => {

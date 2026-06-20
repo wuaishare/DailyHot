@@ -212,6 +212,7 @@ import { trackEvent } from "@/utils/track";
 import {
   getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
   getSourceSubtitleLabel,
+  isGenericSourceSubtitleLabel,
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
 import {
@@ -324,13 +325,11 @@ const listHeaderSubtitle = computed(() => {
     Object.prototype.hasOwnProperty.call(currentSourceMeta.value, "subtype")
       ? currentSourceMeta.value.subtype ?? ""
       : listData.value?.subtitle || listData.value?.type || "";
-  if (
-    currentSourceMeta.value &&
-    Object.prototype.hasOwnProperty.call(currentSourceMeta.value, "subtype")
-  ) {
-    return getSourceSubtitleLabel(rawSubtitle, locale.value);
+  const subtitle = getSourceSubtitleLabel(rawSubtitle, locale.value);
+  if (isGenericSourceSubtitleLabel(subtitle, locale.value)) {
+    return "";
   }
-  return getSourceSubtitleLabel(rawSubtitle, locale.value);
+  return subtitle;
 });
 let listRequestId = 0;
 const normalizeComparableText = (value = "") =>

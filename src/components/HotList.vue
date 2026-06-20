@@ -203,6 +203,7 @@ import { trackEvent } from "@/utils/track";
 import {
   getSourceDisplayLabel,
   getSourceSubtitleLabel,
+  isGenericSourceSubtitleLabel,
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
@@ -277,10 +278,11 @@ const cardSubtitle = computed(() => {
     Object.prototype.hasOwnProperty.call(props.hotData || {}, "subtype")
       ? props.hotData.subtype ?? ""
       : hotListData.value?.type || "";
-  if (Object.prototype.hasOwnProperty.call(props.hotData || {}, "subtype")) {
-    return getSourceSubtitleLabel(rawSubtitle, locale.value);
+  const subtitle = getSourceSubtitleLabel(rawSubtitle, locale.value);
+  if (isGenericSourceSubtitleLabel(subtitle, locale.value)) {
+    return "";
   }
-  return getSourceSubtitleLabel(rawSubtitle, locale.value);
+  return subtitle;
 });
 let hotListRequestId = 0;
 const visibleItems = computed(() =>
