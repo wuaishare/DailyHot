@@ -1168,8 +1168,8 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ko: "풀스택 앱 품질 랭킹",
   },
   "Backend Scores 榜": {
-    "zh-CN": "后端评分榜",
-    "zh-TW": "後端評分榜",
+    "zh-CN": "后端能力评分榜",
+    "zh-TW": "後端能力評分榜",
     en: "Backend Scores",
     ja: "バックエンドスコア",
     ko: "백엔드 점수",

@@ -11,6 +11,7 @@ import {
 } from "@/utils/locale";
 import { getSourceSubtypeOptions } from "@/utils/sourceSubtypes";
 import {
+  getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
   getSourceLabel as getLocalizedSourceLabel,
   getSubtypeLabel as getLocalizedSubtypeLabel,
 } from "@/utils/sourceLabels";
@@ -315,7 +316,7 @@ const DESIGNARENA_ZH_SUBTYPE_SEO = {
     intent: "全栈应用质量、数据建模与交互完成度评分排行",
   },
   "fullstack-backend": {
-    titleSegment: "后端评分榜",
+    titleSegment: "后端能力评分榜",
     intent: "全栈应用后端能力、API、认证与持久化评分排行",
   },
   "daily-usage": {
@@ -1009,13 +1010,20 @@ const getListSeo = (route, siteUrl, canonical) => {
   const sourceKey = typeKey || "default";
   const meta = LIST_SEO_MAP[sourceKey] || LIST_SEO_MAP.default;
   const sourceLabel = getSourceLabel(sourceKey, locale);
+  const sourceDisplayLabel =
+    getLocalizedSourceDisplayLabel(sourceKey, locale, sourceLabel) || sourceLabel;
+  const sourceSeoLabel =
+    locale === "zh-CN" && meta?.label ? meta.label : sourceLabel;
   const subtypeSlug = Array.isArray(route?.params?.subtypeSlug)
     ? route.params.subtypeSlug[0]
     : route?.params?.subtypeSlug;
   const subtypeLabel = getSubtypeLabel(sourceKey, subtypeSlug, locale);
-  const label = subtypeLabel ? `${sourceLabel} · ${subtypeLabel}` : sourceLabel;
+  const label = subtypeLabel
+    ? `${sourceDisplayLabel} · ${subtypeLabel}`
+    : sourceSeoLabel;
+  const descriptionLabel = subtypeLabel ? sourceDisplayLabel : sourceSeoLabel;
   const defaultTitleLabel = normalizeTitleLabel(
-    subtypeLabel ? `${sourceLabel} ${subtypeLabel}` : sourceLabel
+    subtypeLabel ? `${sourceDisplayLabel} ${subtypeLabel}` : sourceSeoLabel
   );
   const zhRouteSeo =
     locale === "zh-CN" ? getZhRouteSeo({ sourceKey, subtypeSlug }) : null;
@@ -1035,32 +1043,32 @@ const getListSeo = (route, siteUrl, canonical) => {
       ? i18n.global.t(
           "seo.sourceSubtypeDescription",
           {
-            label: sourceLabel,
+            label: descriptionLabel,
             subtype: subtypeLabel,
           },
           { locale }
         )
       : locale === "zh-CN" && meta.description
         ? meta.description
-        : i18n.global.t("seo.sourceDescription", { label: sourceLabel }, { locale });
+        : i18n.global.t("seo.sourceDescription", { label: descriptionLabel }, { locale });
   const keywords =
     subtypeLabel
       ? i18n.global.t(
           "seo.sourceSubtypeKeywords",
           {
-            label: sourceLabel,
+            label: descriptionLabel,
             subtype: subtypeLabel,
           },
           { locale }
         )
       : locale === "zh-CN" && meta.keywords
         ? meta.keywords
-        : i18n.global.t("seo.sourceKeywords", { label: sourceLabel }, { locale });
+        : i18n.global.t("seo.sourceKeywords", { label: descriptionLabel }, { locale });
   const localizedSiteName = i18n.global.t("common.siteName", {}, { locale });
   const zhIntent =
     zhRouteSeo?.intent ||
     buildZhListIntent({
-      sourceLabel,
+      sourceLabel: sourceSeoLabel,
       subtypeLabel,
       meta,
     });
@@ -1080,6 +1088,7 @@ const getListSeo = (route, siteUrl, canonical) => {
     locale === "zh-CN"
       ? mergeKeywords(
           keywords,
+          sourceDisplayLabel,
           sourceLabel,
           subtypeLabel,
           zhIntent,

@@ -301,6 +301,46 @@ const getLocalizedSourceLabel = (
   return prettifySlug(sourceName || fallbackLabel || "rankings");
 };
 
+const normalizeLookupLabel = (value = "") =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const stripDisplaySuffix = (sourceDisplaySuffixes, label = "", locale = "zh-CN") => {
+  const suffixes = sourceDisplaySuffixes?.[locale] || [];
+  const normalizedLabel = normalizeLookupLabel(label);
+  const suffix = suffixes.find(
+    (item) =>
+      normalizedLabel.endsWith(item) &&
+      normalizedLabel.length > item.length + 1
+  );
+  if (!suffix) return normalizedLabel;
+  return normalizeLookupLabel(normalizedLabel.slice(0, -suffix.length));
+};
+
+const getLocalizedSourceDisplayLabel = (
+  sourceLabelOverrides,
+  sourceDisplayLabelOverrides,
+  sourceDisplaySuffixes,
+  sourceName,
+  fallbackLabel,
+  locale = "zh-CN"
+) => {
+  const overrides = sourceDisplayLabelOverrides?.[sourceName] || null;
+  if (overrides?.[locale]) return overrides[locale];
+  if (overrides?.en) return overrides.en;
+  return stripDisplaySuffix(
+    sourceDisplaySuffixes,
+    getLocalizedSourceLabel(
+      sourceLabelOverrides,
+      sourceName,
+      fallbackLabel,
+      locale
+    ),
+    locale
+  );
+};
+
 const getSourceNames = (storeText) => {
   const newsSectionMatch = storeText.match(
     /defaultNewsArr:\s*\[(.*?)\n\s*\],\n\s*newsArr:/s
@@ -510,6 +550,14 @@ function main() {
     parseConstant(sourceLabelsSource, "SOURCE_LABEL_OVERRIDES"),
     parseConstant(sourceLabelsSource, "SOURCE_LABEL_LOCALIZATIONS")
   );
+  const sourceDisplayLabelOverrides = parseConstant(
+    sourceLabelsSource,
+    "SOURCE_DISPLAY_LABEL_OVERRIDES"
+  );
+  const sourceDisplaySuffixes = parseConstant(
+    sourceLabelsSource,
+    "SOURCE_DISPLAY_SUFFIXES"
+  );
   const subtypeLabelOverrides = mergeOverrideMaps(
     parseConstant(sourceLabelsSource, "SUBTYPE_LABEL_OVERRIDES"),
     parseConstant(sourceLabelsSource, "COMMON_SUBTYPE_LABEL_OVERRIDES")
@@ -637,24 +685,38 @@ function main() {
             meta.label,
             locale
           );
+    const sourceDisplayLabel =
+      getLocalizedSourceDisplayLabel(
+        sourceLabelOverrides,
+        sourceDisplayLabelOverrides,
+        sourceDisplaySuffixes,
+        sourceName,
+        sourceLabel,
+        locale
+      ) || sourceLabel;
+    const sourceSeoLabel =
+      locale === "zh-CN" && meta.label ? meta.label : sourceLabel;
 
     if (locale !== "zh-CN") {
       const seoMessages = getSeoMessages(messages, locale);
       const siteName = getSiteName(messages, locale);
-      const label = subtypeLabel ? `${sourceLabel} · ${subtypeLabel}` : sourceLabel;
+      const label = subtypeLabel
+        ? `${sourceDisplayLabel} · ${subtypeLabel}`
+        : sourceSeoLabel;
+      const descriptionLabel = subtypeLabel ? sourceDisplayLabel : sourceSeoLabel;
       const title = `${label} - ${siteName}`;
       const description = subtypeLabel
         ? interpolate(seoMessages.sourceSubtypeDescription, {
-            label: sourceLabel,
+            label: descriptionLabel,
             subtype: subtypeLabel,
           })
-        : interpolate(seoMessages.sourceDescription, { label: sourceLabel });
+        : interpolate(seoMessages.sourceDescription, { label: descriptionLabel });
       const keywords = subtypeLabel
         ? interpolate(seoMessages.sourceSubtypeKeywords, {
-            label: sourceLabel,
+            label: descriptionLabel,
             subtype: subtypeLabel,
           })
-        : interpolate(seoMessages.sourceKeywords, { label: sourceLabel });
+        : interpolate(seoMessages.sourceKeywords, { label: descriptionLabel });
       return {
         title,
         description,
@@ -674,7 +736,9 @@ function main() {
 
     const rawDescription = trimTerminalPunctuation(meta.description || "实时热榜与趋势榜");
     const baseIntent =
-      normalizeZhIntent(stripLeadingPhrases(rawDescription, [sourceLabel])) ||
+      normalizeZhIntent(
+        stripLeadingPhrases(rawDescription, [sourceSeoLabel, sourceDisplayLabel])
+      ) ||
       "实时热榜与趋势榜";
     const zhRouteSeo = getZhRouteSeo({
       sourceName,
@@ -685,12 +749,18 @@ function main() {
     });
     const titleLabel =
       zhRouteSeo?.titleLabel ||
-      (subtypeLabel ? normalizeTitleLabel(`${sourceLabel} ${subtypeLabel}`) : sourceLabel);
+      (subtypeLabel
+        ? normalizeTitleLabel(`${sourceDisplayLabel} ${subtypeLabel}`)
+        : sourceSeoLabel);
     const intent =
       zhRouteSeo?.intent ||
       (subtypeLabel
         ? normalizeZhIntent(
-            stripLeadingPhrases(rawDescription, [sourceLabel, subtypeLabel])
+            stripLeadingPhrases(rawDescription, [
+              sourceSeoLabel,
+              sourceDisplayLabel,
+              subtypeLabel,
+            ])
           ) || baseIntent
         : baseIntent);
     const listName = titleLabel;
@@ -704,6 +774,7 @@ function main() {
       description,
       keywords: mergeKeywords(
         meta.keywords,
+        sourceDisplayLabel,
         sourceLabel,
         subtypeLabel,
         intent,
