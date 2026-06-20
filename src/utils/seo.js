@@ -151,6 +151,18 @@ const stripLeadingZhPossessive = (value = "") =>
     .replace(/^的[\s·:：-]*/u, "")
     .trim();
 
+const stripLeadingZhIntentVerb = (value = "") =>
+  String(value)
+    .trim()
+    .replace(
+      /^(?:聚合|追踪|收录|覆盖|精选|汇总|关注|发现|整理|展示|呈现)[\s，,、]*/u,
+      ""
+    )
+    .trim();
+
+const normalizeZhIntent = (value = "") =>
+  stripLeadingZhIntentVerb(stripLeadingZhPossessive(value));
+
 const normalizeTitleLabel = (value = "") =>
   String(value)
     .replace(/\s*·\s*/g, " ")
@@ -470,7 +482,7 @@ const buildZhListIntent = ({
   meta,
 }) => {
   const rawDescription = trimTerminalPunctuation(meta?.description || "");
-  const stripped = stripLeadingZhPossessive(
+  const stripped = normalizeZhIntent(
     stripLeadingPhrases(rawDescription, [sourceLabel, subtypeLabel])
   );
   return stripped || "实时热榜与趋势榜";

@@ -113,7 +113,7 @@ import { getAnalyticsDashboard } from "@/api";
 import { getAdminToken, setAdminToken } from "@/utils/adminAuth";
 import { mainStore } from "@/store";
 import { useI18n } from "vue-i18n";
-import { getSourceLabel } from "@/utils/sourceLabels";
+import { getSourceDisplayLabel } from "@/utils/sourceLabels";
 
 const store = mainStore();
 const { locale, t } = useI18n({ useScope: "global" });
@@ -129,7 +129,7 @@ const dayOptions = computed(() => [
 ]);
 
 const sourceLabel = (source) =>
-  getSourceLabel(
+  getSourceDisplayLabel(
     source,
     locale.value,
     store.newsArr.find((item) => item.name === source)?.label || source

@@ -416,7 +416,9 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import draggable from "vuedraggable";
 import { buildFixedLocalePath, getCategoryLabel } from "@/utils/locale";
-import { getSourceLabel } from "@/utils/sourceLabels";
+import {
+  getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
+} from "@/utils/sourceLabels";
 
 const store = mainStore();
 const osThemeRef = useOsTheme();
@@ -454,7 +456,11 @@ const getCategoryDisplayName = (category) =>
     ? getCategoryLabel(category.name, locale.value)
     : category?.name || "";
 const getSourceDisplayLabel = (item) =>
-  getSourceLabel(item?.name, locale.value, item?.label || item?.name);
+  getLocalizedSourceDisplayLabel(
+    item?.name,
+    locale.value,
+    item?.label || item?.name
+  );
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };

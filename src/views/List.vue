@@ -210,7 +210,7 @@ import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
 import { trackEvent } from "@/utils/track";
 import {
-  getSourceLabel,
+  getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
   getSourceSubtitleLabel,
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
@@ -298,7 +298,11 @@ const logoSrc = (name) => getSourceLogo(name, cacheVersion);
 const isActiveSource = (name) =>
   normalizeSourceFamily(name) === normalizeSourceFamily(listType.value);
 const getSourceDisplayLabel = (item) =>
-  getSourceLabel(item?.name, locale.value, item?.label || item?.name);
+  getLocalizedSourceDisplayLabel(
+    item?.name,
+    locale.value,
+    item?.label || item?.name
+  );
 const currentSourceMeta = computed(
   () =>
     store.newsArr.find((item) => item.name === listType.value) ||

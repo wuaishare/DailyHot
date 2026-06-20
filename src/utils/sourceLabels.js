@@ -359,6 +359,67 @@ const SOURCE_LABEL_LOCALIZATIONS = {
   },
 };
 
+const SOURCE_DISPLAY_LABEL_OVERRIDES = {
+  "clawhub-skills": {
+    "zh-CN": "ClawHub",
+    "zh-TW": "ClawHub",
+    en: "ClawHub",
+    ja: "ClawHub",
+    ko: "ClawHub",
+  },
+  "clawhub-plugins": {
+    "zh-CN": "ClawHub",
+    "zh-TW": "ClawHub",
+    en: "ClawHub",
+    ja: "ClawHub",
+    ko: "ClawHub",
+  },
+};
+
+const SOURCE_DISPLAY_SUFFIXES = {
+  "zh-CN": [
+    "热门文章榜",
+    "热榜",
+    "热搜",
+    "趋势",
+    "热议",
+    "精选",
+    "排行榜",
+  ],
+  "zh-TW": [
+    "熱門文章榜",
+    "熱榜",
+    "熱搜",
+    "趨勢",
+    "熱議",
+    "精選",
+    "排行榜",
+  ],
+  en: [
+    " Hot Search",
+    " Hot List",
+    " Trending",
+    " Rankings",
+    " Ranking",
+    " Curated",
+  ],
+  ja: [
+    "急上昇検索",
+    "人気ランキング",
+    "急上昇",
+    "トレンド",
+    "人気",
+    "セレクト",
+  ],
+  ko: [
+    " 인기 검색어",
+    " 인기 랭킹",
+    " 트렌드",
+    " 인기",
+    " 큐레이션",
+  ],
+};
+
 Object.entries(SOURCE_LABEL_LOCALIZATIONS).forEach(([sourceName, labels]) => {
   SOURCE_LABEL_OVERRIDES[sourceName] = {
     ...(SOURCE_LABEL_OVERRIDES[sourceName] || {}),
@@ -2861,6 +2922,34 @@ export const getSourceLabel = (
   if (overrides?.en) return overrides.en;
   if (fallbackLabel && !containsNonLatin(fallbackLabel)) return fallbackLabel;
   return prettifySlug(sourceName || fallbackLabel || "rankings");
+};
+
+const stripDisplaySuffix = (label = "", locale = "zh-CN") => {
+  const normalizedLocale = normalizeLocale(locale);
+  const suffixes = SOURCE_DISPLAY_SUFFIXES[normalizedLocale] || [];
+  const normalizedLabel = normalizeLookupLabel(label);
+  const suffix = suffixes.find(
+    (item) =>
+      normalizedLabel.endsWith(item) &&
+      normalizedLabel.length > item.length + 1
+  );
+  if (!suffix) return normalizedLabel;
+  return normalizeLookupLabel(normalizedLabel.slice(0, -suffix.length));
+};
+
+export const getSourceDisplayLabel = (
+  sourceName,
+  locale = "zh-CN",
+  fallbackLabel = "",
+) => {
+  const normalizedLocale = normalizeLocale(locale);
+  const overrides = SOURCE_DISPLAY_LABEL_OVERRIDES[sourceName] || null;
+  if (overrides?.[normalizedLocale]) return overrides[normalizedLocale];
+  if (overrides?.en) return overrides.en;
+  return stripDisplaySuffix(
+    getSourceLabel(sourceName, normalizedLocale, fallbackLabel),
+    normalizedLocale
+  );
 };
 
 export const getSubtypeLabel = (item, locale = "zh-CN") => {

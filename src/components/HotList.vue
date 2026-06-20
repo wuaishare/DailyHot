@@ -201,7 +201,7 @@ import {
 import { getSourceLogo } from "@/utils/sourceLogos";
 import { trackEvent } from "@/utils/track";
 import {
-  getSourceLabel,
+  getSourceDisplayLabel,
   getSourceSubtitleLabel,
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
@@ -270,7 +270,7 @@ const API_LOCALIZED_SOURCE_NAMES = new Set(["designarena"]);
 const shouldReloadForLocaleChange = (name = "") =>
   API_LOCALIZED_SOURCE_NAMES.has(name);
 const sourceLabel = computed(() =>
-  getSourceLabel(props.hotData.name, locale.value, props.hotData.label)
+  getSourceDisplayLabel(props.hotData.name, locale.value, props.hotData.label)
 );
 const cardSubtitle = computed(() => {
   const rawSubtitle =
