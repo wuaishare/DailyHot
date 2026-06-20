@@ -253,6 +253,7 @@ const API_LOCALIZED_SOURCE_NAMES = new Set([
 ]);
 const shouldReloadForLocaleChange = (name = "") =>
   API_LOCALIZED_SOURCE_NAMES.has(name);
+const READABLE_TRANSLATION_FALLBACK_MS = 3000;
 
 const updateTime = ref(null);
 const availableNews = computed(() => {
@@ -429,6 +430,38 @@ const applyListResult = (result) => {
   updateTime.value = formatTime(result?.updateTime, locale.value);
 };
 
+const enhanceAndApplyListResult = async (
+  result,
+  requestId,
+  name,
+  shouldTranslate
+) => {
+  if (!shouldTranslate) {
+    applyListResult(result);
+    return;
+  }
+
+  let fallbackApplied = false;
+  const fallbackTimer = window.setTimeout(() => {
+    if (!isCurrentListRequest(requestId, name)) return;
+    fallbackApplied = true;
+    applyListResult(result);
+  }, READABLE_TRANSLATION_FALLBACK_MS);
+
+  try {
+    const nextResult = await enhanceListResult(result);
+    if (!isCurrentListRequest(requestId, name)) return;
+    applyListResult(nextResult);
+  } catch {
+    if (!isCurrentListRequest(requestId, name)) return;
+    if (!fallbackApplied) {
+      applyListResult(result);
+    }
+  } finally {
+    window.clearTimeout(fallbackTimer);
+  }
+};
+
 const applyListFailureResult = (item, result = {}) => {
   applyListResult({
     code: result.code || 500,
@@ -505,17 +538,8 @@ const getHotListsData = async (name, isNew = false) => {
       store.setSourceApi2(item.name, true);
     }
     if (result.code === 200) {
-      applyListResult(result);
       store.markAvailable(item.name);
-      if (!shouldTranslate) return;
-      try {
-        const nextResult = await enhanceListResult(result);
-        if (!isCurrentListRequest(requestId, item.name)) return;
-        applyListResult(nextResult);
-      } catch {
-        if (!isCurrentListRequest(requestId, item.name)) return;
-        applyListResult(result);
-      }
+      await enhanceAndApplyListResult(result, requestId, item.name, shouldTranslate);
     } else {
       store.markUnavailable(item.name);
       applyListFailureResult(item, result);
@@ -530,8 +554,13 @@ const getHotListsData = async (name, isNew = false) => {
       });
       if (!isCurrentListRequest(requestId, item.name)) return;
       if (retryResponse?.result?.code === 200) {
-        applyListResult(retryResponse.result);
         store.markAvailable(item.name);
+        await enhanceAndApplyListResult(
+          retryResponse.result,
+          requestId,
+          item.name,
+          shouldTranslate
+        );
         return;
       }
       store.markUnavailable(item.name);

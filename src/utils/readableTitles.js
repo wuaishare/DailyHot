@@ -1,9 +1,12 @@
 import { getLocaleMeta, normalizeLocale } from "@/utils/locale";
 import { getReadableTranslations } from "@/api";
-import { translatePlainTexts } from "@/utils/translateEngine";
+import {
+  protectTranslationTerms,
+  translatePlainTexts,
+} from "@/utils/translateEngine";
 
 const READABLE_TRANSLATION_LOCALES = new Set(["zh-CN", "en", "zh-TW", "ja", "ko"]);
-const CLIENT_FIRST_TRANSLATION_LOCALES = new Set(["zh-CN", "en", "zh-TW", "ja", "ko"]);
+const CLIENT_FIRST_TRANSLATION_LOCALES = new Set(["zh-CN"]);
 const ENTITY_TITLE_SOURCE_NAMES = new Set([
   "openrouter-rankings",
   "artificialanalysis",
@@ -144,12 +147,21 @@ const getBackendTranslatedMap = async (texts = [], locale) => {
 
   for (const titleChunk of titleChunks) {
     try {
-      const response = await getReadableTranslations(titleChunk, locale);
+      const protectedItems = titleChunk.map((text) => protectTranslationTerms(text));
+      const response = await getReadableTranslations(
+        protectedItems.map((item) => item.protectedText),
+        locale
+      );
       const data = Array.isArray(response?.data) ? response.data : [];
       const chunkMap = toTranslatedMap(
-        data.map((item) => {
-          const translated = String(item.translated || "").trim();
-          return [item.original, translated];
+        data.map((item, index) => {
+          const original = titleChunk[index] || item.original;
+          const protectedItem =
+            protectedItems[index] || protectTranslationTerms(original);
+          const translated = protectedItem
+            .restore(String(item.translated || "").trim())
+            .trim();
+          return [original, translated];
         })
       );
       mergeTranslatedMap(backendMap, chunkMap);
@@ -327,7 +339,7 @@ export const translateReadableTitles = async (titles = [], locale) => {
 export const enhanceReadableResultTitles = async (
   result,
   locale,
-  { offset = 0, limit = 20, sourceName = "" } = {}
+  { includeDescriptions = true, offset = 0, limit = 20, sourceName = "" } = {}
 ) => {
   const normalizedLocale = normalizeLocale(locale);
   if (!shouldUseReadableTitleTranslation(sourceName, normalizedLocale)) return result;
@@ -342,10 +354,13 @@ export const enhanceReadableResultTitles = async (
     start + Math.max(1, Number(limit) || normalizedResult.data.length)
   );
   const scopedItems = normalizedResult.data.slice(start, end);
-  const sourceTexts = scopedItems.flatMap((item) => [
-    String(item?.originalTitle || item?.title || "").trim(),
-    String(item?.originalDesc || item?.desc || "").trim(),
-  ]).filter((text) => looksTranslatableSentence(text, normalizedLocale));
+  const sourceTexts = scopedItems.flatMap((item) => {
+    const texts = [String(item?.originalTitle || item?.title || "").trim()];
+    if (includeDescriptions) {
+      texts.push(String(item?.originalDesc || item?.desc || "").trim());
+    }
+    return texts;
+  }).filter((text) => looksTranslatableSentence(text, normalizedLocale));
 
   if (!sourceTexts.length) return normalizedResult;
 

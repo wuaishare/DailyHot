@@ -282,6 +282,7 @@ const API_LOCALIZED_SOURCE_NAMES = new Set([
 ]);
 const shouldReloadForLocaleChange = (name = "") =>
   API_LOCALIZED_SOURCE_NAMES.has(name);
+const READABLE_TRANSLATION_FALLBACK_MS = 3000;
 const sourceLabel = computed(() =>
   getSourceDisplayLabel(props.hotData.name, locale.value, props.hotData.label)
 );
@@ -399,6 +400,7 @@ const requestHotListResult = (item, isNew, shouldTranslate, useApi2) =>
 const enhanceHotListResult = (result, targetLocale = locale.value) =>
   shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)
     ? enhanceReadableResultTitles(result, targetLocale, {
+        includeDescriptions: false,
         limit: HOT_LIST_VISIBLE_LIMIT,
         offset: 0,
         sourceName: props.hotData.name,
@@ -415,15 +417,27 @@ const applyHotListResult = (result) => {
 };
 
 const enhanceAndApplyHotListResult = async (result, requestId, shouldTranslate) => {
-  applyHotListResult(result);
-  if (!shouldTranslate) return;
+  if (!shouldTranslate) {
+    applyHotListResult(result);
+    return;
+  }
+  let fallbackApplied = false;
+  const fallbackTimer = window.setTimeout(() => {
+    if (requestId !== hotListRequestId) return;
+    fallbackApplied = true;
+    applyHotListResult(result);
+  }, READABLE_TRANSLATION_FALLBACK_MS);
   try {
     const nextResult = await enhanceHotListResult(result);
     if (requestId !== hotListRequestId) return;
     applyHotListResult(nextResult);
   } catch {
     if (requestId !== hotListRequestId) return;
-    applyHotListResult(result);
+    if (!fallbackApplied) {
+      applyHotListResult(result);
+    }
+  } finally {
+    window.clearTimeout(fallbackTimer);
   }
 };
 

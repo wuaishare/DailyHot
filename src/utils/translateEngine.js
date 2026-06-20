@@ -49,7 +49,7 @@ const parseGoogleTranslateResponse = (payload) => {
     .trim();
 };
 
-const protectTranslationTerms = (text = "") => {
+export const protectTranslationTerms = (text = "") => {
   const terms = [];
   const protectedText = String(text || "").replace(PROTECTED_TERM_PATTERN, (term) => {
     const token = `DHTERM${terms.length}X`;
