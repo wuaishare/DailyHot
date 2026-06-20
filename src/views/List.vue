@@ -437,6 +437,9 @@ const applyListFailureResult = (item, result = {}) => {
   });
 };
 
+const isCurrentListRequest = (requestId, name) =>
+  requestId === listRequestId || listType.value === name;
+
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
   if (!name) return;
@@ -485,7 +488,7 @@ const getHotListsData = async (name, isNew = false) => {
         forceNoCache: Boolean(isNew),
       }
     );
-    if (response?.result?.code !== 200 && requestId === listRequestId) {
+    if (response?.result?.code !== 200 && isCurrentListRequest(requestId, item.name)) {
       await new Promise((resolve) => setTimeout(resolve, 800));
       response = await getHotListsWithFallback(item.name, true, requestParams, {
         useApi2,
@@ -493,7 +496,7 @@ const getHotListsData = async (name, isNew = false) => {
       });
     }
     const { result, usedFallback, fallbackSuccess } = response;
-    if (requestId !== listRequestId) return;
+    if (!isCurrentListRequest(requestId, item.name)) return;
     if (usedFallback && fallbackSuccess && !useApi2) {
       store.setSourceApi2(item.name, true);
     }
@@ -503,10 +506,10 @@ const getHotListsData = async (name, isNew = false) => {
       if (!shouldTranslate) return;
       try {
         const nextResult = await enhanceListResult(result);
-        if (requestId !== listRequestId) return;
+        if (!isCurrentListRequest(requestId, item.name)) return;
         applyListResult(nextResult);
       } catch {
-        if (requestId !== listRequestId) return;
+        if (!isCurrentListRequest(requestId, item.name)) return;
         applyListResult(result);
       }
     } else {
@@ -515,13 +518,13 @@ const getHotListsData = async (name, isNew = false) => {
       $message.error(result.message);
     }
   } catch {
-    if (requestId !== listRequestId) return;
+    if (!isCurrentListRequest(requestId, item.name)) return;
     try {
       const retryResponse = await getHotListsWithFallback(item.name, true, requestParams, {
         useApi2,
         forceNoCache: true,
       });
-      if (requestId !== listRequestId) return;
+      if (!isCurrentListRequest(requestId, item.name)) return;
       if (retryResponse?.result?.code === 200) {
         store.markAvailable(item.name);
         applyListResult(retryResponse.result);
@@ -530,7 +533,7 @@ const getHotListsData = async (name, isNew = false) => {
       store.markUnavailable(item.name);
       applyListFailureResult(item, retryResponse?.result);
     } catch {
-      if (requestId !== listRequestId) return;
+      if (!isCurrentListRequest(requestId, item.name)) return;
       store.markUnavailable(item.name);
       applyListFailureResult(item);
     }
