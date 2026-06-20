@@ -69,6 +69,10 @@ const assertHtml = async (path, expectations) => {
     response.body,
     /<link\s+rel="canonical"\s+href="([^"]+)"/
   );
+  const description = extract(
+    response.body,
+    /<meta\s+name="description"\s+content="([^"]+)"/
+  );
   const asset = extract(
     response.body,
     /<script\s+type="module"\s+crossorigin\s+src="(\/assets\/index-[^"]+\.js)"/
@@ -79,6 +83,17 @@ const assertHtml = async (path, expectations) => {
       `title mismatch: ${title}`
     );
   }
+  if (expectations.descriptionIncludes) {
+    const required = Array.isArray(expectations.descriptionIncludes)
+      ? expectations.descriptionIncludes
+      : [expectations.descriptionIncludes];
+    required.forEach((item) =>
+      assert(
+        description.includes(item),
+        `description missing ${item}: ${description}`
+      )
+    );
+  }
   if (expectations.canonical) {
     assert(
       canonical === `${siteUrl}${expectations.canonical}`,
@@ -86,7 +101,7 @@ const assertHtml = async (path, expectations) => {
     );
   }
   assert(asset, "missing main asset");
-  return { title, canonical, asset };
+  return { title, canonical, description, asset };
 };
 
 addCheck("route SEO: ithome base canonicalizes to day", () =>
@@ -121,6 +136,70 @@ addCheck("localized route SEO: english ithome base canonicalizes to day", () =>
   assertHtml("/en/rank/ithome", {
     titleIncludes: "ITHome · Daily",
     canonical: "/en/rank/ithome/day",
+  })
+);
+
+addCheck("category SEO: zh-CN AI uses platform-rich description", () =>
+  assertHtml("/category/ai", {
+    titleIncludes: "AI 热榜",
+    canonical: "/category/ai",
+    descriptionIncludes: ["OpenRouter", "Artificial Analysis", "Product Hunt"],
+  })
+);
+
+addCheck("category SEO: en AI uses platform-rich description", () =>
+  assertHtml("/en/category/ai", {
+    titleIncludes: "AI Hot Rankings - AI model leaderboards",
+    canonical: "/en/category/ai",
+    descriptionIncludes: ["OpenRouter", "Artificial Analysis", "Hacker News"],
+  })
+);
+
+addCheck("category SEO: zh-TW AI uses platform-rich description", () =>
+  assertHtml("/zh-tw/category/ai", {
+    titleIncludes: "AI熱榜 - AI模型排行榜",
+    canonical: "/zh-tw/category/ai",
+    descriptionIncludes: ["OpenRouter", "Artificial Analysis", "Hacker News"],
+  })
+);
+
+addCheck("category SEO: ja AI uses platform-rich description", () =>
+  assertHtml("/ja/category/ai", {
+    titleIncludes: "AIランキング - AIモデル評価",
+    canonical: "/ja/category/ai",
+    descriptionIncludes: ["OpenRouter", "Artificial Analysis", "Hacker News"],
+  })
+);
+
+addCheck("category SEO: ko AI uses platform-rich description", () =>
+  assertHtml("/ko/category/ai", {
+    titleIncludes: "AI 랭킹 - AI 모델 순위",
+    canonical: "/ko/category/ai",
+    descriptionIncludes: ["OpenRouter", "Artificial Analysis", "Hacker News"],
+  })
+);
+
+addCheck("route SEO: openrouter model rankings are localized", () =>
+  assertHtml("/rank/openrouter-rankings/models-week", {
+    titleIncludes: "OpenRouter 模型周榜",
+    canonical: "/rank/openrouter-rankings/models-week",
+    descriptionIncludes: "模型使用热度与调用趋势榜",
+  })
+);
+
+addCheck("route SEO: designarena daily usage is concise", () =>
+  assertHtml("/rank/designarena/daily-usage", {
+    titleIncludes: "DesignArena 日活使用榜",
+    canonical: "/rank/designarena/daily-usage",
+    descriptionIncludes: "模型生成应用日活用户",
+  })
+);
+
+addCheck("route SEO: clawhub skill installs mention OpenClaw", () =>
+  assertHtml("/rank/clawhub/skills-installs", {
+    titleIncludes: "ClawHub 安装最多技能榜",
+    canonical: "/rank/clawhub/skills-installs",
+    descriptionIncludes: "OpenClaw技能安装量",
   })
 );
 
@@ -169,26 +248,61 @@ addCheck("api: ithome subtype coverage", async () => {
   return results;
 });
 
+addCheck("api: AI ranking endpoints are available", async () => {
+  const cases = [
+    ["openrouter-rankings", "models-week"],
+    ["openrouter-rankings", "apps-day"],
+    ["designarena", "fullstack"],
+    ["designarena", "daily-usage"],
+    ["clawhub", "skills-installs"],
+    ["clawhub", "plugins-recommended"],
+  ];
+  const results = [];
+  for (const [source, type] of cases) {
+    const url = new URL(`${siteUrl}/api/${source}`);
+    url.searchParams.set("cache", "false");
+    url.searchParams.set("type", type);
+    const response = await request(url.toString());
+    assert(response.statusCode === 200, `${source}/${type}: HTTP ${response.statusCode}`);
+    const payload = JSON.parse(response.body);
+    assert(payload.code === 200, `${source}/${type}: API code ${payload.code}`);
+    assert(
+      Array.isArray(payload.data) && payload.data.length > 0,
+      `${source}/${type}: empty data`
+    );
+    results.push(`${source}/${type}:${payload.subtitle || payload.type}:${payload.data.length}`);
+  }
+  return results;
+});
+
 addCheck("api: readable translation preserves model terms", async () => {
-  const response = await request(`${siteUrl}/api/readable-translate`, {
-    method: "POST",
-    body: JSON.stringify({
-      locale: "zh-CN",
-      texts: [
-        "Statement on the US government directive to suspend access to Fable 5",
-        "Introducing Claude Opus 4.8",
-      ],
-    }),
-  });
-  assert(response.statusCode === 200, `HTTP ${response.statusCode}`);
-  const payload = JSON.parse(response.body);
-  assert(payload.success, "translation API did not report success");
-  const translated = (payload.data || payload.items || [])
-    .map((item) => item.translated || "")
-    .join("\n");
-  assert(/Fable 5/.test(translated), `Fable 5 was not preserved: ${translated}`);
-  assert(/Claude Opus 4\.8/.test(translated), `Claude Opus 4.8 was not preserved: ${translated}`);
-  return translated.split("\n");
+  const locales = ["zh-CN", "zh-TW", "ja", "ko"];
+  const results = [];
+  for (const locale of locales) {
+    const response = await request(`${siteUrl}/api/readable-translate`, {
+      method: "POST",
+      body: JSON.stringify({
+        locale,
+        texts: [
+          "Statement on the US government directive to suspend access to Fable 5",
+          "Introducing Claude Opus 4.8",
+        ],
+      }),
+    });
+    assert(response.statusCode === 200, `${locale}: HTTP ${response.statusCode}`);
+    const payload = JSON.parse(response.body);
+    assert(payload.success, `${locale}: translation API did not report success`);
+    const translated = (payload.data || payload.items || [])
+      .map((item) => item.translated || "")
+      .join("\n");
+    assert(/Fable 5/.test(translated), `${locale}: Fable 5 was not preserved: ${translated}`);
+    assert(
+      /Claude Opus 4\.8/.test(translated),
+      `${locale}: Claude Opus 4.8 was not preserved: ${translated}`
+    );
+    results.push(`${locale}:${translated.replace(/\n/g, " | ")}`);
+  }
+  return results;
 });
 
 const main = async () => {

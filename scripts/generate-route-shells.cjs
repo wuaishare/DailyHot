@@ -613,6 +613,7 @@ function main() {
   const siteMetadataSource = fs.readFileSync(siteMetadataPath, "utf8");
 
   const categorySeoMap = parseConstant(seoSource, "CATEGORY_SEO_MAP");
+  const categoryLocaleSeoMap = parseConstant(seoSource, "CATEGORY_LOCALE_SEO_MAP");
   const listSeoMap = parseConstant(seoSource, "LIST_SEO_MAP");
   const clawHubZhBaseSeo = parseConstant(seoSource, "CLAWHUB_ZH_BASE_SEO");
   const clawHubZhSubtypeSeo = parseConstant(seoSource, "CLAWHUB_ZH_SUBTYPE_SEO");
@@ -717,6 +718,25 @@ function main() {
           canonical,
           htmlLang,
           listName: meta.title,
+        }),
+      };
+    }
+    const localizedCategoryMeta = categoryLocaleSeoMap?.[category.name]?.[locale];
+    if (localizedCategoryMeta) {
+      const { title, description, keywords } = localizedCategoryMeta;
+      return {
+        title,
+        description,
+        keywords,
+        canonical,
+        htmlLang,
+        alternateLinks: buildAlternateLinks(basePathname, supportedLocales),
+        jsonLd: buildCollectionJsonLd({
+          title,
+          description,
+          canonical,
+          htmlLang,
+          listName: categoryConfig?.labels?.[locale] || category.name,
         }),
       };
     }

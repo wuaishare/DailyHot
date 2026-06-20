@@ -132,6 +132,39 @@ const CATEGORY_SEO_MAP = {
   },
 };
 
+const CATEGORY_LOCALE_SEO_MAP = {
+  AI: {
+    en: {
+      title: "AI Hot Rankings - AI model leaderboards, AI news, and tool trends | DailyHot",
+      description:
+        "AI Hot Rankings aggregate OpenRouter, Artificial Analysis, Arena AI, DesignArena, LLM Stats, OpenAI, Anthropic, Hugging Face, Product Hunt, and Hacker News to track model rankings, official AI updates, research trends, and AI product discovery.",
+      keywords:
+        "AI rankings,AI model leaderboard,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI news,AI tools,DailyHot",
+    },
+    "zh-TW": {
+      title: "AI熱榜 - AI模型排行榜、AI資訊與熱門工具榜單聚合 | 吾愛熱榜",
+      description:
+        "AI熱榜彙整 OpenRouter、Artificial Analysis、Arena AI、DesignArena、LLM Stats、OpenAI、Anthropic、Hugging Face、Product Hunt 與 Hacker News，追蹤模型排行、官方AI動態、研究趨勢與AI產品發現。",
+      keywords:
+        "AI熱榜,AI模型排行榜,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI資訊,AI工具,吾愛熱榜",
+    },
+    ja: {
+      title: "AIランキング - AIモデル評価、AIニュース、人気ツール動向の集約 | DailyHot",
+      description:
+        "AIランキングは OpenRouter、Artificial Analysis、Arena AI、DesignArena、LLM Stats、OpenAI、Anthropic、Hugging Face、Product Hunt、Hacker News を集約し、モデル順位、公式AIニュース、研究動向、AIプロダクト発見を追跡します。",
+      keywords:
+        "AIランキング,AIモデルランキング,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AIニュース,AIツール,DailyHot",
+    },
+    ko: {
+      title: "AI 랭킹 - AI 모델 순위, AI 뉴스, 인기 도구 트렌드 | DailyHot",
+      description:
+        "AI 랭킹은 OpenRouter, Artificial Analysis, Arena AI, DesignArena, LLM Stats, OpenAI, Anthropic, Hugging Face, Product Hunt, Hacker News를 모아 모델 순위, 공식 AI 소식, 연구 동향, AI 제품 발견을 추적합니다.",
+      keywords:
+        "AI 랭킹,AI 모델 순위,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI 뉴스,AI 도구,DailyHot",
+    },
+  },
+};
+
 const trimTerminalPunctuation = (value = "") =>
   String(value)
     .trim()
@@ -1019,6 +1052,28 @@ const getCategorySeo = (route, canonical) => {
         mainEntity: {
           "@type": "ItemList",
           name: categoryMeta.title,
+          itemListOrder: "Descending",
+        },
+      },
+    };
+  }
+  const localizedCategoryMeta = CATEGORY_LOCALE_SEO_MAP[rawCategoryName]?.[locale];
+  if (localizedCategoryMeta) {
+    const { title, description, keywords } = localizedCategoryMeta;
+    return {
+      title,
+      description,
+      keywords,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        inLanguage: getLocaleMeta(locale)?.htmlLang || "zh-CN",
+        url: canonical,
+        mainEntity: {
+          "@type": "ItemList",
+          name: categoryName,
           itemListOrder: "Descending",
         },
       },
