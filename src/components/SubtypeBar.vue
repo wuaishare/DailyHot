@@ -8,15 +8,15 @@
       'is-dragging': isDragging,
     }"
     data-no-card-drag
-    @pointerdown.stop
+    @pointerdown.stop="lockCardDrag"
     @pointermove.stop
-    @pointerup.stop
-    @pointercancel.stop
+    @pointerup.stop="unlockCardDrag"
+    @pointercancel.stop="unlockCardDrag"
     @mousedown.stop
-    @touchstart.stop
+    @touchstart.stop="lockCardDrag"
     @touchmove.stop
-    @touchend.stop
-    @touchcancel.stop
+    @touchend.stop="unlockCardDrag"
+    @touchcancel.stop="unlockCardDrag"
     @click.stop
     @dragstart.prevent
   >
@@ -142,10 +142,14 @@ const canScrollRight = ref(false);
 const isDragging = ref(false);
 const dragMoved = ref(false);
 let closeTimer = null;
+let dragUnlockTimer = null;
 let dragStartX = 0;
 let dragStartScrollLeft = 0;
 let pointerCaptured = false;
 let resizeObserver = null;
+const MENU_EDGE_GAP = 12;
+const MENU_MIN_WIDTH = 120;
+const MENU_MAX_WIDTH = 420;
 
 const flatItems = computed(() =>
   props.groups.flatMap((group) => group.items || [])
@@ -213,8 +217,40 @@ const refreshScrollState = () => {
   });
 };
 
+const notifyCardDragLock = (active) => {
+  if (typeof window === "undefined") return;
+  if (dragUnlockTimer) {
+    clearTimeout(dragUnlockTimer);
+    dragUnlockTimer = null;
+  }
+  const dispatch = () => {
+    window.dispatchEvent(
+      new CustomEvent("dailyhot:subtype-interaction", {
+        detail: { active },
+      })
+    );
+  };
+  if (active) {
+    dispatch();
+    return;
+  }
+  dragUnlockTimer = window.setTimeout(() => {
+    dragUnlockTimer = null;
+    dispatch();
+  }, 80);
+};
+
+const lockCardDrag = () => {
+  notifyCardDragLock(true);
+};
+
+const unlockCardDrag = () => {
+  notifyCardDragLock(false);
+};
+
 const startDrag = (event) => {
   const track = trackRef.value;
+  notifyCardDragLock(true);
   if (!track || event.button !== 0 || track.scrollWidth <= track.clientWidth) {
     return;
   }
@@ -242,6 +278,7 @@ const dragScroll = (event) => {
 
 const endDrag = (event) => {
   const track = trackRef.value;
+  notifyCardDragLock(false);
   if (!isDragging.value) return;
   isDragging.value = false;
   if (pointerCaptured) {
@@ -265,28 +302,55 @@ const positionMenu = (target) => {
   if (typeof window === "undefined" || !target) return;
   const rect = target.getBoundingClientRect();
   const menu = document.querySelector(".subtype-menu");
-  const measuredWidth = menu?.getBoundingClientRect?.().width || 0;
-  const width = Math.min(
-    Math.max(measuredWidth || 0, rect.width, 120),
-    420,
-    window.innerWidth - 24
+  const viewportWidth =
+    document.documentElement?.clientWidth || window.innerWidth;
+  const viewportHeight =
+    document.documentElement?.clientHeight || window.innerHeight;
+  const availableWidth = Math.max(
+    MENU_MIN_WIDTH,
+    viewportWidth - MENU_EDGE_GAP * 2
   );
-  const preferredLeft = rect.left + rect.width / 2 - width / 2;
+  const measuredWidth = Math.max(
+    menu?.scrollWidth || 0,
+    menu?.offsetWidth || 0,
+    menu?.getBoundingClientRect?.().width || 0
+  );
+  const width = Math.min(
+    Math.ceil(Math.max(measuredWidth || 0, rect.width, MENU_MIN_WIDTH)),
+    MENU_MAX_WIDTH,
+    availableWidth
+  );
+  const centeredLeft = rect.left + rect.width / 2 - width / 2;
+  const rightAlignedLeft = rect.right - width;
+  const preferredLeft =
+    rect.right + width / 2 + MENU_EDGE_GAP > viewportWidth
+      ? rightAlignedLeft
+      : centeredLeft;
   const left = Math.min(
-    window.innerWidth - width - 12,
-    Math.max(12, preferredLeft)
+    viewportWidth - width - MENU_EDGE_GAP,
+    Math.max(MENU_EDGE_GAP, preferredLeft)
   );
   const top = rect.bottom + 6;
-  const maxHeight = Math.min(240, window.innerHeight - 24);
-  const showAbove = top + 140 > window.innerHeight && rect.top > 150;
+  const maxHeight = Math.min(240, viewportHeight - MENU_EDGE_GAP * 2);
+  const showAbove = top + 140 > viewportHeight && rect.top > 150;
 
   menuStyle.value = {
     left: `${left}px`,
-    top: `${showAbove ? Math.max(12, rect.top - 8) : top}px`,
+    top: `${showAbove ? Math.max(MENU_EDGE_GAP, rect.top - 8) : top}px`,
+    width: `${width}px`,
     maxWidth: `${width}px`,
     maxHeight: `${maxHeight}px`,
     transform: showAbove ? "translateY(-100%)" : "none",
   };
+};
+
+const queueOpenMenuPosition = () => {
+  nextTick(() => {
+    updateOpenMenuPosition();
+    if (typeof window === "undefined") return;
+    window.requestAnimationFrame?.(updateOpenMenuPosition) ||
+      window.setTimeout(updateOpenMenuPosition, 0);
+  });
 };
 
 const updateOpenMenuPosition = () => {
@@ -300,7 +364,7 @@ const openGroup = (group, event) => {
   activeMenuTarget.value = event?.currentTarget || null;
   openGroupKey.value = getGroupKey(group);
   positionMenu(activeMenuTarget.value);
-  nextTick(updateOpenMenuPosition);
+  queueOpenMenuPosition();
 };
 
 const keepMenuOpen = () => {
@@ -365,7 +429,7 @@ const handleGroupClick = (group, event) => {
   if (openGroupKey.value) {
     activeMenuTarget.value = event?.currentTarget || null;
     positionMenu(activeMenuTarget.value);
-    nextTick(updateOpenMenuPosition);
+    queueOpenMenuPosition();
   }
 
   if (!isGroupActive(group)) {
@@ -402,6 +466,11 @@ onBeforeUnmount(() => {
     resizeObserver.disconnect();
     resizeObserver = null;
   }
+  if (dragUnlockTimer) {
+    clearTimeout(dragUnlockTimer);
+    dragUnlockTimer = null;
+  }
+  notifyCardDragLock(false);
   clearCloseTimer();
 });
 </script>

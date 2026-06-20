@@ -10,6 +10,7 @@
       :class="{ 'is-compact': store.compactMode }"
       item-key="name"
       :animation="180"
+      :disabled="cardDragDisabled"
       filter=".no-card-drag, .no-card-drag *"
       :prevent-on-filter="false"
       :fallback-tolerance="8"
@@ -58,6 +59,7 @@ const { t } = useI18n({ useScope: "global" });
 const route = useRoute();
 const enableCardEntrance = ref(true);
 const isCardDragging = ref(false);
+const isSubtypeInteracting = ref(false);
 const sortableNews = ref([]);
 const renderNews = computed(() => {
   return store.newsArr
@@ -77,6 +79,8 @@ const filteredNews = computed(() => {
 const syncSortableNews = () => {
   sortableNews.value = filteredNews.value.slice();
 };
+const cardDragDisabled = computed(() => isSubtypeInteracting.value);
+let subtypeInteractionTimer = null;
 
 watch(
   () => filteredNews.value.map((item) => item.name).join("|"),
@@ -90,7 +94,28 @@ onMounted(() => {
   window.setTimeout(() => {
     enableCardEntrance.value = false;
   }, 400);
+  window.addEventListener("dailyhot:subtype-interaction", handleSubtypeInteraction);
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener("dailyhot:subtype-interaction", handleSubtypeInteraction);
+  if (subtypeInteractionTimer) clearTimeout(subtypeInteractionTimer);
+});
+
+const handleSubtypeInteraction = (event) => {
+  if (subtypeInteractionTimer) {
+    clearTimeout(subtypeInteractionTimer);
+    subtypeInteractionTimer = null;
+  }
+  if (event?.detail?.active) {
+    isSubtypeInteracting.value = true;
+    return;
+  }
+  subtypeInteractionTimer = window.setTimeout(() => {
+    isSubtypeInteracting.value = false;
+    subtypeInteractionTimer = null;
+  }, 120);
+};
 
 const startCardDrag = () => {
   isCardDragging.value = true;
