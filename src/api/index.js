@@ -3,7 +3,11 @@ import { getAdminToken } from "@/utils/adminAuth";
 
 const DEFAULT_FALLBACK_DELAY_MS = 1200;
 const API2_ONLY_SOURCES = new Set(["tianya"]);
-const SAME_ORIGIN_API_SOURCES = new Set(["designarena", "clawhub"]);
+const SAME_ORIGIN_API_SOURCES = new Set([
+  "designarena",
+  "clawhub",
+  "openrouter-rankings",
+]);
 const appApiBase = import.meta.env.VITE_GLOBAL_API;
 const analyticsApiBases = import.meta.env.PROD
   ? ["/api", import.meta.env.VITE_GLOBAL_API].filter(Boolean)
@@ -41,6 +45,7 @@ export const getHotLists = (type, isNew = false, params, options = {}) => {
   const apiBase2 = import.meta.env.VITE_GLOBAL_API2;
   const timeout = options?.timeout;
   const forceNoCache = Boolean(options?.forceNoCache);
+  const silent = Boolean(options?.silent);
   return axios({
     method: "GET",
     url: `/${type}`,
@@ -54,6 +59,7 @@ export const getHotLists = (type, isNew = false, params, options = {}) => {
       ...params,
     },
     ...(timeout ? { timeout } : {}),
+    ...(silent ? { silent: true } : {}),
   });
 };
 
@@ -114,8 +120,13 @@ export const getHotListsWithFallback = async (
   const timeout = options?.timeout;
   const forceNoCache = Boolean(options?.forceNoCache);
   const fallbackDelay = options?.fallbackDelay ?? DEFAULT_FALLBACK_DELAY_MS;
-  const run = (useApi2) =>
-    getHotLists(type, isNew, params, { useApi2, timeout, forceNoCache });
+  const run = (useApi2, runOptions = {}) =>
+    getHotLists(type, isNew, params, {
+      useApi2,
+      timeout,
+      forceNoCache,
+      ...runOptions,
+    });
 
   if (preferApi2 || !hasApi2 || disableFallback) {
     const useApi2 = preferApi2 && !disableFallback;
@@ -124,7 +135,7 @@ export const getHotListsWithFallback = async (
   }
 
   const createAttempt = (useApi2) =>
-    run(useApi2).then((result) => {
+    run(useApi2, { silent: true }).then((result) => {
       if (result?.code === 200) {
         return { result, usedApi2 };
       }
