@@ -558,6 +558,56 @@ addCheck("api: readable translation localizes zh-CN news titles", async () => {
   return translated;
 });
 
+addCheck("api: readable translation localizes zh-CN titles to target languages", async () => {
+  const sourceTexts = [
+    "日本签证7月1日起涨价5倍",
+    "如何评价GLM-5.2？",
+    "中国在为台岛以东海域国土规划做准备",
+  ];
+  const locales = ["zh-TW", "en", "ja", "ko"];
+  const results = [];
+  for (const locale of locales) {
+    const response = await requestWithRetry(
+      `${siteUrl}/api/readable-translate`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          locale,
+          texts: sourceTexts,
+        }),
+      },
+      3
+    );
+    assert(response.statusCode === 200, `${locale}: HTTP ${response.statusCode}`);
+    const payload = JSON.parse(response.body);
+    assert(payload.success, `${locale}: translation API did not report success`);
+    const translatedItems = payload.data || payload.items || [];
+    assert(
+      translatedItems.length === sourceTexts.length,
+      `${locale}: unexpected translated item count: ${translatedItems.length}`
+    );
+    const translated = translatedItems.map((item) => item.translated || "");
+    translated.forEach((value, index) => {
+      assert(value && value !== sourceTexts[index], `${locale}: item ${index} was not translated`);
+    });
+    assert(
+      /GLM-5\.2/.test(translated.join("\n")),
+      `${locale}: GLM-5.2 model term was not preserved: ${translated.join(" | ")}`
+    );
+    if (locale === "zh-TW") {
+      const joined = translated.join("\n");
+      assert(/中國|評價|規劃|準備/.test(joined), `zh-TW: missing traditional text: ${joined}`);
+      assert(!/中国|评价|规划|准备/.test(joined), `zh-TW: leaked simplified text: ${joined}`);
+    } else {
+      translated.forEach((value, index) =>
+        assertLocaleText(value, locale, `zh-CN-to-${locale}.item${index}`)
+      );
+    }
+    results.push(`${locale}:${translated.join(" | ")}`);
+  }
+  return results;
+});
+
 const main = async () => {
   let failed = 0;
   for (const check of checks) {

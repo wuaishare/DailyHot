@@ -65,6 +65,7 @@ const BILIBILI_COMMON_HEADERS = {
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 DailyHot/1.0",
   Cookie: "buvid3=00000000-0000-4000-8000-000000000000infoc",
 };
+const BILIBILI_DIRECT_FETCH_ATTEMPTS = 3;
 const ITHOME_XCVTS_URL = "https://api.xcvts.cn/api/hotlist/ithome";
 const ITHOME_OFFICIAL_RANK_URL = "https://m.ithome.com/rankm/";
 const ITHOME_DIRECT_FETCH_TIMEOUT_MS = 6000;
@@ -1082,19 +1083,30 @@ const buildBilibiliResponse = ({ type, items, updateTime = new Date().toISOStrin
 });
 
 const fetchBilibiliJson = async (url, options = {}) => {
-  const response = await fetchWithTimeout(url, {
-    method: "GET",
-    headers: {
-      ...BILIBILI_COMMON_HEADERS,
-      ...(options.referer ? { Referer: options.referer } : {}),
-    },
-  });
-  if (!response.ok) throw new Error(`Bilibili ${response.status}`);
-  const payload = await response.json();
-  if (payload?.code !== 0) {
-    throw new Error(`Bilibili API code ${payload?.code ?? "unknown"}`);
+  let lastError;
+  for (let attempt = 0; attempt < BILIBILI_DIRECT_FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(url, {
+        method: "GET",
+        headers: {
+          ...BILIBILI_COMMON_HEADERS,
+          ...(options.referer ? { Referer: options.referer } : {}),
+        },
+      });
+      if (!response.ok) throw new Error(`Bilibili ${response.status}`);
+      const payload = await response.json();
+      if (payload?.code !== 0) {
+        throw new Error(`Bilibili API code ${payload?.code ?? "unknown"}`);
+      }
+      return payload;
+    } catch (error) {
+      lastError = error;
+      if (attempt < BILIBILI_DIRECT_FETCH_ATTEMPTS - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+      }
+    }
   }
-  return payload;
+  throw lastError;
 };
 
 const fetchBilibiliWeeklyItems = async () => {
@@ -1604,6 +1616,32 @@ const localizeClawHubProxyResult = (result, locale = "zh-CN", type = "") => {
   };
 };
 
+const sendLocalizedClawHubUnavailable = (req, res, message) => {
+  const locale =
+    normalizeReadableLocale(normalizeQueryValue(req.query.locale, "zh-CN")) ||
+    "zh-CN";
+  const type = normalizeQueryValue(req.query.type, "");
+  res.status(502).json(
+    localizeClawHubProxyResult(
+      {
+        code: 502,
+        name: "clawhub",
+        title: "ClawHub",
+        type: "",
+        subtitle: "",
+        description: "",
+        message,
+        data: [],
+        total: 0,
+        fromCache: false,
+        updateTime: new Date().toISOString(),
+      },
+      locale,
+      type
+    )
+  );
+};
+
 function formatNumber(value, digits = 0) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "0";
@@ -1937,6 +1975,20 @@ export default async function handler(req, res) {
   if (pathValue === "bilibili") {
     const handled = await handleBilibili(req, res);
     if (handled) return;
+    const type = getBilibiliType(normalizeQueryValue(req.query.type, "all"));
+    res.status(502).json({
+      code: 502,
+      name: "bilibili",
+      title: "哔哩哔哩",
+      type: BILIBILI_TYPE_LABELS[type],
+      subtitle: BILIBILI_TYPE_LABELS[type],
+      message: "Bilibili direct API unavailable",
+      data: [],
+      total: 0,
+      fromCache: false,
+      updateTime: new Date().toISOString(),
+    });
+    return;
   }
 
   if (pathValue === "ithome") {
@@ -1987,6 +2039,10 @@ export default async function handler(req, res) {
   }
 
   if (!proxyResult) {
+    if (pathValue === "clawhub") {
+      sendLocalizedClawHubUnavailable(req, res, "ClawHub upstream unavailable");
+      return;
+    }
     if (PUBLIC_API_FALLBACK_PATHS.has(pathValue)) {
       redirectToPublicApiFallback(pathValue, req.query, res);
       return;
@@ -2000,6 +2056,14 @@ export default async function handler(req, res) {
 
   const { response, contentType, text } = proxyResult;
   if (!contentType.includes("application/json")) {
+    if (pathValue === "clawhub") {
+      sendLocalizedClawHubUnavailable(
+        req,
+        res,
+        "ClawHub upstream returned non-JSON response"
+      );
+      return;
+    }
     if (PUBLIC_API_FALLBACK_PATHS.has(pathValue)) {
       redirectToPublicApiFallback(pathValue, req.query, res);
       return;
