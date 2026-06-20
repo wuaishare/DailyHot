@@ -3627,6 +3627,13 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     ja: "すべて",
     ko: "전체",
   },
+  全部: {
+    "zh-CN": "全部",
+    "zh-TW": "全部",
+    en: "All",
+    ja: "すべて",
+    ko: "전체",
+  },
   娱乐: {
     "zh-CN": "娱乐",
     "zh-TW": "娛樂",

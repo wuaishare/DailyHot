@@ -593,6 +593,17 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  hellogithub: [
+    {
+      key: "sort",
+      label: "榜单",
+      param: "sort",
+      items: [
+        { label: "精选", value: "featured" },
+        { label: "全部", value: "all" },
+      ],
+    },
+  ],
   clawhub: [
     {
       key: "skills",
@@ -717,10 +728,14 @@ export const resolveSourceSubtype = (options, preferredSubtype) => {
 };
 
 export const buildSourceSubtypeParams = (sourceName, subtype) => {
+  const groups = getSourceSubtypeGroups(sourceName);
   const resolved = resolveSourceSubtype(
-    getSourceSubtypeOptions(sourceName),
+    groups.flatMap((group) => group.items || []),
     subtype
   );
   if (!resolved) return {};
-  return { type: resolved };
+  const group = groups.find((item) =>
+    (item.items || []).some((option) => option.value === resolved)
+  );
+  return { [group?.param || "type"]: resolved };
 };
