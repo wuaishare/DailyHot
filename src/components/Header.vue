@@ -92,7 +92,7 @@
             <div class="refresh-panel" @click.stop>
               <div class="panel-header">
                 <n-text>{{ t("header.refreshControl") }}</n-text>
-                <n-text depth="3" v-if="countdownText">{{ t("header.nextRefresh") }}：{{ countdownText }}</n-text>
+                <n-text depth="3" v-if="countdownText">{{ t("header.nextRefresh") }}: {{ countdownText }}</n-text>
               </div>
               <n-button
                 block
@@ -616,7 +616,12 @@ const formatCountdown = (remainMs) => {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
-  return `${h}${t("header.hour")}${m}${t("header.minute")}${s}${t("header.second")}`;
+  const separator = locale.value === "en" ? " " : "";
+  return [
+    `${h}${t("header.hour")}`,
+    `${m}${t("header.minute")}`,
+    `${s}${t("header.second")}`,
+  ].join(separator);
 };
 
 const normalizeRemainingMs = (value) => {
@@ -691,6 +696,7 @@ watch(
     store.autoRefreshRemainingMs,
     store.autoRefreshInterval,
     router.currentRoute.value?.name,
+    locale.value,
   ],
   () => {
     autoEnabled.value = store.autoRefreshEnabled;

@@ -1127,7 +1127,7 @@ export const messages = {
       autoRefresh: "자동 새로고침",
       resume: "재개",
       pause: "일시중지",
-      hour: "시",
+      hour: "시간",
       minute: "분",
       second: "초",
       refreshTip:
