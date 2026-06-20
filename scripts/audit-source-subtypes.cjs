@@ -10,7 +10,7 @@ const siteUrl = (process.env.LIVE_SITE_URL || "https://hot.wuaishare.cn").replac
 );
 const verify = process.env.VERIFY || process.env.VITE_BUILD_NUMBER || "subtype-audit";
 const timeoutMs = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
-const concurrency = Number(process.env.SUBTYPE_AUDIT_CONCURRENCY || 6);
+const concurrency = Number(process.env.SUBTYPE_AUDIT_CONCURRENCY || 4);
 const dataSourceEnv = process.env.SUBTYPE_DATA_SOURCES || "";
 
 const DEFAULT_DATA_SOURCES = [
@@ -106,7 +106,7 @@ const withVerify = (requestPath) => {
   return url;
 };
 
-const fetchJson = async (url, attempts = 2) => {
+const fetchJson = async (url, attempts = 3) => {
   let lastError;
   let lastResult;
   for (let index = 0; index < attempts; index += 1) {
@@ -136,7 +136,7 @@ const fetchJson = async (url, attempts = 2) => {
       clearTimeout(timeout);
     }
     if (index < attempts - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 800 * (index + 1)));
     }
   }
   if (lastResult) return lastResult;
@@ -200,7 +200,7 @@ const checkMetadata = async (groups, sourceName) => {
 
   const url = withVerify(`/api/${sourceName}`);
   url.searchParams.set("cache", "false");
-  const result = await fetchJson(url.toString(), 2);
+  const result = await fetchJson(url.toString(), 4);
   if (result.status !== 200 || result.json?.code !== 200) {
     return [`${sourceName}: default API returned HTTP ${result.status}`];
   }
