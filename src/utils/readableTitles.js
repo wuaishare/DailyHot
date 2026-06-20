@@ -19,6 +19,7 @@ const ENTITY_TITLE_SOURCE_NAMES = new Set([
   "hf-models",
   "producthunt-ai",
 ]);
+const SOURCE_TEXT_NORMALIZER_NAMES = new Set(["anthropic-news"]);
 
 const translationCache = new Map();
 const pendingCache = new Map();
@@ -46,6 +47,91 @@ const MODEL_NAME_MARKER_PATTERN =
   /\b(?:GPT|ChatGPT|Claude|Sonnet|Opus|Haiku|Fable|Mythos|Gemini|Gemma|DiffusionGemma|GLM|Llama|Grok|Qwen|DeepSeek|Mistral|Mixtral|Kimi|ERNIE|Hunyuan|Doubao|Phi|Command|Aya|DALL[·-]E|Sora)\b/i;
 const SENTENCE_SIGNAL_PATTERN =
   /\b(?:a|an|the|to|for|with|without|in|on|from|by|and|or|how|why|what|new|updated|introducing|launching|using|improving|securing|unlocking|building|expanding|investing|powering|measuring|statement|research|program|community|grant|family|future|analytics|controls|safety|agents?|generation|translation|voice|natural|faster|multimodal|encoder|robotics|learning|impact)\b/i;
+const ANTHROPIC_LABEL_PATTERN =
+  "(?:Announcements|Announcement|Product|Research|Company|Policy|News|Engineering|Events|Event)";
+const MONTH_NAME_PATTERN =
+  "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*";
+const ANTHROPIC_DATE_PATTERN = `${MONTH_NAME_PATTERN}\\s+\\d{1,2},\\s+\\d{4}`;
+const ANTHROPIC_SUMMARY_START_PATTERN =
+  /\b(?:We(?:'|’)re|We are|We|The full text|The US government|An upgrade|A national|Our|This|Anthropic opens|Anthropic announces|Learn|Read|Today)\b/;
+
+const normalizeWhitespace = (value = "") =>
+  String(value || "").replace(/\s+/g, " ").trim();
+
+const normalizeAnthropicText = (value = "") =>
+  normalizeWhitespace(
+    String(value || "")
+      .replace(new RegExp(`^(${ANTHROPIC_LABEL_PATTERN})(?=${MONTH_NAME_PATTERN})`, "i"), "$1 ")
+      .replace(new RegExp(`^(${ANTHROPIC_LABEL_PATTERN})(?=[A-Z])`), "$1 ")
+      .replace(new RegExp(`(${ANTHROPIC_DATE_PATTERN})(?=[A-Z])`, "gi"), "$1 ")
+      .replace(/([a-z0-9)])(?=(?:We(?:'|’)re|The full text|An upgrade|Anthropic opens|Chris Olah)\b)/g, "$1 ")
+      .replace(/([.!?])(?=[A-Z])/g, "$1 ")
+  );
+
+const stripAnthropicMetaPrefix = (value = "") =>
+  normalizeWhitespace(
+    normalizeAnthropicText(value)
+      .replace(new RegExp(`^${ANTHROPIC_LABEL_PATTERN}(?:\\b|(?=[A-Z]))\\s*`), "")
+      .replace(new RegExp(`^${ANTHROPIC_DATE_PATTERN}\\s*`, "i"), "")
+  );
+
+const splitAnthropicTitleAndDesc = (value = "") => {
+  const body = stripAnthropicMetaPrefix(value);
+  if (!body) return { title: "", desc: "" };
+  const summaryMatch = body.match(ANTHROPIC_SUMMARY_START_PATTERN);
+  if (!summaryMatch || summaryMatch.index <= 0) {
+    return { title: body, desc: "" };
+  }
+  const title = normalizeWhitespace(body.slice(0, summaryMatch.index));
+  const desc = normalizeWhitespace(body.slice(summaryMatch.index));
+  return { title: title || body, desc };
+};
+
+const normalizeAnthropicItem = (item = {}) => {
+  const rawTitle = normalizeWhitespace(item.originalTitle || item.title);
+  const rawDesc = normalizeWhitespace(item.originalDesc || item.desc);
+  const titleCandidate =
+    rawTitle && !new RegExp(`^${ANTHROPIC_DATE_PATTERN}$`, "i").test(rawTitle)
+      ? rawTitle
+      : rawDesc;
+  const parsedTitle = splitAnthropicTitleAndDesc(titleCandidate);
+  const parsedDesc = splitAnthropicTitleAndDesc(rawDesc);
+  const nextTitle = parsedTitle.title || parsedDesc.title || rawTitle;
+  const nextDesc = parsedTitle.desc || parsedDesc.desc || parsedDesc.title || rawDesc;
+  if (!nextTitle && !nextDesc) return item;
+
+  const normalizedTitle = normalizeWhitespace(nextTitle);
+  const normalizedDesc = normalizeWhitespace(nextDesc);
+  const dedupedDesc = normalizedDesc && normalizedDesc !== normalizedTitle ? normalizedDesc : "";
+  if (
+    normalizedTitle === rawTitle &&
+    dedupedDesc === rawDesc &&
+    item.originalTitle &&
+    item.originalDesc
+  ) {
+    return item;
+  }
+
+  return {
+    ...item,
+    originalTitle: normalizedTitle || rawTitle,
+    originalDesc: dedupedDesc,
+    title: normalizedTitle || item.title,
+    desc: dedupedDesc,
+  };
+};
+
+export const normalizeReadableSourceResult = (result, sourceName = "") => {
+  if (!SOURCE_TEXT_NORMALIZER_NAMES.has(sourceName)) return result;
+  if (!Array.isArray(result?.data) || !result.data.length) return result;
+  let changed = false;
+  const data = result.data.map((item) => {
+    const nextItem = normalizeAnthropicItem(item);
+    if (nextItem !== item) changed = true;
+    return nextItem;
+  });
+  return changed ? { ...result, data } : result;
+};
 
 const getClientTranslatedMap = async (texts = [], locale) => {
   const clientMap = await translatePlainTexts(texts, locale);
@@ -245,26 +331,29 @@ export const enhanceReadableResultTitles = async (
 ) => {
   const normalizedLocale = normalizeLocale(locale);
   if (!shouldUseReadableTitleTranslation(sourceName, normalizedLocale)) return result;
-  if (!Array.isArray(result?.data) || !result.data.length) return result;
+  const normalizedResult = normalizeReadableSourceResult(result, sourceName);
+  if (!Array.isArray(normalizedResult?.data) || !normalizedResult.data.length) {
+    return normalizedResult;
+  }
 
   const start = Math.max(0, Number(offset) || 0);
   const end = Math.min(
-    result.data.length,
-    start + Math.max(1, Number(limit) || result.data.length)
+    normalizedResult.data.length,
+    start + Math.max(1, Number(limit) || normalizedResult.data.length)
   );
-  const scopedItems = result.data.slice(start, end);
+  const scopedItems = normalizedResult.data.slice(start, end);
   const sourceTexts = scopedItems.flatMap((item) => [
     String(item?.originalTitle || item?.title || "").trim(),
     String(item?.originalDesc || item?.desc || "").trim(),
   ]).filter((text) => looksTranslatableSentence(text, normalizedLocale));
 
-  if (!sourceTexts.length) return result;
+  if (!sourceTexts.length) return normalizedResult;
 
   const translatedMap = await translateReadableTitles(sourceTexts, normalizedLocale);
-  if (!Object.keys(translatedMap).length) return result;
+  if (!Object.keys(translatedMap).length) return normalizedResult;
 
   let changed = false;
-  const nextData = result.data.slice();
+  const nextData = normalizedResult.data.slice();
   scopedItems.forEach((item, index) => {
     const sourceTitle = String(item?.originalTitle || item?.title || "").trim();
     const sourceDesc = String(item?.originalDesc || item?.desc || "").trim();
@@ -292,5 +381,5 @@ export const enhanceReadableResultTitles = async (
     nextData[start + index] = nextItem;
   });
 
-  return changed ? { ...result, data: nextData } : result;
+  return changed ? { ...normalizedResult, data: nextData } : normalizedResult;
 };
