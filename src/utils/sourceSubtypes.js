@@ -153,6 +153,17 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  nytimes: [
+    {
+      key: "region",
+      label: "地区",
+      param: "type",
+      items: [
+        { label: "中文网", value: "china" },
+        { label: "全球版", value: "global" },
+      ],
+    },
+  ],
   hupu: [
     {
       key: "board",
@@ -201,6 +212,20 @@ const SOURCE_SUBTYPE_GROUPS = {
         { label: "公告", value: "1" },
         { label: "活动", value: "2" },
         { label: "资讯", value: "3" },
+      ],
+    },
+    {
+      key: "game",
+      label: "游戏",
+      param: "game",
+      items: [
+        { label: "崩坏3", value: "game-honkai", apiValue: "1" },
+        { label: "原神", value: "game-genshin", apiValue: "2" },
+        { label: "崩坏学园2", value: "game-houkai2", apiValue: "3" },
+        { label: "未定事件簿", value: "game-tears-of-themis", apiValue: "4" },
+        { label: "大别野", value: "game-villa", apiValue: "5" },
+        { label: "崩坏：星穹铁道", value: "game-starrail", apiValue: "6" },
+        { label: "绝区零", value: "game-zenless", apiValue: "8" },
       ],
     },
   ],
@@ -267,6 +292,16 @@ const SOURCE_SUBTYPE_GROUPS = {
         { label: "鱼塘", value: "125" },
         { label: "番剧", value: "155" },
         { label: "生活", value: "201" },
+      ],
+    },
+    {
+      key: "range",
+      label: "时间",
+      param: "range",
+      items: [
+        { label: "今日", value: "DAY" },
+        { label: "三日", value: "THREE_DAYS" },
+        { label: "本周", value: "WEEK" },
       ],
     },
   ],
@@ -737,5 +772,6 @@ export const buildSourceSubtypeParams = (sourceName, subtype) => {
   const group = groups.find((item) =>
     (item.items || []).some((option) => option.value === resolved)
   );
-  return { [group?.param || "type"]: resolved };
+  const option = (group?.items || []).find((item) => item.value === resolved);
+  return { [group?.param || "type"]: option?.apiValue || resolved };
 };

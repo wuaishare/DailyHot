@@ -566,6 +566,11 @@ const LIST_SEO_MAP = {
     keywords: "豆瓣小组热帖,豆瓣热榜,社区讨论",
     description: "豆瓣小组热门帖文，聚合社区内的热门讨论。",
   },
+  nytimes: {
+    label: "纽约时报",
+    keywords: "纽约时报,纽约时报中文网,纽约时报全球版,国际新闻",
+    description: "纽约时报中文网与全球版新闻榜单，覆盖国际时事、商业、科技与文化报道。",
+  },
   tianya: {
     label: "天涯社区精华帖",
     keywords: "天涯社区,天涯荟萃,天涯神帖,社区精华帖",
@@ -590,6 +595,16 @@ const LIST_SEO_MAP = {
     label: "知乎日报",
     keywords: "知乎日报,知乎日报热榜,每日精选",
     description: "知乎日报精选内容，快速浏览每日热门文章。",
+  },
+  acfun: {
+    label: "AcFun 排行榜",
+    keywords: "AcFun,AcFun 排行榜,视频热榜,弹幕视频",
+    description: "AcFun 视频排行榜，覆盖综合、动画、游戏、科技、番剧等分区与时间热度。",
+  },
+  miyoushe: {
+    label: "米游社热榜",
+    keywords: "米游社,米游社公告,米哈游游戏资讯,原神,崩坏星穹铁道,绝区零",
+    description: "米游社官方动态榜单，覆盖米哈游游戏公告、活动、资讯与社区更新。",
   },
   genshin: {
     label: "原神热榜",
