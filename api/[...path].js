@@ -1458,6 +1458,17 @@ const buildProxyTargetUrl = (baseUrl, pathValue, query) => {
   return targetUrl;
 };
 
+const redirectToPublicApiFallback = (pathValue, query, res) => {
+  const redirectUrl = buildProxyTargetUrl(
+    PUBLIC_API_DEFAULT_FALLBACK_BASE_URL,
+    pathValue,
+    query
+  );
+  res.status(307);
+  res.setHeader("location", redirectUrl.toString());
+  res.send("");
+};
+
 const getProxyBaseUrlCandidates = (pathValue, baseUrl) => {
   const candidates = [baseUrl];
   if (PUBLIC_API_FALLBACK_PATHS.has(pathValue) && PUBLIC_API_FALLBACK_BASE_URL) {
@@ -1562,6 +1573,10 @@ export default async function handler(req, res) {
   }
 
   if (!proxyResult) {
+    if (PUBLIC_API_FALLBACK_PATHS.has(pathValue)) {
+      redirectToPublicApiFallback(pathValue, req.query, res);
+      return;
+    }
     res.status(502).json({
       code: 502,
       message: "API proxy upstream unavailable",
@@ -1571,6 +1586,10 @@ export default async function handler(req, res) {
 
   const { response, contentType, text } = proxyResult;
   if (!contentType.includes("application/json")) {
+    if (PUBLIC_API_FALLBACK_PATHS.has(pathValue)) {
+      redirectToPublicApiFallback(pathValue, req.query, res);
+      return;
+    }
     res.status(502).json({
       code: 502,
       message: "API proxy upstream returned non-JSON response",
