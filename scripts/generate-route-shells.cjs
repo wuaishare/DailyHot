@@ -231,12 +231,28 @@ const getDesignArenaZhRouteSeo = ({
   };
 };
 
+const getIthomeZhRouteSeo = ({
+  sourceName,
+  subtypeValue,
+  ithomeZhSubtypeSeo,
+}) => {
+  if (sourceName !== "ithome" || !subtypeValue) return null;
+  const subtypeSeo = ithomeZhSubtypeSeo?.[subtypeValue];
+  if (!subtypeSeo) return null;
+
+  return {
+    titleLabel: normalizeTitleLabel(`IT之家${subtypeSeo.titleSegment}`),
+    intent: subtypeSeo.intent,
+  };
+};
+
 const getZhRouteSeo = ({
   sourceName,
   subtypeValue,
   clawHubZhBaseSeo,
   clawHubZhSubtypeSeo,
   designArenaZhSubtypeSeo,
+  ithomeZhSubtypeSeo,
 }) =>
   getClawHubZhRouteSeo({
     sourceName,
@@ -248,6 +264,11 @@ const getZhRouteSeo = ({
     sourceName,
     subtypeValue,
     designArenaZhSubtypeSeo,
+  }) ||
+  getIthomeZhRouteSeo({
+    sourceName,
+    subtypeValue,
+    ithomeZhSubtypeSeo,
   });
 
 const prettifySlug = (value = "") =>
@@ -372,6 +393,16 @@ const getSubtypeValues = (sourceSubtypeGroups) => {
     result.set(sourceName, values);
   }
 
+  return result;
+};
+
+const getDefaultSubtypeValues = (subtypeValues) => {
+  const result = new Map();
+  subtypeValues.forEach((values, sourceName) => {
+    if (values?.[0]) {
+      result.set(sourceName, values[0]);
+    }
+  });
   return result;
 };
 
@@ -589,7 +620,11 @@ function main() {
     seoSource,
     "DESIGNARENA_ZH_SUBTYPE_SEO"
   );
+  const ithomeZhSubtypeSeo = parseConstant(seoSource, "ITHOME_ZH_SUBTYPE_SEO");
   const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
+  const aggregateSubtypeSources = new Set(
+    parseConstant(subtypeSource, "AGGREGATE_SUBTYPE_SOURCES")
+  );
   const sourceLabelOverrides = mergeOverrideMaps(
     parseConstant(sourceLabelsSource, "SOURCE_LABEL_OVERRIDES"),
     parseConstant(sourceLabelsSource, "SOURCE_LABEL_LOCALIZATIONS")
@@ -611,6 +646,7 @@ function main() {
   const builtinCategories = parseConstant(siteMetadataSource, "BUILTIN_CATEGORIES");
   const sourceNames = getSourceNames(storeSource);
   const subtypeValues = getSubtypeValues(sourceSubtypeGroups);
+  const defaultSubtypeValues = getDefaultSubtypeValues(subtypeValues);
   const subtypeLabelMap = getSubtypeLabelMap(sourceSubtypeGroups);
   const categoryConfigBySlug = new Map(
     builtinCategories.map((category) => [category.slug, category])
@@ -739,18 +775,25 @@ function main() {
   const buildRankMeta = (sourceName, subtypeValue, localeMeta, pathname) => {
     const locale = localeMeta.code;
     const meta = listSeoMap[sourceName] || listSeoMap.default || {};
-    const canonical = buildAbsoluteUrl(pathname);
-    const basePathname = subtypeValue
-      ? `/rank/${sourceName}/${subtypeValue}`
+    const shouldUseDefaultSubtype =
+      !subtypeValue &&
+      defaultSubtypeValues.has(sourceName) &&
+      !aggregateSubtypeSources.has(sourceName);
+    const effectiveSubtypeValue = shouldUseDefaultSubtype
+      ? defaultSubtypeValues.get(sourceName)
+      : subtypeValue;
+    const basePathname = effectiveSubtypeValue
+      ? `/rank/${sourceName}/${effectiveSubtypeValue}`
       : `/rank/${sourceName}`;
+    const canonical = buildAbsoluteUrl(withLocalePrefix(localeMeta, basePathname));
     const htmlLang = localeMeta.htmlLang;
-    const rawSubtypeLabel = subtypeValue
-      ? subtypeLabelMap.get(sourceName)?.get(subtypeValue) || ""
+    const rawSubtypeLabel = effectiveSubtypeValue
+      ? subtypeLabelMap.get(sourceName)?.get(effectiveSubtypeValue) || ""
       : "";
-    const subtypeLabel = subtypeValue
+    const subtypeLabel = effectiveSubtypeValue
       ? getLocalizedSubtypeLabel(
           subtypeLabelOverrides,
-          subtypeValue,
+          effectiveSubtypeValue,
           rawSubtypeLabel,
           locale
         )
@@ -821,10 +864,11 @@ function main() {
       "实时热榜与趋势榜";
     const zhRouteSeo = getZhRouteSeo({
       sourceName,
-      subtypeValue,
+      subtypeValue: effectiveSubtypeValue,
       clawHubZhBaseSeo,
       clawHubZhSubtypeSeo,
       designArenaZhSubtypeSeo,
+      ithomeZhSubtypeSeo,
     });
     const titleLabel =
       zhRouteSeo?.titleLabel ||

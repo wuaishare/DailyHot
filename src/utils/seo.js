@@ -9,7 +9,11 @@ import {
   getSupportedLocales,
   normalizeLocale,
 } from "@/utils/locale";
-import { getSourceSubtypeOptions } from "@/utils/sourceSubtypes";
+import {
+  getDefaultSourceSubtype,
+  getSourceSubtypeOptions,
+  shouldCanonicalizeDefaultSubtype,
+} from "@/utils/sourceSubtypes";
 import {
   getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
   getSourceLabel as getLocalizedSourceLabel,
@@ -438,6 +442,33 @@ const DESIGNARENA_ZH_SUBTYPE_SEO = {
   },
 };
 
+const ITHOME_ZH_SUBTYPE_SEO = {
+  day: {
+    titleSegment: "日榜",
+    intent: "今日科技数码热点、IT新闻与热门资讯排行",
+  },
+  week: {
+    titleSegment: "周榜",
+    intent: "本周科技数码热点、行业新闻与热门资讯排行",
+  },
+  month: {
+    titleSegment: "月榜",
+    intent: "本月科技数码热点、行业新闻与热门资讯排行",
+  },
+  comments: {
+    titleSegment: "热评榜",
+    intent: "高互动评论话题、科技争议与热门讨论排行",
+  },
+  hot: {
+    titleSegment: "资讯热榜",
+    intent: "资讯热度、科技新闻与数码产品动态排行",
+  },
+  list: {
+    titleSegment: "滚动新闻",
+    intent: "滚动新闻、科技快讯与数码新品动态",
+  },
+};
+
 const getClawHubSubtypeSeoKey = (sourceKey, subtypeSlug) => {
   if (!subtypeSlug) return "";
   if (sourceKey === "clawhub") return subtypeSlug;
@@ -474,9 +505,21 @@ const getDesignArenaZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
   };
 };
 
+const getIthomeZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
+  if (sourceKey !== "ithome" || !subtypeSlug) return null;
+  const subtypeSeo = ITHOME_ZH_SUBTYPE_SEO[subtypeSlug];
+  if (!subtypeSeo) return null;
+
+  return {
+    titleLabel: normalizeTitleLabel(`IT之家${subtypeSeo.titleSegment}`),
+    intent: subtypeSeo.intent,
+  };
+};
+
 const getZhRouteSeo = ({ sourceKey, subtypeSlug }) =>
   getClawHubZhRouteSeo({ sourceKey, subtypeSlug }) ||
-  getDesignArenaZhRouteSeo({ sourceKey, subtypeSlug });
+  getDesignArenaZhRouteSeo({ sourceKey, subtypeSlug }) ||
+  getIthomeZhRouteSeo({ sourceKey, subtypeSlug });
 
 const buildZhListIntent = ({
   sourceLabel,
@@ -1033,7 +1076,12 @@ const getListSeo = (route, siteUrl, canonical) => {
   const subtypeSlug = Array.isArray(route?.params?.subtypeSlug)
     ? route.params.subtypeSlug[0]
     : route?.params?.subtypeSlug;
-  const subtypeLabel = getSubtypeLabel(sourceKey, subtypeSlug, locale);
+  const effectiveSubtypeSlug =
+    subtypeSlug ||
+    (shouldCanonicalizeDefaultSubtype(sourceKey)
+      ? getDefaultSourceSubtype(sourceKey)
+      : "");
+  const subtypeLabel = getSubtypeLabel(sourceKey, effectiveSubtypeSlug, locale);
   const label = subtypeLabel
     ? `${sourceDisplayLabel} · ${subtypeLabel}`
     : sourceSeoLabel;
@@ -1042,7 +1090,9 @@ const getListSeo = (route, siteUrl, canonical) => {
     subtypeLabel ? `${sourceDisplayLabel} ${subtypeLabel}` : sourceSeoLabel
   );
   const zhRouteSeo =
-    locale === "zh-CN" ? getZhRouteSeo({ sourceKey, subtypeSlug }) : null;
+    locale === "zh-CN"
+      ? getZhRouteSeo({ sourceKey, subtypeSlug: effectiveSubtypeSlug })
+      : null;
   const titleLabel = zhRouteSeo?.titleLabel || defaultTitleLabel;
   const localizedDefaultDescription = i18n.global.t(
     "seo.listDescription",
@@ -1149,7 +1199,7 @@ export const applySeoMeta = (route) => {
   const siteUrl = getSiteUrl();
   const canonical = meta.canonical
     ? buildAbsoluteUrl(meta.canonical, siteUrl)
-    : buildAbsoluteUrl(route?.fullPath || route?.path || "/", siteUrl);
+    : buildAbsoluteUrl(buildLocalePathFromRoute(route, locale), siteUrl);
   const context = { route, siteUrl, canonical, locale };
 
   const listSeo = ["list", "list-locale", "list-legacy"].includes(route?.name)

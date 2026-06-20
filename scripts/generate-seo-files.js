@@ -90,6 +90,9 @@ async function main() {
   const categorySlugs = BUILTIN_CATEGORIES.map((item) => item.slug).filter(Boolean);
   const sourceNames = [...newsSection.matchAll(/name:\s*"([^"]+)"/g)].map((m) => m[1]);
   const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
+  const aggregateSubtypeSources = new Set(
+    parseConstant(subtypeSource, "AGGREGATE_SUBTYPE_SOURCES")
+  );
   const subtypeMap = new Map();
   for (const [sourceName, groups] of Object.entries(sourceSubtypeGroups)) {
     const values = (groups || []).flatMap((group) =>
@@ -97,6 +100,8 @@ async function main() {
     );
     subtypeMap.set(sourceName, values);
   }
+  const shouldListBaseRankRoute = (source) =>
+    !(subtypeMap.get(source)?.length && !aggregateSubtypeSources.has(source));
 
   const withLocalePrefix = (localeMeta, pathname) => {
     const normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
@@ -144,10 +149,12 @@ async function main() {
     });
   });
   sourceNames.forEach((source) => {
-    addLocalizedRouteGroup(`/rank/${source}`, {
-      changefreq: "hourly",
-      priority: "0.7",
-    });
+    if (shouldListBaseRankRoute(source)) {
+      addLocalizedRouteGroup(`/rank/${source}`, {
+        changefreq: "hourly",
+        priority: "0.7",
+      });
+    }
     (subtypeMap.get(source) || []).forEach((subtype) => {
       addLocalizedRouteGroup(`/rank/${source}/${subtype}`, {
         changefreq: "hourly",

@@ -47,8 +47,8 @@ const SOURCE_SUBTYPE_GROUPS = {
       items: [
         { label: "日榜", value: "day" },
         { label: "周榜", value: "week" },
-        { label: "热评榜", value: "comments" },
         { label: "月榜", value: "month" },
+        { label: "热评榜", value: "comments" },
       ],
     },
     {
@@ -723,6 +723,8 @@ const SOURCE_SUBTYPE_GROUPS = {
   ],
 };
 
+const AGGREGATE_SUBTYPE_SOURCES = ["clawhub"];
+
 const normalizeValue = (value) => {
   if (Array.isArray(value)) return value[0] || null;
   return value ?? null;
@@ -733,6 +735,14 @@ export const getSourceSubtypeGroups = (sourceName) =>
 
 export const getSourceSubtypeOptions = (sourceName) =>
   getSourceSubtypeGroups(sourceName).flatMap((group) => group.items || []);
+
+export const getDefaultSourceSubtype = (sourceName) =>
+  getSourceSubtypeOptions(sourceName)[0]?.value || null;
+
+export const shouldCanonicalizeDefaultSubtype = (sourceName) =>
+  Boolean(sourceName) &&
+  !AGGREGATE_SUBTYPE_SOURCES.includes(sourceName) &&
+  Boolean(getDefaultSourceSubtype(sourceName));
 
 export const getSourceSubtypeStorageKey = (sourceName) =>
   `${STORAGE_PREFIX}${sourceName}`;

@@ -4,6 +4,10 @@ import {
   LOCALE_STORAGE_KEY,
   SUPPORTED_LOCALES,
 } from "@/config/site-metadata.mjs";
+import {
+  getDefaultSourceSubtype,
+  shouldCanonicalizeDefaultSubtype,
+} from "@/utils/sourceSubtypes";
 
 const ROUTE_LOCALE_MAP = new Map(
   SUPPORTED_LOCALES.map((item) => [item.routeParam, item.code]),
@@ -153,7 +157,22 @@ export const buildLocalePathFromRoute = (route, locale = DEFAULT_LOCALE) => {
   const subtypeSlug = route?.params?.subtypeSlug;
   const categorySlug = route?.params?.categorySlug;
   if (sourceSlug) {
-    return buildRankPath(normalizedLocale, sourceSlug, subtypeSlug);
+    const normalizedSourceSlug = getSourceNameBySlug(
+      Array.isArray(sourceSlug) ? sourceSlug[0] : sourceSlug
+    );
+    const routeSubtypeSlug = Array.isArray(subtypeSlug)
+      ? subtypeSlug[0]
+      : subtypeSlug;
+    const effectiveSubtypeSlug =
+      routeSubtypeSlug ||
+      (shouldCanonicalizeDefaultSubtype(normalizedSourceSlug)
+        ? getDefaultSourceSubtype(normalizedSourceSlug)
+        : "");
+    return buildRankPath(
+      normalizedLocale,
+      normalizedSourceSlug,
+      effectiveSubtypeSlug
+    );
   }
   if (categorySlug) {
     return buildCategoryPath(normalizedLocale, categorySlug);

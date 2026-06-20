@@ -10,6 +10,10 @@ import {
   savePreferredLocale,
   setDocumentLanguage,
 } from "@/utils/locale";
+import {
+  getDefaultSourceSubtype,
+  shouldCanonicalizeDefaultSubtype,
+} from "@/utils/sourceSubtypes";
 import { trackEvent } from "@/utils/track";
 
 const router = createRouter({
@@ -55,6 +59,17 @@ router.beforeEach((to) => {
       : to.params?.subtypeSlug;
     if (rawSourceSlug && sourceSlug && rawSourceSlug !== sourceSlug) {
       return buildRankPath(locale, sourceSlug, subtypeSlug || "");
+    }
+    if (!subtypeSlug && shouldCanonicalizeDefaultSubtype(sourceSlug)) {
+      return {
+        path: buildRankPath(
+          locale,
+          sourceSlug,
+          getDefaultSourceSubtype(sourceSlug)
+        ),
+        query: to.query,
+        hash: to.hash,
+      };
     }
   }
   const categoryName = getCategoryNameBySlug(to.params?.categorySlug);
