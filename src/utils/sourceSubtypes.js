@@ -466,11 +466,19 @@ const SOURCE_SUBTYPE_GROUPS = {
   ],
   "artificialanalysis": [
     {
-      key: "default",
-      label: "",
+      key: "core",
+      label: "核心",
       items: [
         { label: "模型榜", value: "models" },
-        { label: "厂商榜", value: "providers" },
+        { label: "API 提供商与端点榜", value: "providers" },
+        { label: "编码智能体榜", value: "coding-agents" },
+      ],
+    },
+    {
+      key: "media",
+      label: "媒体",
+      items: [
+        { label: "文生图榜", value: "text-to-image" },
       ],
     },
   ],

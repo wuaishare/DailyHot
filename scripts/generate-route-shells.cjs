@@ -261,6 +261,21 @@ const getBilibiliZhRouteSeo = ({
   };
 };
 
+const getArtificialAnalysisZhRouteSeo = ({
+  sourceName,
+  subtypeValue,
+  artificialAnalysisZhSubtypeSeo,
+}) => {
+  if (sourceName !== "artificialanalysis" || !subtypeValue) return null;
+  const subtypeSeo = artificialAnalysisZhSubtypeSeo?.[subtypeValue];
+  if (!subtypeSeo) return null;
+
+  return {
+    titleLabel: normalizeTitleLabel(`Artificial Analysis ${subtypeSeo.titleSegment}`),
+    intent: subtypeSeo.intent,
+  };
+};
+
 const getZhRouteSeo = ({
   sourceName,
   subtypeValue,
@@ -269,6 +284,7 @@ const getZhRouteSeo = ({
   designArenaZhSubtypeSeo,
   ithomeZhSubtypeSeo,
   bilibiliZhSubtypeSeo,
+  artificialAnalysisZhSubtypeSeo,
 }) =>
   getClawHubZhRouteSeo({
     sourceName,
@@ -290,6 +306,11 @@ const getZhRouteSeo = ({
     sourceName,
     subtypeValue,
     bilibiliZhSubtypeSeo,
+  }) ||
+  getArtificialAnalysisZhRouteSeo({
+    sourceName,
+    subtypeValue,
+    artificialAnalysisZhSubtypeSeo,
   });
 
 const prettifySlug = (value = "") =>
@@ -644,6 +665,10 @@ function main() {
   );
   const ithomeZhSubtypeSeo = parseConstant(seoSource, "ITHOME_ZH_SUBTYPE_SEO");
   const bilibiliZhSubtypeSeo = parseConstant(seoSource, "BILIBILI_ZH_SUBTYPE_SEO");
+  const artificialAnalysisZhSubtypeSeo = parseConstant(
+    seoSource,
+    "ARTIFICIALANALYSIS_ZH_SUBTYPE_SEO"
+  );
   const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
   const aggregateSubtypeSources = new Set(
     parseConstant(subtypeSource, "AGGREGATE_SUBTYPE_SOURCES")
@@ -912,6 +937,7 @@ function main() {
       designArenaZhSubtypeSeo,
       ithomeZhSubtypeSeo,
       bilibiliZhSubtypeSeo,
+      artificialAnalysisZhSubtypeSeo,
     });
     const titleLabel =
       zhRouteSeo?.titleLabel ||

@@ -525,6 +525,21 @@ const BILIBILI_ZH_SUBTYPE_SEO = {
   },
 };
 
+const ARTIFICIALANALYSIS_ZH_SUBTYPE_SEO = {
+  providers: {
+    titleSegment: "API 提供商与端点榜",
+    intent: "LLM API 提供商、模型端点、价格、速度与首包延迟对比",
+  },
+  "coding-agents": {
+    titleSegment: "编码智能体榜",
+    intent: "AI 编码智能体基准、任务通过率、成本与执行时长排行",
+  },
+  "text-to-image": {
+    titleSegment: "文生图榜",
+    intent: "AI 文生图模型 Elo、样本量与图像生成价格排行",
+  },
+};
+
 const getClawHubSubtypeSeoKey = (sourceKey, subtypeSlug) => {
   if (!subtypeSlug) return "";
   if (sourceKey === "clawhub") return subtypeSlug;
@@ -583,11 +598,23 @@ const getBilibiliZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
   };
 };
 
+const getArtificialAnalysisZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
+  if (sourceKey !== "artificialanalysis" || !subtypeSlug) return null;
+  const subtypeSeo = ARTIFICIALANALYSIS_ZH_SUBTYPE_SEO[subtypeSlug];
+  if (!subtypeSeo) return null;
+
+  return {
+    titleLabel: normalizeTitleLabel(`Artificial Analysis ${subtypeSeo.titleSegment}`),
+    intent: subtypeSeo.intent,
+  };
+};
+
 const getZhRouteSeo = ({ sourceKey, subtypeSlug }) =>
   getClawHubZhRouteSeo({ sourceKey, subtypeSlug }) ||
   getDesignArenaZhRouteSeo({ sourceKey, subtypeSlug }) ||
   getIthomeZhRouteSeo({ sourceKey, subtypeSlug }) ||
-  getBilibiliZhRouteSeo({ sourceKey, subtypeSlug });
+  getBilibiliZhRouteSeo({ sourceKey, subtypeSlug }) ||
+  getArtificialAnalysisZhRouteSeo({ sourceKey, subtypeSlug });
 
 const buildZhListIntent = ({
   sourceLabel,
@@ -745,7 +772,7 @@ const LIST_SEO_MAP = {
   artificialanalysis: {
     label: "Artificial Analysis 排行榜",
     keywords: "Artificial Analysis,AI 排行榜,模型评测",
-    description: "Artificial Analysis 模型能力、价格与速度综合排行榜。",
+    description: "Artificial Analysis 模型、API 提供商与专项 AI 榜单入口。",
   },
   lmarena: {
     label: "Arena AI 排行榜",
