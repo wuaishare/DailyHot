@@ -63,17 +63,19 @@
             :options="languageOptions"
             @select="switchLocale"
           >
-            <n-button secondary strong round>
-              <template #icon>
-                <img
-                  class="locale-trigger-flag"
-                  :src="currentLocaleMeta.flag"
-                  :alt="currentLocaleMeta.label"
-                  :style="localeFlagStyle"
-                />
-              </template>
-              {{ currentLocaleMeta.shortLabel }}
-            </n-button>
+            <div class="control-hit-area">
+              <n-button class="header-control-btn" secondary strong round>
+                <template #icon>
+                  <img
+                    class="locale-trigger-flag"
+                    :src="currentLocaleMeta.flag"
+                    :alt="currentLocaleMeta.label"
+                    :style="localeFlagStyle"
+                  />
+                </template>
+                {{ currentLocaleMeta.shortLabel }}
+              </n-button>
+            </div>
           </n-dropdown>
           <n-popover
             v-if="showRefresh"
@@ -83,18 +85,21 @@
             style="max-width: 320px"
           >
             <template #trigger>
-              <n-button
-                secondary
-                strong
-                round
-                :aria-label="refreshButtonLabel"
-                :title="refreshButtonLabel"
-              >
-                <template #icon>
-                  <n-icon :component="Refresh" />
-                </template>
-                <span v-if="countdownText" class="countdown">{{ countdownText }}</span>
-              </n-button>
+              <div class="control-hit-area">
+                <n-button
+                  class="header-control-btn"
+                  secondary
+                  strong
+                  round
+                  :aria-label="refreshButtonLabel"
+                  :title="refreshButtonLabel"
+                >
+                  <template #icon>
+                    <n-icon :component="Refresh" />
+                  </template>
+                  <span v-if="countdownText" class="countdown">{{ countdownText }}</span>
+                </n-button>
+              </div>
             </template>
             <div class="refresh-panel" @click.stop>
               <div class="panel-header">
@@ -170,41 +175,43 @@
           </n-popover>
           <n-popover>
             <template #trigger>
-              <n-button
-                secondary
-                strong
-                round
-                :aria-label="themeToggleLabel"
-                :title="themeToggleLabel"
-                @click="
-                  store.setSiteTheme(
-                    store.siteTheme === 'light' ? 'dark' : 'light'
-                  )
-                "
-              >
-                <template #icon>
-                  <n-icon
-                    :component="store.siteTheme === 'light' ? Moon : SunOne"
-                  />
-                </template>
-              </n-button>
+              <div class="control-hit-area" @click="toggleTheme">
+                <n-button
+                  class="header-control-btn"
+                  secondary
+                  strong
+                  round
+                  :aria-label="themeToggleLabel"
+                  :title="themeToggleLabel"
+                  @click.stop="toggleTheme"
+                >
+                  <template #icon>
+                    <n-icon
+                      :component="store.siteTheme === 'light' ? Moon : SunOne"
+                    />
+                  </template>
+                </n-button>
+              </div>
             </template>
             {{ store.siteTheme === "light" ? t("common.darkMode") : t("common.lightMode") }}
           </n-popover>
           <n-popover>
             <template #trigger>
-              <n-button
-                secondary
-                strong
-                round
-                :aria-label="t('common.settings')"
-                :title="t('common.settings')"
-                @click="goSetting"
-              >
-                <template #icon>
-                  <n-icon :component="SettingTwo" />
-                </template>
-              </n-button>
+              <div class="control-hit-area" @click="goSetting">
+                <n-button
+                  class="header-control-btn"
+                  secondary
+                  strong
+                  round
+                  :aria-label="t('common.settings')"
+                  :title="t('common.settings')"
+                  @click.stop="goSetting"
+                >
+                  <template #icon>
+                    <n-icon :component="SettingTwo" />
+                  </template>
+                </n-button>
+              </div>
             </template>
             {{ t("common.settings") }}
           </n-popover>
@@ -311,6 +318,9 @@ const canManualRefresh = computed(
 const themeToggleLabel = computed(() =>
   store.siteTheme === "light" ? t("common.darkMode") : t("common.lightMode")
 );
+const toggleTheme = () => {
+  store.setSiteTheme(store.siteTheme === "light" ? "dark" : "light");
+};
 const buildCalendarDate = (timeData) => {
   if (!timeData?.time) return null;
   return new Date(
@@ -835,6 +845,23 @@ onBeforeUnmount(() => {
   .controls {
     display: flex;
     justify-content: flex-end;
+    align-self: stretch;
+    :deep(.n-space) {
+      min-height: 56px;
+      align-items: stretch !important;
+    }
+    :deep(.n-space > div) {
+      display: flex;
+      align-items: stretch;
+    }
+    .control-hit-area {
+      display: flex;
+      align-items: stretch;
+      cursor: pointer;
+    }
+    :deep(.header-control-btn) {
+      height: 100%;
+    }
     .countdown {
       margin-left: 3px;
       font-size: 12px;
@@ -926,6 +953,12 @@ onBeforeUnmount(() => {
   }
 
   &.expanded {
+    .controls {
+      .control-hit-area {
+        margin-block: -16px;
+        padding-block: 16px;
+      }
+    }
     .category-select {
       .category-hit-area {
         margin-block: -16px;
@@ -971,7 +1004,22 @@ onBeforeUnmount(() => {
     :deep(.mobile .n-button) {
       transform: scale(0.88);
     }
+    .controls {
+      :deep(.n-space) {
+        min-height: 39px;
+      }
+      .control-hit-area {
+        margin: 0;
+        padding: 0;
+      }
+      :deep(.header-control-btn) {
+        height: 34px;
+      }
+    }
     .category-select {
+      .category-nav .category-hit-area {
+        min-height: 39px;
+      }
       .category-nav .cat-btn {
         font-size: 16px;
       }
