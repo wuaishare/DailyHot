@@ -3,6 +3,10 @@ const { spawnSync } = require("node:child_process");
 const buildNumber = spawnSync("node", ["scripts/resolve-code-build-date.cjs"], {
   cwd: process.cwd(),
   encoding: "utf8",
+  env: {
+    ...process.env,
+    DAILYHOT_INCLUDE_WORKTREE_MTIME: "1",
+  },
 });
 
 if (buildNumber.status !== 0 || !buildNumber.stdout.trim()) {
