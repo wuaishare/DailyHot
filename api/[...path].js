@@ -1,5 +1,6 @@
 export const config = {
   runtime: "nodejs",
+  maxDuration: 30,
 };
 
 const readBody = async (req) => {
@@ -32,15 +33,44 @@ const PROXY_LOCAL_QUERY_PARAMS = new Set([
   "verify",
   "browserVerify",
 ]);
+const IMAGE_PROXY_ALLOWED_HOST_SUFFIXES = ["doubanio.com"];
+const IMAGE_PROXY_MAX_BYTES = 8 * 1024 * 1024;
+const IMAGE_PROXY_TIMEOUT_MS = 15000;
 const PUBLIC_API_DEFAULT_FALLBACK_BASE_URL = "https://hotapi2.wuaishare.cn";
 const PUBLIC_API_FALLBACK_BASE_URL =
   process.env.INTERNAL_API_FALLBACK_BASE_URL || PUBLIC_API_DEFAULT_FALLBACK_BASE_URL;
 const PUBLIC_API_FALLBACK_PATHS = new Set([
+  "artificialanalysis",
   "bilibili",
   "clawhub",
   "ithome",
   "openrouter-rankings",
+  "weibo",
 ]);
+const API_SUBTYPE_PATH_SOURCES = new Set([
+  "artificialanalysis",
+  "bilibili",
+  "clawhub",
+  "designarena",
+  "ithome",
+  "openrouter-rankings",
+]);
+const WEIBO_HOT_BAND_URL = "https://weibo.com/ajax/statuses/hot_band";
+const WEIBO_WEB_BASE_URL = "https://weibo.com";
+const WEIBO_SEARCH_BASE_URL = "https://s.weibo.com/weibo";
+const WEIBO_CACHE_TTL_MS = 60 * 1000;
+const WEIBO_DIRECT_FETCH_TIMEOUT_MS = 6000;
+const WEIBO_ZHISOU_URL = "https://ai.s.weibo.com/api/wis/show.json";
+const WEIBO_ZHISOU_CACHE_TTL_MS = 30 * 60 * 1000;
+const WEIBO_ZHISOU_TIMEOUT_MS = 4500;
+const WEIBO_ZHISOU_ENRICH_LIMIT = 5;
+const WEIBO_ZHISOU_SUMMARY_MAX_LENGTH = 150;
+const WEIBO_COMMON_HEADERS = {
+  Accept: "application/json",
+  Referer: `${WEIBO_WEB_BASE_URL}/hot/search`,
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 DailyHot/1.0",
+};
 const BILIBILI_API_BASE_URL = "https://api.bilibili.com";
 const BILIBILI_WEB_BASE_URL = "https://www.bilibili.com";
 const BILIBILI_RANK_REFERER = `${BILIBILI_WEB_BASE_URL}/v/popular/rank/all`;
@@ -1013,6 +1043,162 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = ITHOME_DIRECT_FET
   }
 };
 
+const normalizePlainText = (value = "") =>
+  String(value || "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const stripWeiboTopicMarks = (value = "") =>
+  normalizePlainText(value).replace(/^#+|#+$/g, "").trim();
+
+const formatWeiboHotNumber = (value) => {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return "";
+  if (number >= 100000000) {
+    return `${(number / 100000000)
+      .toFixed(number >= 1000000000 ? 1 : 2)
+      .replace(/\.0+$/, "")}亿`;
+  }
+  if (number >= 10000) {
+    return `${(number / 10000)
+      .toFixed(number >= 100000 ? 0 : 1)
+      .replace(/\.0$/, "")}万`;
+  }
+  return String(Math.round(number));
+};
+
+const getWeiboCacheStore = () => {
+  if (!globalThis.__dailyhotWeiboCache) {
+    globalThis.__dailyhotWeiboCache = new Map();
+  }
+  return globalThis.__dailyhotWeiboCache;
+};
+
+const isWeiboPromotedItem = (item = {}) =>
+  Boolean(item?.is_ad || item?.topic_ad || item?.ad_type || item?.promotion);
+
+const buildWeiboTopicUrl = (item = {}, title = "") => {
+  const url = new URL(WEIBO_SEARCH_BASE_URL);
+  url.searchParams.set(
+    "q",
+    stripWeiboTopicMarks(item.word_scheme || item.word || item.note || title)
+  );
+  return url.toString();
+};
+
+const buildWeiboDescription = (item = {}) => {
+  const parts = [];
+  const addPart = (value) => {
+    const text = normalizePlainText(value);
+    if (!text || parts.includes(text)) return;
+    parts.push(text);
+  };
+
+  const fieldTag = normalizePlainText(item.field_tag);
+  const category = normalizePlainText(item.category);
+  const detail = normalizePlainText(item.detail_tag?.content);
+  const reason = normalizePlainText(item.reason_tag);
+  const transparency = normalizePlainText(item.transparency_tag);
+  const hot = formatWeiboHotNumber(item.num);
+
+  addPart(fieldTag || (category ? `${category}领域` : ""));
+  addPart(reason);
+  if (detail && detail !== fieldTag) addPart(detail);
+  if (transparency && !transparency.includes("[media_count]")) {
+    addPart(transparency);
+  }
+  if (hot) addPart(`热度 ${hot}`);
+
+  return parts.slice(0, 5).join(" · ");
+};
+
+const stripWeiboZhisouBlocks = (value = "") =>
+  String(value || "")
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/```wbCustomBlock[\s\S]*?```/g, "")
+    .replace(/<media-block>[\s\S]*?<\/media-block>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/!\[[^\]]*]\([^)]+\)/g, "")
+    .replace(/\[[^\]]+]\([^)]+\)/g, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const truncateWeiboZhisouSummary = (value = "") => {
+  const text = stripWeiboZhisouBlocks(value);
+  if (!text || /抱歉|服务繁忙|稍后/.test(text)) return "";
+  const firstSentence =
+    text.match(/^[\s\S]{20,}?[。！？](?=\s|$|[“”"'])/)?.[0] ||
+    text.match(/^[\s\S]{20,}?[。！？]/)?.[0] ||
+    text;
+  const summary = firstSentence.trim();
+  if (summary.length <= WEIBO_ZHISOU_SUMMARY_MAX_LENGTH) return summary;
+  return `${summary.slice(0, WEIBO_ZHISOU_SUMMARY_MAX_LENGTH - 1)}…`;
+};
+
+const fetchWeiboZhisouSummary = async (title, { forceNoCache = false } = {}) => {
+  const query = stripWeiboTopicMarks(title);
+  if (!query) return "";
+  const cache = getWeiboCacheStore();
+  const cacheKey = `zhisou:${query}`;
+  const cached = cache.get(cacheKey);
+  if (
+    !forceNoCache &&
+    cached &&
+    Date.now() - cached.cachedAt < WEIBO_ZHISOU_CACHE_TTL_MS
+  ) {
+    return cached.value;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const body = new URLSearchParams({
+    query,
+    content_type: "loop",
+    request_id: String(now),
+    request_time: String(now),
+    search_source: "",
+    sid: "h5_ai_share",
+    page_id: "",
+    vstyle: "1",
+    cot: "1",
+    loop_num: "1",
+    query_id: "",
+  });
+  const response = await fetchWithTimeout(
+    WEIBO_ZHISOU_URL,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+        Origin: "https://m.s.weibo.com",
+        Referer: "https://m.s.weibo.com/zhisou/zhisoushare/",
+        "User-Agent":
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 DailyHot/1.0",
+      },
+      body,
+    },
+    WEIBO_ZHISOU_TIMEOUT_MS
+  );
+  if (!response.ok) throw new Error(`Weibo Zhisou ${response.status}`);
+  const payload = await response.json();
+  if (Number(payload?.status) !== 2 || !payload?.msg) {
+    throw new Error(`Weibo Zhisou unavailable: ${payload?.status || "unknown"}`);
+  }
+  const summary = truncateWeiboZhisouSummary(payload.msg);
+  if (!summary) throw new Error("Weibo Zhisou summary is empty");
+  const value = summary;
+  cache.set(cacheKey, { cachedAt: Date.now(), value });
+  return value;
+};
+
 const getBilibiliType = (type = "") =>
   Object.prototype.hasOwnProperty.call(BILIBILI_TYPE_LABELS, type) ? type : "all";
 
@@ -1159,6 +1345,112 @@ const handleBilibili = async (req, res) => {
     return true;
   } catch (error) {
     console.warn("Bilibili direct fetch failed", error);
+    return false;
+  }
+};
+
+const enrichWeiboItemsWithZhisou = async (data, { forceNoCache = false } = {}) => {
+  const targets = data.slice(0, WEIBO_ZHISOU_ENRICH_LIMIT);
+  const results = await Promise.allSettled(
+    targets.map((item) => fetchWeiboZhisouSummary(item.title, { forceNoCache }))
+  );
+  results.forEach((result, index) => {
+    if (result.status === "fulfilled" && result.value) {
+      targets[index].desc = result.value;
+    }
+  });
+};
+
+const buildWeiboResponse = async ({
+  items,
+  updateTime,
+  fromCache = false,
+}) => {
+  const timestamp = Date.parse(updateTime) || Date.now();
+  const data = items
+    .filter((item) => !isWeiboPromotedItem(item))
+    .map((item, index) => {
+      const title = stripWeiboTopicMarks(
+        item?.note || item?.word || item?.word_scheme || ""
+      );
+      if (!title) return null;
+      const url = buildWeiboTopicUrl(item, title);
+      const desc = buildWeiboDescription(item) || title;
+      return {
+        id: String(item?.mid || item?.word_scheme || item?.word || index + 1),
+        title,
+        desc,
+        hot: Number(item?.num) || Math.max(items.length - index, 0),
+        timestamp,
+        url,
+        mobileUrl: url,
+      };
+    })
+    .filter(Boolean);
+
+  await enrichWeiboItemsWithZhisou(data);
+
+  return {
+    code: 200,
+    name: "weibo",
+    title: "微博",
+    type: "微博热搜",
+    subtitle: "热搜榜",
+    description: "微博实时热搜榜，聚合话题领域、热度排名与讨论趋势。",
+    link: `${WEIBO_WEB_BASE_URL}/hot/search`,
+    total: data.length,
+    fromCache,
+    updateTime,
+    data,
+  };
+};
+
+const fetchWeiboHotBand = async ({ forceNoCache = false } = {}) => {
+  const cache = getWeiboCacheStore();
+  const cached = cache.get("hot-band");
+  if (!forceNoCache && cached && Date.now() - cached.cachedAt < WEIBO_CACHE_TTL_MS) {
+    return { ...cached.value, fromCache: true };
+  }
+
+  const response = await fetchWithTimeout(
+    WEIBO_HOT_BAND_URL,
+    {
+      method: "GET",
+      headers: WEIBO_COMMON_HEADERS,
+    },
+    WEIBO_DIRECT_FETCH_TIMEOUT_MS
+  );
+  if (!response.ok) throw new Error(`Weibo hot band ${response.status}`);
+  const payload = await response.json();
+  const items = Array.isArray(payload?.data?.band_list)
+    ? payload.data.band_list
+    : [];
+  if (payload?.ok !== 1 || !items.length) {
+    throw new Error("Weibo hot band response is invalid");
+  }
+
+  const result = await buildWeiboResponse({
+    items,
+    updateTime: new Date().toISOString(),
+  });
+  if (!result.data.length) {
+    throw new Error("Weibo hot band response has no usable items");
+  }
+  cache.set("hot-band", { cachedAt: Date.now(), value: result });
+  return result;
+};
+
+const handleWeibo = async (req, res) => {
+  if (req.method !== "GET") return false;
+  const forceNoCache =
+    String(normalizeQueryValue(req.query.cache, "true")).toLowerCase() === "false";
+
+  try {
+    const result = await fetchWeiboHotBand({ forceNoCache });
+    res.status(200).json(result);
+    return true;
+  } catch (error) {
+    console.warn("Weibo direct fetch failed", error);
     return false;
   }
 };
@@ -1883,6 +2175,501 @@ const handleDesignArena = async (req, res) => {
   }
 };
 
+const ARTIFICIALANALYSIS_BASE_URL = "https://artificialanalysis.ai";
+const ARTIFICIALANALYSIS_PROXY_URL = `${PUBLIC_API_FALLBACK_BASE_URL}/artificialanalysis`;
+const ARTIFICIALANALYSIS_TIMEOUT_MS = 20000;
+const ARTIFICIALANALYSIS_PARAM_NAME_BY_LOCALE = {
+  "zh-CN": "榜单",
+  "zh-TW": "榜單",
+  en: "Type",
+  ja: "タイプ",
+  ko: "유형",
+};
+const ARTIFICIALANALYSIS_DESC_LABELS = {
+  "zh-CN": {
+    index: "Index",
+    cost: "单任务成本",
+    time: "平均时长",
+    top: "官方 FAQ Top 5",
+    context: "上下文",
+    blendPrice: "混合价",
+    speed: "速度",
+    firstChunk: "首包",
+    totalResponse: "总响应",
+  },
+  "zh-TW": {
+    index: "Index",
+    cost: "單任務成本",
+    time: "平均時長",
+    top: "官方 FAQ Top 5",
+    context: "上下文",
+    blendPrice: "混合價",
+    speed: "速度",
+    firstChunk: "首包",
+    totalResponse: "總響應",
+  },
+  en: {
+    index: "Index",
+    cost: "Cost / task",
+    time: "Time / task",
+    top: "Official FAQ Top 5",
+    context: "Context",
+    blendPrice: "Blended price",
+    speed: "Speed",
+    firstChunk: "First chunk",
+    totalResponse: "Total response",
+  },
+  ja: {
+    index: "Index",
+    cost: "タスク単価",
+    time: "平均時間",
+    top: "公式FAQ Top 5",
+    context: "コンテキスト",
+    blendPrice: "混合価格",
+    speed: "速度",
+    firstChunk: "初回チャンク",
+    totalResponse: "総応答",
+  },
+  ko: {
+    index: "Index",
+    cost: "작업당 비용",
+    time: "평균 시간",
+    top: "공식 FAQ Top 5",
+    context: "컨텍스트",
+    blendPrice: "혼합 가격",
+    speed: "속도",
+    firstChunk: "첫 청크",
+    totalResponse: "총 응답",
+  },
+};
+const ARTIFICIALANALYSIS_TYPE_META = {
+  models: {
+    source: "proxy",
+    path: "/leaderboards/models",
+    title: {
+      "zh-CN": "模型综合评测榜",
+      "zh-TW": "模型綜合評測榜",
+      en: "Models",
+      ja: "モデル総合評価",
+      ko: "모델 종합 평가",
+    },
+    description: {
+      "zh-CN": "Artificial Analysis 大模型能力、价格与速度综合排行榜。",
+      "zh-TW": "Artificial Analysis 大模型能力、價格與速度綜合排行榜。",
+      en: "Artificial Analysis rankings for model intelligence, price, and speed.",
+      ja: "Artificial Analysisのモデル性能、価格、速度ランキング。",
+      ko: "Artificial Analysis의 모델 성능, 가격, 속도 랭킹.",
+    },
+  },
+  providers: {
+    source: "html",
+    path: "/leaderboards/providers",
+    title: {
+      "zh-CN": "API 提供商与端点榜",
+      "zh-TW": "API 提供商與端點榜",
+      en: "API Providers & Endpoints",
+      ja: "APIプロバイダとエンドポイント",
+      ko: "API 프로바이더 및 엔드포인트",
+    },
+    description: {
+      "zh-CN": "Artificial Analysis LLM API 提供商与模型端点价格、速度、首包延迟与总响应时长对比榜。",
+      "zh-TW": "Artificial Analysis LLM API 提供商與模型端點價格、速度、首包延遲與總響應時長對比榜。",
+      en: "Artificial Analysis comparisons of LLM API provider endpoints across price, speed, first chunk latency, and total response time.",
+      ja: "Artificial AnalysisのLLM APIプロバイダ端点を価格、速度、初回応答遅延、総応答時間で比較するランキング。",
+      ko: "Artificial Analysis의 LLM API 프로바이더 엔드포인트를 가격, 속도, 첫 응답 지연, 총 응답 시간으로 비교한 랭킹.",
+    },
+  },
+  "coding-agents": {
+    source: "html",
+    path: "/agents/coding-agents",
+    title: {
+      "zh-CN": "编码智能体榜",
+      "zh-TW": "編碼智慧體榜",
+      en: "Coding Agents",
+      ja: "コーディングエージェント",
+      ko: "코딩 에이전트",
+    },
+    description: {
+      "zh-CN": "Artificial Analysis 编码智能体任务通过率、成本与执行时长排行榜。",
+      "zh-TW": "Artificial Analysis 編碼智慧體任務通過率、成本與執行時長排行榜。",
+      en: "Artificial Analysis coding agent rankings across benchmark performance, cost, and execution time.",
+      ja: "Artificial Analysisのコーディングエージェントをベンチマーク成績、コスト、実行時間で比較するランキング。",
+      ko: "Artificial Analysis 코딩 에이전트를 벤치마크 성능, 비용, 실행 시간으로 비교한 랭킹.",
+    },
+  },
+  "text-to-image": {
+    source: "html",
+    path: "/image/leaderboard/text-to-image",
+    title: {
+      "zh-CN": "文生图榜",
+      "zh-TW": "文生圖榜",
+      en: "Text to Image",
+      ja: "テキスト画像",
+      ko: "텍스트 투 이미지",
+    },
+    description: {
+      "zh-CN": "Artificial Analysis 文生图模型 Elo 与图像生成价格排行榜。",
+      "zh-TW": "Artificial Analysis 文生圖模型 Elo 與圖像生成價格排行榜。",
+      en: "Artificial Analysis text-to-image rankings across Elo and image generation pricing.",
+      ja: "Artificial Analysisのテキスト画像モデルをEloと生成価格で比較するランキング。",
+      ko: "Artificial Analysis 텍스트 투 이미지 모델의 Elo와 생성 가격 랭킹.",
+    },
+  },
+};
+const ARTIFICIALANALYSIS_PROVIDER_LABEL_BY_PATH = {
+  "/providers/amazon_bedrock": "Amazon Bedrock",
+  "/providers/azure": "Microsoft Azure",
+};
+
+const absoluteArtificialAnalysisUrl = (path = "/") =>
+  path.startsWith("http")
+    ? path
+    : `${ARTIFICIALANALYSIS_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+
+const getArtificialAnalysisMeta = (type = "models", locale = "zh-CN") => {
+  const normalizedLocale = normalizeReadableLocale(locale) || "zh-CN";
+  const meta = ARTIFICIALANALYSIS_TYPE_META[type] || ARTIFICIALANALYSIS_TYPE_META.models;
+  return {
+    ...meta,
+    title: meta.title?.[normalizedLocale] || meta.title?.en || meta.title?.["zh-CN"] || "",
+    description:
+      meta.description?.[normalizedLocale] ||
+      meta.description?.en ||
+      meta.description?.["zh-CN"] ||
+      "",
+  };
+};
+
+const getArtificialAnalysisTypeParams = (locale = "zh-CN") =>
+  Object.fromEntries(
+    Object.keys(ARTIFICIALANALYSIS_TYPE_META).map((type) => [
+      type,
+      getArtificialAnalysisMeta(type, locale).title,
+    ])
+  );
+
+const localizeArtificialAnalysisResult = (result, type, locale = "zh-CN") => {
+  const normalizedLocale = normalizeReadableLocale(locale) || "zh-CN";
+  const meta = getArtificialAnalysisMeta(type, normalizedLocale);
+  const data = Array.isArray(result?.data)
+    ? result.data.map((item) => ({
+        ...item,
+        title: String(item?.title || "").trim(),
+        originalTitle: item?.originalTitle || String(item?.title || "").trim(),
+        noAutoTranslate: true,
+      }))
+    : [];
+  return {
+    ...result,
+    code: 200,
+    name: "artificialanalysis",
+    title: "Artificial Analysis",
+    type: meta.title,
+    subtitle: meta.title,
+    description: meta.description,
+    link: absoluteArtificialAnalysisUrl(meta.path),
+    params: {
+      type: {
+        name:
+          ARTIFICIALANALYSIS_PARAM_NAME_BY_LOCALE[normalizedLocale] ||
+          ARTIFICIALANALYSIS_PARAM_NAME_BY_LOCALE.en,
+        type: getArtificialAnalysisTypeParams(normalizedLocale),
+      },
+    },
+    selectedType: type,
+    total: result?.total || data.length,
+    data,
+  };
+};
+
+const fetchArtificialAnalysisProxyResult = async (type, locale = "zh-CN") => {
+  const url = new URL(ARTIFICIALANALYSIS_PROXY_URL);
+  url.searchParams.set("type", type);
+  url.searchParams.set("locale", locale);
+  const response = await fetchWithTimeout(
+    url.toString(),
+    {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "DailyHot-ArtificialAnalysis/1.0",
+      },
+    },
+    ARTIFICIALANALYSIS_TIMEOUT_MS
+  );
+  if (!response.ok) {
+    throw new Error(`ArtificialAnalysis proxy ${response.status}`);
+  }
+  const payload = await response.json();
+  if (payload?.code !== 200 || !Array.isArray(payload?.data)) {
+    throw new Error("ArtificialAnalysis proxy response is invalid");
+  }
+  return localizeArtificialAnalysisResult(payload, type, locale);
+};
+
+const buildArtificialAnalysisResponse = ({ type, locale = "zh-CN", data = [], updateTime }) => {
+  const normalizedLocale = normalizeReadableLocale(locale) || "zh-CN";
+  const meta = getArtificialAnalysisMeta(type, normalizedLocale);
+  return {
+    code: 200,
+    name: "artificialanalysis",
+    title: "Artificial Analysis",
+    type: meta.title,
+    subtitle: meta.title,
+    description: meta.description,
+    link: absoluteArtificialAnalysisUrl(meta.path),
+    params: {
+      type: {
+        name:
+          ARTIFICIALANALYSIS_PARAM_NAME_BY_LOCALE[normalizedLocale] ||
+          ARTIFICIALANALYSIS_PARAM_NAME_BY_LOCALE.en,
+        type: getArtificialAnalysisTypeParams(normalizedLocale),
+      },
+    },
+    selectedType: type,
+    total: data.length,
+    fromCache: false,
+    updateTime: updateTime || new Date().toISOString(),
+    data,
+  };
+};
+
+const decodeArtificialAnalysisHtml = (value = "") =>
+  String(value || "")
+    .replace(/\\u0026/g, "&")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ");
+
+const formatArtificialAnalysisDuration = (seconds, locale = "zh-CN") => {
+  const minutes = Number(seconds) / 60;
+  if (!Number.isFinite(minutes) || minutes <= 0) return "";
+  const rounded = minutes >= 10 ? minutes.toFixed(1) : minutes.toFixed(1);
+  if (locale === "zh-CN" || locale === "zh-TW") return `${rounded}分钟`;
+  if (locale === "ja") return `${rounded}分`;
+  if (locale === "ko") return `${rounded}분`;
+  return `${rounded}m`;
+};
+
+const extractArtificialAnalysisCodingAgents = (html = "", locale = "zh-CN") => {
+  const labels =
+    ARTIFICIALANALYSIS_DESC_LABELS[normalizeReadableLocale(locale) || "zh-CN"] ||
+    ARTIFICIALANALYSIS_DESC_LABELS["zh-CN"];
+  const normalizedHtml = String(html || "").replace(/\\"/g, "\"");
+  const regex =
+    /displayLabel":"([^"]+)"[\s\S]*?indexScore":([0-9.]+)[\s\S]*?costUsd":([0-9.]+)[\s\S]*?agentWallTimeSec":([0-9.]+)/g;
+  const map = new Map();
+  let match;
+  while ((match = regex.exec(normalizedHtml))) {
+    const title = decodeArtificialAnalysisHtml(match[1]).trim();
+    if (!title || map.has(title)) continue;
+    const score = Number(match[2]) * 100;
+    const cost = Number(match[3]);
+    const duration = Number(match[4]);
+    map.set(title, {
+      id: title,
+      title,
+      originalTitle: title,
+      desc: `${labels.index} ${formatNumber(score, 1)} · ${labels.cost} $${formatNumber(cost, 2)} · ${labels.time} ${formatArtificialAnalysisDuration(duration, locale)}`,
+      hot: Number(score.toFixed(1)),
+      url: absoluteArtificialAnalysisUrl("/agents/coding-agents"),
+      mobileUrl: absoluteArtificialAnalysisUrl("/agents/coding-agents"),
+      noAutoTranslate: true,
+    });
+  }
+  return [...map.values()]
+    .sort((a, b) => Number(b.hot || 0) - Number(a.hot || 0))
+    .slice(0, 10);
+};
+
+const extractArtificialAnalysisTextToImage = (html = "", locale = "zh-CN") => {
+  const labels =
+    ARTIFICIALANALYSIS_DESC_LABELS[normalizeReadableLocale(locale) || "zh-CN"] ||
+    ARTIFICIALANALYSIS_DESC_LABELS["zh-CN"];
+  const faqMatch = html.match(
+    /The top Text to Image models by Elo rating are:\s*([\s\S]*?)\s*Rankings are based on blind user votes/i
+  );
+  if (!faqMatch) return [];
+  const content = decodeArtificialAnalysisHtml(faqMatch[1]);
+  const entryRegex = /\d+\.\s+(.+?)\s+\(Elo\s+([0-9,]+)\)/g;
+  const rows = [];
+  let match;
+  while ((match = entryRegex.exec(content)) && rows.length < 5) {
+    const title = String(match[1] || "").trim();
+    const elo = Number(String(match[2] || "").replace(/,/g, ""));
+    if (!title || !Number.isFinite(elo)) continue;
+    rows.push({
+      id: title,
+      title,
+      originalTitle: title,
+      desc: `ELO ${formatInteger(elo)} · ${labels.top}`,
+      hot: elo,
+      url: absoluteArtificialAnalysisUrl("/image/leaderboard/text-to-image"),
+      mobileUrl: absoluteArtificialAnalysisUrl("/image/leaderboard/text-to-image"),
+      noAutoTranslate: true,
+    });
+  }
+  return rows;
+};
+
+const extractArtificialAnalysisProviders = async (html = "", locale = "zh-CN") => {
+  const labels =
+    ARTIFICIALANALYSIS_DESC_LABELS[normalizeReadableLocale(locale) || "zh-CN"] ||
+    ARTIFICIALANALYSIS_DESC_LABELS["zh-CN"];
+  const normalizedHtml = String(html || "");
+  const startRegex =
+    /\\"name\\":\\"([^\\]+)\\",\\"short_name\\":\\"([^\\]+)\\",\\"model_label\\":\\"([^\\]+)\\",\\"host_label\\":\\"([^\\]+)\\"/g;
+  const modelStartRegex = /\\"model\\":\{/g;
+  let nextModelMatch = modelStartRegex.exec(normalizedHtml);
+  let currentModelStart = -1;
+  const modelInfoCache = new Map();
+  const getModelInfo = (modelStart, modelEnd) => {
+    if (modelInfoCache.has(modelStart)) return modelInfoCache.get(modelStart);
+    const modelChunk =
+      modelStart >= 0 ? normalizedHtml.slice(modelStart, modelEnd) : "";
+    const info = {
+      deprecated:
+        modelChunk.match(/\\"deprecated\\":(true|false)/)?.[1] === "true",
+      intelligence: Number(
+        modelChunk.match(/\\"intelligence_index\\":([0-9.]+)/)?.[1] ||
+          modelChunk.match(/\\"estimated_intelligence_index\\":([0-9.]+)/)?.[1]
+      ),
+    };
+    modelInfoCache.set(modelStart, info);
+    return info;
+  };
+  const seen = new Set();
+  const rows = [];
+  let match;
+  while ((match = startRegex.exec(normalizedHtml))) {
+    const modelLabel = decodeArtificialAnalysisHtml(match[3]).trim();
+    const hostLabel = decodeArtificialAnalysisHtml(match[4]).trim();
+    const chunkStart = Math.max(0, match.index);
+    while (nextModelMatch && nextModelMatch.index < chunkStart) {
+      currentModelStart = nextModelMatch.index;
+      nextModelMatch = modelStartRegex.exec(normalizedHtml);
+    }
+    const modelInfo = getModelInfo(currentModelStart, chunkStart);
+    if (modelInfo.deprecated) continue;
+    const chunkEnd = Math.min(normalizedHtml.length, chunkStart + 16000);
+    const chunk = normalizedHtml.slice(chunkStart, chunkEnd);
+    const hostPath = decodeArtificialAnalysisHtml(
+      chunk.match(/\\"hosts_url\\":\\"([^\\]+)\\"/)?.[1] || ""
+    ).trim();
+    if (!modelLabel || !hostLabel || !hostPath) continue;
+    const key = `${hostLabel}::${modelLabel}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const contextWindow = decodeArtificialAnalysisHtml(
+      chunk.match(/\\"context_window_formatted\\":\\"([^\\]+)\\"/)?.[1] || ""
+    ).trim();
+    const price = Number(chunk.match(/\\"price_1m_blended_7_2_1\\":([0-9.]+)/)?.[1]);
+    const speed = Number(chunk.match(/\\"median_output_speed\\":([0-9.]+)/)?.[1]);
+    const firstChunk = Number(
+      chunk.match(/\\"timescaleData\\":\{[\s\S]*?\\"median_time_to_first_chunk\\":([0-9.]+)/)?.[1] ||
+        chunk.match(/\\"median_time_to_first_chunk\\":([0-9.]+)/)?.[1]
+    );
+    const totalTime = Number(
+      chunk.match(
+        /\\"prompt_length_type\\":\\"long\\"[\s\S]*?\\"median_end_to_end_response_time\\":([0-9.]+)/
+      )?.[1]
+    );
+    const providerTitle = ARTIFICIALANALYSIS_PROVIDER_LABEL_BY_PATH[hostPath] || hostLabel;
+    const title = `${providerTitle} · ${modelLabel}`;
+    rows.push({
+      id: key,
+      title,
+      originalTitle: title,
+      desc: `${labels.context} ${contextWindow} · ${labels.blendPrice} $${formatNumber(price, price < 1 ? 3 : 2)}/1M · ${labels.speed} ${formatNumber(speed, 1)} tok/s · ${labels.firstChunk} ${formatNumber(firstChunk, 2)}s · ${labels.totalResponse} ${formatNumber(totalTime, 2)}s`,
+      hot: Number.isFinite(speed) ? Number(speed.toFixed(1)) : 0,
+      url: absoluteArtificialAnalysisUrl(hostPath),
+      mobileUrl: absoluteArtificialAnalysisUrl(hostPath),
+      noAutoTranslate: true,
+      _sortIntelligence: Number.isFinite(modelInfo.intelligence)
+        ? modelInfo.intelligence
+        : -Infinity,
+      _sortOriginalIndex: rows.length,
+    });
+  }
+  return rows
+    .sort(
+      (a, b) =>
+        b._sortIntelligence - a._sortIntelligence ||
+        a._sortOriginalIndex - b._sortOriginalIndex
+    )
+    .map(({ _sortIntelligence, _sortOriginalIndex, ...item }) => item);
+};
+
+const fetchArtificialAnalysisHtml = async (path = "/") => {
+  const response = await fetchWithTimeout(
+    absoluteArtificialAnalysisUrl(path),
+    {
+      headers: {
+        Accept: "text/html",
+        "User-Agent": "DailyHot-ArtificialAnalysis/1.0",
+      },
+    },
+    ARTIFICIALANALYSIS_TIMEOUT_MS
+  );
+  if (!response.ok) {
+    throw new Error(`ArtificialAnalysis html ${response.status}`);
+  }
+  return await response.text();
+};
+
+const handleArtificialAnalysis = async (req, res) => {
+  if (req.method !== "GET") return false;
+  const type = normalizeQueryValue(req.query.type, "models");
+  const locale = normalizeReadableLocale(normalizeQueryValue(req.query.locale, "zh-CN")) || "zh-CN";
+  const meta = ARTIFICIALANALYSIS_TYPE_META[type];
+  if (!meta) return false;
+
+  try {
+    const result =
+      meta.source === "proxy"
+        ? await fetchArtificialAnalysisProxyResult(type, locale)
+        : buildArtificialAnalysisResponse({
+            type,
+            locale,
+            data:
+              type === "providers"
+                ? await extractArtificialAnalysisProviders(
+                    await fetchArtificialAnalysisHtml(meta.path),
+                    locale
+                  )
+                : type === "coding-agents"
+                ? extractArtificialAnalysisCodingAgents(
+                    await fetchArtificialAnalysisHtml(meta.path),
+                    locale
+                  )
+                : extractArtificialAnalysisTextToImage(
+                    await fetchArtificialAnalysisHtml(meta.path),
+                    locale
+                  ),
+          });
+    if (!Array.isArray(result.data) || !result.data.length) {
+      throw new Error(`ArtificialAnalysis ${type} returned empty data`);
+    }
+    res.status(200).json(result);
+    return true;
+  } catch (error) {
+    console.warn("ArtificialAnalysis direct fetch failed", error);
+    res.status(502).json({
+      ...buildArtificialAnalysisResponse({
+        type,
+        locale,
+        data: [],
+      }),
+      code: 502,
+      message: "ArtificialAnalysis upstream unavailable",
+    });
+    return true;
+  }
+};
+
 const buildProxyTargetUrl = (baseUrl, pathValue, query) => {
   const targetUrl = new URL(`${baseUrl.replace(/\/+$/, "")}/${pathValue}`);
 
@@ -1898,6 +2685,30 @@ const buildProxyTargetUrl = (baseUrl, pathValue, query) => {
   });
 
   return targetUrl;
+};
+
+const normalizeApiRoute = (pathValue = "", query = {}) => {
+  const segments = String(pathValue || "")
+    .split("/")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  if (segments.length < 2) {
+    return { pathValue, query };
+  }
+
+  const [source, ...subtypeSegments] = segments;
+  if (!API_SUBTYPE_PATH_SOURCES.has(source)) {
+    return { pathValue, query };
+  }
+
+  const subtypeFromPath = subtypeSegments.join("/");
+  return {
+    pathValue: source,
+    query: {
+      ...query,
+      type: normalizeQueryValue(query.type, subtypeFromPath),
+    },
+  };
 };
 
 const redirectToPublicApiFallback = (pathValue, query, res) => {
@@ -1935,6 +2746,100 @@ const fetchProxyTarget = async ({ targetUrl, req, body, proxyToken }) => {
   const contentType = response.headers.get("content-type") || "application/json";
   const text = await response.text();
   return { response, contentType, text };
+};
+
+const getImageProxyTarget = (rawUrl = "") => {
+  const target = new URL(rawUrl);
+  if (target.protocol !== "https:") {
+    throw new Error("Only HTTPS image URLs are supported");
+  }
+  const host = target.hostname.toLowerCase();
+  const isAllowed = IMAGE_PROXY_ALLOWED_HOST_SUFFIXES.some(
+    (suffix) => host === suffix || host.endsWith(`.${suffix}`)
+  );
+  if (!isAllowed) {
+    throw new Error("Image host is not allowed");
+  }
+  if (/^img\d+\.doubanio\.com$/.test(host)) {
+    target.hostname = "img3.doubanio.com";
+  }
+  return target;
+};
+
+const getImageProxyReferer = (target) => {
+  const host = target.hostname.toLowerCase();
+  if (host === "doubanio.com" || host.endsWith(".doubanio.com")) {
+    return "https://movie.douban.com/";
+  }
+  return `${target.origin}/`;
+};
+
+const handleImageProxy = async (req, res) => {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.status(405).json({ code: 405, message: "Method not allowed" });
+    return;
+  }
+
+  let target;
+  try {
+    target = getImageProxyTarget(normalizeQueryValue(req.query.url, ""));
+  } catch {
+    res.status(400).json({ code: 400, message: "Invalid image URL" });
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), IMAGE_PROXY_TIMEOUT_MS);
+  try {
+    const response = await fetch(target, {
+      headers: {
+        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        Referer: getImageProxyReferer(target),
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 DailyHot/1.0",
+      },
+      signal: controller.signal,
+    });
+    const contentType = response.headers.get("content-type") || "";
+    const contentLength = Number(response.headers.get("content-length") || 0);
+
+    if (!response.ok) {
+      res.status(response.status).json({
+        code: response.status,
+        message: "Image upstream unavailable",
+      });
+      return;
+    }
+    if (!contentType.toLowerCase().startsWith("image/")) {
+      res.status(415).json({ code: 415, message: "Unsupported image content" });
+      return;
+    }
+    if (contentLength > IMAGE_PROXY_MAX_BYTES) {
+      res.status(413).json({ code: 413, message: "Image is too large" });
+      return;
+    }
+
+    const imageBuffer = Buffer.from(await response.arrayBuffer());
+    if (imageBuffer.length > IMAGE_PROXY_MAX_BYTES) {
+      res.status(413).json({ code: 413, message: "Image is too large" });
+      return;
+    }
+
+    res.status(200);
+    res.setHeader("content-type", contentType);
+    res.setHeader("cache-control", "public, max-age=86400, s-maxage=604800");
+    res.setHeader("access-control-allow-origin", "*");
+    res.setHeader("content-length", String(imageBuffer.length));
+    if (req.method === "HEAD") {
+      res.end();
+      return;
+    }
+    res.send(imageBuffer);
+  } catch {
+    res.status(502).json({ code: 502, message: "Image proxy unavailable" });
+  } finally {
+    clearTimeout(timeout);
+  }
 };
 
 const getLegacyClawHubAggregateType = (pathValue, rawType = "") => {
@@ -2024,7 +2929,10 @@ export default async function handler(req, res) {
   const requestPath = new URL(req.url, "https://hot.wuaishare.cn").pathname
     .replace(/^\/api\/?/, "")
     .replace(/^\/+/, "");
-  const pathValue = queryPath || requestPath;
+  let pathValue = queryPath || requestPath;
+  const normalizedRoute = normalizeApiRoute(pathValue, req.query);
+  pathValue = normalizedRoute.pathValue;
+  req.query = normalizedRoute.query;
 
   if (
     pathValue === "analytics" &&
@@ -2049,6 +2957,16 @@ export default async function handler(req, res) {
 
   if (pathValue === "readable-translate" && req.method === "POST") {
     const handled = await handleReadableTranslate(body, res);
+    if (handled) return;
+  }
+
+  if (pathValue === "image-proxy") {
+    await handleImageProxy(req, res);
+    return;
+  }
+
+  if (pathValue === "weibo") {
+    const handled = await handleWeibo(req, res);
     if (handled) return;
   }
 
@@ -2078,6 +2996,11 @@ export default async function handler(req, res) {
 
   if (pathValue === "designarena") {
     const handled = await handleDesignArena(req, res);
+    if (handled) return;
+  }
+
+  if (pathValue === "artificialanalysis") {
+    const handled = await handleArtificialAnalysis(req, res);
     if (handled) return;
   }
 

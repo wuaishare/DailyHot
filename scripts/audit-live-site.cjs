@@ -316,6 +316,22 @@ addCheck("route SEO: designarena daily usage is concise", () =>
   })
 );
 
+addCheck("route SEO: artificialanalysis providers use API provider wording", () =>
+  assertHtml("/rank/artificialanalysis/providers", {
+    titleIncludes: "Artificial Analysis API 提供商与端点榜",
+    canonical: "/rank/artificialanalysis/providers",
+    descriptionIncludes: ["LLM API 提供商", "模型端点"],
+  })
+);
+
+addCheck("route SEO: artificialanalysis coding agents are exposed", () =>
+  assertHtml("/rank/artificialanalysis/coding-agents", {
+    titleIncludes: "Artificial Analysis 编码智能体榜",
+    canonical: "/rank/artificialanalysis/coding-agents",
+    descriptionIncludes: "AI 编码智能体基准",
+  })
+);
+
 addCheck("route SEO: clawhub skill installs mention OpenClaw", () =>
   assertHtml("/rank/clawhub/skills-installs", {
     titleIncludes: "ClawHub 安装最多技能榜",
@@ -435,10 +451,52 @@ addCheck("api: bilibili popular coverage", async () => {
   return results;
 });
 
+addCheck("api: weibo descriptions include topic metadata", async () => {
+  const url = new URL(`${siteUrl}/api/weibo`);
+  url.searchParams.set("cache", "false");
+  const response = await requestWithRetry(url.toString(), {}, 3);
+  assert(response.statusCode === 200, `HTTP ${response.statusCode}`);
+  const payload = JSON.parse(response.body);
+  assert(payload.code === 200, `API code ${payload.code}`);
+  assert(Array.isArray(payload.data) && payload.data.length > 0, "empty data");
+  const sample = payload.data.slice(0, 8);
+  const richItems = sample.filter((item) => {
+    const title = String(item?.title || "");
+    const desc = String(item?.desc || "");
+    const hasNaturalSummary =
+      desc.length >= 40 &&
+      /[\u3400-\u9fff]/.test(desc) &&
+      /[。！？]/.test(desc);
+    return (
+      desc &&
+      desc !== title &&
+      desc !== `#${title}#` &&
+      (hasNaturalSummary || /(?:领域|热度|搜索|讨论|媒体|上涨|TOP)/.test(desc))
+    );
+  });
+  sample.forEach((item) => {
+    const desc = String(item?.desc || "");
+    assert(
+      !/<think>|wbCustomBlock|<[^>]+>/.test(desc),
+      `weibo internal markup leaked: ${item?.title}=>${desc.slice(0, 160)}`
+    );
+  });
+  assert(
+    richItems.length >= Math.min(3, sample.length),
+    `not enough rich descriptions: ${sample
+      .map((item) => `${item.title}=>${item.desc}`)
+      .join(" | ")}`
+  );
+  return richItems.slice(0, 3).map((item) => `${item.title}:${item.desc}`);
+});
+
 addCheck("api: AI ranking endpoints are available", async () => {
   const cases = [
     ["openrouter-rankings", "models-week"],
     ["openrouter-rankings", "apps-day"],
+    ["artificialanalysis", "providers"],
+    ["artificialanalysis", "coding-agents"],
+    ["artificialanalysis", "text-to-image"],
     ["designarena", "fullstack"],
     ["designarena", "daily-usage"],
     ["clawhub", "skills-installs"],
@@ -457,6 +515,44 @@ addCheck("api: AI ranking endpoints are available", async () => {
       Array.isArray(payload.data) && payload.data.length > 0,
       `${source}/${type}: empty data`
     );
+    if (source === "artificialanalysis" && type === "providers") {
+      const firstTitle = String(payload.data[0]?.title || "");
+      const firstDesc = String(payload.data[0]?.desc || "");
+      assert(
+        firstTitle.includes("Anthropic") && firstTitle.includes("Claude Opus 4.8"),
+        `${source}/${type}: first title should include provider and model, got ${firstTitle}`
+      );
+      assert(
+        !firstDesc.includes("Claude Opus 4.8"),
+        `${source}/${type}: first desc should not duplicate model, got ${firstDesc}`
+      );
+    }
+    results.push(`${source}/${type}:${payload.subtitle || payload.type}:${payload.data.length}`);
+  }
+  return results;
+});
+
+addCheck("api: segmented ranking routes are available", async () => {
+  const cases = [
+    ["openrouter-rankings", "models-week"],
+    ["artificialanalysis", "providers"],
+    ["designarena", "fullstack"],
+    ["clawhub", "plugins-recommended"],
+  ];
+  const results = [];
+  for (const [source, type] of cases) {
+    const response = await requestWithRetry(
+      withVerify(`/api/${source}/${type}?cache=false`),
+      {},
+      3
+    );
+    assert(response.statusCode === 200, `${source}/${type}: HTTP ${response.statusCode}`);
+    const payload = JSON.parse(response.body);
+    assert(payload.code === 200, `${source}/${type}: API code ${payload.code}`);
+    assert(
+      Array.isArray(payload.data) && payload.data.length > 0,
+      `${source}/${type}: empty data`
+    );
     results.push(`${source}/${type}:${payload.subtitle || payload.type}:${payload.data.length}`);
   }
   return results;
@@ -464,6 +560,9 @@ addCheck("api: AI ranking endpoints are available", async () => {
 
 addCheck("api: localized AI ranking labels are language-specific", async () => {
   const cases = [
+    ["artificialanalysis", "providers", "en", ["type", "subtitle", "description"]],
+    ["artificialanalysis", "coding-agents", "ja", ["type", "subtitle", "description"]],
+    ["artificialanalysis", "text-to-image", "ko", ["type", "subtitle", "description"]],
     ["designarena", "fullstack", "ko", ["type", "description"]],
     ["designarena", "fullstack", "ja", ["type", "description"]],
     ["clawhub", "plugins-recommended", "ko", ["type", "subtitle", "description"]],
