@@ -169,7 +169,7 @@
                     >
                       <img
                         class="cover"
-                        :src="item.cover"
+                        :src="getCoverDisplaySrc(item.cover)"
                         :alt="item.title"
                         loading="lazy"
                         @error="coverErrorMap[item.cover] = true"
@@ -201,6 +201,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { formatTime } from "@/utils/getTime";
 import { getHotListsWithFallback } from "@/api";
+import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import SubtypeBar from "@/components/SubtypeBar.vue";
 import {
   buildSourceSubtypeParams,

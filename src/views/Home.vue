@@ -120,6 +120,9 @@ const handleSubtypeInteraction = (event) => {
 const startCardDrag = () => {
   isCardDragging.value = true;
   enableCardEntrance.value = false;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("dailyhot:hide-item-preview"));
+  }
 };
 
 const saveCardOrder = () => {

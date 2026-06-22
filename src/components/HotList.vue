@@ -171,29 +171,46 @@
     </template>
   </n-card>
   <Teleport to="body">
-    <Transition name="cover-preview">
+    <Transition name="item-preview">
       <div
         v-if="previewItem"
-        class="hot-cover-preview"
+        class="hot-item-preview"
+        :class="{ 'has-cover': previewHasCover }"
         :style="previewStyle"
+        role="tooltip"
       >
-        <img
-          class="cover"
-          :src="previewItem.cover"
-          :alt="previewItem.title"
-          loading="lazy"
-          @error="coverErrorMap[previewItem.cover] = true; hidePreview()"
-        />
+        <div class="preview-copy">
+          <div class="preview-title">
+            {{ previewItem.displayTitle || previewItem.title }}
+          </div>
+          <div v-if="previewItem.displayDesc" class="preview-desc">
+            {{ previewItem.displayDesc }}
+          </div>
+          <div v-if="previewItem.hot" class="preview-meta">
+            <n-icon :component="Fire" />
+            <span>{{ previewItem.hot }}</span>
+          </div>
+        </div>
+        <div v-if="previewHasCover" class="preview-cover-wrap">
+          <img
+            class="cover"
+            :src="getCoverDisplaySrc(previewItem.cover)"
+            :alt="previewItem.title"
+            loading="lazy"
+            @error="handlePreviewCoverError(previewItem.cover)"
+          />
+        </div>
       </div>
     </Transition>
   </Teleport>
 </template>
 
 <script setup>
-import { Refresh, More } from "@icon-park/vue-next";
+import { Fire, Refresh, More } from "@icon-park/vue-next";
 import { getHotListsWithFallback } from "@/api";
 import { formatTime } from "@/utils/getTime";
 import { getCacheVersion } from "@/utils/cache";
+import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -260,13 +277,26 @@ const previewItem = ref(null);
 const previewStyle = ref({});
 const previewSizeCache = new Map();
 let previewRequestId = 0;
+let previewOpenTimer = null;
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
-const previewMaxWidth = 260;
-const previewMaxHeight = 260;
+const previewTextOnlyWidth = 340;
+const previewWithCoverWidth = 440;
+const previewCoverMaxWidth = 150;
+const previewCoverMaxHeight = 150;
+const previewFallbackCoverSize = {
+  width: previewCoverMaxWidth,
+  height: previewCoverMaxHeight,
+};
 const showImages = computed(() => store.showImages);
+const previewHasCover = computed(
+  () =>
+    showImages.value &&
+    previewItem.value?.cover &&
+    !coverErrorMap[previewItem.value.cover]
+);
 const shouldEnhanceReadableTitles = computed(() =>
   shouldUseReadableTitleTranslation(props.hotData.name, locale.value)
 );
@@ -298,14 +328,51 @@ const cardSubtitle = computed(() => {
   return subtitle;
 });
 let hotListRequestId = 0;
+const normalizeComparableText = (value = "") =>
+  String(value || "")
+    .replace(/[^\p{L}\p{N}]+/gu, "")
+    .toLowerCase()
+    .trim();
+const stripPreviewText = (value = "") =>
+  String(value || "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/^智搜[:：]\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+const isDuplicateDesc = (desc = "", ...titles) => {
+  const normalizedDesc = normalizeComparableText(desc);
+  if (!normalizedDesc) return true;
+  return titles.some((title) => {
+    const normalizedTitle = normalizeComparableText(title);
+    return normalizedTitle && normalizedDesc === normalizedTitle;
+  });
+};
 const visibleItems = computed(() =>
   (hotListData.value?.data || []).slice(0, HOT_LIST_VISIBLE_LIMIT).map((item) => {
     const originalTitle = String(item?.originalTitle || "");
+    const originalDesc = String(item?.originalDesc || "");
     const displayTitle = item?.title || originalTitle;
+    const rawDisplayDesc = item?.desc || originalDesc;
+    const displayDesc = isDuplicateDesc(
+      rawDisplayDesc,
+      originalTitle,
+      item?.title,
+      displayTitle
+    )
+      ? ""
+      : stripPreviewText(rawDisplayDesc);
     return {
       ...item,
       originalTitle,
+      originalDesc,
       displayTitle,
+      displayDesc,
       hasReadableTranslation:
         shouldProtectEntityTitles.value ||
         Boolean(item?.noAutoTranslate) ||
@@ -526,8 +593,8 @@ const getPreviewSize = (cover) => {
     const image = new Image();
     image.onload = () => {
       const scale = Math.min(
-        previewMaxWidth / image.naturalWidth,
-        previewMaxHeight / image.naturalHeight,
+        previewCoverMaxWidth / image.naturalWidth,
+        previewCoverMaxHeight / image.naturalHeight,
         1
       );
       resolve({
@@ -536,27 +603,38 @@ const getPreviewSize = (cover) => {
       });
     };
     image.onerror = reject;
-    image.src = cover;
+    image.src = getCoverDisplaySrc(cover);
   });
   previewSizeCache.set(cover, sizePromise);
   return sizePromise;
 };
 
-const showPreview = async (item, event) => {
-  if (!showImages.value || !item?.cover || coverErrorMap[item.cover]) return;
-  if (!isClient || !event?.currentTarget) return;
-  const target = event.currentTarget;
-  const requestId = ++previewRequestId;
-  let previewSize;
-  try {
-    previewSize = await getPreviewSize(item.cover);
-  } catch (error) {
-    coverErrorMap[item.cover] = true;
-    hidePreview();
-    return;
+const hasPreviewContent = (item) =>
+  Boolean(
+    item?.displayDesc || (showImages.value && item?.cover && !coverErrorMap[item.cover])
+  );
+
+const estimatePreviewHeight = (item, coverSize) => {
+  const descLength = String(item?.displayDesc || "").length;
+  const descLines = descLength ? Math.min(4, Math.max(1, Math.ceil(descLength / 28))) : 0;
+  const textHeight = 48 + descLines * 20 + (item?.hot ? 22 : 0);
+  if (!coverSize) return Math.max(84, textHeight + 28);
+  return Math.max(coverSize.height + 28, textHeight + 28);
+};
+
+const openPreview = async (item, target, requestId) => {
+  const canShowCover = showImages.value && item?.cover && !coverErrorMap[item.cover];
+  let coverSize = null;
+  if (canShowCover) {
+    try {
+      coverSize = await getPreviewSize(item.cover);
+    } catch (error) {
+      coverSize = previewFallbackCoverSize;
+    }
   }
   if (requestId !== previewRequestId || !target.isConnected) return;
 
+  const hasCover = Boolean(coverSize);
   const rect = target.getBoundingClientRect();
   const card = target.closest(".hot-list");
   const cardRect = card?.getBoundingClientRect();
@@ -565,8 +643,8 @@ const showPreview = async (item, event) => {
   );
   const padding = 12;
   const gap = 10;
-  const previewWidth = previewSize.width;
-  const previewHeight = previewSize.height;
+  const previewWidth = hasCover ? previewWithCoverWidth : previewTextOnlyWidth;
+  const previewHeight = estimatePreviewHeight(item, coverSize);
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const clampLeft = (value) =>
     clamp(value, padding, window.innerWidth - previewWidth - padding);
@@ -616,12 +694,67 @@ const showPreview = async (item, event) => {
   previewStyle.value = {
     left: `${left}px`,
     top: `${top}px`,
+    width: `${previewWidth}px`,
+    "--preview-cover-width": coverSize ? `${coverSize.width}px` : "0px",
+    "--preview-cover-height": coverSize ? `${coverSize.height}px` : "0px",
+    ...getPreviewThemeVars(),
   };
 };
 
+const showPreview = (item, event) => {
+  if (!isClient || !isDesktop.value || !event?.currentTarget) return;
+  if (!hasPreviewContent(item)) return;
+  if (previewOpenTimer) window.clearTimeout(previewOpenTimer);
+  const target = event.currentTarget;
+  const requestId = ++previewRequestId;
+  previewOpenTimer = window.setTimeout(() => {
+    previewOpenTimer = null;
+    openPreview(item, target, requestId);
+  }, 180);
+};
+
 const hidePreview = () => {
+  if (previewOpenTimer) {
+    window.clearTimeout(previewOpenTimer);
+    previewOpenTimer = null;
+  }
   previewRequestId += 1;
   previewItem.value = null;
+};
+
+const handleGlobalPreviewClose = () => {
+  hidePreview();
+};
+
+const handlePreviewCoverError = (cover) => {
+  if (!cover) return;
+  coverErrorMap[cover] = true;
+  if (previewItem.value?.cover !== cover) return;
+  previewStyle.value = {
+    ...previewStyle.value,
+    width: `${previewTextOnlyWidth}px`,
+    "--preview-cover-width": "0px",
+    "--preview-cover-height": "0px",
+  };
+};
+
+const getPreviewThemeVars = () => {
+  const isDarkTheme = store.siteTheme === "dark";
+  return {
+    "--preview-bg": isDarkTheme ? "#18181c" : "#fff",
+    "--preview-border": isDarkTheme
+      ? "rgba(255, 255, 255, 0.12)"
+      : "rgba(127, 127, 127, 0.2)",
+    "--preview-title-color": isDarkTheme
+      ? "rgba(255, 255, 255, 0.92)"
+      : "rgba(31, 34, 37, 0.92)",
+    "--preview-text-color": isDarkTheme
+      ? "rgba(255, 255, 255, 0.74)"
+      : "rgba(31, 34, 37, 0.72)",
+    "--preview-muted-color": isDarkTheme
+      ? "rgba(255, 255, 255, 0.48)"
+      : "rgba(31, 34, 37, 0.56)",
+  };
 };
 
 const changeSubType = (subtype) => {
@@ -727,6 +860,7 @@ onMounted(() => {
   updateIsDesktop();
   if (isClient) {
     window.addEventListener("resize", updateIsDesktop);
+    window.addEventListener("dailyhot:hide-item-preview", handleGlobalPreviewClose);
   }
   checkListShow();
 });
@@ -734,6 +868,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener("resize", updateIsDesktop);
+    window.removeEventListener("dailyhot:hide-item-preview", handleGlobalPreviewClose);
   }
   hidePreview();
 });
@@ -968,34 +1103,87 @@ onBeforeUnmount(() => {
   }
 }
 
-.hot-cover-preview {
+.hot-item-preview {
   position: fixed;
   z-index: 3000;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  box-sizing: border-box;
+  max-width: calc(100vw - 24px);
+  padding: 12px;
   pointer-events: none;
-  line-height: 0;
-  filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.22));
+  color: var(--preview-title-color, var(--n-text-color, rgba(31, 34, 37, 0.92)));
+  background: var(--preview-bg, var(--n-color, #fff));
+  border: 1px solid var(--preview-border, var(--n-border-color, rgba(127, 127, 127, 0.2)));
+  border-radius: 10px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+  line-height: 1.45;
+
+  &.has-cover {
+    grid-template-columns: minmax(0, 1fr) var(--preview-cover-width);
+    align-items: start;
+  }
+
+  .preview-copy {
+    min-width: 0;
+  }
+
+  .preview-title {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-bottom: 6px;
+    color: var(--preview-title-color, var(--n-title-text-color, var(--n-text-color, rgba(31, 34, 37, 0.92))));
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .preview-desc {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--preview-text-color, var(--n-text-color-2, rgba(31, 34, 37, 0.72)));
+    font-size: 13px;
+    line-height: 1.55;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+  }
+
+  .preview-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    color: var(--preview-muted-color, var(--n-text-color-3, rgba(31, 34, 37, 0.56)));
+    font-size: 12px;
+  }
+
+  .preview-cover-wrap {
+    overflow: hidden;
+    width: var(--preview-cover-width);
+    height: var(--preview-cover-height);
+    border-radius: 8px;
+    background: rgba(127, 127, 127, 0.08);
+  }
 
   .cover {
     display: block;
-    width: auto;
-    height: auto;
-    max-width: 260px;
-    max-height: 260px;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     object-position: center;
-    border: 1px solid rgba(127, 127, 127, 0.2);
-    border-radius: 12px;
-    background: transparent;
   }
 }
 
-.cover-preview-enter-active,
-.cover-preview-leave-active {
+.item-preview-enter-active,
+.item-preview-leave-active {
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
-.cover-preview-enter-from,
-.cover-preview-leave-to {
+.item-preview-enter-from,
+.item-preview-leave-to {
   opacity: 0;
   transform: translateY(4px);
 }
