@@ -38,7 +38,7 @@
         </div>
       </div>
     </template>
-    <n-scrollbar class="news-list" ref="scrollbarRef" @scroll="hidePreview">
+    <n-scrollbar class="news-list no-card-drag" ref="scrollbarRef" @scroll="hidePreview">
       <Transition name="fade" mode="out-in">
         <div v-if="loadingError" class="error">
           <n-result
@@ -119,8 +119,25 @@
     <template #footer>
       <Transition name="fade" mode="out-in">
         <template v-if="!hotListData">
-          <div class="loading">
-            <n-skeleton text round />
+          <div class="message is-loading-footer">
+            <div class="loading">
+              <n-skeleton text round />
+            </div>
+            <n-popover>
+              <template #trigger>
+                <span
+                  class="card-drag-handle"
+                  role="button"
+                  tabindex="0"
+                  :aria-label="t('hotList.dragSort')"
+                  @click.stop.prevent
+                  @keydown.stop.prevent
+                >
+                  <n-icon :component="Drag" />
+                </span>
+              </template>
+              {{ t("hotList.dragSort") }}
+            </n-popover>
           </div>
         </template>
         <template v-else>
@@ -147,6 +164,21 @@
                   </n-button>
                 </template>
                 {{ t("hotList.viewMore") }}
+              </n-popover>
+              <n-popover>
+                <template #trigger>
+                  <span
+                    class="card-drag-handle"
+                    role="button"
+                    tabindex="0"
+                    :aria-label="t('hotList.dragSort')"
+                    @click.stop.prevent
+                    @keydown.stop.prevent
+                  >
+                    <n-icon :component="Drag" />
+                  </span>
+                </template>
+                {{ t("hotList.dragSort") }}
               </n-popover>
               <n-popover>
                 <template #trigger>
@@ -206,7 +238,7 @@
 </template>
 
 <script setup>
-import { Fire, Refresh, More } from "@icon-park/vue-next";
+import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
 import { getHotListsWithFallback } from "@/api";
 import { formatTime } from "@/utils/getTime";
 import { getCacheVersion } from "@/utils/cache";
@@ -955,6 +987,40 @@ onBeforeUnmount(() => {
 
     .time {
       padding: 0 6px;
+    }
+
+    .loading {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .card-drag-handle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      width: 34px;
+      height: 22px;
+      border-radius: 999px;
+      color: var(--n-text-color-2);
+      background: rgba(127, 127, 127, 0.14);
+      cursor: grab;
+      touch-action: none;
+      transition: color 0.2s ease, background-color 0.2s ease;
+
+      &:hover {
+        color: var(--n-text-color);
+        background: rgba(127, 127, 127, 0.2);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--n-close-color-pressed);
+        outline-offset: 2px;
+      }
+
+      &:active {
+        cursor: grabbing;
+      }
     }
   }
 

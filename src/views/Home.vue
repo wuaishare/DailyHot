@@ -11,6 +11,7 @@
       item-key="name"
       :animation="180"
       :disabled="cardDragDisabled"
+      handle=".card-drag-handle"
       filter=".no-card-drag, .no-card-drag *"
       :prevent-on-filter="false"
       :fallback-tolerance="8"
