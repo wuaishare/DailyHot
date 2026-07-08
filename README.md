@@ -2,8 +2,8 @@
 <img alt="logo" height="120" src="./public/favicon.png" width="120"/>
 <h2>今日热榜</h2>
 <p>汇聚全网热点，热门尽览无余。</p>
-<p>二次开发+自用版本。by [吾爱分享网](https://hot.wuaishare.cn/)</p>
-<p>自用+示例站点：[吾爱热榜](https://hot.wuaishare.cn/)</p>
+<p>二次开发+自用版本。by [https://www.wuaishare.cn/](吾爱分享网)</p>
+<p>自用+示例站点：[https://hot.wuaishare.cn/](吾爱热榜)</p>
 <p>原始项目地址：https://github.com/imsyy/DailyHot</p>
 <img src="./screenshots/main.webp" style="border-radius: 16px" />
 <img src="./screenshots/main2.webp" style="border-radius: 16px" />
