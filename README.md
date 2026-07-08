@@ -2,17 +2,13 @@
 <img alt="logo" height="120" src="./public/favicon.png" width="120"/>
 <h2>今日热榜</h2>
 <p>汇聚全网热点，热门尽览无余。吾爱分享网二次开发+自用版本。by www.wuaishare.cn</p>
-<br />
+  
+[自用+示例站点 - https://hot.wuaishare.cn/](https://hot.wuaishare.cn/)
+
 <img src="./screenshots/main.webp" style="border-radius: 16px" />
 <img src="./screenshots/main2.webp" style="border-radius: 16px" />
 </div>
 
-
-## 示例
-
-> 这里是示例站点
-
-- [今日热榜 - https://hot.wuaishare.cn/](https://hot.wuaishare.cn/)
 
 ## 功能亮点
 
