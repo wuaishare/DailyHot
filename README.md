@@ -1,12 +1,13 @@
 <div align="center">
 <img alt="logo" height="120" src="./public/favicon.png" width="120"/>
 <h2>今日热榜</h2>
-<p>汇聚全网热点，热门尽览无余。吾爱分享网二次开发+自用版本。by www.wuaishare.cn</p>
-  
-自用+示例站点：[hot.wuaishare.cn](https://hot.wuaishare.cn/)
-
+<p>汇聚全网热点，热门尽览无余。</p>
+二次开发+自用版本。by [吾爱分享网](https://hot.wuaishare.cn/)
+自用+示例站点：[吾爱热榜](https://hot.wuaishare.cn/)
+原始项目地址：https://github.com/imsyy/DailyHot
 <img src="./screenshots/main.webp" style="border-radius: 16px" />
 <img src="./screenshots/main2.webp" style="border-radius: 16px" />
+
 </div>
 
 
