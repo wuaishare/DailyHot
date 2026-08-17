@@ -80,6 +80,11 @@ const footerLinks = computed(() => [
     href: buildFixedLocalePath(locale.value, "/privacy"),
     external: false,
   },
+  {
+    label: t("footer.feedback"),
+    href: "https://feedback.wuaishare.cn/",
+    external: true,
+  },
 ]);
 
 const appVersion = getDisplayVersion();
