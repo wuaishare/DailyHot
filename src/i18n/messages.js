@@ -55,6 +55,7 @@ export const messages = {
     },
     feedback: {
       launcher: "反馈建议",
+      backToTop: "返回顶部",
       menuTitle: "帮助吾爱热榜变得更好",
       menuDesc: "提交功能建议、问题反馈或体验优化",
       feature: "功能建议",
@@ -338,6 +339,7 @@ export const messages = {
     },
     feedback: {
       launcher: "Feedback",
+      backToTop: "Back to top",
       menuTitle: "Help improve 吾爱热榜",
       menuDesc: "Share a feature request, bug report, or UX suggestion",
       feature: "Feature request",
@@ -639,6 +641,7 @@ export const messages = {
     },
     feedback: {
       launcher: "意見回饋",
+      backToTop: "返回頂部",
       menuTitle: "幫助吾愛熱榜變得更好",
       menuDesc: "提交功能建議、問題回報或體驗優化",
       feature: "功能建議",
@@ -921,6 +924,7 @@ export const messages = {
     },
     feedback: {
       launcher: "フィードバック",
+      backToTop: "トップへ戻る",
       menuTitle: "吾爱热榜 の改善にご協力ください",
       menuDesc: "機能要望、不具合、UI/UX の提案を送信できます",
       feature: "機能要望",
@@ -1220,6 +1224,7 @@ export const messages = {
     },
     feedback: {
       launcher: "피드백",
+      backToTop: "맨 위로",
       menuTitle: "吾爱热榜 개선에 참여해 주세요",
       menuDesc: "기능 제안, 버그 신고 또는 UX 개선 의견을 남겨 주세요",
       feature: "기능 제안",
