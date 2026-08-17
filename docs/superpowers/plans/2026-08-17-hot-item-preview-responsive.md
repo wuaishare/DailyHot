@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 让 DailyHot 首页热点悬浮预览在横图、方图、竖图和图片失败场景下都保持紧凑、稳定、可读，并降低 Hover 事件抖动。
+**Goal:** 让 DailyHot 首页热点悬浮预览按“有摘要”和“纯媒体”两类信息状态自动选择最合适的图片尺寸与排版，既能看清封面又不制造空白或重复信息。
 
-**Architecture:** 保留 `HotList.vue` 现有 Teleport Preview 架构，把图片“自然缩放尺寸”改为“基于自然比例选择展示 preset”。定位函数只消费最终展示 preset，从而让视觉尺寸、碰撞检测和失败回退一致。额外加入热度格式化，并去掉重复 mouse/pointer 进入事件。
+**Architecture:** 保留 `HotList.vue` 现有 Teleport Preview 架构，在 portrait / square / landscape 媒体预设中同时维护 detail 与 media-only 两套展示尺寸。定位函数消费当前状态的最终宽高；有摘要走图文/纯文本布局，无摘要有图走零内边距媒体卡并把热度覆盖到图片上，无摘要无图不创建 Preview。
 
 **Tech Stack:** Vue 3 Composition API、SCSS、Vite、Naive UI
 
@@ -44,7 +44,24 @@
 
 Preview 不再显示榜单标题。有摘要时显示摘要 + 热度 + 可选图片；无摘要但有图片时切换为紧凑“纯图片 + 热度”模式，宽度跟随媒体槽收缩；无摘要且无图时不显示。
 
-### Task 3: 视觉和回归验证
+### Task 3: 完善状态驱动的媒体布局
+
+**Files:**
+- Modify: `src/components/HotList.vue`
+
+- [ ] **Step 1: 为三类图片增加 detail / media-only 双尺寸**
+
+`portrait` 使用 detail 96×128 / media-only 168×224；`square` 使用 112×112 / 200×200；`landscape` 使用 148×96 / 240×144。定位宽高必须从当前状态使用的实际媒体槽计算。
+
+- [ ] **Step 2: 将无摘要模式改为零内边距媒体卡**
+
+无摘要且有图时，Preview 外层 `padding: 0`，图片填满卡片；有热度时使用绝对定位的左下角 Overlay 胶囊，不增加卡片高度；无热度时只显示图片。
+
+- [ ] **Step 3: 明确无摘要无图片不显示**
+
+保持 `hasPreviewContent()` 只把摘要或可用图片视为增量内容，确保“只有热度”不会创建 Preview。图片失败且没有摘要时继续直接关闭。
+
+### Task 4: 视觉和回归验证
 
 **Files:**
 - Modify: `src/components/HotList.vue`
