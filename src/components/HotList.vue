@@ -69,12 +69,12 @@
             class="item"
             v-for="(item, index) in visibleItems"
             :key="item.id || item.url || item.mobileUrl || `${props.hotData.name}-${index}-${item.originalTitle}`"
-            @mouseenter="showPreview(item, $event)"
+            :aria-describedby="previewItem === item ? previewTooltipId : undefined"
             @pointerenter="showPreview(item, $event)"
-            @mouseleave="hidePreview"
             @pointerleave="hidePreview"
             @focusin="showPreview(item, $event)"
             @focusout="hidePreview"
+            @keydown.esc="hidePreview"
           >
             <div class="line">
               <n-text
@@ -206,6 +206,7 @@
     <Transition name="item-preview">
       <div
         v-if="previewItem"
+        :id="previewTooltipId"
         class="hot-item-preview"
         :class="{ 'has-cover': previewHasCover }"
         :style="previewStyle"
@@ -220,7 +221,7 @@
           </div>
           <div v-if="previewItem.hot" class="preview-meta">
             <n-icon :component="Fire" />
-            <span>{{ previewItem.hot }}</span>
+            <span>{{ formatPreviewHot(previewItem.hot) }}</span>
           </div>
         </div>
         <div v-if="previewHasCover" class="preview-cover-wrap">
@@ -307,23 +308,24 @@ const listLoading = ref(false);
 const loadingError = ref(false);
 const previewItem = ref(null);
 const previewStyle = ref({});
-const previewSizeCache = new Map();
+const previewMediaCache = new Map();
 let previewRequestId = 0;
 let previewOpenTimer = null;
 let previewTarget = null;
 let previewPlacement = null;
+let previewViewportListenersBound = false;
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
 const previewTextOnlyWidth = 340;
-const previewWithCoverWidth = 440;
-const previewCoverMaxWidth = 150;
-const previewCoverMaxHeight = 150;
-const previewFallbackCoverSize = {
-  width: previewCoverMaxWidth,
-  height: previewCoverMaxHeight,
+const previewMediaPresets = {
+  portrait: { width: 84, height: 112, previewWidth: 390 },
+  square: { width: 104, height: 104, previewWidth: 410 },
+  landscape: { width: 132, height: 88, previewWidth: 440 },
 };
+const previewCompactFormatterCache = new Map();
+const previewTooltipId = computed(() => `hot-item-preview-${props.hotData.name}`);
 const showImages = computed(() => store.showImages);
 const previewHasCover = computed(
   () =>
@@ -386,6 +388,32 @@ const isDuplicateDesc = (desc = "", ...titles) => {
     const normalizedTitle = normalizeComparableText(title);
     return normalizedTitle && normalizedDesc === normalizedTitle;
   });
+};
+const getPreviewCompactFormatter = (maximumFractionDigits) => {
+  const targetLocale = locale.value || "zh-CN";
+  const cacheKey = `${targetLocale}:${maximumFractionDigits}`;
+  if (!previewCompactFormatterCache.has(cacheKey)) {
+    previewCompactFormatterCache.set(
+      cacheKey,
+      new Intl.NumberFormat(targetLocale, {
+        notation: "compact",
+        maximumFractionDigits,
+      })
+    );
+  }
+  return previewCompactFormatterCache.get(cacheKey);
+};
+const formatPreviewHot = (value) => {
+  const rawValue = String(value ?? "").trim();
+  if (!rawValue || !/^\d+(?:\.\d+)?$/.test(rawValue)) return rawValue;
+  const numericValue = Number(rawValue);
+  if (!Number.isFinite(numericValue)) return rawValue;
+  const maximumFractionDigits = numericValue >= 10_000_000 ? 0 : 1;
+  try {
+    return getPreviewCompactFormatter(maximumFractionDigits).format(numericValue);
+  } catch {
+    return rawValue;
+  }
 };
 const visibleItems = computed(() =>
   (hotListData.value?.data || []).slice(0, HOT_LIST_VISIBLE_LIMIT).map((item) => {
@@ -470,6 +498,7 @@ watch(
 const updateIsDesktop = () => {
   if (!isClient) return;
   isDesktop.value = window.innerWidth > 680;
+  if (previewItem.value) hidePreview();
 };
 
 const buildHotListRequestParams = (item, shouldTranslate) => {
@@ -621,26 +650,26 @@ const getItemLink = (data) => {
   return isDesktop.value ? data.url : data.mobileUrl;
 };
 
-const getPreviewSize = (cover) => {
-  if (previewSizeCache.has(cover)) return previewSizeCache.get(cover);
-  const sizePromise = new Promise((resolve, reject) => {
+const getPreviewMediaLayout = (cover) => {
+  if (previewMediaCache.has(cover)) return previewMediaCache.get(cover);
+  const mediaPromise = new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
-      const scale = Math.min(
-        previewCoverMaxWidth / image.naturalWidth,
-        previewCoverMaxHeight / image.naturalHeight,
-        1
-      );
-      resolve({
-        width: Math.round(image.naturalWidth * scale),
-        height: Math.round(image.naturalHeight * scale),
-      });
+      const naturalWidth = Number(image.naturalWidth || 0);
+      const naturalHeight = Number(image.naturalHeight || 0);
+      if (!naturalWidth || !naturalHeight) {
+        reject(new Error("Invalid preview image dimensions"));
+        return;
+      }
+      const ratio = naturalWidth / naturalHeight;
+      const kind = ratio < 0.8 ? "portrait" : ratio < 1.25 ? "square" : "landscape";
+      resolve({ kind, ...previewMediaPresets[kind] });
     };
     image.onerror = reject;
     image.src = getCoverDisplaySrc(cover);
   });
-  previewSizeCache.set(cover, sizePromise);
-  return sizePromise;
+  previewMediaCache.set(cover, mediaPromise);
+  return mediaPromise;
 };
 
 const hasPreviewContent = (item) =>
@@ -648,18 +677,20 @@ const hasPreviewContent = (item) =>
     item?.displayDesc || (showImages.value && item?.cover && !coverErrorMap[item.cover])
   );
 
-const estimatePreviewHeight = (item, coverSize) => {
+const estimatePreviewHeight = (item, mediaLayout) => {
+  const titleLength = String(item?.displayTitle || item?.title || "").length;
+  const titleLines = Math.min(2, Math.max(1, Math.ceil(titleLength / 22)));
   const descLength = String(item?.displayDesc || "").length;
-  const descLines = descLength ? Math.min(4, Math.max(1, Math.ceil(descLength / 28))) : 0;
-  const textHeight = 48 + descLines * 20 + (item?.hot ? 22 : 0);
-  if (!coverSize) return Math.max(84, textHeight + 28);
-  return Math.max(coverSize.height + 28, textHeight + 28);
+  const descLines = descLength ? Math.min(3, Math.max(1, Math.ceil(descLength / 24))) : 0;
+  let textHeight = titleLines * 19;
+  if (descLines) textHeight += 6 + descLines * 20;
+  if (item?.hot) textHeight += 8 + 18;
+  return Math.max(68, Math.max(textHeight, mediaLayout?.height || 0) + 24);
 };
 
-const positionPreview = (item, target, coverSize, preferredPlacement = null) => {
+const positionPreview = (item, target, mediaLayout, preferredPlacement = null) => {
   if (!target?.isConnected) return false;
 
-  const hasCover = Boolean(coverSize);
   const rect = target.getBoundingClientRect();
   const card = target.closest(".hot-list");
   const cardRect = card?.getBoundingClientRect();
@@ -668,8 +699,8 @@ const positionPreview = (item, target, coverSize, preferredPlacement = null) => 
   );
   const padding = 12;
   const gap = 10;
-  const previewWidth = hasCover ? previewWithCoverWidth : previewTextOnlyWidth;
-  const previewHeight = estimatePreviewHeight(item, coverSize);
+  const previewWidth = mediaLayout?.previewWidth || previewTextOnlyWidth;
+  const previewHeight = estimatePreviewHeight(item, mediaLayout);
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const clampLeft = (value) =>
     clamp(value, padding, window.innerWidth - previewWidth - padding);
@@ -724,12 +755,14 @@ const positionPreview = (item, target, coverSize, preferredPlacement = null) => 
   previewTarget = target;
   previewPlacement = placement;
   previewItem.value = item;
+  bindPreviewViewportListeners();
   previewStyle.value = {
     left: `${left}px`,
     top: `${top}px`,
     width: `${previewWidth}px`,
-    "--preview-cover-width": coverSize ? `${coverSize.width}px` : "0px",
-    "--preview-cover-height": coverSize ? `${coverSize.height}px` : "0px",
+    "--preview-cover-width": mediaLayout ? `${mediaLayout.width}px` : "0px",
+    "--preview-cover-height": mediaLayout ? `${mediaLayout.height}px` : "0px",
+    "--preview-cover-position": mediaLayout?.kind === "portrait" ? "center 28%" : "center",
     ...getPreviewThemeVars(),
   };
   return true;
@@ -737,16 +770,20 @@ const positionPreview = (item, target, coverSize, preferredPlacement = null) => 
 
 const openPreview = async (item, target, requestId) => {
   const canShowCover = showImages.value && item?.cover && !coverErrorMap[item.cover];
-  let coverSize = null;
+  let mediaLayout = null;
   if (canShowCover) {
     try {
-      coverSize = await getPreviewSize(item.cover);
-    } catch (error) {
-      coverSize = previewFallbackCoverSize;
+      mediaLayout = await getPreviewMediaLayout(item.cover);
+    } catch {
+      coverErrorMap[item.cover] = true;
+      if (!item.displayDesc) {
+        hidePreview();
+        return;
+      }
     }
   }
   if (requestId !== previewRequestId || !target.isConnected) return;
-  if (!positionPreview(item, target, coverSize)) hidePreview();
+  if (!positionPreview(item, target, mediaLayout)) hidePreview();
 };
 
 const showPreview = (item, event) => {
@@ -761,6 +798,20 @@ const showPreview = (item, event) => {
   }, 180);
 };
 
+const bindPreviewViewportListeners = () => {
+  if (!isClient || previewViewportListenersBound) return;
+  window.addEventListener("scroll", hidePreview, true);
+  window.addEventListener("blur", hidePreview);
+  previewViewportListenersBound = true;
+};
+
+const unbindPreviewViewportListeners = () => {
+  if (!isClient || !previewViewportListenersBound) return;
+  window.removeEventListener("scroll", hidePreview, true);
+  window.removeEventListener("blur", hidePreview);
+  previewViewportListenersBound = false;
+};
+
 const hidePreview = () => {
   if (previewOpenTimer) {
     window.clearTimeout(previewOpenTimer);
@@ -770,6 +821,7 @@ const hidePreview = () => {
   previewTarget = null;
   previewPlacement = null;
   previewItem.value = null;
+  unbindPreviewViewportListeners();
 };
 
 const handleGlobalPreviewClose = () => {
@@ -1204,12 +1256,16 @@ onBeforeUnmount(() => {
   background: var(--preview-bg, var(--n-color, #fff));
   border: 1px solid var(--preview-border, var(--n-border-color, rgba(127, 127, 127, 0.2)));
   border-radius: 10px;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
   line-height: 1.45;
 
   &.has-cover {
     grid-template-columns: minmax(0, 1fr) var(--preview-cover-width);
     align-items: start;
+
+    .preview-copy {
+      align-self: center;
+    }
   }
 
   .preview-copy {
@@ -1219,7 +1275,7 @@ onBeforeUnmount(() => {
   .preview-title {
     display: -webkit-box;
     overflow: hidden;
-    margin-bottom: 6px;
+    margin-bottom: 0;
     color: var(--preview-title-color, var(--n-title-text-color, var(--n-text-color, rgba(31, 34, 37, 0.92))));
     font-size: 14px;
     font-weight: 600;
@@ -1231,11 +1287,12 @@ onBeforeUnmount(() => {
   .preview-desc {
     display: -webkit-box;
     overflow: hidden;
+    margin-top: 6px;
     color: var(--preview-text-color, var(--n-text-color-2, rgba(31, 34, 37, 0.72)));
     font-size: 13px;
     line-height: 1.55;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
   }
 
   .preview-meta {
@@ -1260,7 +1317,7 @@ onBeforeUnmount(() => {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
+    object-position: var(--preview-cover-position, center);
   }
 }
 
@@ -1273,5 +1330,17 @@ onBeforeUnmount(() => {
 .item-preview-leave-to {
   opacity: 0;
   transform: translateY(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item-preview-enter-active,
+  .item-preview-leave-active {
+    transition: opacity 0.01ms linear;
+  }
+
+  .item-preview-enter-from,
+  .item-preview-leave-to {
+    transform: none;
+  }
 }
 </style>
