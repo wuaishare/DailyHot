@@ -15,15 +15,15 @@
 **Files:**
 - Modify: `src/components/HotList.vue`
 
-- [ ] **Step 1: 用三档 preset 替代 150×150 自然比例缩放**
+- [x] **Step 1: 用三档 preset 替代 150×150 自然比例缩放**
 
 定义 portrait / square / landscape 三档展示尺寸，并让图片加载阶段只读取自然宽高与纵横比，返回最终媒体槽尺寸、Preview 宽度和 kind。
 
-- [ ] **Step 2: 统一 Preview 尺寸计算**
+- [x] **Step 2: 统一 Preview 尺寸计算**
 
 让 `estimatePreviewHeight()` 与 `positionPreview()` 使用 preset 的最终媒体槽尺寸；无图时继续使用纯文本宽度。
 
-- [ ] **Step 3: 保持图片错误回退的原 placement**
+- [x] **Step 3: 保持图片错误回退的原 placement**
 
 确认 `handlePreviewCoverError()` 在降级为纯文本后重新定位；没有摘要时关闭 Preview。
 
@@ -32,24 +32,24 @@
 **Files:**
 - Modify: `src/components/HotList.vue`
 
-- [ ] **Step 1: 热度数字人类可读化**
+- [x] **Step 1: 热度数字人类可读化**
 
 纯数字按 `< 1万`、`万`、`亿` 格式化，最多保留一位小数并去掉无意义 `.0`；已有单位或文字的值原样输出。
 
-- [ ] **Step 2: 移除重复 mouseenter/mouseleave**
+- [x] **Step 2: 移除重复 mouseenter/mouseleave**
 
 列表项保留 `pointerenter/pointerleave` 与 `focusin/focusout`，避免同一次桌面鼠标进入重复重置 180ms timer。
 
-- [ ] **Step 3: 收紧摘要和竖图文本对齐**
+- [x] **Step 3: 去掉重复标题并拆分内容状态**
 
-摘要从 4 行收敛到 3 行；有封面且无摘要时让 copy 在媒体槽内垂直居中。
+Preview 不再显示榜单标题。有摘要时显示摘要 + 热度 + 可选图片；无摘要但有图片时切换为紧凑“纯图片 + 热度”模式，宽度跟随媒体槽收缩；无摘要且无图时不显示。
 
 ### Task 3: 视觉和回归验证
 
 **Files:**
 - Modify: `src/components/HotList.vue`
 
-- [ ] **Step 1: 收敛 Preview 阴影和媒体槽样式**
+- [x] **Step 1: 收敛 Preview 阴影和媒体槽样式**
 
 保持现有设计语言，不新增高噪声装饰；使用更轻的阴影和稳定 media slot。
 

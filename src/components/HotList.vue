@@ -208,15 +208,15 @@
         v-if="previewItem"
         :id="previewTooltipId"
         class="hot-item-preview"
-        :class="{ 'has-cover': previewHasCover }"
+        :class="{
+          'has-cover': previewHasCover,
+          'is-media-only': previewIsMediaOnly,
+        }"
         :style="previewStyle"
         role="tooltip"
       >
-        <div class="preview-copy">
-          <div class="preview-title">
-            {{ previewItem.displayTitle || previewItem.title }}
-          </div>
-          <div v-if="previewItem.displayDesc" class="preview-desc">
+        <div v-if="previewItem.displayDesc" class="preview-copy">
+          <div class="preview-desc">
             {{ previewItem.displayDesc }}
           </div>
           <div v-if="previewItem.hot" class="preview-meta">
@@ -228,10 +228,14 @@
           <img
             class="cover"
             :src="getCoverDisplaySrc(previewItem.cover)"
-            :alt="previewItem.title"
+            alt=""
             loading="lazy"
             @error="handlePreviewCoverError(previewItem.cover)"
           />
+        </div>
+        <div v-if="previewIsMediaOnly && previewItem.hot" class="preview-meta preview-media-meta">
+          <n-icon :component="Fire" />
+          <span>{{ formatPreviewHot(previewItem.hot) }}</span>
         </div>
       </div>
     </Transition>
@@ -332,6 +336,9 @@ const previewHasCover = computed(
     showImages.value &&
     previewItem.value?.cover &&
     !coverErrorMap[previewItem.value.cover]
+);
+const previewIsMediaOnly = computed(
+  () => previewHasCover.value && !previewItem.value?.displayDesc
 );
 const shouldEnhanceReadableTitles = computed(() =>
   shouldUseReadableTitleTranslation(props.hotData.name, locale.value)
@@ -677,15 +684,23 @@ const hasPreviewContent = (item) =>
     item?.displayDesc || (showImages.value && item?.cover && !coverErrorMap[item.cover])
   );
 
-const estimatePreviewHeight = (item, mediaLayout) => {
-  const titleLength = String(item?.displayTitle || item?.title || "").length;
-  const titleLines = Math.min(2, Math.max(1, Math.ceil(titleLength / 22)));
+const getPreviewDimensions = (item, mediaLayout) => {
+  const hasDescription = Boolean(item?.displayDesc);
+  if (mediaLayout && !hasDescription) {
+    return {
+      width: Math.max(mediaLayout.width + 24, 116),
+      height: mediaLayout.height + 24 + (item?.hot ? 26 : 0),
+    };
+  }
+
   const descLength = String(item?.displayDesc || "").length;
   const descLines = descLength ? Math.min(3, Math.max(1, Math.ceil(descLength / 24))) : 0;
-  let textHeight = titleLines * 19;
-  if (descLines) textHeight += 6 + descLines * 20;
-  if (item?.hot) textHeight += 8 + 18;
-  return Math.max(68, Math.max(textHeight, mediaLayout?.height || 0) + 24);
+  let textHeight = descLines ? descLines * 20 : 0;
+  if (item?.hot) textHeight += (textHeight ? 8 : 0) + 18;
+  return {
+    width: mediaLayout?.previewWidth || previewTextOnlyWidth,
+    height: Math.max(58, Math.max(textHeight, mediaLayout?.height || 0) + 24),
+  };
 };
 
 const positionPreview = (item, target, mediaLayout, preferredPlacement = null) => {
@@ -699,8 +714,10 @@ const positionPreview = (item, target, mediaLayout, preferredPlacement = null) =
   );
   const padding = 12;
   const gap = 10;
-  const previewWidth = mediaLayout?.previewWidth || previewTextOnlyWidth;
-  const previewHeight = estimatePreviewHeight(item, mediaLayout);
+  const { width: previewWidth, height: previewHeight } = getPreviewDimensions(
+    item,
+    mediaLayout
+  );
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const clampLeft = (value) =>
     clamp(value, padding, window.innerWidth - previewWidth - padding);
@@ -1268,26 +1285,22 @@ onBeforeUnmount(() => {
     }
   }
 
-  .preview-copy {
-    min-width: 0;
+  &.is-media-only {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+
+    .preview-cover-wrap {
+      justify-self: center;
+    }
   }
 
-  .preview-title {
-    display: -webkit-box;
-    overflow: hidden;
-    margin-bottom: 0;
-    color: var(--preview-title-color, var(--n-title-text-color, var(--n-text-color, rgba(31, 34, 37, 0.92))));
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.35;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+  .preview-copy {
+    min-width: 0;
   }
 
   .preview-desc {
     display: -webkit-box;
     overflow: hidden;
-    margin-top: 6px;
     color: var(--preview-text-color, var(--n-text-color-2, rgba(31, 34, 37, 0.72)));
     font-size: 13px;
     line-height: 1.55;
@@ -1302,6 +1315,12 @@ onBeforeUnmount(() => {
     margin-top: 8px;
     color: var(--preview-muted-color, var(--n-text-color-3, rgba(31, 34, 37, 0.56)));
     font-size: 12px;
+  }
+
+  .preview-media-meta {
+    justify-content: center;
+    margin-top: 0;
+    line-height: 18px;
   }
 
   .preview-cover-wrap {
