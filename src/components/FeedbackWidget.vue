@@ -20,11 +20,11 @@
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { Message } from "@icon-park/vue-next";
+import { feedbackConfig } from "@/config/feedback.mjs";
 import { getBuildNumber, getProductVersion } from "@/utils/cache";
 
 const emit = defineEmits(["update:open"]);
-const feedbackPortalUrl = "https://feedback.wuaishare.cn/";
-const feedbackSdkUrl = `${feedbackPortalUrl}api/widget/sdk.js`;
+const feedbackSdkUrl = `${feedbackConfig.url}/api/widget/sdk.js`;
 const feedbackScriptId = "dailyhot-quackback-sdk";
 
 const { t, locale } = useI18n({ useScope: "global" });
@@ -67,8 +67,8 @@ const buildMetadata = () => {
     typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : "unknown";
 
   return {
-    product: "吾爱热榜",
-    product_key: "dailyhot",
+    product: feedbackConfig.productName,
+    product_key: feedbackConfig.productKey,
     product_version: getProductVersion(),
     build_number: getBuildNumber(),
     channel: "web",
@@ -85,6 +85,7 @@ const handleWidgetClose = () => {
 };
 
 const ensureWidget = async () => {
+  if (feedbackConfig.provider !== "quackback") return;
   if (typeof window === "undefined" || typeof document === "undefined") {
     throw new Error("Feedback widget requires a browser environment");
   }
@@ -92,7 +93,7 @@ const ensureWidget = async () => {
   if (!sdkPromise) {
     const quackback = ensureQueue();
     quackback("init", {
-      instanceUrl: feedbackPortalUrl.replace(/\/$/, ""),
+      instanceUrl: feedbackConfig.url,
       launcher: false,
       locale: getWidgetLocale(),
     });
@@ -139,8 +140,19 @@ const ensureWidget = async () => {
   }
 };
 
+const openExternalFeedback = () => {
+  if (!feedbackConfig.portalUrl || typeof window === "undefined") return;
+  window.open(feedbackConfig.portalUrl, "_blank", "noopener,noreferrer");
+};
+
 const openFeedback = async () => {
-  if (loading.value || widgetOpen.value) return;
+  if (!feedbackConfig.enabled || loading.value || widgetOpen.value) return;
+
+  if (feedbackConfig.provider !== "quackback") {
+    openExternalFeedback();
+    return;
+  }
+
   loading.value = true;
 
   try {
@@ -151,7 +163,7 @@ const openFeedback = async () => {
   } catch (error) {
     widgetOpen.value = false;
     console.warn("Unable to open embedded feedback widget, falling back to portal", error);
-    window.open(feedbackPortalUrl, "_blank", "noopener,noreferrer");
+    openExternalFeedback();
   } finally {
     loading.value = false;
   }

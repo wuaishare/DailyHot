@@ -1,11 +1,14 @@
 <template>
   <div
-    v-show="!feedbackOpen"
+    v-show="!feedbackOpen && (feedbackConfig.enabled || backTopVisible)"
     class="floating-actions"
     role="group"
     :aria-label="t('feedback.actions')"
   >
-    <FeedbackWidget @update:open="feedbackOpen = $event" />
+    <FeedbackWidget
+      v-if="feedbackConfig.enabled"
+      @update:open="feedbackOpen = $event"
+    />
 
     <n-float-button
       v-if="backTopVisible"
@@ -28,6 +31,7 @@
 import { useI18n } from "vue-i18n";
 import { ArrowUp } from "@icon-park/vue-next";
 import FeedbackWidget from "@/components/FeedbackWidget.vue";
+import { feedbackConfig } from "@/config/feedback.mjs";
 
 const emit = defineEmits(["update:back-top-show"]);
 const { t } = useI18n({ useScope: "global" });

@@ -53,39 +53,47 @@
 <script setup>
 import { useI18n } from "vue-i18n";
 import packageJson from "@/../package.json";
+import { feedbackConfig } from "@/config/feedback.mjs";
 import { getBuildVersion, getDisplayVersion } from "@/utils/cache";
 import { buildFixedLocalePath } from "@/utils/locale";
 
 const icp = ref(import.meta.env.VITE_ICP ? import.meta.env.VITE_ICP : null);
 const { t, locale } = useI18n({ useScope: "global" });
 
-const footerLinks = computed(() => [
-  {
-    label: t("footer.autoRefresh"),
-    href: "https://greasyfork.org/zh-CN/scripts/541188",
-    external: true,
-  },
-  {
-    label: t("footer.community"),
-    href: "https://sns.wuaishare.cn/",
-    external: true,
-  },
-  {
-    label: t("footer.reading"),
-    href: "https://v.wuaishare.cn/",
-    external: true,
-  },
-  {
-    label: t("footer.privacy"),
-    href: buildFixedLocalePath(locale.value, "/privacy"),
-    external: false,
-  },
-  {
-    label: t("footer.feedback"),
-    href: "https://feedback.wuaishare.cn/",
-    external: true,
-  },
-]);
+const footerLinks = computed(() => {
+  const links = [
+    {
+      label: t("footer.autoRefresh"),
+      href: "https://greasyfork.org/zh-CN/scripts/541188",
+      external: true,
+    },
+    {
+      label: t("footer.community"),
+      href: "https://sns.wuaishare.cn/",
+      external: true,
+    },
+    {
+      label: t("footer.reading"),
+      href: "https://v.wuaishare.cn/",
+      external: true,
+    },
+    {
+      label: t("footer.privacy"),
+      href: buildFixedLocalePath(locale.value, "/privacy"),
+      external: false,
+    },
+  ];
+
+  if (feedbackConfig.enabled) {
+    links.push({
+      label: t("footer.feedback"),
+      href: feedbackConfig.portalUrl,
+      external: true,
+    });
+  }
+
+  return links;
+});
 
 const appVersion = getDisplayVersion();
 const buildVersion = getBuildVersion();
