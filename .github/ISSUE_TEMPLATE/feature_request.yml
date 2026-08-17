@@ -1,0 +1,45 @@
+name: 功能建议
+description: 提议新的开源功能、配置能力或开发体验改进
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        这里用于讨论开源项目本身的功能演进。吾爱热榜线上内容、数据源、体验与产品建议可直接提交到反馈中心。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 需求背景 / 要解决的问题
+      description: 请先说明当前遇到的限制或真实使用场景，而不只是给出一个功能名称。
+      placeholder: 目前在什么场景下不方便？为什么值得解决？
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 描述你希望 DailyHot 提供什么行为或能力。
+      placeholder: 希望新增……
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 已考虑的替代方案
+      description: 如果有临时解决办法、其他实现方式或同类项目参考，请写在这里。
+  - type: textarea
+    id: impact
+    attributes:
+      label: 预期价值 / 影响范围
+      description: 说明它对普通用户、部署者、维护者或数据源生态的价值。
+    validations:
+      required: true
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: 开源兼容性
+      options:
+        - label: 我理解公共仓库中的功能应避免绑定单个站点、私有服务或 Secret，并愿意接受可配置/可关闭的实现方式。
+          required: true
