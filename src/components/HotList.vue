@@ -310,6 +310,8 @@ const previewStyle = ref({});
 const previewSizeCache = new Map();
 let previewRequestId = 0;
 let previewOpenTimer = null;
+let previewTarget = null;
+let previewPlacement = null;
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
@@ -654,17 +656,8 @@ const estimatePreviewHeight = (item, coverSize) => {
   return Math.max(coverSize.height + 28, textHeight + 28);
 };
 
-const openPreview = async (item, target, requestId) => {
-  const canShowCover = showImages.value && item?.cover && !coverErrorMap[item.cover];
-  let coverSize = null;
-  if (canShowCover) {
-    try {
-      coverSize = await getPreviewSize(item.cover);
-    } catch (error) {
-      coverSize = previewFallbackCoverSize;
-    }
-  }
-  if (requestId !== previewRequestId || !target.isConnected) return;
+const positionPreview = (item, target, coverSize, preferredPlacement = null) => {
+  if (!target?.isConnected) return false;
 
   const hasCover = Boolean(coverSize);
   const rect = target.getBoundingClientRect();
@@ -684,27 +677,36 @@ const openPreview = async (item, target, requestId) => {
     clamp(value, padding, window.innerHeight - previewHeight - padding);
   const placeRight =
     window.innerWidth - rect.right >= previewWidth + gap + padding;
-  const placeLeft =
-    rect.left >= previewWidth + gap + padding;
+  const placeLeft = rect.left >= previewWidth + gap + padding;
   const placeBelow =
     cardRect &&
     window.innerHeight - cardRect.bottom >= previewHeight + gap + padding;
   const placeAbove =
     cardRect && cardRect.top >= previewHeight + gap + padding;
+  const availablePlacements = {
+    right: placeRight,
+    left: placeLeft,
+    below: placeBelow,
+    above: placeAbove,
+  };
+  const placement =
+    (preferredPlacement && availablePlacements[preferredPlacement]
+      ? preferredPlacement
+      : null) ||
+    (placeRight ? "right" : placeLeft ? "left" : placeBelow ? "below" : placeAbove ? "above" : null);
+  if (!placement) return false;
+
   let left = clampLeft(rect.left + 32);
   let top = clampTop(rect.top - 8);
 
-  if (placeRight) {
+  if (placement === "right") {
     left = rect.right + gap;
-  } else if (placeLeft) {
+  } else if (placement === "left") {
     left = rect.left - previewWidth - gap;
-  } else if (placeBelow) {
+  } else if (placement === "below") {
     top = cardRect.bottom + gap;
-  } else if (placeAbove) {
-    top = cardRect.top - previewHeight - gap;
   } else {
-    hidePreview();
-    return;
+    top = cardRect.top - previewHeight - gap;
   }
 
   left = clampLeft(left);
@@ -717,11 +719,10 @@ const openPreview = async (item, target, requestId) => {
       top < textRect.bottom &&
       top + previewHeight > textRect.top
   );
-  if (overlapsText && !placeBelow && !placeAbove) {
-    hidePreview();
-    return;
-  }
+  if (overlapsText && (placement === "left" || placement === "right")) return false;
 
+  previewTarget = target;
+  previewPlacement = placement;
   previewItem.value = item;
   previewStyle.value = {
     left: `${left}px`,
@@ -731,6 +732,21 @@ const openPreview = async (item, target, requestId) => {
     "--preview-cover-height": coverSize ? `${coverSize.height}px` : "0px",
     ...getPreviewThemeVars(),
   };
+  return true;
+};
+
+const openPreview = async (item, target, requestId) => {
+  const canShowCover = showImages.value && item?.cover && !coverErrorMap[item.cover];
+  let coverSize = null;
+  if (canShowCover) {
+    try {
+      coverSize = await getPreviewSize(item.cover);
+    } catch (error) {
+      coverSize = previewFallbackCoverSize;
+    }
+  }
+  if (requestId !== previewRequestId || !target.isConnected) return;
+  if (!positionPreview(item, target, coverSize)) hidePreview();
 };
 
 const showPreview = (item, event) => {
@@ -751,6 +767,8 @@ const hidePreview = () => {
     previewOpenTimer = null;
   }
   previewRequestId += 1;
+  previewTarget = null;
+  previewPlacement = null;
   previewItem.value = null;
 };
 
@@ -762,12 +780,15 @@ const handlePreviewCoverError = (cover) => {
   if (!cover) return;
   coverErrorMap[cover] = true;
   if (previewItem.value?.cover !== cover) return;
-  previewStyle.value = {
-    ...previewStyle.value,
-    width: `${previewTextOnlyWidth}px`,
-    "--preview-cover-width": "0px",
-    "--preview-cover-height": "0px",
-  };
+
+  const item = previewItem.value;
+  const target = previewTarget;
+  if (!item.displayDesc || !target?.isConnected) {
+    hidePreview();
+    return;
+  }
+
+  if (!positionPreview(item, target, null, previewPlacement)) hidePreview();
 };
 
 const getPreviewThemeVars = () => {
