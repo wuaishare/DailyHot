@@ -3,7 +3,7 @@
   "description": "今日热榜",
   "author": "吾爱分享网",
   "github": "https://www.wuaishare.cn/",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "private": true,
   "scripts": {
     "dev": "vite",

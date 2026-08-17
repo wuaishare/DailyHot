@@ -27,6 +27,7 @@
         </router-view>
       </main>
       <Footer />
+      <FeedbackWidget />
       <AnalyticsConsent />
       <SpeedInsights v-if="showSpeedInsights" />
     </n-layout>
@@ -38,6 +39,7 @@ import { mainStore } from "@/store";
 import Provider from "@/components/Provider.vue";
 import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
+import FeedbackWidget from "@/components/FeedbackWidget.vue";
 import AnalyticsConsent from "@/components/AnalyticsConsent.vue";
 import { SpeedInsights } from "@vercel/speed-insights/vue";
 import { useRouter } from "vue-router";
