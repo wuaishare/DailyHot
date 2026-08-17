@@ -56,8 +56,8 @@ body:
     id: version
     attributes:
       label: 版本 / Build Number
-      description: 可从站点页脚复制，例如 v1.4.7 (2608171910)。
-      placeholder: v1.4.7 (YYMMDDHHMM)
+      description: 可从站点页脚复制，例如 v1.4.8 (YYMMDDHHMM)。
+      placeholder: v1.4.8 (YYMMDDHHMM)
     validations:
       required: true
   - type: input

@@ -13,7 +13,7 @@
   "bugs": {
     "url": "https://github.com/wuaishare/DailyHot/issues"
   },
-  "version": "1.4.7",
+  "version": "1.4.8",
   "private": true,
   "scripts": {
     "dev": "vite",
