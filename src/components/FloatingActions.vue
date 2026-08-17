@@ -1,11 +1,9 @@
 <template>
-  <n-float-button-group
+  <div
     v-show="!feedbackOpen"
     class="floating-actions"
-    position="fixed"
-    shape="circle"
-    :right="16"
-    :bottom="18"
+    role="group"
+    :aria-label="t('feedback.actions')"
   >
     <FeedbackWidget @update:open="feedbackOpen = $event" />
 
@@ -23,7 +21,7 @@
         <ArrowUp />
       </n-icon>
     </n-float-button>
-  </n-float-button-group>
+  </div>
 </template>
 
 <script setup>
@@ -89,16 +87,18 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .floating-actions {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
   z-index: 2400;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
 .floating-actions :deep(.n-float-button) {
-  width: 44px;
-  height: 44px;
-}
-
-.floating-actions :deep(.n-float-button-group--circle-shape > :not(:last-child)) {
-  margin-bottom: 10px;
+  flex: 0 0 auto;
 }
 
 .floating-back-top {
