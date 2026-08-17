@@ -70,6 +70,7 @@ const router = useRouter();
 const menuOpen = ref(false);
 const loadingBoard = ref("");
 let sdkPromise = null;
+let activeBoard = "";
 
 const feedbackTypes = computed(() => [
   {
@@ -135,18 +136,31 @@ const buildMetadata = (feedbackType) => {
   };
 };
 
-const ensureWidget = () => {
+const getWidgetInitOptions = (board) => ({
+  instanceUrl: feedbackPortalUrl.replace(/\/$/, ""),
+  launcher: false,
+  locale: getWidgetLocale(),
+  defaultBoard: board,
+});
+
+const ensureWidget = async (board) => {
   if (typeof window === "undefined" || typeof document === "undefined") {
-    return Promise.reject(new Error("Feedback widget requires a browser environment"));
+    throw new Error("Feedback widget requires a browser environment");
   }
-  if (sdkPromise) return sdkPromise;
+
+  if (sdkPromise) {
+    await sdkPromise;
+    if (activeBoard !== board) {
+      window.Quackback?.("destroy");
+      window.Quackback?.("init", getWidgetInitOptions(board));
+      activeBoard = board;
+    }
+    return;
+  }
 
   const quackback = ensureQueue();
-  quackback("init", {
-    instanceUrl: feedbackPortalUrl.replace(/\/$/, ""),
-    launcher: false,
-    locale: getWidgetLocale(),
-  });
+  activeBoard = board;
+  quackback("init", getWidgetInitOptions(board));
 
   const existingScript = document.getElementById(feedbackScriptId);
   sdkPromise = new Promise((resolve, reject) => {
@@ -173,6 +187,7 @@ const ensureWidget = () => {
       "error",
       () => {
         sdkPromise = null;
+        activeBoard = "";
         reject(new Error("Failed to load feedback widget"));
       },
       { once: true }
@@ -181,20 +196,15 @@ const ensureWidget = () => {
     if (!existingScript) document.head.appendChild(script);
   });
 
-  return sdkPromise;
+  await sdkPromise;
 };
 
 const openFeedback = async (item) => {
   loadingBoard.value = item.board;
   try {
-    const quackback = ensureQueue();
-    quackback("metadata", buildMetadata(item.type));
-    await ensureWidget();
+    await ensureWidget(item.board);
     window.Quackback?.("metadata", buildMetadata(item.type));
-    window.Quackback?.("open", {
-      view: "new-post",
-      board: item.board,
-    });
+    window.Quackback?.("open");
     menuOpen.value = false;
   } catch (error) {
     console.warn("Unable to open embedded feedback widget, falling back to portal", error);
