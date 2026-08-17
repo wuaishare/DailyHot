@@ -15,6 +15,7 @@
     "audit:live": "node scripts/audit-live-site.cjs",
     "audit:i18n": "node scripts/audit-i18n-labels.cjs",
     "audit:subtypes": "node scripts/audit-source-subtypes.cjs",
+    "audit:feedback": "node scripts/audit-feedback-config.mjs",
     "deploy:prod": "node scripts/vercel-deploy-prod.cjs",
     "submit:indexnow": "node scripts/submit-indexnow.cjs"
   },
