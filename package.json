@@ -1,8 +1,18 @@
 {
   "name": "dailyhot",
   "description": "今日热榜",
-  "author": "吾爱分享网",
-  "github": "https://www.wuaishare.cn/",
+  "author": {
+    "name": "吾爱分享网",
+    "url": "https://www.wuaishare.cn/"
+  },
+  "homepage": "https://hot.wuaishare.cn/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wuaishare/DailyHot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wuaishare/DailyHot/issues"
+  },
   "version": "1.4.7",
   "private": true,
   "scripts": {

@@ -5,7 +5,7 @@
       <n-a
         class="author"
         :depth="3"
-        :href="packageJson.github"
+        :href="authorUrl"
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -97,10 +97,12 @@ const footerLinks = computed(() => {
 
 const appVersion = getDisplayVersion();
 const buildVersion = getBuildVersion();
+const authorUrl = packageJson.author?.url || packageJson.homepage;
+const repositoryUrl = String(packageJson.repository?.url || "").replace(/\.git$/, "");
 
 const originRepo = computed(() => ({
   label: t("footer.releaseLabel", { version: appVersion }),
-  href: "https://github.com/wuaishare/DailyHot/tree/live",
+  href: `${repositoryUrl}/tree/main`,
   title: buildVersion,
 }));
 </script>
