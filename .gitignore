@@ -32,3 +32,4 @@ public/sitemap.xml
 public/robots.txt
 .env
 .vercel
+.env*
