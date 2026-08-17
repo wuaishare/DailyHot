@@ -324,9 +324,18 @@ const linkTarget = computed(() =>
 );
 const previewTextOnlyWidth = 340;
 const previewMediaPresets = {
-  portrait: { width: 84, height: 112, previewWidth: 390 },
-  square: { width: 104, height: 104, previewWidth: 410 },
-  landscape: { width: 132, height: 88, previewWidth: 440 },
+  portrait: {
+    detail: { width: 96, height: 128, previewWidth: 420 },
+    mediaOnly: { width: 168, height: 224 },
+  },
+  square: {
+    detail: { width: 112, height: 112, previewWidth: 430 },
+    mediaOnly: { width: 200, height: 200 },
+  },
+  landscape: {
+    detail: { width: 148, height: 96, previewWidth: 460 },
+    mediaOnly: { width: 240, height: 144 },
+  },
 };
 const previewCompactFormatterCache = new Map();
 const previewTooltipId = computed(() => `hot-item-preview-${props.hotData.name}`);
@@ -688,8 +697,8 @@ const getPreviewDimensions = (item, mediaLayout) => {
   const hasDescription = Boolean(item?.displayDesc);
   if (mediaLayout && !hasDescription) {
     return {
-      width: Math.max(mediaLayout.width + 24, 116),
-      height: mediaLayout.height + 24 + (item?.hot ? 26 : 0),
+      width: mediaLayout.mediaOnly.width,
+      height: mediaLayout.mediaOnly.height,
     };
   }
 
@@ -697,9 +706,10 @@ const getPreviewDimensions = (item, mediaLayout) => {
   const descLines = descLength ? Math.min(3, Math.max(1, Math.ceil(descLength / 24))) : 0;
   let textHeight = descLines ? descLines * 20 : 0;
   if (item?.hot) textHeight += (textHeight ? 8 : 0) + 18;
+  const detailMedia = mediaLayout?.detail;
   return {
-    width: mediaLayout?.previewWidth || previewTextOnlyWidth,
-    height: Math.max(58, Math.max(textHeight, mediaLayout?.height || 0) + 24),
+    width: detailMedia?.previewWidth || previewTextOnlyWidth,
+    height: Math.max(58, Math.max(textHeight, detailMedia?.height || 0) + 24),
   };
 };
 
@@ -769,6 +779,13 @@ const positionPreview = (item, target, mediaLayout, preferredPlacement = null) =
   );
   if (overlapsText && (placement === "left" || placement === "right")) return false;
 
+  const isMediaOnly = Boolean(mediaLayout && !item?.displayDesc);
+  const activeMedia = mediaLayout
+    ? isMediaOnly
+      ? mediaLayout.mediaOnly
+      : mediaLayout.detail
+    : null;
+
   previewTarget = target;
   previewPlacement = placement;
   previewItem.value = item;
@@ -777,8 +794,9 @@ const positionPreview = (item, target, mediaLayout, preferredPlacement = null) =
     left: `${left}px`,
     top: `${top}px`,
     width: `${previewWidth}px`,
-    "--preview-cover-width": mediaLayout ? `${mediaLayout.width}px` : "0px",
-    "--preview-cover-height": mediaLayout ? `${mediaLayout.height}px` : "0px",
+    height: isMediaOnly ? `${previewHeight}px` : undefined,
+    "--preview-cover-width": activeMedia ? `${activeMedia.width}px` : "0px",
+    "--preview-cover-height": activeMedia ? `${activeMedia.height}px` : "0px",
     "--preview-cover-position": mediaLayout?.kind === "portrait" ? "center 28%" : "center",
     ...getPreviewThemeVars(),
   };
@@ -1286,11 +1304,17 @@ onBeforeUnmount(() => {
   }
 
   &.is-media-only {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
+    position: fixed;
+    display: block;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    background: transparent;
 
     .preview-cover-wrap {
-      justify-self: center;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
     }
   }
 
@@ -1318,8 +1342,19 @@ onBeforeUnmount(() => {
   }
 
   .preview-media-meta {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 1;
     justify-content: center;
     margin-top: 0;
+    padding: 4px 8px;
+    color: rgba(255, 255, 255, 0.96);
+    background: rgba(20, 22, 26, 0.76);
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    font-size: 12px;
+    font-weight: 500;
     line-height: 18px;
   }
 
