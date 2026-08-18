@@ -57,7 +57,7 @@ export const messages = {
       launcher: "反馈建议",
       actions: "页面辅助操作",
       backToTop: "返回顶部",
-      menuTitle: "帮助 {productName} 变得更好",
+      menuTitle: "帮助{productName}变得更好",
       menuDesc:
         "提交功能建议、问题反馈或体验优化，你的每一条反馈都会帮助我们决定接下来优先改进什么。",
       feature: "功能建议",
@@ -647,7 +647,7 @@ export const messages = {
       launcher: "意見回饋",
       actions: "頁面輔助操作",
       backToTop: "返回頂部",
-      menuTitle: "幫助 {productName} 變得更好",
+      menuTitle: "幫助{productName}變得更好",
       menuDesc:
         "提交功能建議、問題回報或體驗優化，你的每一則回饋都會幫助我們決定接下來優先改進什麼。",
       feature: "功能建議",
