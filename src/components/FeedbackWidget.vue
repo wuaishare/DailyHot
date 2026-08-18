@@ -24,7 +24,10 @@ import { feedbackConfig } from "@/config/feedback.mjs";
 import { getBuildNumber, getProductVersion } from "@/utils/cache";
 
 const emit = defineEmits(["update:open"]);
-const feedbackSdkUrl = `${feedbackConfig.url}/api/widget/sdk.js`;
+const feedbackSdkVersion = `${getProductVersion()}-${getBuildNumber()}`;
+const feedbackSdkUrl = `${feedbackConfig.url}/api/widget/sdk.js?v=${encodeURIComponent(
+  feedbackSdkVersion
+)}`;
 const feedbackScriptId = "dailyhot-quackback-sdk";
 
 const { t, locale } = useI18n({ useScope: "global" });
