@@ -61,6 +61,16 @@ const getWidgetLocale = () => {
   return "en";
 };
 
+const buildFeedbackIntro = () => ({
+  title: t("feedback.menuTitle", { productName: feedbackConfig.productName }),
+  description: t("feedback.menuDesc"),
+  items: [
+    { label: t("feedback.feature"), description: t("feedback.featureDesc") },
+    { label: t("feedback.bug"), description: t("feedback.bugDesc") },
+    { label: t("feedback.ux"), description: t("feedback.uxDesc") },
+  ],
+});
+
 const buildMetadata = () => {
   const route = router.currentRoute.value;
   const viewport =
@@ -96,6 +106,7 @@ const ensureWidget = async () => {
       instanceUrl: feedbackConfig.url,
       launcher: false,
       locale: getWidgetLocale(),
+      feedbackIntro: buildFeedbackIntro(),
     });
 
     const existingScript = document.getElementById(feedbackScriptId);
