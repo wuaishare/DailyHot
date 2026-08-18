@@ -140,9 +140,11 @@ VITE_FEEDBACK_PRODUCT_KEY="dailyhot"
 
 不配置这些变量时，反馈按钮与 Footer 反馈入口都不会显示。任何 Quackback 管理 API Key、MCP Token、OAuth Secret 或数据库凭据都不应放进前端环境变量。
 
-## 缓存版本
+## 版本与构建号
 
-展示版本来自 `package.json`，当前格式为 `v1.4.9 (YYMMDDHHMM)`；括号内版本号默认取最近一次前端代码提交时间，并统一按北京时间（Asia/Shanghai）格式化，例如 `2606102007`。这里的“代码提交”只统计 `src/`、`public/`、`api/`、`index.html`、`package.json`、`vercel.json`、`vite.config.js` 以及构建/SEO/部署相关脚本等实际影响站点产物的路径，不会因为单纯修改 `README` 说明文字而改变页脚版本。若本地或 CI 无法读取 Git 提交时间，则退回到构建当下的北京时间 `YYMMDDHHMM`，避免出现 `00.0000.000000`、UTC 前一天日期或时间戳样式的难读版本号。
+当前稳定 Release 保持为 **`v1.4.9`**，展示格式为 `v1.4.9 (YYMMDDHHMM)`。日常 Bug 修复、UI/文案优化、数据源调整、小型功能与集成维护**不再自动递增 `package.json` 的主版本号**，只通过括号内 Build Number 区分实际线上构建；只有成批的重要功能、明显架构调整或值得作为独立 Release 对外说明的版本，才修改 `1.4.9`。
+
+括号内 Build Number 默认取最近一次前端代码提交时间，并统一按北京时间（Asia/Shanghai）格式化，例如 `2606102007`。这里的“代码提交”只统计 `src/`、`public/`、`api/`、`index.html`、`package.json`、`vercel.json`、`vite.config.js` 以及构建/SEO/部署相关脚本等实际影响站点产物的路径，不会因为单纯修改 `README` 说明文字而改变页脚版本。若本地或 CI 无法读取 Git 提交时间，则退回到构建当下的北京时间 `YYMMDDHHMM`，避免出现 `00.0000.000000`、UTC 前一天日期或时间戳样式的难读版本号。
 
 ## Vercel 部署
 
