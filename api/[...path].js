@@ -63,7 +63,7 @@ const WEIBO_DIRECT_FETCH_TIMEOUT_MS = 6000;
 const WEIBO_ZHISOU_URL = "https://ai.s.weibo.com/api/wis/show.json";
 const WEIBO_ZHISOU_CACHE_TTL_MS = 30 * 60 * 1000;
 const WEIBO_ZHISOU_TIMEOUT_MS = 4500;
-const WEIBO_ZHISOU_ENRICH_LIMIT = 5;
+const WEIBO_ZHISOU_ENRICH_LIMIT = 10;
 const WEIBO_ZHISOU_SUMMARY_MAX_LENGTH = 150;
 const WEIBO_COMMON_HEADERS = {
   Accept: "application/json",
