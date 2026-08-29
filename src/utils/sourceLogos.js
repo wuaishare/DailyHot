@@ -1,5 +1,5 @@
 const SOURCE_LOGO_MAP = {
-  xueqiu: "/logo/xueqiu.svg",
+  xueqiu: "/logo/xueqiu.png",
   sse: "https://www.sse.com.cn/favicon.ico",
   "openrouter-rankings": "/logo/ai/openrouter-rankings.svg",
   artificialanalysis: "/logo/ai/artificialanalysis.png",
