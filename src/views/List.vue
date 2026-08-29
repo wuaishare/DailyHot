@@ -293,6 +293,7 @@ const API_LOCALIZED_SOURCE_NAMES = new Set([
   "clawhub",
   "clawhub-skills",
   "clawhub-plugins",
+  "global-indexes",
 ]);
 const shouldReloadForLocaleChange = (name = "") =>
   API_LOCALIZED_SOURCE_NAMES.has(name);
