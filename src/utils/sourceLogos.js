@@ -3,6 +3,7 @@ const SOURCE_LOGO_MAP = {
   sse: "https://www.sse.com.cn/favicon.ico",
   szse: "https://res.szse.cn/common/images/favicon.ico",
   hkex: "https://www.hkex.com.hk/assets/images/favicon.png",
+  nasdaq: "https://www.nasdaq.com/sites/acquia.prod/files/favicon.ico",
   "openrouter-rankings": "/logo/ai/openrouter-rankings.svg",
   artificialanalysis: "/logo/ai/artificialanalysis.png",
   lmarena: "/logo/ai/arena-ai.png",

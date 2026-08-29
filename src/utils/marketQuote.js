@@ -1,13 +1,21 @@
 import { normalizeLocale } from "@/utils/locale";
 
-const MARKET_QUOTE_SOURCES = new Set(["sse", "szse", "hkex"]);
+const MARKET_QUOTE_SOURCES = new Set(["xueqiu", "sse", "szse", "hkex", "nasdaq"]);
 
 const MARKET_LABELS = {
-  "zh-CN": { close: "收盘", hkClose: "收市", turnover: "成交额" },
-  "zh-TW": { close: "收盤", hkClose: "收市", turnover: "成交額" },
-  en: { close: "Close", hkClose: "Close", turnover: "Turnover" },
-  ja: { close: "終値", hkClose: "終値", turnover: "売買代金" },
-  ko: { close: "종가", hkClose: "종가", turnover: "거래대금" },
+  "zh-CN": { close: "收盘", hkClose: "收市", current: "现价", turnover: "成交额", volume: "成交量", heat: "热度" },
+  "zh-TW": { close: "收盤", hkClose: "收市", current: "現價", turnover: "成交額", volume: "成交量", heat: "熱度" },
+  en: { close: "Close", hkClose: "Close", current: "Price", turnover: "Turnover", volume: "Volume", heat: "Heat" },
+  ja: { close: "終値", hkClose: "終値", current: "現在値", turnover: "売買代金", volume: "出来高", heat: "注目度" },
+  ko: { close: "종가", hkClose: "종가", current: "현재가", turnover: "거래대금", volume: "거래량", heat: "인기도" },
+};
+
+const FUND_LABELS = {
+  "zh-CN": "年化(近5年)",
+  "zh-TW": "年化(近5年)",
+  en: "Annualized (5Y)",
+  ja: "年率 (5年)",
+  ko: "연환산 (5년)",
 };
 
 const CURRENCY_PREFIXES = {
@@ -57,13 +65,40 @@ export const getMarketQuoteView = (item, locale = "zh-CN") => {
   const currencyPrefix = CURRENCY_PREFIXES[String(extra.currency || "").toUpperCase()] || "";
   const price = `${currencyPrefix}${formatNumber(extra.last, targetLocale, 3)}`;
 
+  const metricKind =
+    extra.metricKind === "heat" ? "heat" : extra.metric === "volume" ? "volume" : "turnover";
+  const metricValue =
+    metricKind === "heat" ? extra.metricValue : metricKind === "volume" ? extra.volume : extra.amount;
+  const market = String(extra.market || "").toUpperCase();
+  const colorConvention =
+    extra.colorConvention === "greenUp" || market === "US" ? "western" : "cn";
+  const closeLabel =
+    extra.priceLabelKind === "current"
+      ? labels.current
+      : market === "HK"
+        ? labels.hkClose
+        : labels.close;
+
   return {
     code: String(extra.code),
     price,
     change: `${changePrefix}${formatNumber(validChangeRate, targetLocale, 2)}%`,
-    turnover: formatCompact(extra.amount, targetLocale),
-    closeLabel: String(extra.market || "").toUpperCase() === "HK" ? labels.hkClose : labels.close,
-    turnoverLabel: labels.turnover,
+    metric: formatCompact(metricValue, targetLocale),
+    metricLabel: labels[metricKind],
+    closeLabel,
     tone: validChangeRate > 0 ? "up" : validChangeRate < 0 ? "down" : "flat",
+    colorConvention,
+  };
+};
+
+export const getFundMetricView = (item, locale = "zh-CN") => {
+  const metric = item?.extra?.fundMetric;
+  if (!metric || !Number.isFinite(Number(metric.value))) return null;
+  const targetLocale = normalizeLocale(locale);
+  const value = Number(metric.value);
+  return {
+    label: FUND_LABELS[targetLocale] || FUND_LABELS["zh-CN"],
+    value: `${value > 0 ? "+" : ""}${formatNumber(value, targetLocale, 2)}%`,
+    tone: value > 0 ? "up" : value < 0 ? "down" : "flat",
   };
 };

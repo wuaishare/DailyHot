@@ -84,6 +84,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.5,
           show: true,
           category: "财经",
+          subtype: "topics",
         },
         {
           label: "上交所",
@@ -104,6 +105,13 @@ export const mainStore = defineStore("mainData", {
           label: "港交所",
           name: "hkex",
           order: 7.8,
+          show: true,
+          category: "财经",
+        },
+        {
+          label: "Nasdaq",
+          name: "nasdaq",
+          order: 7.9,
           show: true,
           category: "财经",
         },

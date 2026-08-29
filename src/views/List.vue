@@ -161,12 +161,24 @@
                         </span>
                         <span
                           class="market-quote-change"
-                          :class="`is-${item.marketQuote.tone}`"
+                          :class="[
+                            `is-${item.marketQuote.tone}`,
+                            `is-${item.marketQuote.colorConvention}`,
+                          ]"
                         >
                           {{ item.marketQuote.change }}
                         </span>
                         <span>
-                          {{ item.marketQuote.turnoverLabel }} {{ item.marketQuote.turnover }}
+                          {{ item.marketQuote.metricLabel }} {{ item.marketQuote.metric }}
+                        </span>
+                      </div>
+                      <div v-else-if="item.fundMetric" class="fund-metric-detail">
+                        <span>{{ item.fundMetric.label }}</span>
+                        <span
+                          class="fund-metric-value"
+                          :class="`is-${item.fundMetric.tone}`"
+                        >
+                          {{ item.fundMetric.value }}
                         </span>
                       </div>
                       <template v-else>
@@ -233,7 +245,11 @@ import {
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
-import { getMarketQuoteView, isMarketQuoteSource } from "@/utils/marketQuote";
+import {
+  getFundMetricView,
+  getMarketQuoteView,
+  isMarketQuoteSource,
+} from "@/utils/marketQuote";
 import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
 import { trackEvent } from "@/utils/track";
 import {
@@ -399,6 +415,7 @@ const currentPageItems = computed(() =>
         marketQuote: isMarketQuoteSource(listType.value)
           ? getMarketQuoteView(item, locale.value)
           : null,
+        fundMetric: getFundMetricView(item, locale.value),
         hasReadableTranslation:
           shouldProtectEntityTitles.value ||
           Boolean(item?.noAutoTranslate) ||
@@ -1194,6 +1211,39 @@ onBeforeUnmount(() => {
 
             &.is-flat {
               color: var(--n-text-color-3);
+            }
+
+            &.is-western.is-up {
+              color: #18a058;
+            }
+
+            &.is-western.is-down {
+              color: #ea444d;
+            }
+          }
+          .fund-metric-detail {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+            font-size: 13px;
+            color: var(--n-text-color-3);
+            font-variant-numeric: tabular-nums;
+
+            .fund-metric-value {
+              font-weight: 600;
+
+              &.is-up {
+                color: #ea444d;
+              }
+
+              &.is-down {
+                color: #18a058;
+              }
+
+              &.is-flat {
+                color: var(--n-text-color-3);
+              }
             }
           }
           .desc {

@@ -144,6 +144,18 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  xueqiu: [
+    {
+      key: "rank",
+      label: "榜单",
+      param: "type",
+      items: [
+        { label: "热门话题", value: "topics" },
+        { label: "热股榜", value: "stocks" },
+        { label: "热门基金", value: "funds" },
+      ],
+    },
+  ],
   sse: [
     {
       key: "rank",

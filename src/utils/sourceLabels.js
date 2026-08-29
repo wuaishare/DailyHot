@@ -2,10 +2,11 @@ import { normalizeLocale } from "@/utils/locale";
 
 const SOURCE_LABEL_OVERRIDES = {
   weibo: { en: "Weibo Hot Search" },
-  xueqiu: { en: "Xueqiu Hot Topics" },
+  xueqiu: { en: "Xueqiu" },
   sse: { en: "Shanghai Stock Exchange" },
   szse: { en: "Shenzhen Stock Exchange" },
   hkex: { en: "Hong Kong Exchanges and Clearing" },
+  nasdaq: { en: "Nasdaq" },
   zhihu: { en: "Zhihu Hot List" },
   douyin: { en: "Douyin Hot List" },
   bilibili: { en: "Bilibili Trending" },
@@ -110,11 +111,11 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ko: "Weibo 인기 검색어",
   },
   xueqiu: {
-    "zh-CN": "雪球热门话题",
-    "zh-TW": "雪球熱門話題",
-    en: "Xueqiu Hot Topics",
-    ja: "Xueqiu 注目トピック",
-    ko: "Xueqiu 인기 주제",
+    "zh-CN": "雪球",
+    "zh-TW": "雪球",
+    en: "Xueqiu",
+    ja: "Xueqiu",
+    ko: "Xueqiu",
   },
   sse: {
     "zh-CN": "上海证券交易所",
@@ -136,6 +137,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "Hong Kong Exchanges and Clearing",
     ja: "香港取引所",
     ko: "홍콩거래소",
+  },
+  nasdaq: {
+    "zh-CN": "Nasdaq",
+    "zh-TW": "Nasdaq",
+    en: "Nasdaq",
+    ja: "Nasdaq",
+    ko: "Nasdaq",
   },
   toutiao: {
     "zh-CN": "今日头条热榜",
@@ -3105,6 +3113,27 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     en: "Hot Topics",
     ja: "人気トピック",
     ko: "인기 토픽",
+  },
+  热股榜: {
+    "zh-CN": "热股榜",
+    "zh-TW": "熱門股票",
+    en: "Hot Stocks",
+    ja: "人気株",
+    ko: "인기 종목",
+  },
+  热门基金: {
+    "zh-CN": "热门基金",
+    "zh-TW": "熱門基金",
+    en: "Popular Funds",
+    ja: "人気ファンド",
+    ko: "인기 펀드",
+  },
+  美股成交额活跃榜: {
+    "zh-CN": "美股成交额活跃榜",
+    "zh-TW": "美股成交額活躍榜",
+    en: "Most Active by Dollar Volume",
+    ja: "米国株 売買代金アクティブ",
+    ko: "미국주식 거래대금 활발 순위",
   },
   论坛热帖: {
     "zh-CN": "论坛热帖",

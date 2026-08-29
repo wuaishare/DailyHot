@@ -50,6 +50,7 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "sse",
   "szse",
   "hkex",
+  "nasdaq",
 ]);
 const API_SUBTYPE_PATH_SOURCES = new Set([
   "artificialanalysis",
