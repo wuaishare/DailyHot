@@ -3143,6 +3143,13 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     ja: "米国株 売買代金アクティブ",
     ko: "미국주식 거래대금 활발 순위",
   },
+  主要指数行情: {
+    "zh-CN": "主要指数行情",
+    "zh-TW": "主要指數行情",
+    en: "Major Index Markets",
+    ja: "主要指数市況",
+    ko: "주요 지수 시황",
+  },
   论坛热帖: {
     "zh-CN": "论坛热帖",
     "zh-TW": "論壇熱帖",

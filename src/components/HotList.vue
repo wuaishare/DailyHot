@@ -70,6 +70,7 @@
             :class="{
               'is-market-quote': item.marketQuote,
               'is-fund-metric': item.fundMetric,
+              'is-index-overview': isIndexOverviewSource,
             }"
             v-for="(item, index) in visibleItems"
             :key="item.id || item.url || item.mobileUrl || `${props.hotData.name}-${index}-${item.originalTitle}`"
@@ -82,6 +83,7 @@
           >
             <div class="line">
               <n-text
+                v-if="!isIndexOverviewSource"
                 class="num"
                 :class="
                   index === 0
@@ -116,6 +118,9 @@
                       :translate="item.hasReadableTranslation ? 'no' : undefined"
                     >
                       {{ item.displayTitle }}
+                    </span>
+                    <span v-if="item.marketQuote.region" class="market-quote-region">
+                      {{ item.marketQuote.region }}
                     </span>
                     <span class="market-quote-code">{{ item.marketQuote.code }}</span>
                   </div>
@@ -448,6 +453,7 @@ const READABLE_TRANSLATION_FALLBACK_MS = 3000;
 const sourceLabel = computed(() =>
   getSourceDisplayLabel(props.hotData.name, locale.value, props.hotData.label)
 );
+const isIndexOverviewSource = computed(() => props.hotData.name === "global-indexes");
 const cardSubtitle = computed(() => {
   const rawSubtitle =
     Object.prototype.hasOwnProperty.call(props.hotData || {}, "subtype")
@@ -1276,6 +1282,10 @@ onBeforeUnmount(() => {
         }
       }
 
+      &.is-index-overview .line {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
       .num {
         width: 24px;
         height: 24px;
@@ -1349,6 +1359,16 @@ onBeforeUnmount(() => {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+          }
+
+          .market-quote-region {
+            flex: 0 0 auto;
+            padding: 1px 5px;
+            border-radius: 999px;
+            background: color-mix(in srgb, currentColor 8%, transparent);
+            font-size: 10px;
+            line-height: 1.35;
+            color: var(--n-text-color-3);
           }
 
           .market-quote-code {

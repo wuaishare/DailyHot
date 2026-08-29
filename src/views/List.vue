@@ -105,6 +105,7 @@
               >
                 <template #prefix>
                   <n-text
+                    v-if="!isIndexOverviewSource"
                     class="num"
                     :class="
                       index + 1 + (pageNumber - 1) * 20 === 1
@@ -151,6 +152,9 @@
                           :translate="item.hasReadableTranslation ? 'no' : undefined"
                           v-html="item.displayTitle"
                         />
+                        <span v-if="item.marketQuote?.region" class="market-quote-region">
+                          {{ item.marketQuote.region }}
+                        </span>
                         <span v-if="item.marketQuote" class="market-quote-code">
                           {{ item.marketQuote.code }}
                         </span>
@@ -359,6 +363,7 @@ const currentSourceMeta = computed(
     store.defaultNewsArr.find((item) => item.name === listType.value) ||
     null
 );
+const isIndexOverviewSource = computed(() => listType.value === "global-indexes");
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
@@ -1182,6 +1187,16 @@ onBeforeUnmount(() => {
             min-width: 0;
             margin-bottom: 0;
           }
+          .market-quote-region {
+            flex: 0 0 auto;
+            padding: 1px 6px;
+            border-radius: 999px;
+            background: color-mix(in srgb, currentColor 8%, transparent);
+            font-size: 11px;
+            line-height: 1.4;
+            color: var(--n-text-color-3);
+          }
+
           .market-quote-code {
             flex: 0 0 auto;
             font-size: 12px;

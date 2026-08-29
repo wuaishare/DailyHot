@@ -25,6 +25,14 @@ const FUND_LABELS = {
   ko: "연환산 (5년)",
 };
 
+const REGION_LABELS = {
+  "zh-CN": { CN: "中国大陆", HK: "香港", US: "美国" },
+  "zh-TW": { CN: "中國大陸", HK: "香港", US: "美國" },
+  en: { CN: "Mainland China", HK: "Hong Kong", US: "United States" },
+  ja: { CN: "中国本土", HK: "香港", US: "米国" },
+  ko: { CN: "중국 본토", HK: "홍콩", US: "미국" },
+};
+
 const CURRENCY_PREFIXES = {
   HKD: "HK$",
   USD: "$",
@@ -100,8 +108,11 @@ export const getMarketQuoteView = (item, locale = "zh-CN") => {
           ? labels.hkClose
           : labels.close;
 
+  const regionLabels = REGION_LABELS[targetLocale] || REGION_LABELS["zh-CN"];
+
   return {
     code: String(extra.code),
+    region: regionLabels[market] || "",
     price,
     change: `${changePrefix}${formatNumber(validChangeRate, targetLocale, 2)}%`,
     metric:
