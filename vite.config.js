@@ -241,7 +241,6 @@ export default defineConfig(async ({ mode }) => {
           globPatterns: [
             "**/*.{js,css,woff2,woff,ttf,png,jpg,jpeg,svg,gif,webp,ico,webmanifest}",
           ],
-          importScripts: ["/sw-force-reload.js"],
           navigateFallback: null,
           navigateFallbackDenylist: [
             /^\/api(?:[/?#]|$)/,

@@ -41,16 +41,54 @@
     <div id="app"></div>
     <script>
       (() => {
-        const retryParam = "__dailyhot_asset_retry";
+        const assetRetryParam = "__dailyhot_asset_retry";
+        const bootRetryParam = "__dailyhot_boot_retry";
         const currentUrl = new URL(window.location.href);
-        if (currentUrl.searchParams.has(retryParam)) {
+        let cleanedUrl = false;
+        for (const retryParam of [assetRetryParam, bootRetryParam]) {
+          if (!currentUrl.searchParams.has(retryParam)) continue;
           currentUrl.searchParams.delete(retryParam);
+          cleanedUrl = true;
+        }
+        if (cleanedUrl) {
           history.replaceState(
             history.state,
             "",
             `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`
           );
         }
+
+        const recoverBoot = async () => {
+          if (document.documentElement.dataset.dailyhotMounted === "1") return;
+          const storageKey = `dailyhot:boot-retry:${window.location.pathname}`;
+          try {
+            if (sessionStorage.getItem(storageKey)) return;
+            sessionStorage.setItem(storageKey, String(Date.now()));
+          } catch {
+            // Recovery should still work when session storage is unavailable.
+          }
+
+          try {
+            if (navigator.serviceWorker) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(registrations.map((registration) => registration.unregister()));
+            }
+            if (window.caches) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((key) => caches.delete(key)));
+            }
+          } catch {
+            // Reloading from the network is still useful if cleanup is partial.
+          }
+
+          const retryUrl = new URL(window.location.href);
+          retryUrl.searchParams.set(bootRetryParam, String(Date.now()));
+          window.location.replace(retryUrl.toString());
+        };
+
+        window.setTimeout(() => {
+          void recoverBoot();
+        }, 12000);
 
         window.addEventListener(
           "error",
@@ -81,7 +119,7 @@
             }
 
             const retryUrl = new URL(window.location.href);
-            retryUrl.searchParams.set(retryParam, String(Date.now()));
+            retryUrl.searchParams.set(assetRetryParam, String(Date.now()));
             window.location.replace(retryUrl.toString());
           },
           true

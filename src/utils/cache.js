@@ -33,7 +33,6 @@ export const ensureCacheVersion = async () => {
     if (saved !== CACHE_VERSION) {
       await clearAppCaches();
       localStorage.setItem("CACHE_VERSION", CACHE_VERSION);
-      window.location.reload();
     }
   } catch (err) {
     console.warn("ensureCacheVersion failed", err);

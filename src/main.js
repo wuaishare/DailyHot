@@ -14,38 +14,18 @@ import { registerSW } from "virtual:pwa-register";
 // 全局样式
 import "@/style/global.scss";
 
-let updateServiceWorker = () => {};
-const reloadOnceForServiceWorkerUpdate = () => {
-  if (typeof window === "undefined") return;
-  const marker = `sw-reload:${__APP_VERSION__.buildNumber}`;
-  try {
-    if (sessionStorage.getItem("DAILYHOT_SW_RELOAD") === marker) return;
-    sessionStorage.setItem("DAILYHOT_SW_RELOAD", marker);
-  } catch {
-    // Service worker updates should still reload when session storage is blocked.
-  }
-  window.location.reload();
-};
-
-if (typeof navigator !== "undefined" && navigator.serviceWorker) {
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    reloadOnceForServiceWorkerUpdate();
+const registerAppServiceWorker = () => {
+  if (typeof navigator === "undefined" || !navigator.serviceWorker) return;
+  registerSW({
+    immediate: true,
+    onRegisteredSW(_swUrl, registration) {
+      registration?.update();
+      if (registration && typeof window !== "undefined") {
+        window.setInterval(() => registration.update(), 30 * 60 * 1000);
+      }
+    },
   });
-}
-
-updateServiceWorker = registerSW({
-  immediate: true,
-  onNeedRefresh() {
-    updateServiceWorker(true);
-    reloadOnceForServiceWorkerUpdate();
-  },
-  onRegisteredSW(_swUrl, registration) {
-    registration?.update();
-    if (registration && typeof window !== "undefined") {
-      window.setInterval(() => registration.update(), 30 * 60 * 1000);
-    }
-  },
-});
+};
 
 (async () => {
   await ensureCacheVersion();
@@ -70,6 +50,15 @@ updateServiceWorker = registerSW({
   app.use(router);
 
   app.mount("#app");
+  if (typeof window !== "undefined") {
+    document.documentElement.dataset.dailyhotMounted = "1";
+    try {
+      sessionStorage.removeItem(`dailyhot:boot-retry:${window.location.pathname}`);
+    } catch {
+      // Boot recovery remains optional when session storage is unavailable.
+    }
+  }
+  registerAppServiceWorker();
 
   if (typeof window !== "undefined") {
     const runTranslation = () => {
