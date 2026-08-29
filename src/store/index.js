@@ -10,6 +10,10 @@ const BUILTIN_CATEGORIES = [
   { id: "ai", name: "AI", order: 6, builtin: true },
 ];
 
+const BUILTIN_CATEGORY_MIGRATIONS = {
+  xueqiu: { from: "综合", to: "财经" },
+};
+
 export const mainStore = defineStore("mainData", {
   state: () => {
     return {
@@ -730,6 +734,14 @@ export const mainStore = defineStore("mainData", {
         }
         if (defaults.subtype) {
           merged.subtype = defaults.subtype;
+        }
+        const categoryMigration = BUILTIN_CATEGORY_MIGRATIONS[item.name];
+        if (
+          categoryMigration &&
+          item.category === categoryMigration.from &&
+          defaults.category === categoryMigration.to
+        ) {
+          merged.category = categoryMigration.to;
         }
         if (item.name === "paperswithcode") {
           merged.show = false;

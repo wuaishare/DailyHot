@@ -67,6 +67,7 @@
         <div v-else class="lists" :id="hotData.name + 'Lists'">
           <div
             class="item"
+            :class="{ 'is-market-quote': item.marketQuote }"
             v-for="(item, index) in visibleItems"
             :key="item.id || item.url || item.mobileUrl || `${props.hotData.name}-${index}-${item.originalTitle}`"
             :aria-describedby="previewItem === item ? previewTooltipId : undefined"
@@ -92,6 +93,44 @@
                 >{{ index + 1 }}</n-text
               >
               <n-a
+                v-if="item.marketQuote"
+                :style="{ fontSize: store.listFontSize + 'px' }"
+                class="text market-quote-link"
+                :href="getItemLink(item)"
+                :target="linkTarget"
+                rel="noopener noreferrer nofollow"
+                :title="item.originalTitle || undefined"
+                @click.stop
+              >
+                <div class="market-quote-copy">
+                  <div class="market-quote-title-row">
+                    <span
+                      class="title-text"
+                      :class="{
+                        'no-auto-translate': item.hasReadableTranslation,
+                        notranslate: item.hasReadableTranslation,
+                      }"
+                      :translate="item.hasReadableTranslation ? 'no' : undefined"
+                    >
+                      {{ item.displayTitle }}
+                    </span>
+                    <span class="market-quote-code">{{ item.marketQuote.code }}</span>
+                  </div>
+                  <div class="market-quote-meta">
+                    <span>{{ item.marketQuote.closeLabel }} {{ item.marketQuote.price }}</span>
+                    <span>·</span>
+                    <span>{{ item.marketQuote.turnoverLabel }} {{ item.marketQuote.turnover }}</span>
+                  </div>
+                </div>
+                <span
+                  class="market-quote-change"
+                  :class="`is-${item.marketQuote.tone}`"
+                >
+                  {{ item.marketQuote.change }}
+                </span>
+              </n-a>
+              <n-a
+                v-else
                 :style="{ fontSize: store.listFontSize + 'px' }"
                 class="text"
                 :href="getItemLink(item)"
@@ -260,6 +299,7 @@ import {
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo } from "@/utils/sourceLogos";
+import { getMarketQuoteView, isMarketQuoteSource } from "@/utils/marketQuote";
 import { trackEvent } from "@/utils/track";
 import {
   getSourceDisplayLabel,
@@ -451,6 +491,9 @@ const visibleItems = computed(() =>
       originalDesc,
       displayTitle,
       displayDesc,
+      marketQuote: isMarketQuoteSource(props.hotData.name)
+        ? getMarketQuoteView(item, locale.value)
+        : null,
       hasReadableTranslation:
         shouldProtectEntityTitles.value ||
         Boolean(item?.noAutoTranslate) ||
@@ -822,6 +865,7 @@ const openPreview = async (item, target, requestId) => {
 };
 
 const showPreview = (item, event) => {
+  if (item?.marketQuote) return;
   if (!isClient || !isDesktop.value || !event?.currentTarget) return;
   if (!hasPreviewContent(item)) return;
   if (previewOpenTimer) window.clearTimeout(previewOpenTimer);
@@ -1181,6 +1225,15 @@ onBeforeUnmount(() => {
         gap: 8px;
       }
 
+      &.is-market-quote {
+        min-height: 42px;
+        margin-bottom: 8px;
+
+        .line {
+          align-items: stretch;
+        }
+      }
+
       .num {
         width: 24px;
         height: 24px;
@@ -1229,6 +1282,75 @@ onBeforeUnmount(() => {
           overflow: hidden;
           -webkit-box-orient: vertical;
           -webkit-line-clamp: 2;
+        }
+
+        &.market-quote-link {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 10px;
+          min-width: 0;
+
+          .market-quote-copy {
+            min-width: 0;
+          }
+
+          .market-quote-title-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            min-width: 0;
+          }
+
+          .title-text {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .market-quote-code {
+            flex: 0 0 auto;
+            font-size: 11px;
+            line-height: 1.2;
+            color: var(--n-text-color-3);
+            font-variant-numeric: tabular-nums;
+          }
+
+          .market-quote-meta {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+            overflow: hidden;
+            font-size: 11px;
+            line-height: 1.3;
+            color: var(--n-text-color-3);
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
+          }
+
+          .market-quote-change {
+            flex: 0 0 auto;
+            min-width: 54px;
+            text-align: right;
+            font-size: 13px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+
+            &.is-up {
+              color: #ea444d;
+            }
+
+            &.is-down {
+              color: #18a058;
+            }
+
+            &.is-flat {
+              color: var(--n-text-color-3);
+            }
+          }
         }
 
         @media (min-width: 768px) {

@@ -141,27 +141,48 @@
                 >
                   <div class="content">
                     <div class="copy">
-                      <n-text
-                        class="title"
-                        :class="{
-                          'no-auto-translate': item.hasReadableTranslation,
-                          notranslate: item.hasReadableTranslation,
-                        }"
-                        :translate="item.hasReadableTranslation ? 'no' : undefined"
-                        v-html="item.displayTitle"
-                      />
-                      <n-text
-                        v-if="item.displayDesc"
-                        class="desc"
-                        :depth="3"
-                        v-html="item.displayDesc"
-                      />
-                      <div class="message">
-                        <div class="hot" v-if="item.hot">
-                          <n-icon :depth="3" :component="Fire" />
-                          <n-text class="hot-text" :depth="3" v-html="item.hot" />
-                        </div>
+                      <div class="title-row">
+                        <n-text
+                          class="title"
+                          :class="{
+                            'no-auto-translate': item.hasReadableTranslation,
+                            notranslate: item.hasReadableTranslation,
+                          }"
+                          :translate="item.hasReadableTranslation ? 'no' : undefined"
+                          v-html="item.displayTitle"
+                        />
+                        <span v-if="item.marketQuote" class="market-quote-code">
+                          {{ item.marketQuote.code }}
+                        </span>
                       </div>
+                      <div v-if="item.marketQuote" class="market-quote-detail">
+                        <span>
+                          {{ item.marketQuote.closeLabel }} {{ item.marketQuote.price }}
+                        </span>
+                        <span
+                          class="market-quote-change"
+                          :class="`is-${item.marketQuote.tone}`"
+                        >
+                          {{ item.marketQuote.change }}
+                        </span>
+                        <span>
+                          {{ item.marketQuote.turnoverLabel }} {{ item.marketQuote.turnover }}
+                        </span>
+                      </div>
+                      <template v-else>
+                        <n-text
+                          v-if="item.displayDesc"
+                          class="desc"
+                          :depth="3"
+                          v-html="item.displayDesc"
+                        />
+                        <div class="message">
+                          <div class="hot" v-if="item.hot">
+                            <n-icon :depth="3" :component="Fire" />
+                            <n-text class="hot-text" :depth="3" v-html="item.hot" />
+                          </div>
+                        </div>
+                      </template>
                     </div>
                     <div
                       class="cover-wrapper"
@@ -212,6 +233,7 @@ import {
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
+import { getMarketQuoteView, isMarketQuoteSource } from "@/utils/marketQuote";
 import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
 import { trackEvent } from "@/utils/track";
 import {
@@ -374,6 +396,9 @@ const currentPageItems = computed(() =>
         originalDesc,
         displayTitle,
         displayDesc,
+        marketQuote: isMarketQuoteSource(listType.value)
+          ? getMarketQuoteView(item, locale.value)
+          : null,
         hasReadableTranslation:
           shouldProtectEntityTitles.value ||
           Boolean(item?.noAutoTranslate) ||
@@ -1123,12 +1148,53 @@ onBeforeUnmount(() => {
           flex-direction: column;
           justify-content: center;
           min-width: 0;
+          .title-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            min-width: 0;
+          }
           .title {
             overflow: hidden;
             font-size: 16px;
             margin-bottom: 4px;
             text-overflow: ellipsis;
             white-space: nowrap;
+          }
+          .title-row .title {
+            min-width: 0;
+            margin-bottom: 0;
+          }
+          .market-quote-code {
+            flex: 0 0 auto;
+            font-size: 12px;
+            color: var(--n-text-color-3);
+            font-variant-numeric: tabular-nums;
+          }
+          .market-quote-detail {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            margin-top: 5px;
+            font-size: 13px;
+            color: var(--n-text-color-3);
+            font-variant-numeric: tabular-nums;
+          }
+          .market-quote-change {
+            font-weight: 600;
+
+            &.is-up {
+              color: #ea444d;
+            }
+
+            &.is-down {
+              color: #18a058;
+            }
+
+            &.is-flat {
+              color: var(--n-text-color-3);
+            }
           }
           .desc {
             overflow: hidden;
