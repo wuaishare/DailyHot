@@ -51,6 +51,7 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "szse",
   "hkex",
   "nasdaq",
+  "global-indexes",
 ]);
 const API_SUBTYPE_PATH_SOURCES = new Set([
   "artificialanalysis",

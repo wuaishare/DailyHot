@@ -116,6 +116,13 @@ export const mainStore = defineStore("mainData", {
           category: "财经",
         },
         {
+          label: "全球主要指数",
+          name: "global-indexes",
+          order: 7.95,
+          show: true,
+          category: "财经",
+        },
+        {
           label: "哔哩哔哩",
           name: "bilibili",
           order: 8,

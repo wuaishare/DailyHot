@@ -7,6 +7,7 @@ const SOURCE_LABEL_OVERRIDES = {
   szse: { en: "Shenzhen Stock Exchange" },
   hkex: { en: "Hong Kong Exchanges and Clearing" },
   nasdaq: { en: "Nasdaq" },
+  "global-indexes": { en: "Global Market Indexes" },
   zhihu: { en: "Zhihu Hot List" },
   douyin: { en: "Douyin Hot List" },
   bilibili: { en: "Bilibili Trending" },
@@ -144,6 +145,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "Nasdaq",
     ja: "Nasdaq",
     ko: "Nasdaq",
+  },
+  "global-indexes": {
+    "zh-CN": "全球主要指数",
+    "zh-TW": "全球主要指數",
+    en: "Global Market Indexes",
+    ja: "世界主要株価指数",
+    ko: "글로벌 주요 지수",
   },
   toutiao: {
     "zh-CN": "今日头条热榜",
