@@ -46,6 +46,8 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "ithome",
   "openrouter-rankings",
   "weibo",
+  "xueqiu",
+  "sse",
 ]);
 const API_SUBTYPE_PATH_SOURCES = new Set([
   "artificialanalysis",

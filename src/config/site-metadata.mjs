@@ -79,6 +79,18 @@ export const BUILTIN_CATEGORIES = [
     },
   },
   {
+    id: "finance",
+    name: "财经",
+    slug: "finance",
+    labels: {
+      "zh-CN": "财经",
+      en: "Finance",
+      "zh-TW": "財經",
+      ja: "金融",
+      ko: "금융",
+    },
+  },
+  {
     id: "life",
     name: "生活",
     slug: "life",

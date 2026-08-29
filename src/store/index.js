@@ -3,10 +3,11 @@ import { defineStore } from "pinia";
 const BUILTIN_CATEGORIES = [
   { id: "general", name: "综合", order: 0, builtin: true },
   { id: "tech", name: "科技", order: 1, builtin: true },
-  { id: "life", name: "生活", order: 2, builtin: true },
-  { id: "games", name: "游戏", order: 3, builtin: true },
-  { id: "community", name: "社区", order: 4, builtin: true },
-  { id: "ai", name: "AI", order: 5, builtin: true },
+  { id: "finance", name: "财经", order: 2, builtin: true },
+  { id: "life", name: "生活", order: 3, builtin: true },
+  { id: "games", name: "游戏", order: 4, builtin: true },
+  { id: "community", name: "社区", order: 5, builtin: true },
+  { id: "ai", name: "AI", order: 6, builtin: true },
 ];
 
 export const mainStore = defineStore("mainData", {
@@ -78,7 +79,15 @@ export const mainStore = defineStore("mainData", {
           name: "xueqiu",
           order: 7.5,
           show: true,
-          category: "综合",
+          category: "财经",
+        },
+        {
+          label: "上交所",
+          name: "sse",
+          order: 7.6,
+          show: true,
+          category: "财经",
+          subtype: "stock",
         },
         {
           label: "哔哩哔哩",

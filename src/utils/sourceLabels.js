@@ -3,6 +3,7 @@ import { normalizeLocale } from "@/utils/locale";
 const SOURCE_LABEL_OVERRIDES = {
   weibo: { en: "Weibo Hot Search" },
   xueqiu: { en: "Xueqiu Hot Topics" },
+  sse: { en: "Shanghai Stock Exchange" },
   zhihu: { en: "Zhihu Hot List" },
   douyin: { en: "Douyin Hot List" },
   bilibili: { en: "Bilibili Trending" },
@@ -112,6 +113,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "Xueqiu Hot Topics",
     ja: "Xueqiu 注目トピック",
     ko: "Xueqiu 인기 주제",
+  },
+  sse: {
+    "zh-CN": "上海证券交易所",
+    "zh-TW": "上海證券交易所",
+    en: "Shanghai Stock Exchange",
+    ja: "上海証券取引所",
+    ko: "상하이증권거래소",
   },
   toutiao: {
     "zh-CN": "今日头条热榜",
@@ -1041,6 +1049,20 @@ const SUBTYPE_LABEL_OVERRIDES = {
     en: "Rankings",
     ja: "ランキング",
     ko: "랭킹",
+  },
+  股票成交额榜: {
+    "zh-CN": "股票成交额榜",
+    "zh-TW": "股票成交額榜",
+    en: "Stock Turnover",
+    ja: "株式売買代金ランキング",
+    ko: "주식 거래대금 순위",
+  },
+  "ETF 成交额榜": {
+    "zh-CN": "ETF 成交额榜",
+    "zh-TW": "ETF 成交額榜",
+    en: "ETF Turnover",
+    ja: "ETF売買代金ランキング",
+    ko: "ETF 거래대금 순위",
   },
   综合热门: {
     "zh-CN": "综合热门",

@@ -66,6 +66,22 @@ const CATEGORY_SEO_MAP = {
       "掘金热榜",
     ],
   },
+  "财经": {
+    title: "财经热榜",
+    titleTail: "股票、ETF、证券市场与投资话题趋势聚合",
+    description:
+      "财经热榜聚合雪球投资话题与上海证券交易所官方成交额排行，覆盖股票、ETF、证券市场活跃度与投资社区关注焦点。",
+    keywords: [
+      "财经热榜",
+      "股票成交额榜",
+      "ETF成交额榜",
+      "上海证券交易所",
+      "雪球热门话题",
+      "A股热榜",
+      "证券市场",
+      "投资热点",
+    ],
+  },
   "生活": {
     title: "生活热榜",
     titleTail: "消费、阅读、影视与生活方式热点聚合",
@@ -133,6 +149,36 @@ const CATEGORY_SEO_MAP = {
 };
 
 const CATEGORY_LOCALE_SEO_MAP = {
+  "财经": {
+    en: {
+      title: "Finance Rankings - Stocks, ETFs, market activity, and investor topics | DailyHot",
+      description:
+        "Finance Rankings combine Xueqiu investor topics with official Shanghai Stock Exchange turnover rankings for stocks and ETFs, highlighting market activity and investor attention.",
+      keywords:
+        "finance rankings,stock turnover,ETF turnover,Shanghai Stock Exchange,Xueqiu,A-share market,securities market,investment trends,DailyHot",
+    },
+    "zh-TW": {
+      title: "財經熱榜 - 股票、ETF、證券市場與投資話題趨勢聚合 | 吾愛熱榜",
+      description:
+        "財經熱榜彙整雪球投資話題與上海證券交易所官方成交額排行，涵蓋股票、ETF、證券市場活躍度與投資社群關注焦點。",
+      keywords:
+        "財經熱榜,股票成交額榜,ETF成交額榜,上海證券交易所,雪球熱門話題,A股熱榜,證券市場,投資熱點,吾愛熱榜",
+    },
+    ja: {
+      title: "金融ランキング - 株式、ETF、市場活況、投資トピックの集約 | DailyHot",
+      description:
+        "金融ランキングは Xueqiu の投資トピックと上海証券取引所の公式な株式・ETF売買代金ランキングを集約し、市場の活況と投資家の関心を追跡します。",
+      keywords:
+        "金融ランキング,株式売買代金,ETF売買代金,上海証券取引所,Xueqiu,A株,証券市場,投資トレンド,DailyHot",
+    },
+    ko: {
+      title: "금융 랭킹 - 주식, ETF, 시장 거래대금, 투자 이슈 | DailyHot",
+      description:
+        "금융 랭킹은 Xueqiu 투자 이슈와 상하이증권거래소의 공식 주식·ETF 거래대금 순위를 모아 시장 활동과 투자자 관심을 추적합니다.",
+      keywords:
+        "금융 랭킹,주식 거래대금,ETF 거래대금,상하이증권거래소,Xueqiu,A주,증권시장,투자 트렌드,DailyHot",
+    },
+  },
   AI: {
     en: {
       title: "AI Hot Rankings - AI model leaderboards, AI news, and tool trends | DailyHot",
@@ -638,6 +684,11 @@ const LIST_SEO_MAP = {
     label: "雪球热门话题",
     keywords: "雪球热门话题,雪球热榜,财经热点,投资话题,证券市场热点",
     description: "聚合投资社区当前高关注度的财经、股票、基金与证券市场讨论。",
+  },
+  sse: {
+    label: "上海证券交易所",
+    keywords: "上海证券交易所,上交所,沪市股票成交额榜,ETF成交额榜,A股成交额,证券市场",
+    description: "上海证券交易所官方沪市股票与 ETF 成交额排行，按真实交易金额呈现市场活跃度。",
   },
   zhihu: {
     label: "知乎热榜",

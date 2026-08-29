@@ -11,15 +11,6 @@ const sourceLabelsPath = path.join(repoRoot, "src", "utils", "sourceLabels.js");
 const messagesPath = path.join(repoRoot, "src", "i18n", "messages.js");
 const siteMetadataPath = path.join(repoRoot, "src", "config", "site-metadata.mjs");
 
-const CATEGORY_ROUTES = [
-  { name: "综合", slug: "general" },
-  { name: "科技", slug: "tech" },
-  { name: "生活", slug: "life" },
-  { name: "游戏", slug: "games" },
-  { name: "社区", slug: "community" },
-  { name: "AI", slug: "ai" },
-];
-
 const SYSTEM_ROUTES = [
   { pathname: "/setting", seoKey: "setting", robots: "noindex,nofollow" },
   { pathname: "/analytics", seoKey: "analytics", robots: "noindex,nofollow" },
@@ -990,7 +981,7 @@ function main() {
     const homePathname = withLocalePrefix(localeMeta, "/");
     writeRouteShell(homePathname, buildHomeMeta(localeMeta, homePathname));
 
-    CATEGORY_ROUTES.forEach((category) => {
+    builtinCategories.forEach((category) => {
       const pathname = withLocalePrefix(localeMeta, `/category/${category.slug}`);
       const meta = buildCategoryMeta(category, localeMeta, pathname);
       if (meta) writeRouteShell(pathname, meta);
