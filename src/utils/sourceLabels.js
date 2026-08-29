@@ -5,6 +5,7 @@ const SOURCE_LABEL_OVERRIDES = {
   xueqiu: { en: "Xueqiu Hot Topics" },
   sse: { en: "Shanghai Stock Exchange" },
   szse: { en: "Shenzhen Stock Exchange" },
+  hkex: { en: "Hong Kong Exchanges and Clearing" },
   zhihu: { en: "Zhihu Hot List" },
   douyin: { en: "Douyin Hot List" },
   bilibili: { en: "Bilibili Trending" },
@@ -128,6 +129,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "Shenzhen Stock Exchange",
     ja: "深圳証券取引所",
     ko: "선전증권거래소",
+  },
+  hkex: {
+    "zh-CN": "香港交易所",
+    "zh-TW": "香港交易所",
+    en: "Hong Kong Exchanges and Clearing",
+    ja: "香港取引所",
+    ko: "홍콩거래소",
   },
   toutiao: {
     "zh-CN": "今日头条热榜",
@@ -1071,6 +1079,20 @@ const SUBTYPE_LABEL_OVERRIDES = {
     en: "ETF Turnover",
     ja: "ETF売買代金ランキング",
     ko: "ETF 거래대금 순위",
+  },
+  港股市场成交额榜: {
+    "zh-CN": "港股市场成交额榜",
+    "zh-TW": "港股市場成交額榜",
+    en: "Hong Kong Turnover",
+    ja: "香港市場売買代金ランキング",
+    ko: "홍콩 시장 거래대금 순위",
+  },
+  官方日行情: {
+    "zh-CN": "官方日行情",
+    "zh-TW": "官方日行情",
+    en: "Official Daily Market Data",
+    ja: "公式日次市場データ",
+    ko: "공식 일간 시세",
   },
   综合热门: {
     "zh-CN": "综合热门",

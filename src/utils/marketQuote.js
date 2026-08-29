@@ -1,13 +1,19 @@
 import { normalizeLocale } from "@/utils/locale";
 
-const MARKET_QUOTE_SOURCES = new Set(["sse", "szse"]);
+const MARKET_QUOTE_SOURCES = new Set(["sse", "szse", "hkex"]);
 
 const MARKET_LABELS = {
-  "zh-CN": { close: "收盘", turnover: "成交额" },
-  "zh-TW": { close: "收盤", turnover: "成交額" },
-  en: { close: "Close", turnover: "Turnover" },
-  ja: { close: "終値", turnover: "売買代金" },
-  ko: { close: "종가", turnover: "거래대금" },
+  "zh-CN": { close: "收盘", hkClose: "收市", turnover: "成交额" },
+  "zh-TW": { close: "收盤", hkClose: "收市", turnover: "成交額" },
+  en: { close: "Close", hkClose: "Close", turnover: "Turnover" },
+  ja: { close: "終値", hkClose: "終値", turnover: "売買代金" },
+  ko: { close: "종가", hkClose: "종가", turnover: "거래대금" },
+};
+
+const CURRENCY_PREFIXES = {
+  HKD: "HK$",
+  USD: "$",
+  CNY: "CN¥",
 };
 
 export const isMarketQuoteSource = (name) =>
@@ -48,12 +54,15 @@ export const getMarketQuoteView = (item, locale = "zh-CN") => {
   const validChangeRate = Number.isFinite(changeRate) ? changeRate : 0;
   const changePrefix = validChangeRate > 0 ? "+" : "";
 
+  const currencyPrefix = CURRENCY_PREFIXES[String(extra.currency || "").toUpperCase()] || "";
+  const price = `${currencyPrefix}${formatNumber(extra.last, targetLocale, 3)}`;
+
   return {
     code: String(extra.code),
-    price: formatNumber(extra.last, targetLocale, 3),
+    price,
     change: `${changePrefix}${formatNumber(validChangeRate, targetLocale, 2)}%`,
     turnover: formatCompact(extra.amount, targetLocale),
-    closeLabel: labels.close,
+    closeLabel: String(extra.market || "").toUpperCase() === "HK" ? labels.hkClose : labels.close,
     turnoverLabel: labels.turnover,
     tone: validChangeRate > 0 ? "up" : validChangeRate < 0 ? "down" : "flat",
   };

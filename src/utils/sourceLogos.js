@@ -2,6 +2,7 @@ const SOURCE_LOGO_MAP = {
   xueqiu: "/logo/xueqiu.png",
   sse: "https://www.sse.com.cn/favicon.ico",
   szse: "https://res.szse.cn/common/images/favicon.ico",
+  hkex: "https://www.hkex.com.hk/assets/images/favicon.png",
   "openrouter-rankings": "/logo/ai/openrouter-rankings.svg",
   artificialanalysis: "/logo/ai/artificialanalysis.png",
   lmarena: "/logo/ai/arena-ai.png",

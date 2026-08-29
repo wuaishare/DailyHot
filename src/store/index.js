@@ -101,6 +101,13 @@ export const mainStore = defineStore("mainData", {
           category: "财经",
         },
         {
+          label: "港交所",
+          name: "hkex",
+          order: 7.8,
+          show: true,
+          category: "财经",
+        },
+        {
           label: "哔哩哔哩",
           name: "bilibili",
           order: 8,

@@ -14,6 +14,7 @@ const SAME_ORIGIN_API_SOURCES = new Set([
   "xueqiu",
   "sse",
   "szse",
+  "hkex",
 ]);
 const appApiBase = import.meta.env.VITE_GLOBAL_API;
 const analyticsApiBases = import.meta.env.PROD

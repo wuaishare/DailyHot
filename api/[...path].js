@@ -49,6 +49,7 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "xueqiu",
   "sse",
   "szse",
+  "hkex",
 ]);
 const API_SUBTYPE_PATH_SOURCES = new Set([
   "artificialanalysis",
