@@ -634,6 +634,11 @@ const LIST_SEO_MAP = {
     keywords: "微博热搜,微博热榜,热搜榜",
     description: "微博实时热搜榜单，追踪全网热门话题与趋势。",
   },
+  xueqiu: {
+    label: "雪球热门话题",
+    keywords: "雪球热门话题,雪球热榜,财经热点,投资话题,证券市场热点",
+    description: "雪球热门话题榜，聚合投资社区当前高关注度的财经、股票、基金与证券市场讨论。",
+  },
   zhihu: {
     label: "知乎热榜",
     keywords: "知乎热榜,知乎热搜,知乎热门",

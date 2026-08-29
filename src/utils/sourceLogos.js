@@ -1,4 +1,5 @@
 const SOURCE_LOGO_MAP = {
+  xueqiu: "https://xqimg.imedao.com/18cc98da6c19cdc03fdb7c76.png",
   "openrouter-rankings": "/logo/ai/openrouter-rankings.svg",
   artificialanalysis: "/logo/ai/artificialanalysis.png",
   lmarena: "/logo/ai/arena-ai.png",

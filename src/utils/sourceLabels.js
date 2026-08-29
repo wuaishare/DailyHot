@@ -2,6 +2,7 @@ import { normalizeLocale } from "@/utils/locale";
 
 const SOURCE_LABEL_OVERRIDES = {
   weibo: { en: "Weibo Hot Search" },
+  xueqiu: { en: "Xueqiu Hot Topics" },
   zhihu: { en: "Zhihu Hot List" },
   douyin: { en: "Douyin Hot List" },
   bilibili: { en: "Bilibili Trending" },
@@ -104,6 +105,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "Weibo Hot Search",
     ja: "Weibo急上昇検索",
     ko: "Weibo 인기 검색어",
+  },
+  xueqiu: {
+    "zh-CN": "雪球热门话题",
+    "zh-TW": "雪球熱門話題",
+    en: "Xueqiu Hot Topics",
+    ja: "Xueqiu 注目トピック",
+    ko: "Xueqiu 인기 주제",
   },
   toutiao: {
     "zh-CN": "今日头条热榜",

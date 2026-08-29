@@ -74,6 +74,13 @@ export const mainStore = defineStore("mainData", {
           category: "综合",
         },
         {
+          label: "雪球",
+          name: "xueqiu",
+          order: 7.5,
+          show: true,
+          category: "综合",
+        },
+        {
           label: "哔哩哔哩",
           name: "bilibili",
           order: 8,
