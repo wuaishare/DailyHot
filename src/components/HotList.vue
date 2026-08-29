@@ -512,8 +512,9 @@ const formatPreviewHot = (value) => {
     return rawValue;
   }
 };
-const visibleItems = computed(() =>
-  (hotListData.value?.data || []).slice(0, HOT_LIST_VISIBLE_LIMIT).map((item) => {
+const visibleItems = computed(() => {
+  const items = hotListData.value?.data || [];
+  return (isIndexOverviewSource.value ? items : items.slice(0, HOT_LIST_VISIBLE_LIMIT)).map((item) => {
     const originalTitle = String(item?.originalTitle || "");
     const originalDesc = String(item?.originalDesc || "");
     const displayTitle = item?.title || originalTitle;
@@ -543,8 +544,8 @@ const visibleItems = computed(() =>
           Boolean(displayTitle) &&
           displayTitle.trim() !== originalTitle.trim()),
     };
-  })
-);
+  });
+});
 const syncReadableTitleDom = (items = []) => {
   nextTick(() => {
     const root =
