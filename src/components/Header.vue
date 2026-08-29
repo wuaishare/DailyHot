@@ -73,7 +73,7 @@
                     :style="localeFlagStyle"
                   />
                 </template>
-                {{ currentLocaleMeta.shortLabel }}
+                <span v-if="!isSmallScreen">{{ currentLocaleMeta.shortLabel }}</span>
               </n-button>
             </div>
           </n-dropdown>
@@ -97,7 +97,7 @@
                   <template #icon>
                     <n-icon :component="Refresh" />
                   </template>
-                  <span v-if="countdownText" class="countdown">{{ countdownText }}</span>
+                  <span v-if="countdownText && !isSmallScreen" class="countdown">{{ countdownText }}</span>
                 </n-button>
               </div>
             </template>
@@ -708,7 +708,10 @@ const setupCountdown = () => {
 
 const updateScreen = () => {
   if (typeof window === "undefined") return;
-  isSmallScreen.value = window.innerWidth <= 960;
+  // Compact the header until there is enough room for the longest localized
+  // category labels plus the full control cluster. This also covers iPad mini
+  // landscape (1024 CSS px) and common laptop widths without wrapping rows.
+  isSmallScreen.value = window.innerWidth <= 1792;
 };
 
 watch(
@@ -1025,6 +1028,47 @@ onBeforeUnmount(() => {
       }
       .category-nav :deep(.n-space) {
         min-height: 39px;
+      }
+    }
+  }
+
+  @media (min-width: 769px) and (max-width: 1792px) {
+    padding: 12px 4vw;
+
+    section {
+      grid-template-columns: minmax(150px, 1fr) minmax(220px, 1fr) auto;
+      column-gap: 10px;
+    }
+
+    .category-select {
+      min-width: 0;
+
+      :deep(.n-select) {
+        width: 100%;
+        min-width: 0;
+        max-width: 260px;
+      }
+    }
+
+    .controls {
+      :deep(.n-space) {
+        min-height: 48px;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+      }
+
+      :deep(.header-control-btn) {
+        min-width: 44px;
+        height: 48px;
+        padding-inline: 13px;
+      }
+    }
+
+    &.expanded {
+      .controls .control-hit-area,
+      .category-select .category-hit-area {
+        margin-block: -12px;
+        padding-block: 12px;
       }
     }
   }
