@@ -718,8 +718,8 @@ const LIST_SEO_MAP = {
   },
   "global-indexes": {
     label: "全球主要指数",
-    keywords: "全球主要指数,上证指数,沪深300,深证成指,创业板指,恒生指数,恒生科技指数,台湾加权指数,TAIEX,标普500,S&P 500,SPX,道琼斯指数,Dow Jones,罗素2000,Russell 2000,纳斯达克综合指数,Nasdaq 100,日经225,Nikkei 225,KOSPI 200,富时100,FTSE 100,CAC 40,DAX,EURO STOXX 50",
-    description: "聚合中国大陆、香港、台湾、日本、韩国、美国、英国、法国、德国与欧元区主要股票指数行情，覆盖标普500、道琼斯、罗素2000、纳斯达克、日经225、KOSPI 200、FTSE 100、CAC 40、DAX、EURO STOXX 50 等全球核心市场基准。",
+    keywords: "全球主要指数,上证指数,沪深300,深证成指,创业板指,恒生指数,恒生科技指数,台湾加权指数,TAIEX,标普500,S&P 500,SPX,道琼斯指数,Dow Jones,罗素2000,Russell 2000,纳斯达克综合指数,Nasdaq 100,日经225,Nikkei 225,KOSPI,KOSPI 200,KOSDAQ,富时100,FTSE 100,CAC 40,DAX,EURO STOXX 50",
+    description: "聚合中国大陆、香港、台湾、日本、韩国、美国、英国、法国、德国与欧元区主要股票指数行情，覆盖标普500、道琼斯、罗素2000、纳斯达克、日经225、KOSPI、KOSPI 200、KOSDAQ、FTSE 100、CAC 40、DAX、EURO STOXX 50 等全球核心市场基准。",
   },
   zhihu: {
     label: "知乎热榜",
