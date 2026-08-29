@@ -90,6 +90,13 @@ export const mainStore = defineStore("mainData", {
           subtype: "stock",
         },
         {
+          label: "深交所",
+          name: "szse",
+          order: 7.7,
+          show: true,
+          category: "财经",
+        },
+        {
           label: "哔哩哔哩",
           name: "bilibili",
           order: 8,

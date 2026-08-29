@@ -4,6 +4,7 @@ const SOURCE_LABEL_OVERRIDES = {
   weibo: { en: "Weibo Hot Search" },
   xueqiu: { en: "Xueqiu Hot Topics" },
   sse: { en: "Shanghai Stock Exchange" },
+  szse: { en: "Shenzhen Stock Exchange" },
   zhihu: { en: "Zhihu Hot List" },
   douyin: { en: "Douyin Hot List" },
   bilibili: { en: "Bilibili Trending" },
@@ -120,6 +121,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "Shanghai Stock Exchange",
     ja: "上海証券取引所",
     ko: "상하이증권거래소",
+  },
+  szse: {
+    "zh-CN": "深圳证券交易所",
+    "zh-TW": "深圳證券交易所",
+    en: "Shenzhen Stock Exchange",
+    ja: "深圳証券取引所",
+    ko: "선전증권거래소",
   },
   toutiao: {
     "zh-CN": "今日头条热榜",

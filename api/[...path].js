@@ -48,6 +48,7 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "weibo",
   "xueqiu",
   "sse",
+  "szse",
 ]);
 const API_SUBTYPE_PATH_SOURCES = new Set([
   "artificialanalysis",
