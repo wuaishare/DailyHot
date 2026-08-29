@@ -167,6 +167,17 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  szse: [
+    {
+      key: "rank",
+      label: "榜单",
+      param: "type",
+      items: [
+        { label: "股票成交额榜", value: "stock" },
+        { label: "ETF 成交额榜", value: "etf" },
+      ],
+    },
+  ],
   nytimes: [
     {
       key: "region",

@@ -100,6 +100,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.7,
           show: true,
           category: "财经",
+          subtype: "stock",
         },
         {
           label: "港交所",
