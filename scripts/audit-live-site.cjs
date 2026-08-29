@@ -140,6 +140,10 @@ const assertHtml = async (path, expectations) => {
     response.body,
     /<script\s+type="module"\s+crossorigin\s+src="(\/assets\/index-[^"]+\.js)"/
   );
+  const stylesheet = extract(
+    response.body,
+    /<link[^>]+rel="stylesheet"[^>]+href="(\/assets\/index-[^"]+\.css)"/
+  );
   if (expectations.titleIncludes) {
     assert(
       title.includes(expectations.titleIncludes),
@@ -184,7 +188,17 @@ const assertHtml = async (path, expectations) => {
     assert(hasRouteJsonLd, "missing route JSON-LD");
   }
   assert(asset, "missing main asset");
-  return { title, canonical, description, htmlLang, alternateCount, hasRouteJsonLd, asset };
+  assert(stylesheet, "missing main stylesheet");
+  return {
+    title,
+    canonical,
+    description,
+    htmlLang,
+    alternateCount,
+    hasRouteJsonLd,
+    asset,
+    stylesheet,
+  };
 };
 
 addCheck("localized home SEO shells include hreflang and JSON-LD", async () => {
@@ -206,6 +220,43 @@ addCheck("localized home SEO shells include hreflang and JSON-LD", async () => {
     });
     results.push(`${path}:${result.htmlLang}:${result.alternateCount}`);
   }
+  return results;
+});
+
+addCheck("deployment assets resolve with correct MIME types", async () => {
+  const shell = await assertHtml("/category/tech", {
+    titleIncludes: "科技热榜",
+    canonical: "/category/tech",
+  });
+  const cases = [
+    [shell.asset, "javascript"],
+    [shell.stylesheet, "text/css"],
+  ];
+  const results = [];
+  for (const [assetPath, expectedType] of cases) {
+    const response = await requestWithRetry(`${siteUrl}${assetPath}`);
+    const contentType = String(response.headers["content-type"] || "");
+    assert(response.statusCode === 200, `${assetPath}: HTTP ${response.statusCode}`);
+    assert(
+      contentType.includes(expectedType),
+      `${assetPath}: expected ${expectedType}, got ${contentType || "unknown"}`
+    );
+    results.push(`${assetPath}:${contentType}`);
+  }
+
+  const missingAsset = await requestWithRetry(
+    `${siteUrl}/assets/__dailyhot_missing_asset_probe__.js?verify=${Date.now()}`
+  );
+  const missingType = String(missingAsset.headers["content-type"] || "");
+  assert(
+    missingAsset.statusCode === 404,
+    `missing asset must return 404, got HTTP ${missingAsset.statusCode} ${missingType}`
+  );
+  assert(
+    !missingType.includes("text/html"),
+    `missing asset incorrectly fell back to HTML: ${missingType}`
+  );
+  results.push(`missing-asset:${missingAsset.statusCode}:${missingType || "none"}`);
   return results;
 });
 

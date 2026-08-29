@@ -39,6 +39,55 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      (() => {
+        const retryParam = "__dailyhot_asset_retry";
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.has(retryParam)) {
+          currentUrl.searchParams.delete(retryParam);
+          history.replaceState(
+            history.state,
+            "",
+            `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`
+          );
+        }
+
+        window.addEventListener(
+          "error",
+          (event) => {
+            const target = event.target;
+            const resourceUrl = target?.src || target?.href || "";
+            if (!resourceUrl) return;
+
+            let parsedUrl;
+            try {
+              parsedUrl = new URL(resourceUrl, window.location.href);
+            } catch {
+              return;
+            }
+            if (
+              parsedUrl.origin !== window.location.origin ||
+              !parsedUrl.pathname.startsWith("/assets/")
+            ) {
+              return;
+            }
+
+            const storageKey = `dailyhot:asset-retry:${parsedUrl.pathname}`;
+            try {
+              if (sessionStorage.getItem(storageKey)) return;
+              sessionStorage.setItem(storageKey, String(Date.now()));
+            } catch {
+              // Recovery should still work when session storage is unavailable.
+            }
+
+            const retryUrl = new URL(window.location.href);
+            retryUrl.searchParams.set(retryParam, String(Date.now()));
+            window.location.replace(retryUrl.toString());
+          },
+          true
+        );
+      })();
+    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
