@@ -9,22 +9,24 @@ import i18n from "@/i18n";
 import { ensureCacheVersion } from "@/utils/cache";
 import { resolveInitialLocale, savePreferredLocale, setDocumentLanguage } from "@/utils/locale";
 import { applyDynamicTranslation } from "@/utils/translateEngine";
-import { registerSW } from "virtual:pwa-register";
 
 // 全局样式
 import "@/style/global.scss";
 
 const registerAppServiceWorker = () => {
   if (typeof navigator === "undefined" || !navigator.serviceWorker) return;
-  registerSW({
-    immediate: true,
-    onRegisteredSW(_swUrl, registration) {
-      registration?.update();
-      if (registration && typeof window !== "undefined") {
+  const baseUrl = import.meta.env.BASE_URL || "/";
+  const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  navigator.serviceWorker
+    .register(`${normalizedBaseUrl}sw.js`, { scope: normalizedBaseUrl })
+    .then((registration) => {
+      if (typeof window !== "undefined") {
         window.setInterval(() => registration.update(), 30 * 60 * 1000);
       }
-    },
-  });
+    })
+    .catch((error) => {
+      console.warn("Service worker registration failed", error);
+    });
 };
 
 (async () => {

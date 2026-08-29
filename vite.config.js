@@ -233,7 +233,7 @@ export default defineConfig(async ({ mode }) => {
       }),
       // PWA
       VitePWA({
-        registerType: "autoUpdate",
+        injectRegister: false,
         workbox: {
           clientsClaim: true,
           skipWaiting: true,
