@@ -637,7 +637,7 @@ const LIST_SEO_MAP = {
   xueqiu: {
     label: "雪球热门话题",
     keywords: "雪球热门话题,雪球热榜,财经热点,投资话题,证券市场热点",
-    description: "雪球热门话题榜，聚合投资社区当前高关注度的财经、股票、基金与证券市场讨论。",
+    description: "聚合投资社区当前高关注度的财经、股票、基金与证券市场讨论。",
   },
   zhihu: {
     label: "知乎热榜",
