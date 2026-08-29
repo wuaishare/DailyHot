@@ -1,5 +1,10 @@
 <template>
-  <n-card :bordered="false" class="app-header" content-style="padding: 0">
+  <n-card
+    :bordered="false"
+    class="app-header"
+    :class="{ 'tablet-compact': isTabletScreen }"
+    content-style="padding: 0"
+  >
     <section>
       <div class="logo" @click="router.push(buildHomePath(locale))">
         <img src="/ico/favicon.png" alt="logo" />
@@ -287,6 +292,7 @@ const timeForm = reactive({
   second: 0,
 });
 const isSmallScreen = ref(false);
+const isTabletScreen = ref(false);
 const isSettingPage = computed(
   () => ["setting", "setting-locale"].includes(router.currentRoute.value?.name)
 );
@@ -708,10 +714,13 @@ const setupCountdown = () => {
 
 const updateScreen = () => {
   if (typeof window === "undefined") return;
-  // Compact the header until there is enough room for the longest localized
-  // category labels plus the full control cluster. This also covers iPad mini
-  // landscape (1024 CSS px) and common laptop widths without wrapping rows.
-  isSmallScreen.value = window.innerWidth <= 1792;
+  const width = window.innerWidth;
+  const hasCoarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches === true;
+  const hasTouch = Number(window.navigator?.maxTouchPoints || 0) > 0;
+  const tabletCompact = width > 768 && width <= 1180 && (hasCoarsePointer || hasTouch);
+
+  isTabletScreen.value = tabletCompact;
+  isSmallScreen.value = width <= 768 || tabletCompact;
 };
 
 watch(
@@ -1032,7 +1041,7 @@ onBeforeUnmount(() => {
     }
   }
 
-  @media (min-width: 769px) and (max-width: 1792px) {
+  &.tablet-compact {
     padding: 12px 4vw;
 
     section {
