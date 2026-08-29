@@ -368,10 +368,14 @@ const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
 const shouldEnhanceReadableTitles = computed(() =>
-  shouldUseReadableTitleTranslation(listType.value, locale.value)
+  shouldUseReadableTitleTranslation(
+    listType.value,
+    locale.value,
+    listSubType.value
+  )
 );
 const shouldProtectEntityTitles = computed(() =>
-  shouldProtectEntityTitleTranslation(listType.value)
+  shouldProtectEntityTitleTranslation(listType.value, listSubType.value)
 );
 const listHeaderSubtitle = computed(() => {
   const rawSubtitle =

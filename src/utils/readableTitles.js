@@ -21,6 +21,11 @@ const ENTITY_TITLE_SOURCE_NAMES = new Set([
   "clawhub-plugins",
   "hf-models",
   "producthunt-ai",
+  "sse",
+  "szse",
+  "hkex",
+  "nasdaq",
+  "global-indexes",
 ]);
 const SOURCE_TEXT_NORMALIZER_NAMES = new Set(["anthropic-news"]);
 
@@ -243,14 +248,18 @@ const looksTranslatableSentence = (text = "", locale = "zh-CN") => {
   return hasHan || hasKana || hasHangul || hasLatinSentence(value);
 };
 
-export const shouldUseReadableTitleTranslation = (sourceName, locale) => {
+const isEntityTitleSource = (sourceName, subtype) =>
+  ENTITY_TITLE_SOURCE_NAMES.has(sourceName) ||
+  (sourceName === "xueqiu" && ["stocks", "funds"].includes(String(subtype || "")));
+
+export const shouldUseReadableTitleTranslation = (sourceName, locale, subtype) => {
   const normalizedLocale = normalizeLocale(locale);
   if (!READABLE_TRANSLATION_LOCALES.has(normalizedLocale)) return false;
-  return !ENTITY_TITLE_SOURCE_NAMES.has(sourceName);
+  return !isEntityTitleSource(sourceName, subtype);
 };
 
-export const shouldProtectEntityTitleTranslation = (sourceName) =>
-  ENTITY_TITLE_SOURCE_NAMES.has(sourceName);
+export const shouldProtectEntityTitleTranslation = (sourceName, subtype) =>
+  isEntityTitleSource(sourceName, subtype);
 
 export const translateReadableTitles = async (titles = [], locale) => {
   const normalizedLocale = normalizeLocale(locale);

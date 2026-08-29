@@ -434,12 +434,6 @@ const previewHasCover = computed(
 const previewIsMediaOnly = computed(
   () => previewHasCover.value && !previewItem.value?.displayDesc
 );
-const shouldEnhanceReadableTitles = computed(() =>
-  shouldUseReadableTitleTranslation(props.hotData.name, locale.value)
-);
-const shouldProtectEntityTitles = computed(() =>
-  shouldProtectEntityTitleTranslation(props.hotData.name)
-);
 const HOT_LIST_VISIBLE_LIMIT = 15;
 const API_LOCALIZED_SOURCE_NAMES = new Set([
   "designarena",
@@ -580,6 +574,16 @@ const activeSubType = ref(
     subtypeOptions.value,
     readSourceSubtype(props.hotData.name)
   )
+);
+const shouldEnhanceReadableTitles = computed(() =>
+  shouldUseReadableTitleTranslation(
+    props.hotData.name,
+    locale.value,
+    activeSubType.value
+  )
+);
+const shouldProtectEntityTitles = computed(() =>
+  shouldProtectEntityTitleTranslation(props.hotData.name, activeSubType.value)
 );
 
 watch(
