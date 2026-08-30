@@ -444,28 +444,80 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .analytics-consent-shell {
-    padding: 10px;
+    padding: 8px;
   }
 
   .analytics-consent {
-    width: calc(100vw - 20px);
-    border-radius: 16px;
-    padding: 14px;
+    box-sizing: border-box;
+    width: calc(100vw - 16px);
+    max-height: min(calc(100vh - 16px), calc(100dvh - 16px));
+    border-radius: 14px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .analytics-consent.details-visible {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .eyebrow {
+    display: none;
+  }
+
+  .copy {
+    gap: 4px;
+  }
+
+  .title {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .desc {
+    font-size: 12px;
+    line-height: 1.45;
+    -webkit-line-clamp: 2;
+  }
+
+  .analytics-consent.details-visible .desc {
+    font-size: 13px;
+    line-height: 1.55;
   }
 
   .actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
     justify-content: stretch;
+    padding-top: 6px;
   }
 
   .actions :deep(.n-button) {
+    flex: 1 1 0;
     min-width: 0;
-    width: 100%;
+    width: auto;
+    --n-height: 30px !important;
+    --n-font-size: 12px !important;
+    --n-padding: 0 7px !important;
   }
 
-  .actions :deep(.n-button:nth-child(3)) {
-    grid-column: 1 / -1;
+  .actions :deep(.n-button .n-button__content) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .details {
+    padding-top: 10px;
+    gap: 10px;
+  }
+
+  .groups {
+    gap: 8px;
+  }
+
+  .group {
+    padding: 10px 12px;
   }
 
   .details-footer,
