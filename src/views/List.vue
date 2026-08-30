@@ -390,22 +390,22 @@ const currentSourceMeta = computed(
 );
 const isIndexOverviewSource = computed(() => listType.value === "global-indexes");
 const isSortableMarketSource = computed(() => isMarketListSortable(listType.value));
-const SZSE_NATIVE_RANK_TYPES = new Set([
-  "stock",
-  "stock-volume",
-  "stock-trades",
-  "stock-gain",
-  "stock-loss",
-  "stock-turnover",
-]);
-const showMarketSortControl = computed(
-  () =>
-    isSortableMarketSource.value &&
-    !(
-      listType.value === "szse" &&
-      SZSE_NATIVE_RANK_TYPES.has(String(listSubType.value || ""))
-    )
-);
+const NATIVE_RANK_TYPES_BY_SOURCE = {
+  sse: new Set(["stock", "stock-volume", "stock-gain", "stock-loss"]),
+  szse: new Set([
+    "stock",
+    "stock-volume",
+    "stock-trades",
+    "stock-gain",
+    "stock-loss",
+    "stock-turnover",
+  ]),
+};
+const showMarketSortControl = computed(() => {
+  const nativeTypes = NATIVE_RANK_TYPES_BY_SOURCE[listType.value];
+  const isNativeRanking = nativeTypes?.has(String(listSubType.value || ""));
+  return isSortableMarketSource.value && !isNativeRanking;
+});
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
