@@ -1,5 +1,6 @@
 <template>
   <div class="home">
+    <SourceQuickAccess :sources="filteredNews" @select="jumpToSource" />
     <!-- <n-alert type="info" :show-icon="false" style="margin-bottom: 20px">
       站点未完工
     </n-alert> -->
@@ -50,6 +51,7 @@
 <script setup>
 import { mainStore } from "@/store";
 import HotList from "@/components/HotList.vue";
+import SourceQuickAccess from "@/components/SourceQuickAccess.vue";
 import draggable from "vuedraggable";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -118,6 +120,14 @@ const handleSubtypeInteraction = (event) => {
   }, 120);
 };
 
+const jumpToSource = (sourceName) => {
+  if (typeof document === "undefined" || !sourceName) return;
+  const target = document.getElementById(`hot-list-${sourceName}`);
+  if (!target) return;
+  const scrollTarget = target.closest(".news-card") || target;
+  scrollTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
 const startCardDrag = () => {
   isCardDragging.value = true;
   enableCardEntrance.value = false;
@@ -163,6 +173,10 @@ const reset = () => {
     &.is-compact {
       gap: 14px;
     }
+  }
+
+  .news-card {
+    scroll-margin-top: 92px;
   }
 
   .news-card.with-entrance {
