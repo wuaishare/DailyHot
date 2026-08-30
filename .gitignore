@@ -33,3 +33,6 @@ public/robots.txt
 .env
 .vercel
 .env*
+
+# Machine-local confidential agent overlay; durable strategy lives in the private WP Better workspace.
+AGENTS.private.md
