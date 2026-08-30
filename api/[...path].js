@@ -56,6 +56,17 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "nse",
   "global-indexes",
 ]);
+const PUBLIC_API_FIRST_PATHS = new Set([
+  "xueqiu",
+  "sse",
+  "szse",
+  "hkex",
+  "nasdaq",
+  "nyse",
+  "twse",
+  "nse",
+  "global-indexes",
+]);
 const API_SUBTYPE_PATH_SOURCES = new Set([
   "artificialanalysis",
   "bilibili",
@@ -2732,11 +2743,13 @@ const redirectToPublicApiFallback = (pathValue, query, res) => {
 };
 
 const getProxyBaseUrlCandidates = (pathValue, baseUrl) => {
-  const candidates = [baseUrl];
-  if (PUBLIC_API_FALLBACK_PATHS.has(pathValue) && PUBLIC_API_FALLBACK_BASE_URL) {
-    candidates.push(PUBLIC_API_FALLBACK_BASE_URL);
-    candidates.push(PUBLIC_API_DEFAULT_FALLBACK_BASE_URL);
-  }
+  const fallbackCandidates = [
+    PUBLIC_API_FALLBACK_BASE_URL,
+    PUBLIC_API_DEFAULT_FALLBACK_BASE_URL,
+  ];
+  const candidates = PUBLIC_API_FIRST_PATHS.has(pathValue)
+    ? [...fallbackCandidates, baseUrl]
+    : [baseUrl, ...fallbackCandidates];
   return [...new Set(candidates.map((url) => url?.replace(/\/+$/, "")).filter(Boolean))];
 };
 
