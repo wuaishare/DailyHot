@@ -15,7 +15,7 @@
             round
             :aria-label="t('hotList.indexSort')"
             :title="t('hotList.indexSort')"
-            :type="globalIndexSortMode !== GLOBAL_INDEX_SORT_MODES.GAIN ? 'primary' : 'default'"
+            :type="globalIndexSortMode !== GLOBAL_INDEX_SORT_MODES.IMPORTANCE ? 'primary' : 'default'"
             :round="compact"
           >
             <template #icon>
@@ -170,12 +170,30 @@ const { t } = useI18n({ useScope: "global" });
 const orderDraft = ref([]);
 
 const sortOptions = computed(() => [
-  { value: GLOBAL_INDEX_SORT_MODES.GAIN, label: t("hotList.indexSortGain") },
   { value: GLOBAL_INDEX_SORT_MODES.IMPORTANCE, label: t("hotList.indexSortImportance") },
+  { value: GLOBAL_INDEX_SORT_MODES.GAIN, label: t("hotList.indexSortGain") },
   { value: GLOBAL_INDEX_SORT_MODES.CUSTOM, label: t("hotList.indexSortCustom") },
 ]);
 
-const regionCodeOrder = ["CN", "HK", "TW", "JP", "KR", "IN", "US", "UK", "FR", "DE", "EUROZONE"];
+const regionCodeOrder = [
+  "CN",
+  "HK",
+  "TW",
+  "JP",
+  "KR",
+  "IN",
+  "US",
+  "CA",
+  "AU",
+  "BR",
+  "UK",
+  "CH",
+  "FR",
+  "DE",
+  "ES",
+  "IT",
+  "EUROZONE",
+];
 const regionOptions = computed(() => {
   const byCode = new Map();
   props.items.forEach((item) => {
@@ -196,7 +214,7 @@ const selectedRegionCount = computed(
   () => regionOptions.value.filter((item) => !globalIndexExcludedRegions.value.includes(item.code)).length
 );
 const activeSortLabel = computed(
-  () => sortOptions.value.find((item) => item.value === globalIndexSortMode.value)?.label || t("hotList.indexSortGain")
+  () => sortOptions.value.find((item) => item.value === globalIndexSortMode.value)?.label || t("hotList.indexSortImportance")
 );
 const regionTriggerLabel = computed(() =>
   globalIndexExcludedRegions.value.length

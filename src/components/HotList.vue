@@ -27,19 +27,27 @@
             :show-state-label="isDesktop"
             @click.stop
           />
-          <SubtypeBar
-            v-else-if="subtypeGroups.length"
-            class="header-subtype"
-            :groups="subtypeGroups"
-            :active-value="activeSubType"
-            @change="changeSubType"
-            @click.stop
-          />
-          <n-text
-            v-else-if="cardSubtitle"
-            class="subtitle"
-            :depth="2"
+          <div
+            v-else-if="subtypeGroups.length || isSortableMarketSource"
+            class="header-market-actions"
           >
+            <SubtypeBar
+              v-if="subtypeGroups.length"
+              class="header-subtype"
+              :groups="subtypeGroups"
+              :active-value="activeSubType"
+              @change="changeSubType"
+              @click.stop
+            />
+            <MarketListSortControl
+              v-if="isSortableMarketSource"
+              :source="hotData.name"
+              :compact="true"
+              :show-state-label="isDesktop"
+              @click.stop
+            />
+          </div>
+          <n-text v-else-if="cardSubtitle" class="subtitle" :depth="2">
             {{ cardSubtitle }}
           </n-text>
           <n-skeleton v-else-if="!hotListData" width="60px" text round />
@@ -340,6 +348,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import SubtypeBar from "@/components/SubtypeBar.vue";
 import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
+import MarketListSortControl from "@/components/MarketListSortControl.vue";
 import {
   buildSourceSubtypeParams,
   getSourceSubtypeGroups,
@@ -363,6 +372,7 @@ import {
 } from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
 import { applyGlobalIndexPreferences } from "@/utils/globalIndexOrder";
+import { applyMarketListSort, isMarketListSortable } from "@/utils/marketListSort";
 import {
   enhanceReadableResultTitles,
   shouldProtectEntityTitleTranslation,
@@ -445,6 +455,7 @@ const previewIsMediaOnly = computed(
   () => previewHasCover.value && !previewItem.value?.displayDesc
 );
 const HOT_LIST_VISIBLE_LIMIT = 15;
+const MARKET_LIST_VISIBLE_LIMIT = 20;
 const API_LOCALIZED_SOURCE_NAMES = new Set([
   "designarena",
   "clawhub",
@@ -459,6 +470,7 @@ const sourceLabel = computed(() =>
   getSourceDisplayLabel(props.hotData.name, locale.value, props.hotData.label)
 );
 const isIndexOverviewSource = computed(() => props.hotData.name === "global-indexes");
+const isSortableMarketSource = computed(() => isMarketListSortable(props.hotData.name));
 const cardSubtitle = computed(() => {
   const rawSubtitle =
     Object.prototype.hasOwnProperty.call(props.hotData || {}, "subtype")
@@ -524,7 +536,16 @@ const formatPreviewHot = (value) => {
 };
 const visibleItems = computed(() => {
   const items = hotListData.value?.data || [];
-  const decoratedItems = (isIndexOverviewSource.value ? items : items.slice(0, HOT_LIST_VISIBLE_LIMIT)).map((item) => {
+  const sortedItems = isSortableMarketSource.value
+    ? applyMarketListSort(items, props.hotData.name)
+    : items;
+  const visibleSourceItems = isIndexOverviewSource.value
+    ? sortedItems
+    : sortedItems.slice(
+        0,
+        isSortableMarketSource.value ? MARKET_LIST_VISIBLE_LIMIT : HOT_LIST_VISIBLE_LIMIT
+      );
+  const decoratedItems = visibleSourceItems.map((item) => {
     const originalTitle = String(item?.originalTitle || "");
     const originalDesc = String(item?.originalDesc || "");
     const displayTitle = item?.title || originalTitle;
@@ -1200,11 +1221,25 @@ onBeforeUnmount(() => {
       margin-left: auto;
     }
 
+    .header-market-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      flex: 1 1 0;
+      min-width: 0;
+      margin-left: auto;
+    }
+
     .header-subtype {
       flex: 1 1 0;
       min-width: 0;
       max-width: none;
       margin-left: auto;
+    }
+
+    .header-market-actions .header-subtype {
+      margin-left: 0;
     }
 
     .header-subtype:deep(.subtype-scroll) {

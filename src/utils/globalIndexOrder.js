@@ -15,22 +15,28 @@ export const GLOBAL_INDEX_IMPORTANCE_ORDER = [
   "nasdaq-comp",
   "deutsche-boerse-dji",
   "nasdaq-ndx",
-  "sse-000001",
+  "deutsche-boerse-rut",
   "sse-000300",
+  "sse-000001",
   "hsi-hsi",
   "deutsche-boerse-n225",
   "deutsche-boerse-ftse100",
   "deutsche-boerse-dax",
   "stoxx-sx5e",
+  "tmx-tsx",
+  "asx-xjo",
   "nifty-nifty50",
   "bse-sensex",
-  "twse-taiex",
   "krx-kospi",
-  "deutsche-boerse-rut",
+  "twse-taiex",
   "deutsche-boerse-cac40",
+  "deutsche-boerse-smi",
+  "b3-ibov",
   "hsi-hstech",
   "szse-399001",
   "szse-399006",
+  "deutsche-boerse-ibex35",
+  "borsa-ftsemib",
   "krx-kospi200",
   "krx-kosdaq",
 ];
@@ -51,13 +57,13 @@ const safeReadArray = (key) => {
 export const readGlobalIndexOrder = () => safeReadArray(ORDER_STORAGE_KEY);
 
 export const readGlobalIndexSortMode = () => {
-  if (typeof localStorage === "undefined") return GLOBAL_INDEX_SORT_MODES.GAIN;
+  if (typeof localStorage === "undefined") return GLOBAL_INDEX_SORT_MODES.IMPORTANCE;
   const stored = localStorage.getItem(SORT_STORAGE_KEY);
   if (Object.values(GLOBAL_INDEX_SORT_MODES).includes(stored)) return stored;
   // 兼容上一版已经保存过拖拽顺序的用户：已有自定义顺序时自动迁移到自定义模式。
   return readGlobalIndexOrder().length
     ? GLOBAL_INDEX_SORT_MODES.CUSTOM
-    : GLOBAL_INDEX_SORT_MODES.GAIN;
+    : GLOBAL_INDEX_SORT_MODES.IMPORTANCE;
 };
 
 export const readGlobalIndexExcludedRegions = () =>
@@ -86,7 +92,7 @@ export const resetGlobalIndexOrder = () => {
 export const saveGlobalIndexSortMode = (mode) => {
   const normalized = Object.values(GLOBAL_INDEX_SORT_MODES).includes(mode)
     ? mode
-    : GLOBAL_INDEX_SORT_MODES.GAIN;
+    : GLOBAL_INDEX_SORT_MODES.IMPORTANCE;
   if (typeof localStorage !== "undefined") {
     localStorage.setItem(SORT_STORAGE_KEY, normalized);
   }

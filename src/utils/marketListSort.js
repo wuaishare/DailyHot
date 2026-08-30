@@ -1,0 +1,83 @@
+import { reactive } from "vue";
+
+const STORAGE_PREFIX = "dailyhot:market-sort:v1:";
+
+export const MARKET_SORT_MODES = {
+  RANK: "rank",
+  GAIN: "gain",
+  LOSS: "loss",
+  ACTIVITY: "activity",
+};
+
+const SORTABLE_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq"]);
+const validModes = new Set(Object.values(MARKET_SORT_MODES));
+
+export const marketListSortModes = reactive({});
+
+export const isMarketListSortable = (source) => SORTABLE_SOURCES.has(String(source || ""));
+
+export const getMarketListActivityKind = (source) =>
+  String(source || "") === "nasdaq" ? "volume" : "amount";
+
+export const readMarketListSortMode = (source) => {
+  const name = String(source || "");
+  if (!isMarketListSortable(name)) return MARKET_SORT_MODES.RANK;
+  if (marketListSortModes[name]) return marketListSortModes[name];
+  let mode = MARKET_SORT_MODES.RANK;
+  if (typeof localStorage !== "undefined") {
+    const stored = localStorage.getItem(`${STORAGE_PREFIX}${name}`);
+    if (validModes.has(stored)) mode = stored;
+  }
+  marketListSortModes[name] = mode;
+  return mode;
+};
+
+export const saveMarketListSortMode = (source, mode) => {
+  const name = String(source || "");
+  if (!isMarketListSortable(name)) return MARKET_SORT_MODES.RANK;
+  const normalized = validModes.has(mode) ? mode : MARKET_SORT_MODES.RANK;
+  marketListSortModes[name] = normalized;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(`${STORAGE_PREFIX}${name}`, normalized);
+  }
+  return normalized;
+};
+
+const getChangeRate = (item) => {
+  const value = Number(item?.extra?.changeRate);
+  return Number.isFinite(value) ? value : 0;
+};
+
+const getActivityValue = (item, source) => {
+  const extra = item?.extra || {};
+  const candidate =
+    getMarketListActivityKind(source) === "volume"
+      ? extra.volume ?? item?.hot
+      : extra.amount ?? item?.hot ?? extra.volume;
+  const value = Number(candidate);
+  return Number.isFinite(value) ? value : 0;
+};
+
+export const applyMarketListSort = (
+  items = [],
+  source,
+  mode = readMarketListSortMode(source)
+) => {
+  if (!isMarketListSortable(source) || mode === MARKET_SORT_MODES.RANK) {
+    return [...items];
+  }
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      let delta = 0;
+      if (mode === MARKET_SORT_MODES.GAIN) {
+        delta = getChangeRate(b.item) - getChangeRate(a.item);
+      } else if (mode === MARKET_SORT_MODES.LOSS) {
+        delta = getChangeRate(a.item) - getChangeRate(b.item);
+      } else if (mode === MARKET_SORT_MODES.ACTIVITY) {
+        delta = getActivityValue(b.item, source) - getActivityValue(a.item, source);
+      }
+      return delta || a.index - b.index;
+    })
+    .map(({ item }) => item);
+};

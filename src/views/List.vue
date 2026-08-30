@@ -85,6 +85,13 @@
                   :items="listData.data"
                   :compact="!isDesktop"
                 />
+                <MarketListSortControl
+                  v-else-if="isSortableMarketSource && listData.data?.length"
+                  class="market-sort-control"
+                  :source="listType"
+                  :compact="!isDesktop"
+                  :show-state-label="isDesktop"
+                />
               </div>
             </div>
           </template>
@@ -249,6 +256,7 @@ import { getHotListsWithFallback } from "@/api";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import SubtypeBar from "@/components/SubtypeBar.vue";
 import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
+import MarketListSortControl from "@/components/MarketListSortControl.vue";
 import {
   buildSourceSubtypeParams,
   getSourceSubtypeGroups,
@@ -265,6 +273,7 @@ import {
 } from "@/utils/marketQuote";
 import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
 import { applyGlobalIndexPreferences } from "@/utils/globalIndexOrder";
+import { applyMarketListSort, isMarketListSortable } from "@/utils/marketListSort";
 import { trackEvent } from "@/utils/track";
 import {
   getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
@@ -374,6 +383,7 @@ const currentSourceMeta = computed(
     null
 );
 const isIndexOverviewSource = computed(() => listType.value === "global-indexes");
+const isSortableMarketSource = computed(() => isMarketListSortable(listType.value));
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
@@ -414,9 +424,9 @@ const isDuplicateDesc = (desc = "", ...titles) => {
 };
 const orderedListItems = computed(() => {
   const items = listData.value?.data || [];
-  return isIndexOverviewSource.value
-    ? applyGlobalIndexPreferences(items)
-    : items;
+  if (isIndexOverviewSource.value) return applyGlobalIndexPreferences(items);
+  if (isSortableMarketSource.value) return applyMarketListSort(items, listType.value);
+  return items;
 });
 const currentPageItems = computed(() =>
   orderedListItems.value
