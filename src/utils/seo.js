@@ -70,7 +70,7 @@ const CATEGORY_SEO_MAP = {
     title: "财经热榜",
     titleTail: "股票、ETF、证券市场与投资话题趋势聚合",
     description:
-      "财经热榜聚合雪球投资话题、热股与热门基金，并汇总沪深港交易所、Nasdaq 官方市场活跃榜及全球主要指数，覆盖A股、港股、美股、台湾、日本、韩国、印度、英国、法国、德国与欧元区市场、ETF及证券市场趋势。",
+      "财经热榜聚合雪球投资话题、热股与热门基金，并汇总沪深港交易所、Nasdaq 官方市场活跃榜及全球主要指数，覆盖A股、港股、美股、中国台湾、日本、韩国、印度、英国、法国、德国与欧元区市场、ETF及证券市场趋势。",
     keywords: [
       "财经热榜",
       "股票成交额榜",
@@ -719,7 +719,7 @@ const LIST_SEO_MAP = {
   "global-indexes": {
     label: "全球主要指数",
     keywords: "全球主要指数,上证指数,沪深300,深证成指,创业板指,恒生指数,恒生科技指数,台湾加权指数,TAIEX,标普500,S&P 500,SPX,道琼斯指数,Dow Jones,罗素2000,Russell 2000,纳斯达克综合指数,Nasdaq 100,日经225,Nikkei 225,KOSPI,KOSPI 200,KOSDAQ,NIFTY 50,SENSEX,富时100,FTSE 100,CAC 40,DAX,EURO STOXX 50",
-    description: "聚合中国大陆、香港、台湾、日本、韩国、印度、美国、英国、法国、德国与欧元区主要股票指数行情，覆盖标普500、道琼斯、罗素2000、纳斯达克、日经225、KOSPI、NIFTY 50、SENSEX、FTSE 100、CAC 40、DAX、EURO STOXX 50 等全球核心市场基准。",
+    description: "聚合中国大陆、中国香港、中国台湾、日本、韩国、印度、美国、英国、法国、德国与欧元区主要股票指数行情，覆盖标普500、道琼斯、罗素2000、纳斯达克、日经225、KOSPI、NIFTY 50、SENSEX、FTSE 100、CAC 40、DAX、EURO STOXX 50 等全球核心市场基准。",
   },
   zhihu: {
     label: "知乎热榜",

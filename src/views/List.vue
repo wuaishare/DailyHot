@@ -71,6 +71,11 @@
                 </n-text>
               </div>
               <div class="data">
+                <GlobalIndexControls
+                  v-if="isIndexOverviewSource && listData.data?.length"
+                  class="index-controls"
+                  :items="listData.data"
+                />
                 <n-text
                   v-if="listData.total"
                   :depth="3"
@@ -98,7 +103,12 @@
         </template>
         <template v-else>
           <div class="all">
-            <n-list hoverable style="width: 100%">
+            <n-empty
+              v-if="isIndexOverviewSource && !orderedListItems.length"
+              :description="t('hotList.indexRegionEmpty')"
+              style="padding: 48px 16px"
+            />
+            <n-list v-else hoverable style="width: 100%">
               <n-list-item
                 v-for="(item, index) in currentPageItems"
                 :key="item.id || item.url || item.mobileUrl || `${listType}-${pageNumber}-${index}-${item.originalTitle}`"
@@ -220,9 +230,10 @@
               </n-list-item>
             </n-list>
             <n-pagination
+              v-if="orderedListItems.length"
               class="pagination"
               :page-slot="5"
-              :item-count="listData.data.length"
+              :item-count="orderedListItems.length"
               :page-sizes="[20]"
               v-model:page="pageNumber"
             />
@@ -243,6 +254,7 @@ import { formatTime } from "@/utils/getTime";
 import { getHotListsWithFallback } from "@/api";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import SubtypeBar from "@/components/SubtypeBar.vue";
+import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
 import {
   buildSourceSubtypeParams,
   getSourceSubtypeGroups,
@@ -258,7 +270,7 @@ import {
   isMarketQuoteSource,
 } from "@/utils/marketQuote";
 import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
-import { applyGlobalIndexOrder, readGlobalIndexOrder } from "@/utils/globalIndexOrder";
+import { applyGlobalIndexPreferences } from "@/utils/globalIndexOrder";
 import { trackEvent } from "@/utils/track";
 import {
   getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
@@ -339,7 +351,6 @@ const pageNumber = ref(
     : 1
 );
 const listData = ref(null);
-const globalIndexOrder = ref(readGlobalIndexOrder());
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const typeTrackRef = ref(null);
 const typeCanScrollLeft = ref(false);
@@ -411,7 +422,7 @@ const isDuplicateDesc = (desc = "", ...titles) => {
 const orderedListItems = computed(() => {
   const items = listData.value?.data || [];
   return isIndexOverviewSource.value
-    ? applyGlobalIndexOrder(items, globalIndexOrder.value)
+    ? applyGlobalIndexPreferences(items)
     : items;
 });
 const currentPageItems = computed(() =>
@@ -851,6 +862,14 @@ watch(
     syncReadableTitleDom(items);
   },
   { immediate: true, deep: true }
+);
+
+watch(
+  () => orderedListItems.value.length,
+  (total) => {
+    const maxPage = Math.max(1, Math.ceil(total / 20));
+    if (pageNumber.value > maxPage) pageNumber.value = maxPage;
+  }
 );
 
 // 页数变化

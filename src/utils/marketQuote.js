@@ -26,11 +26,11 @@ const FUND_LABELS = {
 };
 
 const REGION_LABELS = {
-  "zh-CN": { CN: "中国大陆", HK: "香港", US: "美国" },
-  "zh-TW": { CN: "中國大陸", HK: "香港", US: "美國" },
-  en: { CN: "Mainland China", HK: "Hong Kong", US: "United States" },
-  ja: { CN: "中国本土", HK: "香港", US: "米国" },
-  ko: { CN: "중국 본토", HK: "홍콩", US: "미국" },
+  "zh-CN": { CN: "中国大陆", HK: "中国香港", TW: "中国台湾", US: "美国" },
+  "zh-TW": { CN: "中國大陸", HK: "中國香港", TW: "中國臺灣", US: "美國" },
+  en: { CN: "Mainland China", HK: "Hong Kong, China", TW: "Taiwan, China", US: "United States" },
+  ja: { CN: "中国本土", HK: "中国香港", TW: "中国台湾", US: "米国" },
+  ko: { CN: "중국 본토", HK: "중국 홍콩", TW: "중국 대만", US: "미국" },
 };
 
 const CURRENCY_PREFIXES = {

@@ -65,6 +65,9 @@
           <n-skeleton text round :repeat="10" height="20px" />
         </div>
         <div v-else class="lists" :id="hotData.name + 'Lists'">
+          <div v-if="isIndexOverviewSource && !visibleItems.length" class="index-empty">
+            {{ t("hotList.indexRegionEmpty") }}
+          </div>
           <div
             class="item"
             :class="{
@@ -104,7 +107,7 @@
                 :href="getItemLink(item)"
                 :target="linkTarget"
                 rel="noopener noreferrer nofollow"
-                :title="isIndexOverviewSource ? undefined : item.originalTitle || undefined"
+                :title="isIndexOverviewSource ? item.displayDesc || undefined : item.originalTitle || undefined"
                 @click.stop
               >
                 <div class="market-quote-copy">
@@ -248,67 +251,10 @@
                 </template>
                 {{ t("hotList.viewMore") }}
               </n-popover>
-              <n-popover
+              <GlobalIndexControls
                 v-if="isIndexOverviewSource && hotListData.data.length"
-                trigger="manual"
-                :show="indexOrderPopoverOpen"
-                placement="top-end"
-                :show-arrow="false"
-                @clickoutside="closeIndexOrderPopover"
-              >
-                <template #trigger>
-                  <n-button
-                    size="tiny"
-                    secondary
-                    strong
-                    round
-                    :aria-label="t('hotList.indexOrder')"
-                    @click.stop="toggleIndexOrderPopover"
-                  >
-                    <template #icon>
-                      <n-icon :component="SortOne" />
-                    </template>
-                  </n-button>
-                </template>
-                <div class="index-order-panel" @click.stop>
-                  <div class="index-order-heading">
-                    <strong>{{ t("hotList.indexOrder") }}</strong>
-                    <span>{{ t("hotList.indexOrderTip") }}</span>
-                  </div>
-                  <draggable
-                    v-model="indexOrderDraft"
-                    class="index-order-list"
-                    item-key="id"
-                    handle=".index-order-handle"
-                    :animation="160"
-                    :fallback-tolerance="6"
-                    :touch-start-threshold="6"
-                    @end="saveIndexOrderDraft"
-                  >
-                    <template #item="{ element }">
-                      <div class="index-order-item">
-                        <span
-                          class="index-order-handle"
-                          role="button"
-                          :aria-label="t('hotList.dragSort')"
-                        >
-                          <n-icon :component="Drag" />
-                        </span>
-                        <span class="index-order-title">{{ element.displayTitle }}</span>
-                        <span class="index-order-code">{{ element.marketQuote?.code }}</span>
-                      </div>
-                    </template>
-                  </draggable>
-                  <n-button
-                    size="tiny"
-                    quaternary
-                    class="index-order-reset"
-                    @click.stop="restoreIndexOrder"
-                  >
-                    {{ t("hotList.indexOrderReset") }}
-                  </n-button>
-                </div>
-              </n-popover>
+                :items="hotListData.data"
+              />
               <n-popover>
                 <template #trigger>
                   <span
@@ -387,8 +333,7 @@
 </template>
 
 <script setup>
-import { Drag, Fire, Refresh, More, SortOne } from "@icon-park/vue-next";
-import draggable from "vuedraggable";
+import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
 import { getHotListsWithFallback } from "@/api";
 import { formatTime } from "@/utils/getTime";
 import { getCacheVersion } from "@/utils/cache";
@@ -397,6 +342,7 @@ import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import SubtypeBar from "@/components/SubtypeBar.vue";
+import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
 import {
   buildSourceSubtypeParams,
   getSourceSubtypeGroups,
@@ -418,12 +364,7 @@ import {
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
-import {
-  applyGlobalIndexOrder,
-  readGlobalIndexOrder,
-  resetGlobalIndexOrder,
-  saveGlobalIndexOrder,
-} from "@/utils/globalIndexOrder";
+import { applyGlobalIndexPreferences } from "@/utils/globalIndexOrder";
 import {
   enhanceReadableResultTitles,
   shouldProtectEntityTitleTranslation,
@@ -463,9 +404,6 @@ const lastClickTime = ref(
 
 // 热榜数据
 const hotListData = ref(null);
-const indexCustomOrder = ref(readGlobalIndexOrder());
-const indexOrderDraft = ref([]);
-const indexOrderPopoverOpen = ref(false);
 const scrollbarRef = ref(null);
 const listLoading = ref(false);
 const loadingError = ref(false);
@@ -633,38 +571,9 @@ const visibleItems = computed(() => {
     };
   });
   return isIndexOverviewSource.value
-    ? applyGlobalIndexOrder(decoratedItems, indexCustomOrder.value)
+    ? applyGlobalIndexPreferences(decoratedItems)
     : decoratedItems;
 });
-const syncIndexOrderDraft = () => {
-  indexOrderDraft.value = visibleItems.value.map((item) => ({ ...item }));
-};
-
-const toggleIndexOrderPopover = () => {
-  const nextOpen = !indexOrderPopoverOpen.value;
-  if (nextOpen) syncIndexOrderDraft();
-  indexOrderPopoverOpen.value = nextOpen;
-};
-
-const closeIndexOrderPopover = () => {
-  indexOrderPopoverOpen.value = false;
-};
-
-const saveIndexOrderDraft = () => {
-  const ids = indexOrderDraft.value.map((item) => item?.id).filter(Boolean);
-  indexCustomOrder.value = saveGlobalIndexOrder(ids);
-  $message.success(t("hotList.indexOrderSaved"));
-};
-
-const restoreIndexOrder = () => {
-  resetGlobalIndexOrder();
-  indexCustomOrder.value = [];
-  indexOrderDraft.value = applyGlobalIndexOrder(
-    visibleItems.value,
-    []
-  ).map((item) => ({ ...item }));
-  $message.success(t("hotList.indexOrderResetDone"));
-};
 
 const syncReadableTitleDom = (items = []) => {
   nextTick(() => {
@@ -1376,6 +1285,17 @@ onBeforeUnmount(() => {
   .lists {
     padding-right: 6px;
 
+    .index-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+      padding: 16px;
+      color: var(--n-text-color-3);
+      font-size: 12px;
+      text-align: center;
+    }
+
     .item {
       position: relative;
       display: flex;
@@ -1645,88 +1565,6 @@ onBeforeUnmount(() => {
   }
 }
 
-.index-order-panel {
-  width: min(360px, calc(100vw - 32px));
-  padding: 4px;
-
-  .index-order-heading {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    margin-bottom: 8px;
-
-    strong {
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    span {
-      color: var(--n-text-color-3);
-      font-size: 11px;
-      line-height: 1.4;
-    }
-  }
-
-  .index-order-list {
-    max-height: 320px;
-    overflow-y: auto;
-    padding-right: 4px;
-  }
-
-  .index-order-item {
-    display: grid;
-    grid-template-columns: 24px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 7px;
-    min-height: 30px;
-    padding: 3px 4px;
-    border-radius: 6px;
-    background: var(--n-color);
-
-    & + .index-order-item {
-      margin-top: 2px;
-    }
-  }
-
-  .index-order-handle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 5px;
-    color: var(--n-text-color-3);
-    cursor: grab;
-    touch-action: none;
-
-    &:hover {
-      color: var(--n-text-color);
-      background: rgba(127, 127, 127, 0.12);
-    }
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  .index-order-title {
-    overflow: hidden;
-    font-size: 12px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .index-order-code {
-    color: var(--n-text-color-3);
-    font-size: 10px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .index-order-reset {
-    width: 100%;
-    margin-top: 8px;
-  }
-}
 
 .hot-item-preview {
   position: fixed;
