@@ -1044,6 +1044,11 @@ onBeforeUnmount(() => {
   &.tablet-compact {
     padding: 12px 4vw;
 
+    &.collapsed {
+      padding: 0 4vw;
+      min-height: 48px;
+    }
+
     section {
       grid-template-columns: minmax(150px, 1fr) minmax(220px, 1fr) auto;
       column-gap: 10px;
