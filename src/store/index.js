@@ -473,6 +473,14 @@ export const mainStore = defineStore("mainData", {
           category: "科技",
         },
         {
+          label: "超级线报",
+          name: "super-deals",
+          order: 51.6,
+          show: true,
+          category: "羊毛",
+          subtype: "latest",
+        },
+        {
           label: "0818团",
           name: "0818tuan",
           order: 51.7,

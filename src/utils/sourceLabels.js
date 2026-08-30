@@ -521,6 +521,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ja: "51CTO",
     ko: "51CTO",
   },
+  "super-deals": {
+    "zh-CN": "超级线报",
+    "zh-TW": "超級線報",
+    en: "Super Deals",
+    ja: "スーパーお得情報",
+    ko: "슈퍼 혜택",
+  },
   "0818tuan": {
     "zh-CN": "0818团",
     "zh-TW": "0818團",
@@ -3125,6 +3132,27 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     en: "Latest Deals",
     ja: "最新情報",
     ko: "최신 혜택",
+  },
+  "1小时排行": {
+    "zh-CN": "1小时排行",
+    "zh-TW": "1小時排行",
+    en: "1-Hour Ranking",
+    ja: "1時間ランキング",
+    ko: "1시간 랭킹",
+  },
+  "3小时排行": {
+    "zh-CN": "3小时排行",
+    "zh-TW": "3小時排行",
+    en: "3-Hour Ranking",
+    ja: "3時間ランキング",
+    ko: "3시간 랭킹",
+  },
+  "6小时排行": {
+    "zh-CN": "6小时排行",
+    "zh-TW": "6小時排行",
+    en: "6-Hour Ranking",
+    ja: "6時間ランキング",
+    ko: "6시간 랭킹",
   },
   长期优惠券: {
     "zh-CN": "长期优惠券",

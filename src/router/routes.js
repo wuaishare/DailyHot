@@ -1,3 +1,5 @@
+import { WOOL_TOPIC_METADATA } from "@/config/site-metadata.mjs";
+
 const localePattern = ":lang(en|zh-tw|ja|ko)";
 
 const routes = [
@@ -65,6 +67,42 @@ const routes = [
       keywords: "分类热榜,实时热榜,热点分类",
     },
     component: () => import("@/views/Home.vue"),
+  },
+  {
+    path: "/topic/wool",
+    name: "wool-topic",
+    meta: {
+      title: "实时羊毛专题",
+      seoTitle: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoTitle,
+      description: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoDescription,
+      keywords: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoKeywords,
+      jsonLd: ({ canonical, title, description }) => ({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        url: canonical,
+      }),
+    },
+    component: () => import("@/views/WoolTopic.vue"),
+  },
+  {
+    path: `/${localePattern}/topic/wool`,
+    name: "wool-topic-locale",
+    meta: {
+      title: "实时羊毛专题",
+      seoTitle: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoTitle,
+      description: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoDescription,
+      keywords: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoKeywords,
+      jsonLd: ({ canonical, title, description }) => ({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        url: canonical,
+      }),
+    },
+    component: () => import("@/views/WoolTopic.vue"),
   },
   // 新闻列表
   {

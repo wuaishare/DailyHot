@@ -13,6 +13,8 @@ const SAME_ORIGIN_API_SOURCES = new Set([
   "weibo",
 ]);
 const DIRECT_PUBLIC_API_SOURCES = new Set([
+  "super-deals",
+  "wool-topic",
   "0818tuan",
   "nodeloc-deals",
   "ithome-xijiayi",

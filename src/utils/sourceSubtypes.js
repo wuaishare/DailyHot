@@ -90,6 +90,18 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "super-deals": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "最新线报", value: "latest" },
+        { label: "1小时排行", value: "1h" },
+        { label: "3小时排行", value: "3h" },
+        { label: "6小时排行", value: "6h" },
+      ],
+    },
+  ],
   "0818tuan": [
     {
       key: "feed",

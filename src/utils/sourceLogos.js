@@ -1,6 +1,7 @@
 import { getPublicAssetUrl } from "@/utils/publicAssets";
 
 const SOURCE_LOGO_MAP = {
+  "super-deals": "/logo/wool/super-deals.png",
   "0818tuan": "/logo/wool/0818tuan.png",
   "nodeloc-deals": "/logo/wool/nodeloc.png",
   xueqiu: "/logo/xueqiu.png",

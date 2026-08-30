@@ -40,6 +40,8 @@ const PUBLIC_API_DEFAULT_FALLBACK_BASE_URL = "https://hotapi2.wuaishare.cn";
 const PUBLIC_API_FALLBACK_BASE_URL =
   process.env.INTERNAL_API_FALLBACK_BASE_URL || PUBLIC_API_DEFAULT_FALLBACK_BASE_URL;
 const PUBLIC_API_FALLBACK_PATHS = new Set([
+  "super-deals",
+  "wool-topic",
   "0818tuan",
   "nodeloc-deals",
   "ithome-xijiayi",
@@ -61,6 +63,8 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "asx",
 ]);
 const PUBLIC_API_FIRST_PATHS = new Set([
+  "super-deals",
+  "wool-topic",
   "0818tuan",
   "nodeloc-deals",
   "ithome-xijiayi",

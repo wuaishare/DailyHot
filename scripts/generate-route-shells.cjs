@@ -683,6 +683,7 @@ function main() {
   const messages = parseConstant(messagesSource, "messages");
   const supportedLocales = parseConstant(siteMetadataSource, "SUPPORTED_LOCALES");
   const builtinCategories = parseConstant(siteMetadataSource, "BUILTIN_CATEGORIES");
+  const woolTopicMetadata = parseConstant(siteMetadataSource, "WOOL_TOPIC_METADATA");
   const sourceNames = getSourceNames(storeSource);
   const subtypeValues = getSubtypeValues(sourceSubtypeGroups);
   const defaultSubtypeValues = getDefaultSubtypeValues(subtypeValues);
@@ -798,6 +799,25 @@ function main() {
         htmlLang,
         listName: categoryLabel,
       }),
+    };
+  };
+
+  const buildWoolTopicMeta = (localeMeta, pathname) => {
+    const locale = localeMeta.code;
+    const htmlLang = localeMeta.htmlLang;
+    const meta = woolTopicMetadata[locale] || woolTopicMetadata["zh-CN"] || {};
+    const canonical = buildAbsoluteUrl(pathname);
+    const title = meta.seoTitle || meta.title || "Live Deals";
+    const description = meta.seoDescription || meta.description || "Live deal opportunities.";
+    return {
+      title,
+      description,
+      keywords: meta.seoKeywords || mergeKeywords(title, brandNameZh),
+      canonical,
+      htmlLang,
+      robots: "index,follow",
+      alternateLinks: buildAlternateLinks("/topic/wool", supportedLocales),
+      jsonLd: buildWebPageJsonLd({ title, description, canonical, htmlLang }),
     };
   };
 
@@ -986,6 +1006,12 @@ function main() {
       const meta = buildCategoryMeta(category, localeMeta, pathname);
       if (meta) writeRouteShell(pathname, meta);
     });
+
+    const woolTopicPathname = withLocalePrefix(localeMeta, "/topic/wool");
+    writeRouteShell(
+      woolTopicPathname,
+      buildWoolTopicMeta(localeMeta, woolTopicPathname)
+    );
 
     SYSTEM_ROUTES.forEach((systemRoute) => {
       const pathname = withLocalePrefix(localeMeta, systemRoute.pathname);
