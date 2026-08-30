@@ -86,7 +86,7 @@
                   :compact="!isDesktop"
                 />
                 <MarketListSortControl
-                  v-else-if="isSortableMarketSource && listData.data?.length"
+                  v-else-if="showMarketSortControl && listData.data?.length"
                   class="market-sort-control"
                   :source="listType"
                   :compact="!isDesktop"
@@ -390,6 +390,22 @@ const currentSourceMeta = computed(
 );
 const isIndexOverviewSource = computed(() => listType.value === "global-indexes");
 const isSortableMarketSource = computed(() => isMarketListSortable(listType.value));
+const SZSE_NATIVE_RANK_TYPES = new Set([
+  "stock",
+  "stock-volume",
+  "stock-trades",
+  "stock-gain",
+  "stock-loss",
+  "stock-turnover",
+]);
+const showMarketSortControl = computed(
+  () =>
+    isSortableMarketSource.value &&
+    !(
+      listType.value === "szse" &&
+      SZSE_NATIVE_RANK_TYPES.has(String(listSubType.value || ""))
+    )
+);
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
@@ -431,7 +447,7 @@ const isDuplicateDesc = (desc = "", ...titles) => {
 const orderedListItems = computed(() => {
   const items = listData.value?.data || [];
   if (isIndexOverviewSource.value) return applyGlobalIndexPreferences(items);
-  if (isSortableMarketSource.value) return applyMarketListSort(items, listType.value);
+  if (showMarketSortControl.value) return applyMarketListSort(items, listType.value);
   return items;
 });
 const currentPageItems = computed(() =>
