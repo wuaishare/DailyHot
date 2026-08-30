@@ -116,6 +116,11 @@
               :description="t('hotList.indexRegionEmpty')"
               style="padding: 48px 16px"
             />
+            <GlobalIndexTable
+              v-else-if="isIndexOverviewSource"
+              :items="orderedListItems"
+              :link-target="linkTarget"
+            />
             <n-list v-else hoverable style="width: 100%">
               <n-list-item
                 v-for="(item, index) in currentPageItems"
@@ -232,7 +237,7 @@
               </n-list-item>
             </n-list>
             <n-pagination
-              v-if="orderedListItems.length"
+              v-if="orderedListItems.length && !isIndexOverviewSource"
               class="pagination"
               :page-slot="5"
               :item-count="orderedListItems.length"
@@ -256,6 +261,7 @@ import { getHotListsWithFallback } from "@/api";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import SubtypeBar from "@/components/SubtypeBar.vue";
 import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
+import GlobalIndexTable from "@/components/GlobalIndexTable.vue";
 import MarketListSortControl from "@/components/MarketListSortControl.vue";
 import {
   buildSourceSubtypeParams,

@@ -1096,6 +1096,20 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "ETF売買代金ランキング",
     ko: "ETF 거래대금 순위",
   },
+  成交额: {
+    "zh-CN": "成交额",
+    "zh-TW": "成交額",
+    en: "Dollar Volume",
+    ja: "売買代金",
+    ko: "거래대금",
+  },
+  成交量: {
+    "zh-CN": "成交量",
+    "zh-TW": "成交量",
+    en: "Volume",
+    ja: "出来高",
+    ko: "거래량",
+  },
   港股市场成交额榜: {
     "zh-CN": "港股市场成交额榜",
     "zh-TW": "港股市場成交額榜",

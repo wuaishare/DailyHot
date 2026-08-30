@@ -709,12 +709,12 @@ const LIST_SEO_MAP = {
   hkex: {
     label: "香港交易所",
     keywords: "香港交易所,港交所,HKEX,港股成交额榜,港股活跃榜,香港股票,证券市场",
-    description: "香港交易所官方每日十大成交额最活跃证券排行，并展示收市价、涨跌幅与实际成交金额。",
+    description: "基于香港交易所官方全市场日行情计算港股成交额前20名，并展示收市价、涨跌幅与实际成交金额。",
   },
   nasdaq: {
     label: "Nasdaq",
-    keywords: "Nasdaq,Nasdaq most active,美股成交额活跃榜,美股成交量,NVDA,美股热榜,美国股市",
-    description: "Nasdaq 官方按美元成交额排序的美股活跃榜，展示最新价、涨跌幅与官方成交量。",
+    keywords: "Nasdaq,Nasdaq most active,美股成交额活跃榜,美股成交量榜,NVDA,美股热榜,美国股市",
+    description: "汇总 Nasdaq 官方美元成交额活跃榜，并提供基于官方股票筛选器全市场行情生成的成交量 Top20。",
   },
   "global-indexes": {
     label: "全球股指",

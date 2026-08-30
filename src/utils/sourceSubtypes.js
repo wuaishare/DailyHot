@@ -178,6 +178,17 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  nasdaq: [
+    {
+      key: "rank",
+      label: "榜单",
+      param: "type",
+      items: [
+        { label: "成交额", value: "dollar" },
+        { label: "成交量", value: "volume" },
+      ],
+    },
+  ],
   nytimes: [
     {
       key: "region",
