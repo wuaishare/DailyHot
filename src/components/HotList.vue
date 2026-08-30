@@ -250,10 +250,11 @@
               </n-popover>
               <n-popover
                 v-if="isIndexOverviewSource && hotListData.data.length"
-                trigger="click"
+                trigger="manual"
+                :show="indexOrderPopoverOpen"
                 placement="top-end"
                 :show-arrow="false"
-                @update:show="syncIndexOrderDraft"
+                @clickoutside="closeIndexOrderPopover"
               >
                 <template #trigger>
                   <n-button
@@ -262,7 +263,7 @@
                     strong
                     round
                     :aria-label="t('hotList.indexOrder')"
-                    @click.stop
+                    @click.stop="toggleIndexOrderPopover"
                   >
                     <template #icon>
                       <n-icon :component="SortOne" />
@@ -464,6 +465,7 @@ const lastClickTime = ref(
 const hotListData = ref(null);
 const indexCustomOrder = ref(readGlobalIndexOrder());
 const indexOrderDraft = ref([]);
+const indexOrderPopoverOpen = ref(false);
 const scrollbarRef = ref(null);
 const listLoading = ref(false);
 const loadingError = ref(false);
@@ -634,9 +636,18 @@ const visibleItems = computed(() => {
     ? applyGlobalIndexOrder(decoratedItems, indexCustomOrder.value)
     : decoratedItems;
 });
-const syncIndexOrderDraft = (show) => {
-  if (!show) return;
+const syncIndexOrderDraft = () => {
   indexOrderDraft.value = visibleItems.value.map((item) => ({ ...item }));
+};
+
+const toggleIndexOrderPopover = () => {
+  const nextOpen = !indexOrderPopoverOpen.value;
+  if (nextOpen) syncIndexOrderDraft();
+  indexOrderPopoverOpen.value = nextOpen;
+};
+
+const closeIndexOrderPopover = () => {
+  indexOrderPopoverOpen.value = false;
 };
 
 const saveIndexOrderDraft = () => {
