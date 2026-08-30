@@ -10,11 +10,30 @@ export const MARKET_SORT_MODES = {
 };
 
 const SORTABLE_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq"]);
+const NATIVE_RANK_TYPES_BY_SOURCE = {
+  sse: new Set(["stock", "stock-volume", "stock-gain", "stock-loss", "etf"]),
+  szse: new Set([
+    "stock",
+    "stock-volume",
+    "stock-trades",
+    "stock-gain",
+    "stock-loss",
+    "stock-turnover",
+    "etf",
+  ]),
+  hkex: new Set(["turnover", "volume", "gain", "loss"]),
+  nasdaq: new Set(["dollar", "volume", "gain", "loss"]),
+};
 const validModes = new Set(Object.values(MARKET_SORT_MODES));
 
 export const marketListSortModes = reactive({});
 
 export const isMarketListSortable = (source) => SORTABLE_SOURCES.has(String(source || ""));
+
+export const isNativeMarketRanking = (source, subtype) => {
+  const nativeTypes = NATIVE_RANK_TYPES_BY_SOURCE[String(source || "")];
+  return nativeTypes?.has(String(subtype || "")) || false;
+};
 
 export const getMarketListActivityKind = (source) =>
   String(source || "") === "nasdaq" ? "volume" : "amount";

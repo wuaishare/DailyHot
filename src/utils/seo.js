@@ -713,8 +713,8 @@ const LIST_SEO_MAP = {
   },
   nasdaq: {
     label: "Nasdaq",
-    keywords: "Nasdaq,Nasdaq most active,美股成交额活跃榜,美股成交量榜,NVDA,美股热榜,美国股市",
-    description: "汇总 Nasdaq 官方美元成交额活跃榜，并提供基于官方股票筛选器全市场行情生成的成交量 Top20。",
+    keywords: "Nasdaq,Nasdaq most active,美股成交额活跃榜,美股成交量榜,美股涨幅榜,美股跌幅榜,NVDA,美股热榜,美国股市",
+    description: "汇总 Nasdaq 官方美元成交额活跃榜，并基于官方股票筛选器全市场行情提供成交量、涨幅与跌幅 Top20。",
   },
   "global-indexes": {
     label: "全球股指",

@@ -207,6 +207,8 @@ const SOURCE_SUBTYPE_GROUPS = {
       items: [
         { label: "成交额", value: "dollar" },
         { label: "成交量", value: "volume" },
+        { label: "股票涨幅", value: "gain" },
+        { label: "股票跌幅", value: "loss" },
       ],
     },
   ],

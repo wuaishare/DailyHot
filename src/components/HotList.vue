@@ -40,7 +40,7 @@
               @click.stop
             />
             <MarketListSortControl
-              v-if="isSortableMarketSource"
+              v-if="showMarketSortControl"
               :source="hotData.name"
               :compact="true"
               :show-state-label="isDesktop"
@@ -372,7 +372,11 @@ import {
 } from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
 import { applyGlobalIndexPreferences } from "@/utils/globalIndexOrder";
-import { applyMarketListSort, isMarketListSortable } from "@/utils/marketListSort";
+import {
+  applyMarketListSort,
+  isMarketListSortable,
+  isNativeMarketRanking,
+} from "@/utils/marketListSort";
 import {
   enhanceReadableResultTitles,
   shouldProtectEntityTitleTranslation,
@@ -536,7 +540,7 @@ const formatPreviewHot = (value) => {
 };
 const visibleItems = computed(() => {
   const items = hotListData.value?.data || [];
-  const sortedItems = isSortableMarketSource.value
+  const sortedItems = showMarketSortControl.value
     ? applyMarketListSort(items, props.hotData.name)
     : items;
   const visibleSourceItems = isIndexOverviewSource.value
@@ -639,6 +643,11 @@ const activeSubType = ref(
     subtypeOptions.value,
     readSourceSubtype(props.hotData.name)
   )
+);
+const showMarketSortControl = computed(
+  () =>
+    isSortableMarketSource.value &&
+    !isNativeMarketRanking(props.hotData.name, activeSubType.value)
 );
 const shouldEnhanceReadableTitles = computed(() =>
   shouldUseReadableTitleTranslation(

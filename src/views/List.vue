@@ -279,7 +279,11 @@ import {
 } from "@/utils/marketQuote";
 import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
 import { applyGlobalIndexPreferences } from "@/utils/globalIndexOrder";
-import { applyMarketListSort, isMarketListSortable } from "@/utils/marketListSort";
+import {
+  applyMarketListSort,
+  isMarketListSortable,
+  isNativeMarketRanking,
+} from "@/utils/marketListSort";
 import { trackEvent } from "@/utils/track";
 import {
   getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
@@ -390,23 +394,11 @@ const currentSourceMeta = computed(
 );
 const isIndexOverviewSource = computed(() => listType.value === "global-indexes");
 const isSortableMarketSource = computed(() => isMarketListSortable(listType.value));
-const NATIVE_RANK_TYPES_BY_SOURCE = {
-  sse: new Set(["stock", "stock-volume", "stock-gain", "stock-loss"]),
-  szse: new Set([
-    "stock",
-    "stock-volume",
-    "stock-trades",
-    "stock-gain",
-    "stock-loss",
-    "stock-turnover",
-  ]),
-  hkex: new Set(["turnover", "volume", "gain", "loss"]),
-};
-const showMarketSortControl = computed(() => {
-  const nativeTypes = NATIVE_RANK_TYPES_BY_SOURCE[listType.value];
-  const isNativeRanking = nativeTypes?.has(String(listSubType.value || ""));
-  return isSortableMarketSource.value && !isNativeRanking;
-});
+const showMarketSortControl = computed(
+  () =>
+    isSortableMarketSource.value &&
+    !isNativeMarketRanking(listType.value, listSubType.value)
+);
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
 );
