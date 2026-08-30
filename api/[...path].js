@@ -2743,11 +2743,11 @@ const redirectToPublicApiFallback = (pathValue, query, res) => {
 };
 
 const getProxyBaseUrlCandidates = (pathValue, baseUrl) => {
-  const fallbackCandidates = [
-    PUBLIC_API_FALLBACK_BASE_URL,
-    PUBLIC_API_DEFAULT_FALLBACK_BASE_URL,
-  ];
-  const candidates = PUBLIC_API_FIRST_PATHS.has(pathValue)
+  const preferPublicApi = PUBLIC_API_FIRST_PATHS.has(pathValue);
+  const fallbackCandidates = preferPublicApi
+    ? [PUBLIC_API_DEFAULT_FALLBACK_BASE_URL, PUBLIC_API_FALLBACK_BASE_URL]
+    : [PUBLIC_API_FALLBACK_BASE_URL, PUBLIC_API_DEFAULT_FALLBACK_BASE_URL];
+  const candidates = preferPublicApi
     ? [...fallbackCandidates, baseUrl]
     : [baseUrl, ...fallbackCandidates];
   return [...new Set(candidates.map((url) => url?.replace(/\/+$/, "")).filter(Boolean))];
