@@ -349,7 +349,6 @@
             {{
               t("settings.clearCacheTip", {
                 version: cacheVersion,
-                url: "https://www.wuaishare.cn/",
               })
             }}
           </n-text>
@@ -450,7 +449,7 @@ const categoryOptions = computed(() =>
 );
 const newCategory = ref("");
 const cacheVersion = ref(getCacheVersion());
-const logoSrc = (name) => getSourceLogo(name, cacheVersion.value);
+const logoSrc = (name) => getSourceLogo(name);
 const getCategoryDisplayName = (category) =>
   category?.builtin
     ? getCategoryLabel(category.name, locale.value)

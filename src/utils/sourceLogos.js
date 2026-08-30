@@ -1,3 +1,5 @@
+import { getPublicAssetUrl } from "@/utils/publicAssets";
+
 const SOURCE_LOGO_MAP = {
   xueqiu: "/logo/xueqiu.png",
   sse: "https://www.sse.com.cn/favicon.ico",
@@ -42,11 +44,11 @@ const SOURCE_LOGO_ALIAS_MAP = {
   "sina-ai": "sina",
 };
 
-export const getSourceLogo = (name, cacheVersion = "") => {
+export const getSourceLogo = (name) => {
   const path = SOURCE_LOGO_MAP[name]
     ? SOURCE_LOGO_MAP[name]
     : `/logo/${SOURCE_LOGO_ALIAS_MAP[name] || name}.png`;
-  return `${path}?v=${cacheVersion}`;
+  return getPublicAssetUrl(path);
 };
 
-export const getSourceLogoFallback = () => "/ico/favicon.png";
+export const getSourceLogoFallback = () => getPublicAssetUrl("/ico/favicon.png");

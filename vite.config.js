@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
@@ -25,6 +26,33 @@ const versionSourcePaths = [
   "scripts/vercel-deploy-prod.cjs",
 ];
 const buildNumberTimeZone = "Asia/Shanghai";
+const publicRoot = path.join(repoRoot, "public");
+
+function collectPublicAssetFiles(targetPath) {
+  if (!fs.existsSync(targetPath)) return [];
+  const stat = fs.statSync(targetPath);
+  if (stat.isFile()) return [targetPath];
+  return fs.readdirSync(targetPath, { withFileTypes: true }).flatMap((entry) =>
+    collectPublicAssetFiles(path.join(targetPath, entry.name))
+  );
+}
+
+function buildPublicAssetVersions() {
+  const files = [
+    ...collectPublicAssetFiles(path.join(publicRoot, "logo")),
+    ...collectPublicAssetFiles(path.join(publicRoot, "ico")),
+  ];
+  return Object.fromEntries(
+    files.map((filePath) => {
+      const publicPath = `/${path.relative(publicRoot, filePath).split(path.sep).join("/")}`;
+      const digest = createHash("sha256")
+        .update(fs.readFileSync(filePath))
+        .digest("hex")
+        .slice(0, 12);
+      return [publicPath, digest];
+    })
+  );
+}
 
 function formatBuildNumber(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -155,6 +183,11 @@ export default defineConfig(async ({ mode }) => {
     BUILTIN_CATEGORIES.map((item) => item.slug).filter(Boolean)
   );
   const productVersion = readPackageVersion();
+  const publicAssetVersions = buildPublicAssetVersions();
+  const versionPublicAsset = (assetPath) => {
+    const version = publicAssetVersions[assetPath];
+    return version ? `${assetPath}?v=${version}` : assetPath;
+  };
   let buildDate = resolveBuildDate();
   const isStillShallow = readGitValue(
     ["rev-parse", "--is-shallow-repository"],
@@ -212,8 +245,18 @@ export default defineConfig(async ({ mode }) => {
         buildNumber: buildDate,
         buildVersion: buildDate,
       }),
+      __PUBLIC_ASSET_VERSIONS__: JSON.stringify(publicAssetVersions),
     },
     plugins: [
+      {
+        name: "dailyhot-public-asset-versions",
+        transformIndexHtml(html) {
+          return html.replaceAll(
+            "/ico/favicon.png",
+            versionPublicAsset("/ico/favicon.png")
+          );
+        },
+      },
       vue(),
       AutoImport({
         imports: [
@@ -252,6 +295,10 @@ export default defineConfig(async ({ mode }) => {
               handler: "CacheFirst",
               options: {
                 cacheName: "file-cache",
+                expiration: {
+                  maxEntries: 80,
+                  maxAgeSeconds: 60 * 60 * 24 * 90,
+                },
               },
             },
             {
@@ -260,6 +307,10 @@ export default defineConfig(async ({ mode }) => {
               handler: "CacheFirst",
               options: {
                 cacheName: "image-cache",
+                expiration: {
+                  maxEntries: 400,
+                  maxAgeSeconds: 60 * 60 * 24 * 45,
+                },
               },
             },
           ],
@@ -274,7 +325,7 @@ export default defineConfig(async ({ mode }) => {
           background_color: "#efefef",
           icons: [
             {
-              src: "/ico/favicon.png",
+              src: versionPublicAsset("/ico/favicon.png"),
               sizes: "200x200",
               type: "image/png",
             },

@@ -7,7 +7,7 @@
   >
     <section>
       <div class="logo" @click="router.push(buildHomePath(locale))">
-        <img src="/ico/favicon.png" alt="logo" />
+        <img :src="siteLogoUrl" alt="logo" />
         <div class="name">
           <n-text>{{ t("common.siteName") }}</n-text>
           <n-text :depth="3">{{ t("common.siteTagline") }}</n-text>
@@ -258,6 +258,7 @@ import {
   HamburgerButton,
 } from "@icon-park/vue-next";
 import { getCurrentTime } from "@/utils/getTime.js";
+import { getPublicAssetUrl } from "@/utils/publicAssets";
 import { mainStore } from "@/store";
 import { NText, NIcon } from "naive-ui";
 import { useRoute, useRouter } from "vue-router";
@@ -281,6 +282,7 @@ const route = useRoute();
 const store = mainStore();
 const { t, locale } = useI18n({ useScope: "global" });
 const timeInterval = ref(null);
+const siteLogoUrl = getPublicAssetUrl("/ico/favicon.png");
 const showRefresh = ref(false);
 const countdownText = ref("");
 const countdownTimer = ref(null);

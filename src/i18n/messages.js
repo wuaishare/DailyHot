@@ -101,6 +101,7 @@ export const messages = {
       indexRegionSelectAll: "全选",
       indexRegionClearAll: "取消全选",
       indexRegionSelected: "已选择 {selected}/{total} 个地区",
+      indexRegionAll: "全部",
       indexRegionEmpty: "当前未选择任何地区，可通过筛选按钮重新选择市场",
       refreshTooSoon: "请稍后再刷新",
       loadFailedMessage: "热榜加载失败，请重试",
@@ -241,7 +242,7 @@ export const messages = {
         "开启后在首页卡片和列表中显示封面图片（有防盗链的将自动隐藏）",
       clearCache: "清除缓存",
       clearCacheTip:
-        "当前缓存版本：{version}（由吾爱分享二次开发 {url}），点击立即清除并刷新",
+        "当前缓存机制版本：{version}。日常发布只更新发生变化的文件缓存；仅在排障时建议手动清除全部缓存并刷新。",
       clearCacheAction: "清除缓存",
       importExport: "设置导入导出",
       importExportTip: "导出为 JSON 文件，导入会覆盖当前设置",
@@ -404,6 +405,7 @@ export const messages = {
       indexRegionSelectAll: "Select all",
       indexRegionClearAll: "Clear all",
       indexRegionSelected: "{selected}/{total} regions selected",
+      indexRegionAll: "All",
       indexRegionEmpty: "No regions are selected. Use the filter button to choose markets.",
       refreshTooSoon: "Please wait a moment before refreshing again.",
       loadFailedMessage: "Failed to load the ranking. Please try again.",
@@ -551,7 +553,7 @@ export const messages = {
         "Display cover images on home cards and list pages. Hotlink-protected images will be hidden automatically.",
       clearCache: "Clear cache",
       clearCacheTip:
-        "Current cache version: {version} (forked by {url}). Click to clear cached assets and reload.",
+        "Cache schema version: {version}. Normal releases invalidate only changed files; clear all caches manually only when troubleshooting.",
       clearCacheAction: "Clear cache",
       importExport: "Import and export",
       importExportTip:
@@ -724,6 +726,7 @@ export const messages = {
       indexRegionSelectAll: "全選",
       indexRegionClearAll: "取消全選",
       indexRegionSelected: "已選擇 {selected}/{total} 個地區",
+      indexRegionAll: "全部",
       indexRegionEmpty: "目前未選擇任何地區，可透過篩選按鈕重新選擇市場",
       refreshTooSoon: "請稍後再重新整理",
       loadFailedMessage: "熱榜載入失敗，請稍後再試",
@@ -864,7 +867,7 @@ export const messages = {
         "開啟後於首頁卡片與列表顯示封面圖片（防盜鏈圖片將自動隱藏）",
       clearCache: "清除快取",
       clearCacheTip:
-        "目前快取版本：{version}（由吾愛分享二次開發 {url}），點擊即可清除並重新整理",
+        "目前快取機制版本：{version}。日常發佈只更新有變更的檔案快取；僅建議在排錯時手動清除全部快取並重新整理。",
       clearCacheAction: "清除快取",
       importExport: "設定匯入匯出",
       importExportTip: "匯出為 JSON 檔，匯入會覆蓋目前設定",
@@ -1026,6 +1029,7 @@ export const messages = {
       indexRegionSelectAll: "すべて選択",
       indexRegionClearAll: "すべて解除",
       indexRegionSelected: "{selected}/{total} 地域を選択中",
+      indexRegionAll: "すべて",
       indexRegionEmpty: "地域が選択されていません。フィルターボタンから市場を選択してください。",
       refreshTooSoon: "少し待ってから再度更新してください。",
       loadFailedMessage: "ランキングの読み込みに失敗しました。再試行してください。",
@@ -1169,7 +1173,7 @@ export const messages = {
         "ホームカードと一覧にカバー画像を表示します。直リンク制限のある画像は自動で非表示になります。",
       clearCache: "キャッシュを削除",
       clearCacheTip:
-        "現在のキャッシュ版: {version}（fork 提供元: {url}）。削除すると再読み込みします。",
+        "キャッシュスキーマ版: {version}。通常のリリースでは変更されたファイルだけを更新し、全キャッシュ削除はトラブルシューティング時のみ推奨します。",
       clearCacheAction: "キャッシュを削除",
       importExport: "設定の入出力",
       importExportTip:
@@ -1345,6 +1349,7 @@ export const messages = {
       indexRegionSelectAll: "전체 선택",
       indexRegionClearAll: "전체 해제",
       indexRegionSelected: "{selected}/{total}개 지역 선택",
+      indexRegionAll: "전체",
       indexRegionEmpty: "선택된 지역이 없습니다. 필터 버튼에서 시장을 다시 선택하세요.",
       refreshTooSoon: "잠시 후 다시 새로고침해 주세요.",
       loadFailedMessage: "랭킹을 불러오지 못했습니다. 다시 시도해 주세요.",
@@ -1491,7 +1496,7 @@ export const messages = {
         "홈 카드와 목록에 커버 이미지를 표시합니다. 핫링크 방지 이미지는 자동으로 숨겨집니다.",
       clearCache: "캐시 비우기",
       clearCacheTip:
-        "현재 캐시 버전: {version} (fork 출처: {url}). 캐시를 지우고 다시 로드합니다.",
+        "캐시 스키마 버전: {version}. 일반 배포에서는 변경된 파일 캐시만 갱신하며, 전체 캐시 삭제는 문제 해결 시에만 권장합니다.",
       clearCacheAction: "캐시 비우기",
       importExport: "설정 가져오기 및 내보내기",
       importExportTip:

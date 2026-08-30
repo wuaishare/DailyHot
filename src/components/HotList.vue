@@ -15,12 +15,20 @@
             <n-avatar
               class="ico"
               :src="logoSrc(hotData.name)"
-              fallback-src="/ico/icon_error.png"
+              :fallback-src="errorLogoUrl"
             />
             <n-text class="name-text">{{ sourceLabel }}</n-text>
           </div>
+          <GlobalIndexControls
+            v-if="isIndexOverviewSource && hotListData?.data?.length"
+            class="header-index-controls"
+            :items="hotListData.data"
+            :compact="true"
+            :show-state-label="isDesktop"
+            @click.stop
+          />
           <SubtypeBar
-            v-if="subtypeGroups.length"
+            v-else-if="subtypeGroups.length"
             class="header-subtype"
             :groups="subtypeGroups"
             :active-value="activeSubType"
@@ -28,13 +36,13 @@
             @click.stop
           />
           <n-text
-            v-if="cardSubtitle && !subtypeGroups.length"
+            v-else-if="cardSubtitle"
             class="subtitle"
             :depth="2"
           >
             {{ cardSubtitle }}
           </n-text>
-          <n-skeleton v-else-if="!subtypeGroups.length && !hotListData" width="60px" text round />
+          <n-skeleton v-else-if="!hotListData" width="60px" text round />
         </div>
       </div>
     </template>
@@ -107,7 +115,7 @@
                 :href="getItemLink(item)"
                 :target="linkTarget"
                 rel="noopener noreferrer nofollow"
-                :title="isIndexOverviewSource ? item.displayDesc || undefined : item.originalTitle || undefined"
+                :title="getMarketQuoteHoverTitle(item)"
                 @click.stop
               >
                 <div class="market-quote-copy">
@@ -121,12 +129,6 @@
                       :translate="item.hasReadableTranslation ? 'no' : undefined"
                     >
                       {{ item.displayTitle }}
-                    </span>
-                    <span
-                      v-if="item.marketQuote.region && !isIndexOverviewSource"
-                      class="market-quote-region"
-                    >
-                      {{ item.marketQuote.region }}
                     </span>
                     <span class="market-quote-code">{{ item.marketQuote.code }}</span>
                   </div>
@@ -251,10 +253,6 @@
                 </template>
                 {{ t("hotList.viewMore") }}
               </n-popover>
-              <GlobalIndexControls
-                v-if="isIndexOverviewSource && hotListData.data.length"
-                :items="hotListData.data"
-              />
               <n-popover>
                 <template #trigger>
                   <span
@@ -336,7 +334,6 @@
 import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
 import { getHotListsWithFallback } from "@/api";
 import { formatTime } from "@/utils/getTime";
-import { getCacheVersion } from "@/utils/cache";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
@@ -351,6 +348,7 @@ import {
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo } from "@/utils/sourceLogos";
+import { getPublicAssetUrl } from "@/utils/publicAssets";
 import {
   getFundMetricView,
   getMarketQuoteView,
@@ -378,8 +376,8 @@ const isClient = typeof window !== "undefined";
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
-const cacheVersion = getCacheVersion();
-const logoSrc = (name) => getSourceLogo(name, cacheVersion);
+const logoSrc = (name) => getSourceLogo(name);
+const errorLogoUrl = getPublicAssetUrl("/ico/icon_error.png");
 const props = defineProps({
   // 热榜数据
   hotData: {
@@ -574,6 +572,21 @@ const visibleItems = computed(() => {
     ? applyGlobalIndexPreferences(decoratedItems)
     : decoratedItems;
 });
+
+const getMarketQuoteHoverTitle = (item) => {
+  const quote = item?.marketQuote;
+  if (!quote) return item?.originalTitle || item?.displayTitle || undefined;
+  return [
+    quote.region,
+    item?.displayTitle || item?.originalTitle,
+    quote.code,
+    `${quote.closeLabel} ${quote.price}`,
+    `${quote.metricLabel} ${quote.metric}`,
+    quote.change,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+};
 
 const syncReadableTitleDom = (items = []) => {
   nextTick(() => {
@@ -1180,6 +1193,11 @@ onBeforeUnmount(() => {
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+    }
+
+    .header-index-controls {
+      flex: 0 0 auto;
+      margin-left: auto;
     }
 
     .header-subtype {

@@ -1,7 +1,10 @@
 const APP_VERSION = __APP_VERSION__;
-const CACHE_VERSION = APP_VERSION.buildNumber || APP_VERSION.version;
+// 只在缓存机制本身发生不兼容变化时升级。日常构建号变化不再触发全站清缓存。
+const CACHE_SCHEMA_VERSION = "2";
+const CACHE_SCHEMA_STORAGE_KEY = "dailyhot:cache-schema";
+const LEGACY_BUILD_CACHE_KEY = "CACHE_VERSION";
 
-export const getCacheVersion = () => CACHE_VERSION;
+export const getCacheVersion = () => CACHE_SCHEMA_VERSION;
 export const getDisplayVersion = () => APP_VERSION.version;
 export const getProductVersion = () => APP_VERSION.productVersion;
 export const getBuildNumber = () => APP_VERSION.buildNumber;
@@ -25,15 +28,20 @@ export const clearAppCaches = async () => {
 export const ensureCacheVersion = async () => {
   try {
     if (typeof localStorage === "undefined") return;
-    const saved = localStorage.getItem("CACHE_VERSION");
-    if (!saved) {
-      localStorage.setItem("CACHE_VERSION", CACHE_VERSION);
+    const savedSchema = localStorage.getItem(CACHE_SCHEMA_STORAGE_KEY);
+
+    // 从旧的“构建号即缓存版本”机制迁移时保留已有缓存，避免升级本身造成一次全站冷启动。
+    if (!savedSchema) {
+      localStorage.setItem(CACHE_SCHEMA_STORAGE_KEY, CACHE_SCHEMA_VERSION);
+      localStorage.removeItem(LEGACY_BUILD_CACHE_KEY);
       return;
     }
-    if (saved !== CACHE_VERSION) {
+
+    if (savedSchema !== CACHE_SCHEMA_VERSION) {
       await clearAppCaches();
-      localStorage.setItem("CACHE_VERSION", CACHE_VERSION);
+      localStorage.setItem(CACHE_SCHEMA_STORAGE_KEY, CACHE_SCHEMA_VERSION);
     }
+    localStorage.removeItem(LEGACY_BUILD_CACHE_KEY);
   } catch (err) {
     console.warn("ensureCacheVersion failed", err);
   }

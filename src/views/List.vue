@@ -71,11 +71,6 @@
                 </n-text>
               </div>
               <div class="data">
-                <GlobalIndexControls
-                  v-if="isIndexOverviewSource && listData.data?.length"
-                  class="index-controls"
-                  :items="listData.data"
-                />
                 <n-text
                   v-if="listData.total"
                   :depth="3"
@@ -84,6 +79,12 @@
                   {{ t("list.totalSummary", { total: listData.total }) }}
                 </n-text>
                 <n-text :depth="3" class="time" v-html="updateTime" />
+                <GlobalIndexControls
+                  v-if="isIndexOverviewSource && listData.data?.length"
+                  class="index-controls"
+                  :items="listData.data"
+                  :compact="!isDesktop"
+                />
               </div>
             </div>
           </template>
@@ -162,12 +163,6 @@
                           :translate="item.hasReadableTranslation ? 'no' : undefined"
                           v-html="item.displayTitle"
                         />
-                        <span
-                          v-if="item.marketQuote?.region && !isIndexOverviewSource"
-                          class="market-quote-region"
-                        >
-                          {{ item.marketQuote.region }}
-                        </span>
                         <span v-if="item.marketQuote" class="market-quote-code">
                           {{ item.marketQuote.code }}
                         </span>
@@ -247,7 +242,6 @@
 <script setup>
 import { Fire } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
-import { getCacheVersion } from "@/utils/cache";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { formatTime } from "@/utils/getTime";
@@ -289,7 +283,6 @@ const route = useRoute();
 const store = mainStore();
 const { locale, t } = useI18n({ useScope: "global" });
 const isClient = typeof window !== "undefined";
-const cacheVersion = getCacheVersion();
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
@@ -365,7 +358,7 @@ const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
 const showImages = computed(() => store.showImages);
-const logoSrc = (name) => getSourceLogo(name, cacheVersion);
+const logoSrc = (name) => getSourceLogo(name);
 const isActiveSource = (name) =>
   normalizeSourceFamily(name) === normalizeSourceFamily(listType.value);
 const getSourceDisplayLabel = (item) =>
@@ -458,9 +451,19 @@ const currentPageItems = computed(() =>
     })
 );
 const getItemHoverTitle = (item) => {
-  const title = item?.originalTitle || item?.displayTitle || "";
-  if (isIndexOverviewSource.value && item?.marketQuote?.region) {
-    return [item.marketQuote.region, title].filter(Boolean).join(" · ");
+  const title = item?.displayTitle || item?.originalTitle || "";
+  const quote = item?.marketQuote;
+  if (quote) {
+    return [
+      quote.region,
+      title,
+      quote.code,
+      `${quote.closeLabel} ${quote.price}`,
+      `${quote.metricLabel} ${quote.metric}`,
+      quote.change,
+    ]
+      .filter(Boolean)
+      .join(" · ");
   }
   return title || undefined;
 };

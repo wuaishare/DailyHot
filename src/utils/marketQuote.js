@@ -109,10 +109,11 @@ export const getMarketQuoteView = (item, locale = "zh-CN") => {
           : labels.close;
 
   const regionLabels = REGION_LABELS[targetLocale] || REGION_LABELS["zh-CN"];
+  const regionCode = String(extra.regionCode || market || "").toUpperCase();
 
   return {
     code: String(extra.code),
-    region: String(extra.region || regionLabels[market] || ""),
+    region: String(regionLabels[regionCode] || extra.region || ""),
     price,
     change: `${changePrefix}${formatNumber(validChangeRate, targetLocale, 2)}%`,
     metric:

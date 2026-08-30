@@ -16,10 +16,13 @@
             :aria-label="t('hotList.indexSort')"
             :title="t('hotList.indexSort')"
             :type="globalIndexSortMode !== GLOBAL_INDEX_SORT_MODES.GAIN ? 'primary' : 'default'"
+            :round="compact"
           >
             <template #icon>
               <n-icon :component="SortOne" />
             </template>
+            <span v-if="!compact">{{ t("hotList.indexSort") }}：{{ activeSortLabel }}</span>
+            <span v-else-if="showStateLabel">{{ activeSortLabel }}</span>
           </n-button>
         </span>
       </template>
@@ -90,10 +93,13 @@
             :aria-label="t('hotList.indexRegionFilter')"
             :title="t('hotList.indexRegionFilter')"
             :type="globalIndexExcludedRegions.length ? 'primary' : 'default'"
+            :round="compact"
           >
             <template #icon>
               <n-icon :component="Filter" />
             </template>
+            <span v-if="!compact">{{ t("hotList.indexRegionFilter") }}：{{ regionTriggerLabel }}</span>
+            <span v-else-if="showStateLabel">{{ regionTriggerLabel }}</span>
           </n-button>
         </span>
       </template>
@@ -150,6 +156,14 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  compact: {
+    type: Boolean,
+    default: true,
+  },
+  showStateLabel: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const { t } = useI18n({ useScope: "global" });
@@ -180,6 +194,14 @@ const regionOptions = computed(() => {
 
 const selectedRegionCount = computed(
   () => regionOptions.value.filter((item) => !globalIndexExcludedRegions.value.includes(item.code)).length
+);
+const activeSortLabel = computed(
+  () => sortOptions.value.find((item) => item.value === globalIndexSortMode.value)?.label || t("hotList.indexSortGain")
+);
+const regionTriggerLabel = computed(() =>
+  globalIndexExcludedRegions.value.length
+    ? `${selectedRegionCount.value}/${regionOptions.value.length}`
+    : t("hotList.indexRegionAll")
 );
 
 const syncOrderDraft = () => {
