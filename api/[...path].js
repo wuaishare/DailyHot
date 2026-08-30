@@ -51,6 +51,9 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "szse",
   "hkex",
   "nasdaq",
+  "nyse",
+  "twse",
+  "nse",
   "global-indexes",
 ]);
 const API_SUBTYPE_PATH_SOURCES = new Set([
@@ -2268,7 +2271,7 @@ const ARTIFICIALANALYSIS_TYPE_META = {
     },
   },
   providers: {
-    source: "html",
+    source: "proxy",
     path: "/leaderboards/providers",
     title: {
       "zh-CN": "API 提供商与端点榜",
