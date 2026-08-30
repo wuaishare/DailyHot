@@ -70,7 +70,7 @@ const CATEGORY_SEO_MAP = {
     title: "财经热榜",
     titleTail: "股票、ETF、证券市场与投资话题趋势聚合",
     description:
-      "财经热榜聚合雪球投资话题、热股与热门基金，并汇总沪深港交易所、Nasdaq 官方市场活跃榜及全球主要指数，覆盖A股、港股、美股、台湾、日本、韩国、英国、法国、德国与欧元区市场、ETF及证券市场趋势。",
+      "财经热榜聚合雪球投资话题、热股与热门基金，并汇总沪深港交易所、Nasdaq 官方市场活跃榜及全球主要指数，覆盖A股、港股、美股、台湾、日本、韩国、印度、英国、法国、德国与欧元区市场、ETF及证券市场趋势。",
     keywords: [
       "财经热榜",
       "股票成交额榜",
@@ -164,30 +164,30 @@ const CATEGORY_LOCALE_SEO_MAP = {
     en: {
       title: "Finance Rankings - Stocks, ETFs, market activity, and investor topics | DailyHot",
       description:
-        "Finance Rankings combine Xueqiu investor topics, hot stocks and popular funds with official Shanghai, Shenzhen, Hong Kong and Nasdaq market activity rankings plus major global market indexes.",
+        "Finance Rankings combine Xueqiu investor topics, hot stocks and popular funds with official Shanghai, Shenzhen, Hong Kong and Nasdaq market activity rankings plus major global market indexes across Asia, India, the U.S. and Europe.",
       keywords:
-        "finance rankings,global market indexes,Shanghai Composite,CSI 300,Hang Seng Index,Hang Seng TECH,Nasdaq Composite,Nasdaq-100,stock turnover,ETF turnover,HKEX,Nasdaq,Xueqiu,DailyHot",
+        "finance rankings,global market indexes,Shanghai Composite,CSI 300,Hang Seng Index,Hang Seng TECH,Nasdaq Composite,Nasdaq-100,NIFTY 50,SENSEX,stock turnover,ETF turnover,HKEX,Nasdaq,Xueqiu,DailyHot",
     },
     "zh-TW": {
       title: "財經熱榜 - 股票、ETF、證券市場與投資話題趨勢聚合 | 吾愛熱榜",
       description:
-        "財經熱榜彙整雪球投資話題、熱門股票與熱門基金，以及上海、深圳、香港交易所、Nasdaq 官方市場活躍榜與全球主要指數，涵蓋A股、港股、美股、ETF與證券市場趨勢。",
+        "財經熱榜彙整雪球投資話題、熱門股票與熱門基金，以及上海、深圳、香港交易所、Nasdaq 官方市場活躍榜與全球主要指數，涵蓋A股、港股、美股、印度、歐洲、ETF與證券市場趨勢。",
       keywords:
-        "財經熱榜,股票成交額榜,ETF成交額榜,上海證券交易所,深圳證券交易所,香港交易所,Nasdaq,美股,港股,雪球熱門股票,熱門基金,A股熱榜,證券市場,吾愛熱榜",
+        "財經熱榜,股票成交額榜,ETF成交額榜,上海證券交易所,深圳證券交易所,香港交易所,Nasdaq,NIFTY 50,SENSEX,美股,港股,雪球熱門股票,熱門基金,A股熱榜,證券市場,吾愛熱榜",
     },
     ja: {
       title: "金融ランキング - 株式、ETF、市場活況、投資トピックの集約 | DailyHot",
       description:
-        "金融ランキングは Xueqiu の投資トピック、人気株、人気ファンドと、上海・深圳・香港取引所、Nasdaq の公式市場アクティビティおよび世界主要株価指数を集約します。",
+        "金融ランキングは Xueqiu の投資トピック、人気株、人気ファンドと、上海・深圳・香港取引所、Nasdaq の公式市場アクティビティ、インドを含む世界主要株価指数を集約します。",
       keywords:
-        "金融ランキング,株式売買代金,ETF売買代金,上海証券取引所,深圳証券取引所,香港取引所,Nasdaq,米国株,香港株,Xueqiu,人気ファンド,A株,DailyHot",
+        "金融ランキング,株式売買代金,ETF売買代金,上海証券取引所,深圳証券取引所,香港取引所,Nasdaq,NIFTY 50,SENSEX,米国株,香港株,Xueqiu,人気ファンド,A株,DailyHot",
     },
     ko: {
       title: "금융 랭킹 - 주식, ETF, 시장 거래대금, 투자 이슈 | DailyHot",
       description:
-        "금융 랭킹은 Xueqiu 투자 이슈·인기 종목·인기 펀드와 상하이·선전·홍콩거래소, Nasdaq 공식 시장 활동 및 글로벌 주요 지수를 함께 제공합니다.",
+        "금융 랭킹은 Xueqiu 투자 이슈·인기 종목·인기 펀드와 상하이·선전·홍콩거래소, Nasdaq 공식 시장 활동 및 인도를 포함한 글로벌 주요 지수를 함께 제공합니다.",
       keywords:
-        "금융 랭킹,주식 거래대금,ETF 거래대금,상하이증권거래소,선전증권거래소,홍콩거래소,Nasdaq,미국 주식,홍콩 주식,Xueqiu,인기 펀드,A주,DailyHot",
+        "금융 랭킹,주식 거래대금,ETF 거래대금,상하이증권거래소,선전증권거래소,홍콩거래소,Nasdaq,NIFTY 50,SENSEX,미국 주식,홍콩 주식,Xueqiu,인기 펀드,A주,DailyHot",
     },
   },
   AI: {
@@ -718,8 +718,8 @@ const LIST_SEO_MAP = {
   },
   "global-indexes": {
     label: "全球主要指数",
-    keywords: "全球主要指数,上证指数,沪深300,深证成指,创业板指,恒生指数,恒生科技指数,台湾加权指数,TAIEX,标普500,S&P 500,SPX,道琼斯指数,Dow Jones,罗素2000,Russell 2000,纳斯达克综合指数,Nasdaq 100,日经225,Nikkei 225,KOSPI,KOSPI 200,KOSDAQ,富时100,FTSE 100,CAC 40,DAX,EURO STOXX 50",
-    description: "聚合中国大陆、香港、台湾、日本、韩国、美国、英国、法国、德国与欧元区主要股票指数行情，覆盖标普500、道琼斯、罗素2000、纳斯达克、日经225、KOSPI、KOSPI 200、KOSDAQ、FTSE 100、CAC 40、DAX、EURO STOXX 50 等全球核心市场基准。",
+    keywords: "全球主要指数,上证指数,沪深300,深证成指,创业板指,恒生指数,恒生科技指数,台湾加权指数,TAIEX,标普500,S&P 500,SPX,道琼斯指数,Dow Jones,罗素2000,Russell 2000,纳斯达克综合指数,Nasdaq 100,日经225,Nikkei 225,KOSPI,KOSPI 200,KOSDAQ,NIFTY 50,SENSEX,富时100,FTSE 100,CAC 40,DAX,EURO STOXX 50",
+    description: "聚合中国大陆、香港、台湾、日本、韩国、印度、美国、英国、法国、德国与欧元区主要股票指数行情，覆盖标普500、道琼斯、罗素2000、纳斯达克、日经225、KOSPI、NIFTY 50、SENSEX、FTSE 100、CAC 40、DAX、EURO STOXX 50 等全球核心市场基准。",
   },
   zhihu: {
     label: "知乎热榜",
