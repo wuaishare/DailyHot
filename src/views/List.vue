@@ -400,6 +400,7 @@ const NATIVE_RANK_TYPES_BY_SOURCE = {
     "stock-loss",
     "stock-turnover",
   ]),
+  hkex: new Set(["turnover", "volume", "gain", "loss"]),
 };
 const showMarketSortControl = computed(() => {
   const nativeTypes = NATIVE_RANK_TYPES_BY_SOURCE[listType.value];
