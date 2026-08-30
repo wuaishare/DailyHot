@@ -16,6 +16,9 @@ const SAME_ORIGIN_API_SOURCES = new Set([
   "szse",
   "hkex",
   "nasdaq",
+  "nyse",
+  "twse",
+  "nse",
   "global-indexes",
 ]);
 const appApiBase = import.meta.env.VITE_GLOBAL_API;

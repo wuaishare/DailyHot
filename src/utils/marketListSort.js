@@ -9,7 +9,7 @@ export const MARKET_SORT_MODES = {
   ACTIVITY: "activity",
 };
 
-const SORTABLE_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq"]);
+const SORTABLE_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq", "nyse", "twse", "nse"]);
 const NATIVE_RANK_TYPES_BY_SOURCE = {
   sse: new Set(["stock", "stock-volume", "stock-gain", "stock-loss", "etf"]),
   szse: new Set([
@@ -23,6 +23,9 @@ const NATIVE_RANK_TYPES_BY_SOURCE = {
   ]),
   hkex: new Set(["turnover", "volume", "gain", "loss"]),
   nasdaq: new Set(["dollar", "volume", "gain", "loss"]),
+  nyse: new Set(["turnover", "volume", "gain", "loss"]),
+  twse: new Set(["turnover", "volume", "gain", "loss"]),
+  nse: new Set(["turnover", "volume", "gain", "loss"]),
 };
 const validModes = new Set(Object.values(MARKET_SORT_MODES));
 

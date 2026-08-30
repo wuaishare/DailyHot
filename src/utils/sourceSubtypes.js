@@ -212,6 +212,30 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  nyse: [
+    { key: "rank", label: "榜单", param: "type", items: [
+      { label: "成交额", value: "turnover" },
+      { label: "成交量", value: "volume" },
+      { label: "股票涨幅", value: "gain" },
+      { label: "股票跌幅", value: "loss" },
+    ] },
+  ],
+  twse: [
+    { key: "rank", label: "榜单", param: "type", items: [
+      { label: "成交额", value: "turnover" },
+      { label: "成交量", value: "volume" },
+      { label: "股票涨幅", value: "gain" },
+      { label: "股票跌幅", value: "loss" },
+    ] },
+  ],
+  nse: [
+    { key: "rank", label: "榜单", param: "type", items: [
+      { label: "成交额", value: "turnover" },
+      { label: "成交量", value: "volume" },
+      { label: "股票涨幅", value: "gain" },
+      { label: "股票跌幅", value: "loss" },
+    ] },
+  ],
   nytimes: [
     {
       key: "region",

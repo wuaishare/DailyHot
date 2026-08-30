@@ -70,7 +70,7 @@ const CATEGORY_SEO_MAP = {
     title: "财经热榜",
     titleTail: "股票、ETF、证券市场与投资话题趋势聚合",
     description:
-      "财经热榜聚合雪球投资话题、热股与热门基金，并汇总沪深港交易所、Nasdaq 官方市场活跃榜及全球股指，覆盖A股、港股、美股、中国台湾、日本、韩国、印度、加拿大、澳大利亚、巴西、瑞士、西班牙、意大利、英国、法国、德国与欧元区市场、ETF及证券市场趋势。",
+      "财经热榜聚合雪球投资话题、热股与热门基金，并汇总沪深港、台湾、印度、纽约证券交易所、Nasdaq 市场榜单及全球股指，覆盖A股、港股、美股、中国台湾、日本、韩国、印度、加拿大、澳大利亚、巴西、瑞士、西班牙、意大利、英国、法国、德国与欧元区市场、ETF及证券市场趋势。",
     keywords: [
       "财经热榜",
       "股票成交额榜",
@@ -80,6 +80,12 @@ const CATEGORY_SEO_MAP = {
       "香港交易所",
       "港股成交额榜",
       "Nasdaq",
+      "纽约证券交易所",
+      "台湾证券交易所",
+      "印度国家证券交易所",
+      "NYSE",
+      "TWSE",
+      "NSE India",
       "美股活跃榜",
       "全球股指",
       "上证指数",
@@ -715,6 +721,21 @@ const LIST_SEO_MAP = {
     label: "Nasdaq",
     keywords: "Nasdaq,Nasdaq most active,美股成交额活跃榜,美股成交量榜,美股涨幅榜,美股跌幅榜,NVDA,美股热榜,美国股市",
     description: "汇总 Nasdaq 官方美元成交额活跃榜，并基于官方股票筛选器全市场行情提供成交量、涨幅与跌幅 Top20。",
+  },
+  nyse: {
+    label: "纽约证券交易所",
+    keywords: "纽约证券交易所,NYSE,NYSE成交额榜,NYSE成交量榜,NYSE涨幅榜,NYSE跌幅榜,美股行情,美国股市",
+    description: "聚合 NYSE 上市股票行情，提供成交额、成交量、涨幅与跌幅 Top20，并明确标注 Nasdaq Stock Screener 行情数据来源。",
+  },
+  twse: {
+    label: "台湾证券交易所",
+    keywords: "台湾证券交易所,TWSE,台股成交额榜,台股成交量榜,台股涨幅榜,台股跌幅榜,台湾股票",
+    description: "基于台湾证券交易所官方 OpenAPI 全市场日行情，提供台股成交额、成交量、涨幅与跌幅 Top20。",
+  },
+  nse: {
+    label: "印度国家证券交易所",
+    keywords: "印度国家证券交易所,NSE India,NSE成交额榜,NSE成交量榜,NSE涨幅榜,NSE跌幅榜,印度股票",
+    description: "基于印度国家证券交易所官方市场分析接口，提供 NSE 股票成交额、成交量、涨幅与跌幅 Top20。",
   },
   "global-indexes": {
     label: "全球股指",

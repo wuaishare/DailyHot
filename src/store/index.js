@@ -117,6 +117,27 @@ export const mainStore = defineStore("mainData", {
           category: "财经",
         },
         {
+          label: "NYSE",
+          name: "nyse",
+          order: 7.91,
+          show: true,
+          category: "财经",
+        },
+        {
+          label: "TWSE",
+          name: "twse",
+          order: 7.92,
+          show: true,
+          category: "财经",
+        },
+        {
+          label: "NSE",
+          name: "nse",
+          order: 7.93,
+          show: true,
+          category: "财经",
+        },
+        {
           label: "全球股指",
           name: "global-indexes",
           order: 7.95,
