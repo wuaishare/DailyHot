@@ -36,7 +36,10 @@
               class="header-subtype"
               :groups="subtypeGroups"
               :active-value="activeSubType"
+              :show-order-control="showNativeOrderControl"
+              :order-direction="marketRankDirection"
               @change="changeSubType"
+              @order-change="changeMarketRankDirection"
               @click.stop
             />
             <MarketListSortControl
@@ -374,8 +377,11 @@ import { buildRankPath } from "@/utils/locale";
 import { applyGlobalIndexPreferences } from "@/utils/globalIndexOrder";
 import {
   applyMarketListSort,
+  applyMarketRankDirection,
   isMarketListSortable,
   isNativeMarketRanking,
+  readMarketRankDirection,
+  saveMarketRankDirection,
 } from "@/utils/marketListSort";
 import {
   enhanceReadableResultTitles,
@@ -540,9 +546,11 @@ const formatPreviewHot = (value) => {
 };
 const visibleItems = computed(() => {
   const items = hotListData.value?.data || [];
-  const sortedItems = showMarketSortControl.value
-    ? applyMarketListSort(items, props.hotData.name)
-    : items;
+  const sortedItems = showNativeOrderControl.value
+    ? applyMarketRankDirection(items, props.hotData.name, activeSubType.value)
+    : showMarketSortControl.value
+      ? applyMarketListSort(items, props.hotData.name)
+      : items;
   const visibleSourceItems = isIndexOverviewSource.value
     ? sortedItems
     : sortedItems.slice(
@@ -644,10 +652,14 @@ const activeSubType = ref(
     readSourceSubtype(props.hotData.name)
   )
 );
+const showNativeOrderControl = computed(() =>
+  isNativeMarketRanking(props.hotData.name, activeSubType.value)
+);
+const marketRankDirection = computed(() =>
+  readMarketRankDirection(props.hotData.name, activeSubType.value)
+);
 const showMarketSortControl = computed(
-  () =>
-    isSortableMarketSource.value &&
-    !isNativeMarketRanking(props.hotData.name, activeSubType.value)
+  () => isSortableMarketSource.value && !showNativeOrderControl.value
 );
 const shouldEnhanceReadableTitles = computed(() =>
   shouldUseReadableTitleTranslation(
@@ -1064,6 +1076,10 @@ const getPreviewThemeVars = () => {
       ? "rgba(255, 255, 255, 0.48)"
       : "rgba(31, 34, 37, 0.56)",
   };
+};
+
+const changeMarketRankDirection = (direction) => {
+  saveMarketRankDirection(props.hotData.name, activeSubType.value, direction);
 };
 
 const changeSubType = (subtype) => {

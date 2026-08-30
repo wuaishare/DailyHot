@@ -49,7 +49,10 @@
       class="subtype"
       :groups="subtypeGroups"
       :active-value="listSubType"
+      :show-order-control="showNativeOrderControl"
+      :order-direction="marketRankDirection"
       @change="changeSubType"
+      @order-change="changeMarketRankDirection"
     />
     <n-card class="card">
       <template #header>
@@ -289,8 +292,11 @@ import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/
 import { applyGlobalIndexPreferences } from "@/utils/globalIndexOrder";
 import {
   applyMarketListSort,
+  applyMarketRankDirection,
   isMarketListSortable,
   isNativeMarketRanking,
+  readMarketRankDirection,
+  saveMarketRankDirection,
 } from "@/utils/marketListSort";
 import { trackEvent } from "@/utils/track";
 import {
@@ -406,10 +412,14 @@ const isProfessionalMarketSource = computed(() =>
   PROFESSIONAL_MARKET_SOURCES.has(listType.value)
 );
 const isSortableMarketSource = computed(() => isMarketListSortable(listType.value));
+const showNativeOrderControl = computed(() =>
+  isNativeMarketRanking(listType.value, listSubType.value)
+);
+const marketRankDirection = computed(() =>
+  readMarketRankDirection(listType.value, listSubType.value)
+);
 const showMarketSortControl = computed(
-  () =>
-    isSortableMarketSource.value &&
-    !isNativeMarketRanking(listType.value, listSubType.value)
+  () => isSortableMarketSource.value && !showNativeOrderControl.value
 );
 const listHeaderTitle = computed(
   () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
@@ -452,6 +462,9 @@ const isDuplicateDesc = (desc = "", ...titles) => {
 const orderedListItems = computed(() => {
   const items = listData.value?.data || [];
   if (isIndexOverviewSource.value) return applyGlobalIndexPreferences(items);
+  if (showNativeOrderControl.value) {
+    return applyMarketRankDirection(items, listType.value, listSubType.value);
+  }
   if (showMarketSortControl.value) return applyMarketListSort(items, listType.value);
   return items;
 });
@@ -858,6 +871,10 @@ const changeType = (type, event) => {
     readSourceSubtype(type)
   );
   router.push(buildRankPath(getLocaleFromRoute(route), type, nextSubtype || ""));
+};
+
+const changeMarketRankDirection = (direction) => {
+  saveMarketRankDirection(listType.value, listSubType.value, direction);
 };
 
 const changeSubType = (subtype) => {

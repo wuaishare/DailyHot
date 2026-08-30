@@ -1,12 +1,18 @@
 import { reactive } from "vue";
 
 const STORAGE_PREFIX = "dailyhot:market-sort:v1:";
+const RANK_DIRECTION_STORAGE_PREFIX = "dailyhot:market-rank-direction:v1:";
 
 export const MARKET_SORT_MODES = {
   RANK: "rank",
   GAIN: "gain",
   LOSS: "loss",
   ACTIVITY: "activity",
+};
+
+export const MARKET_RANK_DIRECTIONS = {
+  NORMAL: "normal",
+  REVERSE: "reverse",
 };
 
 const SORTABLE_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq", "nyse", "twse", "nse"]);
@@ -30,12 +36,47 @@ const NATIVE_RANK_TYPES_BY_SOURCE = {
 const validModes = new Set(Object.values(MARKET_SORT_MODES));
 
 export const marketListSortModes = reactive({});
+export const marketRankDirections = reactive({});
 
 export const isMarketListSortable = (source) => SORTABLE_SOURCES.has(String(source || ""));
 
 export const isNativeMarketRanking = (source, subtype) => {
   const nativeTypes = NATIVE_RANK_TYPES_BY_SOURCE[String(source || "")];
   return nativeTypes?.has(String(subtype || "")) || false;
+};
+
+const getRankDirectionKey = (source, subtype) =>
+  `${String(source || "")}:${String(subtype || "default")}`;
+
+export const readMarketRankDirection = (source, subtype) => {
+  const key = getRankDirectionKey(source, subtype);
+  if (marketRankDirections[key]) return marketRankDirections[key];
+  let direction = MARKET_RANK_DIRECTIONS.NORMAL;
+  if (typeof localStorage !== "undefined") {
+    const stored = localStorage.getItem(`${RANK_DIRECTION_STORAGE_PREFIX}${key}`);
+    if (Object.values(MARKET_RANK_DIRECTIONS).includes(stored)) direction = stored;
+  }
+  marketRankDirections[key] = direction;
+  return direction;
+};
+
+export const saveMarketRankDirection = (source, subtype, direction) => {
+  const key = getRankDirectionKey(source, subtype);
+  const normalized = Object.values(MARKET_RANK_DIRECTIONS).includes(direction)
+    ? direction
+    : MARKET_RANK_DIRECTIONS.NORMAL;
+  marketRankDirections[key] = normalized;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(`${RANK_DIRECTION_STORAGE_PREFIX}${key}`, normalized);
+  }
+  return normalized;
+};
+
+export const applyMarketRankDirection = (items = [], source, subtype) => {
+  if (!isNativeMarketRanking(source, subtype)) return [...items];
+  return readMarketRankDirection(source, subtype) === MARKET_RANK_DIRECTIONS.REVERSE
+    ? [...items].reverse()
+    : [...items];
 };
 
 export const getMarketListActivityKind = (source) =>

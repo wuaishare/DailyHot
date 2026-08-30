@@ -787,7 +787,8 @@ onBeforeUnmount(() => {
   justify-content: center;
   padding: 16px 5vw;
   min-height: 72px;
-  z-index: 2;
+  z-index: 1200;
+  isolation: isolate;
   top: 0;
   background-color: var(--n-color);
   border-bottom: 1px solid var(--n-border-color);

@@ -2,219 +2,196 @@
   <div
     v-if="groups.length"
     class="subtype-bar no-card-drag"
-    :class="{
-      'has-left-shadow': canScrollLeft,
-      'has-right-shadow': canScrollRight,
-      'is-dragging': isDragging,
-    }"
     data-no-card-drag
     @pointerdown.stop="lockCardDrag"
-    @pointermove.stop
     @pointerup.stop="unlockCardDrag"
     @pointercancel.stop="unlockCardDrag"
     @mousedown.stop
     @touchstart.stop="lockCardDrag"
-    @touchmove.stop
     @touchend.stop="unlockCardDrag"
     @touchcancel.stop="unlockCardDrag"
     @click.stop
-    @dragstart.prevent
   >
-    <div class="scroll-shell">
-      <div
-        v-if="useGroupTabs"
-        ref="trackRef"
-        class="subtype-scroll group-tabs"
-        @pointerdown="startDrag"
-        @pointermove="dragScroll"
-        @pointerup="endDrag"
-        @pointercancel="endDrag"
-        @pointerleave="endDrag"
-        @scroll="handleTrackScroll"
+    <div
+      class="trigger-wrap"
+      @mouseenter="handleTriggerEnter"
+      @mouseleave="handleTriggerLeave"
+    >
+      <button
+        ref="triggerRef"
+        type="button"
+        class="subtype-trigger subtype-chip"
+        :class="{ active: Boolean(activeItem) }"
+        :title="currentLabel"
+        :aria-expanded="menuOpen ? 'true' : 'false'"
+        aria-haspopup="menu"
+        @click.stop="toggleMenu"
       >
+        <span class="trigger-label">{{ currentLabel }}</span>
+        <span class="trigger-chevron" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <Teleport to="body">
+      <Transition name="subtype-menu">
         <div
-          v-for="group in groups"
-          :key="getGroupKey(group)"
-          class="group-tab-wrap"
-          @mouseenter="openGroup(group, $event)"
-          @mouseleave="scheduleCloseGroup"
+          v-if="menuOpen"
+          ref="menuRef"
+          class="subtype-menu"
+          :class="{
+            'is-dark': isDarkTheme,
+            'is-mobile': isMobile,
+            'is-desktop': !isMobile,
+          }"
+          :style="menuStyle"
+          role="menu"
+          data-no-card-drag
+          @pointerdown.stop="lockCardDrag"
+          @pointerup.stop="unlockCardDrag"
+          @pointercancel.stop="unlockCardDrag"
+          @mousedown.stop
+          @touchstart.stop="lockCardDrag"
+          @touchend.stop="unlockCardDrag"
+          @touchcancel.stop="unlockCardDrag"
+          @click.stop
+          @mouseenter="keepMenuOpen"
+          @mouseleave="handleMenuLeave"
         >
-          <button
-            type="button"
-            class="subtype-chip group-tab"
-            :class="{ active: isGroupActive(group) }"
-            :title="getGroupButtonTitle(group)"
-            @click="handleGroupClick(group, $event)"
-          >
-            <span class="group-tab-label">{{ getGroupBaseLabel(group) }}</span>
-            <span
-              v-if="getGroupActiveLabel(group)"
-              class="group-tab-active-label"
+          <template v-if="!isMobile">
+            <div
+              class="desktop-menu-grid"
+              :class="{ 'single-group': groups.length === 1 }"
             >
-              {{ getGroupActiveLabel(group) }}
-            </span>
-          </button>
-          <Teleport to="body">
-            <Transition name="subtype-menu">
-              <div
-                v-if="(group.items || []).length > 1 && openGroupKey === getGroupKey(group)"
-                class="subtype-menu"
-                :class="{ 'is-dark': isDarkTheme }"
-                :style="menuStyle"
-                data-no-card-drag
-                @pointerdown.stop
-                @mousedown.stop
-                @mouseenter="keepMenuOpen"
-                @mouseleave="scheduleCloseGroup"
+              <section
+                v-for="group in groups"
+                :key="getGroupKey(group)"
+                class="menu-group"
+              >
+                <div v-if="groups.length > 1 && group.label" class="menu-group-title">
+                  {{ group.label }}
+                </div>
+                <div class="menu-items">
+                  <button
+                    v-for="item in group.items || []"
+                    :key="item.value"
+                    type="button"
+                    class="menu-item"
+                    :class="{ active: item.value === activeValue }"
+                    role="menuitemradio"
+                    :aria-checked="item.value === activeValue ? 'true' : 'false'"
+                    @click="selectItem(item.value)"
+                  >
+                    {{ item.label }}
+                  </button>
+                </div>
+              </section>
+            </div>
+          </template>
+
+          <template v-else>
+            <div class="mobile-accordion-list">
+              <section
+                v-for="group in groups"
+                :key="getGroupKey(group)"
+                class="accordion-group"
               >
                 <button
-                  v-for="item in group.items"
-                  :key="item.value"
                   type="button"
-                  class="subtype-chip menu-chip"
-                  :class="{ active: item.value === activeValue }"
-                  @click="selectItem(item.value)"
+                  class="accordion-heading"
+                  :class="{ active: isGroupActive(group) }"
+                  @click="toggleAccordion(group)"
                 >
-                  {{ item.label }}
+                  <span>{{ group.label || currentLabel }}</span>
+                  <span
+                    class="accordion-chevron"
+                    :class="{ expanded: isAccordionOpen(group) }"
+                    aria-hidden="true"
+                  ></span>
                 </button>
-              </div>
-            </Transition>
-          </Teleport>
+                <div v-show="isAccordionOpen(group)" class="accordion-panel">
+                  <button
+                    v-for="item in group.items || []"
+                    :key="item.value"
+                    type="button"
+                    class="menu-item"
+                    :class="{ active: item.value === activeValue }"
+                    @click="selectItem(item.value)"
+                  >
+                    {{ item.label }}
+                  </button>
+                </div>
+              </section>
+            </div>
+          </template>
+
+          <div v-if="showOrderControl" class="rank-order-row">
+            <span class="rank-order-label">{{ t("hotList.rankOrder") }}</span>
+            <div class="rank-order-options" role="radiogroup" :aria-label="t('hotList.rankOrder')">
+              <button
+                type="button"
+                class="rank-order-option"
+                :class="{ active: orderDirection !== 'reverse' }"
+                @click="selectOrder('normal')"
+              >
+                {{ t("hotList.rankOrderNormal") }}
+              </button>
+              <button
+                type="button"
+                class="rank-order-option"
+                :class="{ active: orderDirection === 'reverse' }"
+                @click="selectOrder('reverse')"
+              >
+                {{ t("hotList.rankOrderReverse") }}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div
-        v-else
-        ref="trackRef"
-        class="subtype-scroll flat-track"
-        @pointerdown="startDrag"
-        @pointermove="dragScroll"
-        @pointerup="endDrag"
-        @pointercancel="endDrag"
-        @pointerleave="endDrag"
-        @scroll="handleTrackScroll"
-      >
-        <button
-          v-for="item in flatItems"
-          :key="item.value"
-          type="button"
-          class="subtype-chip"
-          :class="{ active: item.value === activeValue }"
-          @click="handleItemClick(item.value, $event)"
-        >
-          {{ item.label }}
-        </button>
-      </div>
-    </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-} from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { mainStore } from "@/store";
 
 const props = defineProps({
-  groups: {
-    type: Array,
-    default: () => [],
-  },
-  activeValue: {
-    type: String,
-    default: null,
-  },
+  groups: { type: Array, default: () => [] },
+  activeValue: { type: String, default: null },
+  showOrderControl: { type: Boolean, default: false },
+  orderDirection: { type: String, default: "normal" },
 });
 
-const emit = defineEmits(["change"]);
+const emit = defineEmits(["change", "order-change"]);
 const store = mainStore();
-
-const openGroupKey = ref(null);
+const { t } = useI18n({ useScope: "global" });
+const triggerRef = ref(null);
+const menuRef = ref(null);
+const menuOpen = ref(false);
 const menuStyle = ref({});
-const activeMenuTarget = ref(null);
-const trackRef = ref(null);
-const canScrollLeft = ref(false);
-const canScrollRight = ref(false);
-const isDragging = ref(false);
-const dragMoved = ref(false);
+const isMobile = ref(typeof window !== "undefined" ? window.innerWidth <= 680 : false);
+const accordionOpenKeys = ref(new Set());
 let closeTimer = null;
 let dragUnlockTimer = null;
-let dragStartX = 0;
-let dragStartScrollLeft = 0;
-let pointerCaptured = false;
-let resizeObserver = null;
-const MENU_EDGE_GAP = 12;
-const MENU_MIN_WIDTH = 120;
-const MENU_MAX_WIDTH = 420;
+const EDGE_GAP = 12;
+const DESKTOP_MENU_MAX_WIDTH = 640;
 
-const flatItems = computed(() =>
-  props.groups.flatMap((group) => group.items || [])
+const flatItems = computed(() => props.groups.flatMap((group) => group.items || []));
+const activeItem = computed(() =>
+  flatItems.value.find((item) => item.value === props.activeValue) || flatItems.value[0] || null
 );
-const useGroupTabs = computed(
-  () =>
-    props.groups.length > 1 &&
-    props.groups.some((group) => group.label || (group.items || []).length > 1)
-);
+const currentLabel = computed(() => activeItem.value?.label || props.groups[0]?.label || t("hotList.rankOrder"));
 const isDarkTheme = computed(() => store.siteTheme === "dark");
 
-const getGroupKey = (group) =>
-  group.key || group.label || group.items?.[0]?.value || "group";
+const getGroupKey = (group) => group.key || group.label || group.items?.[0]?.value || "group";
+const isGroupActive = (group) => (group.items || []).some((item) => item.value === props.activeValue);
+const isAccordionOpen = (group) => accordionOpenKeys.value.has(getGroupKey(group));
 
-const getActiveGroupItem = (group) =>
-  (group.items || []).find((item) => item.value === props.activeValue);
-
-const getGroupBaseLabel = (group) =>
-  group.label || group.items?.[0]?.label || "";
-
-const getGroupActiveLabel = (group) => {
-  const items = group.items || [];
-  const activeItem = getActiveGroupItem(group);
-  const baseLabel = getGroupBaseLabel(group);
-  if (!activeItem?.label || items.length <= 1 || activeItem.label === baseLabel) {
-    return "";
-  }
-  return activeItem.label;
-};
-
-const getGroupButtonTitle = (group) => {
-  const baseLabel = getGroupBaseLabel(group);
-  const activeLabel = getGroupActiveLabel(group);
-  return activeLabel ? `${baseLabel} · ${activeLabel}` : baseLabel;
-};
-
-const isGroupActive = (group) => Boolean(getActiveGroupItem(group));
-
-const updateScrollShadow = () => {
-  const track = trackRef.value;
-  if (!track) {
-    canScrollLeft.value = false;
-    canScrollRight.value = false;
-    return;
-  }
-  const maxScrollLeft = Math.max(0, track.scrollWidth - track.clientWidth);
-  canScrollLeft.value = track.scrollLeft > 1;
-  canScrollRight.value = maxScrollLeft - track.scrollLeft > 1;
-};
-
-const attachResizeObserver = () => {
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-    resizeObserver = null;
-  }
-  if (typeof ResizeObserver === "undefined" || !trackRef.value) return;
-  resizeObserver = new ResizeObserver(updateScrollShadow);
-  resizeObserver.observe(trackRef.value);
-};
-
-const refreshScrollState = () => {
-  nextTick(() => {
-    attachResizeObserver();
-    updateScrollShadow();
-  });
+const syncDefaultAccordion = () => {
+  if (!props.groups.length) return;
+  const activeGroup = props.groups.find(isGroupActive) || props.groups[0];
+  accordionOpenKeys.value = new Set([getGroupKey(activeGroup)]);
 };
 
 const notifyCardDragLock = (active) => {
@@ -223,154 +200,16 @@ const notifyCardDragLock = (active) => {
     clearTimeout(dragUnlockTimer);
     dragUnlockTimer = null;
   }
-  const dispatch = () => {
-    window.dispatchEvent(
-      new CustomEvent("dailyhot:subtype-interaction", {
-        detail: { active },
-      })
-    );
-  };
-  if (active) {
-    dispatch();
-    return;
-  }
+  const dispatch = () =>
+    window.dispatchEvent(new CustomEvent("dailyhot:subtype-interaction", { detail: { active } }));
+  if (active) return dispatch();
   dragUnlockTimer = window.setTimeout(() => {
     dragUnlockTimer = null;
     dispatch();
   }, 80);
 };
-
-const lockCardDrag = () => {
-  notifyCardDragLock(true);
-};
-
-const unlockCardDrag = () => {
-  notifyCardDragLock(false);
-};
-
-const startDrag = (event) => {
-  const track = trackRef.value;
-  notifyCardDragLock(true);
-  if (!track || event.button !== 0 || track.scrollWidth <= track.clientWidth) {
-    return;
-  }
-  isDragging.value = true;
-  dragMoved.value = false;
-  pointerCaptured = false;
-  dragStartX = event.clientX;
-  dragStartScrollLeft = track.scrollLeft;
-  clearCloseTimer();
-};
-
-const dragScroll = (event) => {
-  const track = trackRef.value;
-  if (!isDragging.value || !track) return;
-  const deltaX = event.clientX - dragStartX;
-  if (!dragMoved.value && Math.abs(deltaX) > 4) {
-    dragMoved.value = true;
-    track.setPointerCapture?.(event.pointerId);
-    pointerCaptured = true;
-    closeGroup();
-  }
-  track.scrollLeft = dragStartScrollLeft - deltaX;
-  updateScrollShadow();
-};
-
-const endDrag = (event) => {
-  const track = trackRef.value;
-  notifyCardDragLock(false);
-  if (!isDragging.value) return;
-  isDragging.value = false;
-  if (pointerCaptured) {
-    track?.releasePointerCapture?.(event.pointerId);
-    pointerCaptured = false;
-  }
-  updateScrollShadow();
-  if (dragMoved.value && typeof window !== "undefined") {
-    window.setTimeout(() => {
-      dragMoved.value = false;
-    }, 0);
-  }
-};
-
-const handleTrackScroll = () => {
-  updateScrollShadow();
-  if (openGroupKey.value) closeGroup();
-};
-
-const positionMenu = (target) => {
-  if (typeof window === "undefined" || !target) return;
-  const rect = target.getBoundingClientRect();
-  const menu = document.querySelector(".subtype-menu");
-  const viewportWidth =
-    document.documentElement?.clientWidth || window.innerWidth;
-  const viewportHeight =
-    document.documentElement?.clientHeight || window.innerHeight;
-  const availableWidth = Math.max(
-    MENU_MIN_WIDTH,
-    viewportWidth - MENU_EDGE_GAP * 2
-  );
-  const measuredWidth = Math.max(
-    menu?.scrollWidth || 0,
-    menu?.offsetWidth || 0,
-    menu?.getBoundingClientRect?.().width || 0
-  );
-  const width = Math.min(
-    Math.ceil(Math.max(measuredWidth || 0, rect.width, MENU_MIN_WIDTH)),
-    MENU_MAX_WIDTH,
-    availableWidth
-  );
-  const centeredLeft = rect.left + rect.width / 2 - width / 2;
-  const rightAlignedLeft = rect.right - width;
-  const preferredLeft =
-    rect.right + width / 2 + MENU_EDGE_GAP > viewportWidth
-      ? rightAlignedLeft
-      : centeredLeft;
-  const left = Math.min(
-    viewportWidth - width - MENU_EDGE_GAP,
-    Math.max(MENU_EDGE_GAP, preferredLeft)
-  );
-  const top = rect.bottom + 6;
-  const maxHeight = Math.min(240, viewportHeight - MENU_EDGE_GAP * 2);
-  const showAbove = top + 140 > viewportHeight && rect.top > 150;
-
-  menuStyle.value = {
-    left: `${left}px`,
-    top: `${showAbove ? Math.max(MENU_EDGE_GAP, rect.top - 8) : top}px`,
-    width: `${width}px`,
-    maxWidth: `${width}px`,
-    maxHeight: `${maxHeight}px`,
-    transform: showAbove ? "translateY(-100%)" : "none",
-  };
-};
-
-const queueOpenMenuPosition = () => {
-  nextTick(() => {
-    updateOpenMenuPosition();
-    if (typeof window === "undefined") return;
-    window.requestAnimationFrame?.(updateOpenMenuPosition) ||
-      window.setTimeout(updateOpenMenuPosition, 0);
-  });
-};
-
-const updateOpenMenuPosition = () => {
-  if (!openGroupKey.value || !activeMenuTarget.value) return;
-  positionMenu(activeMenuTarget.value);
-};
-
-const openGroup = (group, event) => {
-  if ((group.items || []).length <= 1 || isDragging.value) return;
-  clearCloseTimer();
-  activeMenuTarget.value = event?.currentTarget || null;
-  openGroupKey.value = getGroupKey(group);
-  positionMenu(activeMenuTarget.value);
-  queueOpenMenuPosition();
-};
-
-const keepMenuOpen = () => {
-  clearCloseTimer();
-  if (!openGroupKey.value) return;
-};
+const lockCardDrag = () => notifyCardDragLock(true);
+const unlockCardDrag = () => notifyCardDragLock(false);
 
 const clearCloseTimer = () => {
   if (!closeTimer) return;
@@ -378,98 +217,111 @@ const clearCloseTimer = () => {
   closeTimer = null;
 };
 
-const closeGroup = () => {
+const closeMenu = () => {
   clearCloseTimer();
-  openGroupKey.value = null;
-  activeMenuTarget.value = null;
+  menuOpen.value = false;
 };
 
-const scheduleCloseGroup = () => {
+const scheduleCloseMenu = () => {
   clearCloseTimer();
-  closeTimer = setTimeout(() => {
-    openGroupKey.value = null;
-    activeMenuTarget.value = null;
-    closeTimer = null;
-  }, 120);
+  closeTimer = window.setTimeout(closeMenu, 160);
 };
 
-const handleWindowResize = () => {
-  updateScrollShadow();
-  updateOpenMenuPosition();
+const updateMenuPosition = () => {
+  if (typeof window === "undefined" || !menuOpen.value || !triggerRef.value) return;
+  const rect = triggerRef.value.getBoundingClientRect();
+  const viewportWidth = document.documentElement?.clientWidth || window.innerWidth;
+  const viewportHeight = document.documentElement?.clientHeight || window.innerHeight;
+  const desktopWidth = props.groups.length > 1
+    ? Math.min(DESKTOP_MENU_MAX_WIDTH, 190 * props.groups.length + 32)
+    : 240;
+  const width = Math.min(isMobile.value ? viewportWidth - EDGE_GAP * 2 : desktopWidth, viewportWidth - EDGE_GAP * 2);
+  const preferredLeft = rect.right - width;
+  const left = Math.max(EDGE_GAP, Math.min(preferredLeft, viewportWidth - width - EDGE_GAP));
+  const maxHeight = Math.max(180, viewportHeight - EDGE_GAP * 2);
+  const estimatedHeight = Math.min(isMobile.value ? 440 : 360, maxHeight);
+  const belowTop = rect.bottom + 6;
+  const showAbove = belowTop + estimatedHeight > viewportHeight && rect.top > estimatedHeight + EDGE_GAP;
+  menuStyle.value = {
+    width: `${width}px`,
+    maxWidth: `${width}px`,
+    maxHeight: `${Math.min(isMobile.value ? 480 : 420, maxHeight)}px`,
+    left: `${left}px`,
+    top: `${showAbove ? Math.max(EDGE_GAP, rect.top - 6) : belowTop}px`,
+    transform: showAbove ? "translateY(-100%)" : "none",
+  };
+};
+
+const openMenu = () => {
+  clearCloseTimer();
+  if (isMobile.value) syncDefaultAccordion();
+  menuOpen.value = true;
+  nextTick(() => {
+    updateMenuPosition();
+    window.requestAnimationFrame?.(updateMenuPosition);
+  });
+};
+
+const toggleMenu = () => {
+  if (menuOpen.value) closeMenu();
+  else openMenu();
+};
+
+const handleTriggerEnter = () => {
+  if (!isMobile.value) openMenu();
+};
+const handleTriggerLeave = () => {
+  if (!isMobile.value) scheduleCloseMenu();
+};
+const keepMenuOpen = () => clearCloseTimer();
+const handleMenuLeave = () => {
+  if (!isMobile.value) scheduleCloseMenu();
 };
 
 const selectItem = (value) => {
   if (!value) return;
   emit("change", value);
-  closeGroup();
+  closeMenu();
 };
 
-const handleItemClick = (value, event) => {
-  if (dragMoved.value) {
-    event?.preventDefault();
-    return;
-  }
-  selectItem(value);
+const selectOrder = (direction) => {
+  emit("order-change", direction);
+  closeMenu();
 };
 
-const handleGroupClick = (group, event) => {
-  if (dragMoved.value) {
-    event?.preventDefault();
-    return;
-  }
-  const items = group.items || [];
-  if (!items.length) return;
-  if (items.length === 1) {
-    selectItem(items[0].value);
-    return;
-  }
-
-  openGroupKey.value =
-    openGroupKey.value === getGroupKey(group) ? null : getGroupKey(group);
-  if (openGroupKey.value) {
-    activeMenuTarget.value = event?.currentTarget || null;
-    positionMenu(activeMenuTarget.value);
-    queueOpenMenuPosition();
-  }
-
-  if (!isGroupActive(group)) {
-    emit("change", items[0].value);
-  }
+const toggleAccordion = (group) => {
+  const key = getGroupKey(group);
+  const next = new Set(accordionOpenKeys.value);
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
+  accordionOpenKeys.value = next;
 };
 
-watch(
-  () => [props.groups, props.activeValue, useGroupTabs.value],
-  refreshScrollState,
-  { deep: true }
-);
+const handleWindowChange = () => {
+  const nextMobile = window.innerWidth <= 680;
+  if (nextMobile !== isMobile.value) {
+    isMobile.value = nextMobile;
+    if (nextMobile) syncDefaultAccordion();
+  }
+  updateMenuPosition();
+};
+
+watch(() => [props.groups, props.activeValue], () => {
+  if (isMobile.value) syncDefaultAccordion();
+  if (menuOpen.value) nextTick(updateMenuPosition);
+}, { deep: true });
 
 onMounted(() => {
-  if (typeof document !== "undefined") {
-    document.addEventListener("click", closeGroup);
-  }
-  if (typeof window !== "undefined") {
-    window.addEventListener("resize", handleWindowResize);
-    window.addEventListener("scroll", updateOpenMenuPosition, true);
-  }
-  refreshScrollState();
+  document.addEventListener("click", closeMenu);
+  window.addEventListener("resize", handleWindowChange);
+  window.addEventListener("scroll", updateMenuPosition, true);
+  syncDefaultAccordion();
 });
 
 onBeforeUnmount(() => {
-  if (typeof document !== "undefined") {
-    document.removeEventListener("click", closeGroup);
-  }
-  if (typeof window !== "undefined") {
-    window.removeEventListener("resize", handleWindowResize);
-    window.removeEventListener("scroll", updateOpenMenuPosition, true);
-  }
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-    resizeObserver = null;
-  }
-  if (dragUnlockTimer) {
-    clearTimeout(dragUnlockTimer);
-    dragUnlockTimer = null;
-  }
+  document.removeEventListener("click", closeMenu);
+  window.removeEventListener("resize", handleWindowChange);
+  window.removeEventListener("scroll", updateMenuPosition, true);
   notifyCardDragLock(false);
   clearCloseTimer();
 });
@@ -478,188 +330,220 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 .subtype-bar {
   position: relative;
-  width: 100%;
-  overflow: visible;
-  z-index: 50;
-}
-
-.scroll-shell {
-  position: relative;
-  min-width: 0;
-  overflow: hidden;
-
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    z-index: 2;
-    width: 24px;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.16s ease;
-  }
-
-  &::before {
-    left: 0;
-    background: linear-gradient(
-      90deg,
-      var(--n-card-color, var(--n-color, #fff)),
-      transparent
-    );
-  }
-
-  &::after {
-    right: 0;
-    background: linear-gradient(
-      270deg,
-      var(--n-card-color, var(--n-color, #fff)),
-      transparent
-    );
-  }
-}
-
-.has-left-shadow .scroll-shell::before,
-.has-right-shadow .scroll-shell::after {
-  opacity: 0.92;
-}
-
-.group-tabs,
-.flat-track {
+  z-index: 20;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
   min-width: 0;
-  padding: 2px 0 6px;
 }
 
-.subtype-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-  cursor: grab;
-  touch-action: pan-y;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+.trigger-wrap {
+  display: inline-flex;
+  min-width: 0;
 }
 
-.is-dragging .subtype-scroll {
-  cursor: grabbing;
-  user-select: none;
-}
-
-.group-tab-wrap {
-  position: relative;
-  flex: 0 0 auto;
-}
-
-.subtype-chip {
-  flex: 0 0 auto;
+.subtype-chip,
+.subtype-trigger {
   border: 1px solid var(--n-border-color);
   background: var(--n-color);
   color: var(--n-text-color);
   border-radius: 999px;
-  padding: 4px 10px;
   font-size: 12px;
   line-height: 1.2;
   cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-
-  &:hover {
-    border-color: #ea444d;
-    color: #ea444d;
-  }
-
-  &.active {
-    background: #ea444d;
-    border-color: #ea444d;
-    color: #fff !important;
-    box-shadow: 0 6px 16px rgba(234, 68, 77, 0.2);
-  }
+  transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
 }
 
-.group-tab {
+.subtype-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 0;
-  max-width: min(320px, 76vw);
-  overflow: hidden;
+  gap: 7px;
+  max-width: min(220px, 56vw);
+  padding: 5px 11px;
 }
 
-.group-tab-label,
-.group-tab-active-label {
+.subtype-trigger:hover,
+.subtype-trigger.active {
+  border-color: #ea444d;
+}
+
+.subtype-trigger.active {
+  background: #ea444d;
+  color: #fff;
+}
+
+.trigger-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.group-tab-label {
-  flex: 0 1 auto;
-}
-
-.group-tab-active-label {
-  display: inline-flex;
-  flex: 1 1 auto;
-  align-items: center;
-  font-weight: 700;
-
-  &::before {
-    content: "·";
-    flex: 0 0 auto;
-    margin-right: 6px;
-    font-weight: 500;
-    opacity: 0.72;
-  }
+.trigger-chevron,
+.accordion-chevron {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.16s ease;
 }
 
 .subtype-menu {
-  --subtype-menu-bg: var(--n-card-color, #fff);
-  --subtype-menu-border: var(--n-border-color, rgba(0, 0, 0, 0.08));
-  --subtype-menu-text: var(--n-text-color, #1f2329);
-
+  --menu-bg: var(--n-card-color, #fff);
+  --menu-border: var(--n-border-color, rgba(0, 0, 0, 0.08));
+  --menu-text: var(--n-text-color, #1f2329);
   position: fixed;
-  z-index: 3001;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  width: max-content;
-  min-width: 120px;
-  padding: 8px;
+  z-index: 900;
   overflow: auto;
-  border: 1px solid var(--subtype-menu-border);
+  padding: 10px;
+  border: 1px solid var(--menu-border);
   border-radius: 12px;
-  background: var(--subtype-menu-bg);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-
-  &.is-dark {
-    --subtype-menu-bg: #18181c;
-    --subtype-menu-border: rgba(255, 255, 255, 0.1);
-    --subtype-menu-text: rgba(255, 255, 255, 0.88);
-
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.42);
-  }
+  background: var(--menu-bg);
+  color: var(--menu-text);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.15);
+  scrollbar-width: thin;
 }
 
-.menu-chip {
-  border-color: transparent;
-  background: transparent;
-  color: var(--subtype-menu-text);
-  font-size: 12px;
+.subtype-menu.is-dark {
+  --menu-bg: #18181c;
+  --menu-border: rgba(255, 255, 255, 0.12);
+  --menu-text: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42);
+}
 
-  &:hover {
-    background: rgba(234, 68, 77, 0.1);
-  }
+.desktop-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px 12px;
+}
+
+.desktop-menu-grid.single-group {
+  display: block;
+}
+
+.menu-group-title {
+  padding: 4px 8px 7px;
+  color: var(--n-text-color-3, #8a8f99);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.menu-items {
+  display: grid;
+  gap: 3px;
+}
+
+.menu-item,
+.rank-order-option,
+.accordion-heading {
+  border: 0;
+  background: transparent;
+  color: var(--menu-text);
+  cursor: pointer;
+}
+
+.menu-item {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.menu-item:hover,
+.menu-item.active {
+  background: rgba(234, 68, 77, 0.1);
+  color: #ea444d;
+}
+
+.menu-item.active {
+  font-weight: 700;
+}
+
+.rank-order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 9px;
+  padding: 9px 2px 1px;
+  border-top: 1px solid var(--menu-border);
+}
+
+.rank-order-label {
+  padding-left: 5px;
+  color: var(--n-text-color-3, #8a8f99);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rank-order-options {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 999px;
+  background: rgba(127, 127, 127, 0.1);
+}
+
+.rank-order-option {
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.rank-order-option.active {
+  background: #ea444d;
+  color: #fff;
+  font-weight: 700;
+}
+
+.mobile-accordion-list {
+  display: grid;
+  gap: 4px;
+}
+
+.accordion-group {
+  border-bottom: 1px solid var(--menu-border);
+}
+
+.accordion-group:last-child {
+  border-bottom: 0;
+}
+
+.accordion-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 11px 9px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.accordion-heading.active {
+  color: #ea444d;
+}
+
+.accordion-chevron.expanded {
+  transform: rotate(225deg) translate(-1px, -1px);
+}
+
+.accordion-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0 4px 9px;
+}
+
+.is-mobile.subtype-menu {
+  padding: 8px;
+  border-radius: 12px;
+}
+
+.is-mobile .menu-item {
+  padding: 9px 8px;
 }
 
 .subtype-menu-enter-active,
@@ -670,6 +554,16 @@ onBeforeUnmount(() => {
 .subtype-menu-enter-from,
 .subtype-menu-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+}
+
+@media (max-width: 680px) {
+  .subtype-trigger {
+    max-width: 44vw;
+    padding: 5px 10px;
+  }
+
+  .rank-order-row {
+    padding-top: 10px;
+  }
 }
 </style>

@@ -1123,9 +1123,30 @@ const SUBTYPE_LABEL_OVERRIDES = {
   成交额: {
     "zh-CN": "成交额",
     "zh-TW": "成交額",
-    en: "Dollar Volume",
+    en: "Turnover",
     ja: "売買代金",
     ko: "거래대금",
+  },
+  涨幅榜: {
+    "zh-CN": "涨幅榜",
+    "zh-TW": "漲幅榜",
+    en: "Gainers",
+    ja: "上昇率",
+    ko: "상승률",
+  },
+  跌幅榜: {
+    "zh-CN": "跌幅榜",
+    "zh-TW": "跌幅榜",
+    en: "Losers",
+    ja: "下落率",
+    ko: "하락률",
+  },
+  ETF成交额: {
+    "zh-CN": "ETF成交额",
+    "zh-TW": "ETF成交額",
+    en: "ETF Turnover",
+    ja: "ETF売買代金",
+    ko: "ETF 거래대금",
   },
   成交量: {
     "zh-CN": "成交量",
