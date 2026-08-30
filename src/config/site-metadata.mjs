@@ -91,6 +91,18 @@ export const BUILTIN_CATEGORIES = [
     },
   },
   {
+    id: "wool",
+    name: "羊毛",
+    slug: "wool",
+    labels: {
+      "zh-CN": "羊毛",
+      en: "Deals",
+      "zh-TW": "優惠",
+      ja: "お得",
+      ko: "혜택",
+    },
+  },
+  {
     id: "life",
     name: "生活",
     slug: "life",

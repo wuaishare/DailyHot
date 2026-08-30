@@ -90,6 +90,26 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "0818tuan": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "最新线报", value: "latest" },
+        { label: "长期优惠券", value: "coupon" },
+      ],
+    },
+  ],
+  "nodeloc-deals": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "羊毛党", value: "wool" },
+        { label: "优惠情报", value: "deals" },
+      ],
+    },
+  ],
   smzdm: [
     {
       key: "period",

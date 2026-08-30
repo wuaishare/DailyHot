@@ -99,6 +99,25 @@ const CATEGORY_SEO_MAP = {
       "投资热点",
     ],
   },
+  "羊毛": {
+    title: "羊毛优惠",
+    titleTail: "限免、优惠券、免费福利与实测线报实时聚合",
+    description:
+      "羊毛优惠聚合 0818团、NodeLoc优惠与 IT之家喜加一等高时效信息，覆盖限免、免费额度、优惠券、秒杀、抽奖、补贴与游戏免费领取，帮助你快速发现值得立即行动的福利线报。",
+    keywords: [
+      "羊毛",
+      "优惠线报",
+      "限免",
+      "免费福利",
+      "优惠券",
+      "免费额度",
+      "抽奖",
+      "秒杀",
+      "喜加一",
+      "0818团",
+      "NodeLoc优惠",
+    ],
+  },
   "生活": {
     title: "生活热榜",
     titleTail: "消费、阅读、影视与生活方式热点聚合",
@@ -166,6 +185,33 @@ const CATEGORY_SEO_MAP = {
 };
 
 const CATEGORY_LOCALE_SEO_MAP = {
+  "羊毛": {
+    en: {
+      title: "Deals & Freebies - Coupons, giveaways and limited-time offers | DailyHot",
+      description:
+        "Deals & Freebies aggregates time-sensitive offers from 0818 Deals, NodeLoc Deals and ITHome Free Games, including coupons, free credits, giveaways, discounts and limited-time freebies.",
+      keywords:
+        "deals,freebies,coupons,giveaways,discounts,free credits,limited-time offers,0818 Deals,NodeLoc Deals,ITHome Free Games,DailyHot",
+    },
+    "zh-TW": {
+      title: "優惠情報 - 限免、優惠券、免費福利與即時線報 | 吾愛熱榜",
+      description:
+        "優惠情報彙整 0818團、NodeLoc優惠與 IT之家喜加一等高時效資訊，涵蓋限免、免費額度、優惠券、抽獎、折扣及遊戲免費領取。",
+      keywords: "優惠情報,限免,免費福利,優惠券,抽獎,折扣,0818團,NodeLoc優惠,喜加一,吾愛熱榜",
+    },
+    ja: {
+      title: "お得情報 - 無料配布、クーポン、キャンペーン速報 | DailyHot",
+      description:
+        "0818、NodeLoc、ITHome の無料配布やクーポン、無料クレジット、抽選、割引など、行動価値の高いお得情報をまとめて確認できます。",
+      keywords: "お得情報,無料配布,クーポン,キャンペーン,割引,無料クレジット,0818,NodeLoc,ITHome,DailyHot",
+    },
+    ko: {
+      title: "혜택 정보 - 무료 배포, 쿠폰, 할인 및 이벤트 | DailyHot",
+      description:
+        "0818, NodeLoc, ITHome에서 제공하는 무료 배포, 쿠폰, 무료 크레딧, 경품, 할인 등 시의성 높은 혜택 정보를 한곳에서 확인합니다.",
+      keywords: "혜택,무료 배포,쿠폰,할인,경품,무료 크레딧,0818,NodeLoc,ITHome,DailyHot",
+    },
+  },
   "财经": {
     en: {
       title: "Finance Rankings - Stocks, ETFs, market activity, and investor topics | DailyHot",

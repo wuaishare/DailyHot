@@ -4,14 +4,16 @@ const BUILTIN_CATEGORIES = [
   { id: "general", name: "综合", order: 0, builtin: true },
   { id: "tech", name: "科技", order: 1, builtin: true },
   { id: "finance", name: "财经", order: 2, builtin: true },
-  { id: "life", name: "生活", order: 3, builtin: true },
-  { id: "games", name: "游戏", order: 4, builtin: true },
-  { id: "community", name: "社区", order: 5, builtin: true },
-  { id: "ai", name: "AI", order: 6, builtin: true },
+  { id: "wool", name: "羊毛", order: 3, builtin: true },
+  { id: "life", name: "生活", order: 4, builtin: true },
+  { id: "games", name: "游戏", order: 5, builtin: true },
+  { id: "community", name: "社区", order: 6, builtin: true },
+  { id: "ai", name: "AI", order: 7, builtin: true },
 ];
 
 const BUILTIN_CATEGORY_MIGRATIONS = {
   xueqiu: { from: "综合", to: "财经" },
+  "ithome-xijiayi": { from: "科技", to: "羊毛" },
 };
 
 const BUILTIN_ORDER_MIGRATIONS = {
@@ -471,11 +473,27 @@ export const mainStore = defineStore("mainData", {
           category: "科技",
         },
         {
+          label: "0818团",
+          name: "0818tuan",
+          order: 51.7,
+          show: true,
+          category: "羊毛",
+          subtype: "latest",
+        },
+        {
+          label: "NodeLoc",
+          name: "nodeloc-deals",
+          order: 51.8,
+          show: true,
+          category: "羊毛",
+          subtype: "wool",
+        },
+        {
           label: "IT之家「喜加一」",
           name: "ithome-xijiayi",
           order: 52,
           show: true,
-          category: "科技",
+          category: "羊毛",
         },
         {
           label: "简书",

@@ -1,6 +1,8 @@
 import { getPublicAssetUrl } from "@/utils/publicAssets";
 
 const SOURCE_LOGO_MAP = {
+  "0818tuan": "/logo/wool/0818tuan.png",
+  "nodeloc-deals": "/logo/wool/nodeloc.png",
   xueqiu: "/logo/xueqiu.png",
   sse: "https://www.sse.com.cn/favicon.ico",
   szse: "https://res.szse.cn/common/images/favicon.ico",
