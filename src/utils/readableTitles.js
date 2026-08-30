@@ -28,6 +28,7 @@ const ENTITY_TITLE_SOURCE_NAMES = new Set([
   "nyse",
   "twse",
   "nse",
+  "asx",
   "global-indexes",
 ]);
 const SOURCE_TEXT_NORMALIZER_NAMES = new Set(["anthropic-news"]);

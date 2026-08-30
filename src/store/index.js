@@ -145,6 +145,13 @@ export const mainStore = defineStore("mainData", {
           category: "财经",
         },
         {
+          label: "澳交所",
+          name: "asx",
+          order: 56.5,
+          show: true,
+          category: "财经",
+        },
+        {
           label: "全球股指",
           name: "global-indexes",
           order: 7.45,

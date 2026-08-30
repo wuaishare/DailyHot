@@ -737,6 +737,11 @@ const LIST_SEO_MAP = {
     keywords: "印度国家证券交易所,NSE India,NSE成交额榜,NSE成交量榜,NSE涨幅榜,NSE跌幅榜,印度股票",
     description: "基于印度国家证券交易所官方市场分析接口，提供 NSE 股票成交额、成交量、涨幅与跌幅 Top20。",
   },
+  asx: {
+    label: "澳大利亚证券交易所",
+    keywords: "澳大利亚证券交易所,ASX,澳股成交额榜,澳股成交量榜,澳股成交笔数榜,澳大利亚股票",
+    description: "基于澳大利亚证券交易所官方每日 Top20 报告，提供澳股成交额、成交量与成交笔数排行。",
+  },
   "global-indexes": {
     label: "全球股指",
     keywords: "全球股指,全球指数,上证指数,沪深300,深证成指,创业板指,恒生指数,恒生科技指数,台湾加权指数,TAIEX,标普500,S&P 500,SPX,道琼斯指数,Dow Jones,罗素2000,Russell 2000,纳斯达克综合指数,Nasdaq 100,日经225,Nikkei 225,KOSPI,KOSPI 200,KOSDAQ,NIFTY 50,SENSEX,S&P TSX,TSX Composite,S&P ASX 200,ASX 200,Ibovespa,SMI,IBEX 35,FTSE MIB,富时100,FTSE 100,CAC 40,DAX,EURO STOXX 50",

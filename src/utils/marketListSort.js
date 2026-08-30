@@ -15,7 +15,7 @@ export const MARKET_RANK_DIRECTIONS = {
   REVERSE: "reverse",
 };
 
-const SORTABLE_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq", "nyse", "twse", "nse"]);
+const SORTABLE_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq", "nyse", "twse", "nse", "asx"]);
 const NATIVE_RANK_TYPES_BY_SOURCE = {
   sse: new Set(["stock", "stock-volume", "stock-gain", "stock-loss", "etf"]),
   szse: new Set([
@@ -32,6 +32,7 @@ const NATIVE_RANK_TYPES_BY_SOURCE = {
   nyse: new Set(["turnover", "volume", "gain", "loss"]),
   twse: new Set(["turnover", "volume", "gain", "loss"]),
   nse: new Set(["turnover", "volume", "gain", "loss"]),
+  asx: new Set(["turnover", "volume", "trades"]),
 };
 const validModes = new Set(Object.values(MARKET_SORT_MODES));
 

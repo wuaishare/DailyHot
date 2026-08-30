@@ -236,6 +236,13 @@ const SOURCE_SUBTYPE_GROUPS = {
       { label: "跌幅榜", value: "loss" },
     ] },
   ],
+  asx: [
+    { key: "rank", label: "榜单", param: "type", items: [
+      { label: "成交额", value: "turnover" },
+      { label: "成交量", value: "volume" },
+      { label: "成交笔数", value: "trades" },
+    ] },
+  ],
   nytimes: [
     {
       key: "region",

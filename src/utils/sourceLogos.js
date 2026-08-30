@@ -9,6 +9,7 @@ const SOURCE_LOGO_MAP = {
   nyse: "/logo/market/nyse.gif",
   twse: "https://www.twse.com.tw/favicon.ico",
   nse: "https://www.nseindia.com/assets/images/favicon.ico",
+  asx: "/logo/market/asx.png",
   "global-indexes": "/ico/favicon.png",
   "openrouter-rankings": "/logo/ai/openrouter-rankings.svg",
   artificialanalysis: "/logo/ai/artificialanalysis.png",

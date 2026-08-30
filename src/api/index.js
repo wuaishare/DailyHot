@@ -11,6 +11,8 @@ const SAME_ORIGIN_API_SOURCES = new Set([
   "clawhub",
   "openrouter-rankings",
   "weibo",
+]);
+const DIRECT_PUBLIC_API_SOURCES = new Set([
   "xueqiu",
   "sse",
   "szse",
@@ -19,8 +21,12 @@ const SAME_ORIGIN_API_SOURCES = new Set([
   "nyse",
   "twse",
   "nse",
+  "asx",
   "global-indexes",
 ]);
+const PUBLIC_API2_BASE =
+  import.meta.env.VITE_GLOBAL_API2 ||
+  (import.meta.env.PROD ? "https://hotapi2.wuaishare.cn" : "");
 const appApiBase = import.meta.env.VITE_GLOBAL_API;
 const analyticsApiBases = import.meta.env.PROD
   ? ["/api", import.meta.env.VITE_GLOBAL_API].filter(Boolean)
@@ -51,11 +57,13 @@ const requestAnalytics = async (config) => {
  * @returns
  */
 export const getHotLists = (type, isNew = false, params, options = {}) => {
-  const useSameOriginApi = SAME_ORIGIN_API_SOURCES.has(type);
+  const forceSameOrigin = Boolean(options?.forceSameOrigin);
+  const useDirectPublicApi = DIRECT_PUBLIC_API_SOURCES.has(type) && !forceSameOrigin;
+  const useSameOriginApi = forceSameOrigin || SAME_ORIGIN_API_SOURCES.has(type);
   const useApi2 =
-    !useSameOriginApi && (options?.useApi2 || API2_ONLY_SOURCES.has(type));
+    useDirectPublicApi || (!useSameOriginApi && (options?.useApi2 || API2_ONLY_SOURCES.has(type)));
   const apiBase = appApiBase;
-  const apiBase2 = import.meta.env.VITE_GLOBAL_API2;
+  const apiBase2 = useDirectPublicApi ? PUBLIC_API2_BASE : import.meta.env.VITE_GLOBAL_API2;
   const timeout = options?.timeout;
   const forceNoCache = Boolean(options?.forceNoCache);
   const silent = Boolean(options?.silent);
@@ -124,7 +132,32 @@ export const getHotListsWithFallback = async (
   params,
   options = {}
 ) => {
+  const useDirectPublicApi = DIRECT_PUBLIC_API_SOURCES.has(type);
   const useSameOriginApi = SAME_ORIGIN_API_SOURCES.has(type);
+
+  if (useDirectPublicApi) {
+    try {
+      const result = await getHotLists(type, isNew, params, {
+        timeout: options?.timeout,
+        forceNoCache: Boolean(options?.forceNoCache),
+        silent: true,
+      });
+      return { result, usedApi2: true, usedFallback: false, fallbackSuccess: false };
+    } catch (primaryError) {
+      try {
+        const result = await getHotLists(type, isNew, params, {
+          timeout: options?.timeout,
+          forceNoCache: Boolean(options?.forceNoCache),
+          forceSameOrigin: true,
+          silent: true,
+        });
+        return { result, usedApi2: false, usedFallback: true, fallbackSuccess: true };
+      } catch {
+        throw primaryError;
+      }
+    }
+  }
+
   const hasApi2 = Boolean(import.meta.env.VITE_GLOBAL_API2) && !useSameOriginApi;
   const preferApi2 = Boolean(
     !useSameOriginApi && (options?.useApi2 || API2_ONLY_SOURCES.has(type))

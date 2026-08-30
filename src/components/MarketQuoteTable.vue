@@ -56,6 +56,9 @@ const currencyPrefix = (item) => {
   if (currency === "HKD") return "HK$";
   if (currency === "USD") return "$";
   if (currency === "CNY") return "CN¥";
+  if (currency === "TWD") return "NT$";
+  if (currency === "INR") return "₹";
+  if (currency === "AUD") return "A$";
   return "";
 };
 

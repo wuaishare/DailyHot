@@ -411,7 +411,7 @@ const currentSourceMeta = computed(
     store.defaultNewsArr.find((item) => item.name === listType.value) ||
     null
 );
-const PROFESSIONAL_MARKET_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq", "nyse", "twse", "nse"]);
+const PROFESSIONAL_MARKET_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq", "nyse", "twse", "nse", "asx"]);
 const isIndexOverviewSource = computed(() => listType.value === "global-indexes");
 const isProfessionalMarketSource = computed(() =>
   PROFESSIONAL_MARKET_SOURCES.has(listType.value)

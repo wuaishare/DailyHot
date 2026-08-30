@@ -10,6 +10,7 @@ const SOURCE_LABEL_OVERRIDES = {
   nyse: { en: "New York Stock Exchange" },
   twse: { en: "Taiwan Stock Exchange" },
   nse: { en: "National Stock Exchange of India" },
+  asx: { en: "Australian Securities Exchange" },
   "global-indexes": { en: "Global Stock Indexes" },
   zhihu: { en: "Zhihu Hot List" },
   douyin: { en: "Douyin Hot List" },
@@ -169,6 +170,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "National Stock Exchange of India",
     ja: "インド国立証券取引所",
     ko: "인도국립증권거래소",
+  },
+  asx: {
+    "zh-CN": "澳大利亚证券交易所",
+    "zh-TW": "澳大利亞證券交易所",
+    en: "Australian Securities Exchange",
+    ja: "オーストラリア証券取引所",
+    ko: "호주증권거래소",
   },
   "global-indexes": {
     "zh-CN": "全球股指",

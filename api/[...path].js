@@ -55,6 +55,7 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "twse",
   "nse",
   "global-indexes",
+  "asx",
 ]);
 const PUBLIC_API_FIRST_PATHS = new Set([
   "xueqiu",
@@ -74,6 +75,7 @@ const API_SUBTYPE_PATH_SOURCES = new Set([
   "designarena",
   "ithome",
   "openrouter-rankings",
+  "asx",
 ]);
 const WEIBO_HOT_BAND_URL = "https://weibo.com/ajax/statuses/hot_band";
 const WEIBO_WEB_BASE_URL = "https://weibo.com";
