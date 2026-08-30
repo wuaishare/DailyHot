@@ -121,6 +121,13 @@
               :items="orderedListItems"
               :link-target="linkTarget"
             />
+            <MarketQuoteTable
+              v-else-if="isProfessionalMarketSource"
+              :items="currentPageItems"
+              :link-target="linkTarget"
+              :aria-label="listHeaderTitle"
+              @item-click="trackMarketTableItemClick"
+            />
             <n-list v-else hoverable style="width: 100%">
               <n-list-item
                 v-for="(item, index) in currentPageItems"
@@ -237,7 +244,7 @@
               </n-list-item>
             </n-list>
             <n-pagination
-              v-if="orderedListItems.length && !isIndexOverviewSource"
+              v-if="orderedListItems.length && !isIndexOverviewSource && !isProfessionalMarketSource"
               class="pagination"
               :page-slot="5"
               :item-count="orderedListItems.length"
@@ -262,6 +269,7 @@ import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import SubtypeBar from "@/components/SubtypeBar.vue";
 import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
 import GlobalIndexTable from "@/components/GlobalIndexTable.vue";
+import MarketQuoteTable from "@/components/MarketQuoteTable.vue";
 import MarketListSortControl from "@/components/MarketListSortControl.vue";
 import {
   buildSourceSubtypeParams,
@@ -392,7 +400,11 @@ const currentSourceMeta = computed(
     store.defaultNewsArr.find((item) => item.name === listType.value) ||
     null
 );
+const PROFESSIONAL_MARKET_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq"]);
 const isIndexOverviewSource = computed(() => listType.value === "global-indexes");
+const isProfessionalMarketSource = computed(() =>
+  PROFESSIONAL_MARKET_SOURCES.has(listType.value)
+);
 const isSortableMarketSource = computed(() => isMarketListSortable(listType.value));
 const showMarketSortControl = computed(
   () =>
@@ -697,6 +709,20 @@ const getItemLink = (data) => {
   if (!data?.mobileUrl) return data.url;
   return isDesktop.value ? data.url : data.mobileUrl;
 };
+
+const trackMarketTableItemClick = (item, index) =>
+  trackEvent({
+    event: "rank_item_click",
+    source: listType.value,
+    subtype: listSubType.value,
+    category: store.activeCategory,
+    href: getItemLink(item),
+    meta: {
+      itemId: item?.id,
+      itemTitle: item?.title,
+      rankIndex: index + 1,
+    },
+  });
 
 const getTypeTrackElement = () => typeTrackRef.value?.$el || typeTrackRef.value;
 
