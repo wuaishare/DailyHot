@@ -1258,8 +1258,9 @@ onBeforeUnmount(() => {
       align-items: center;
       justify-content: flex-end;
       gap: 6px;
-      flex: 1 1 0;
+      flex: 0 1 auto;
       min-width: 0;
+      max-width: 68%;
       margin-left: auto;
     }
 
@@ -1270,7 +1271,7 @@ onBeforeUnmount(() => {
     .header-subtype {
       flex: 0 1 auto;
       min-width: 0;
-      max-width: min(180px, 42%);
+      max-width: 180px;
       margin-left: auto;
     }
 

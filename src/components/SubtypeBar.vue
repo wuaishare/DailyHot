@@ -313,6 +313,7 @@ onBeforeUnmount(() => {
 .trigger-wrap {
   display: inline-flex;
   min-width: 0;
+  max-width: 100%;
 }
 
 .subtype-chip,
@@ -331,7 +332,9 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  max-width: min(220px, 56vw);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 5px 11px;
 }
 
