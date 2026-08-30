@@ -23,7 +23,12 @@
       >
         <div class="name-cell" role="cell">
           <strong>{{ item.title }}</strong>
-          <span>{{ item.extra?.code }}</span>
+          <span class="identity-row">
+            <span class="index-code">{{ item.extra?.code }}</span>
+            <span v-if="providerText(item)" class="provider-meta" :class="providerToneClass(item)">
+              {{ providerText(item) }}
+            </span>
+          </span>
         </div>
         <div class="numeric primary-value" role="cell">{{ formatNumber(item.extra?.last) }}</div>
         <div class="numeric" :class="toneClass(item)" role="cell">{{ formatSigned(item.extra?.change) }}</div>
@@ -96,8 +101,36 @@ const toneClass = (item) => {
   return positive === redUp ? "is-red" : "is-green";
 };
 
+const freshnessLabel = (value) => {
+  if (value === "delayed") return t("globalIndexTable.delayed");
+  if (value === "stale") return t("globalIndexTable.stale");
+  if (value === "snapshot") return t("globalIndexTable.snapshot");
+  return "";
+};
+
+const providerText = (item) => {
+  const extra = item?.extra || {};
+  const source = extra.sourceLabel || extra.primaryProvider || "";
+  if (!source) return "";
+  return [
+    source,
+    extra.sourceMode === "fallback" ? t("globalIndexTable.fallback") : "",
+    freshnessLabel(extra.freshness),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+};
+
+const providerToneClass = (item) => {
+  if (item?.extra?.sourceMode === "stale") return "is-stale";
+  if (item?.extra?.sourceMode === "fallback") return "is-fallback";
+  return "";
+};
+
 const itemTitle = (item) =>
-  [item?.extra?.region, item?.title, item?.extra?.code].filter(Boolean).join(" · ");
+  [item?.extra?.region, item?.title, item?.extra?.code, providerText(item)]
+    .filter(Boolean)
+    .join(" · ");
 </script>
 
 <style scoped>
@@ -177,6 +210,30 @@ const itemTitle = (item) =>
 .time {
   color: var(--n-text-color-3);
   font-size: 12px;
+}
+
+.identity-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.index-code {
+  flex: 0 0 auto;
+}
+
+.provider-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provider-meta.is-fallback,
+.provider-meta.is-stale {
+  font-weight: 600;
 }
 
 .numeric {
