@@ -44,16 +44,19 @@
         </div>
       </div>
     </div>
-    <SubtypeBar
-      v-if="subtypeGroups.length"
-      class="subtype"
-      :groups="subtypeGroups"
-      :active-value="listSubType"
-      :show-order-control="showNativeOrderControl"
-      :order-direction="marketRankDirection"
-      @change="changeSubType"
-      @order-change="changeMarketRankDirection"
-    />
+    <div v-if="subtypeGroups.length" class="subtype-actions">
+      <MarketRankDirectionControl
+        v-if="showNativeOrderControl"
+        :direction="marketRankDirection"
+        @change="changeMarketRankDirection"
+      />
+      <SubtypeBar
+        class="subtype"
+        :groups="subtypeGroups"
+        :active-value="listSubType"
+        @change="changeSubType"
+      />
+    </div>
     <n-card class="card">
       <template #header>
         <Transition name="fade" mode="out-in">
@@ -274,6 +277,7 @@ import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
 import GlobalIndexTable from "@/components/GlobalIndexTable.vue";
 import MarketQuoteTable from "@/components/MarketQuoteTable.vue";
 import MarketListSortControl from "@/components/MarketListSortControl.vue";
+import MarketRankDirectionControl from "@/components/MarketRankDirectionControl.vue";
 import {
   buildSourceSubtypeParams,
   getSourceSubtypeGroups,
@@ -285,6 +289,7 @@ import {
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import {
   getFundMetricView,
+  getMarketEntityDisplayTitle,
   getMarketQuoteView,
   isMarketQuoteSource,
 } from "@/utils/marketQuote";
@@ -474,7 +479,9 @@ const currentPageItems = computed(() =>
     .map((item) => {
       const originalTitle = String(item?.originalTitle || "");
       const originalDesc = String(item?.originalDesc || "");
-      const displayTitle = item?.title || originalTitle;
+      const displayTitle = isMarketQuoteSource(listType.value)
+        ? getMarketEntityDisplayTitle(item, listType.value, locale.value)
+        : item?.title || originalTitle;
       const rawDisplayDesc = item?.desc || originalDesc;
       const displayDesc =
         locale.value !== "zh-CN" &&
@@ -1131,9 +1138,17 @@ onBeforeUnmount(() => {
       }
     }
   }
-  .subtype {
+  .subtype-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
     width: 100%;
     margin-top: 6px;
+  }
+  .subtype {
+    width: auto;
+    min-width: 0;
   }
   .card {
     margin-top: 10px;

@@ -31,15 +31,18 @@
             v-else-if="subtypeGroups.length || isSortableMarketSource"
             class="header-market-actions"
           >
+            <MarketRankDirectionControl
+              v-if="showNativeOrderControl"
+              class="header-rank-direction"
+              :direction="marketRankDirection"
+              @change="changeMarketRankDirection"
+            />
             <SubtypeBar
               v-if="subtypeGroups.length"
               class="header-subtype"
               :groups="subtypeGroups"
               :active-value="activeSubType"
-              :show-order-control="showNativeOrderControl"
-              :order-direction="marketRankDirection"
               @change="changeSubType"
-              @order-change="changeMarketRankDirection"
               @click.stop
             />
             <MarketListSortControl
@@ -350,6 +353,7 @@ import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import SubtypeBar from "@/components/SubtypeBar.vue";
+import MarketRankDirectionControl from "@/components/MarketRankDirectionControl.vue";
 import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
 import MarketListSortControl from "@/components/MarketListSortControl.vue";
 import {
@@ -363,6 +367,7 @@ import { getSourceLogo } from "@/utils/sourceLogos";
 import { getPublicAssetUrl } from "@/utils/publicAssets";
 import {
   getFundMetricView,
+  getMarketEntityDisplayTitle,
   getMarketQuoteView,
   isMarketQuoteSource,
 } from "@/utils/marketQuote";
@@ -560,7 +565,9 @@ const visibleItems = computed(() => {
   const decoratedItems = visibleSourceItems.map((item) => {
     const originalTitle = String(item?.originalTitle || "");
     const originalDesc = String(item?.originalDesc || "");
-    const displayTitle = item?.title || originalTitle;
+    const displayTitle = isMarketQuoteSource(props.hotData.name)
+      ? getMarketEntityDisplayTitle(item, props.hotData.name, locale.value)
+      : item?.title || originalTitle;
     const rawDisplayDesc = item?.desc || originalDesc;
     const marketQuote = isMarketQuoteSource(props.hotData.name)
       ? getMarketQuoteView(item, locale.value)
@@ -1256,10 +1263,14 @@ onBeforeUnmount(() => {
       margin-left: auto;
     }
 
+    .header-rank-direction {
+      flex: 0 0 auto;
+    }
+
     .header-subtype {
-      flex: 1 1 0;
+      flex: 0 1 auto;
       min-width: 0;
-      max-width: none;
+      max-width: min(180px, 42%);
       margin-left: auto;
     }
 

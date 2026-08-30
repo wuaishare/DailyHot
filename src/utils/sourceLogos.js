@@ -6,7 +6,7 @@ const SOURCE_LOGO_MAP = {
   szse: "https://res.szse.cn/common/images/favicon.ico",
   hkex: "https://www.hkex.com.hk/assets/images/favicon.png",
   nasdaq: "https://www.nasdaq.com/sites/acquia.prod/files/favicon.ico",
-  nyse: "https://www.nyse.com/favicon.ico",
+  nyse: "/logo/market/nyse.gif",
   twse: "https://www.twse.com.tw/favicon.ico",
   nse: "https://www.nseindia.com/assets/images/favicon.ico",
   "global-indexes": "/ico/favicon.png",

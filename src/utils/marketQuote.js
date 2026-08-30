@@ -1,4 +1,5 @@
 import { normalizeLocale } from "@/utils/locale";
+import { toSimplified } from "chinese-simple2traditional";
 
 const MARKET_QUOTE_SOURCES = new Set([
   "xueqiu",
@@ -46,6 +47,20 @@ const CURRENCY_PREFIXES = {
 
 export const isMarketQuoteSource = (name) =>
   MARKET_QUOTE_SOURCES.has(String(name || "").trim());
+
+const SIMPLIFIED_ENTITY_SOURCES = new Set(["hkex", "twse"]);
+
+export const getMarketEntityDisplayTitle = (item, sourceName, locale = "zh-CN") => {
+  const title = String(item?.title || item?.originalTitle || "").trim();
+  if (!title) return "";
+  if (
+    normalizeLocale(locale) === "zh-CN" &&
+    SIMPLIFIED_ENTITY_SOURCES.has(String(sourceName || ""))
+  ) {
+    return toSimplified(title);
+  }
+  return title;
+};
 
 const formatNumber = (value, locale, maximumFractionDigits = 3) => {
   const numericValue = Number(value);

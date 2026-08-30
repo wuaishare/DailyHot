@@ -124,27 +124,6 @@
             </div>
           </template>
 
-          <div v-if="showOrderControl" class="rank-order-row">
-            <span class="rank-order-label">{{ t("hotList.rankOrder") }}</span>
-            <div class="rank-order-options" role="radiogroup" :aria-label="t('hotList.rankOrder')">
-              <button
-                type="button"
-                class="rank-order-option"
-                :class="{ active: orderDirection !== 'reverse' }"
-                @click="selectOrder('normal')"
-              >
-                {{ t("hotList.rankOrderNormal") }}
-              </button>
-              <button
-                type="button"
-                class="rank-order-option"
-                :class="{ active: orderDirection === 'reverse' }"
-                @click="selectOrder('reverse')"
-              >
-                {{ t("hotList.rankOrderReverse") }}
-              </button>
-            </div>
-          </div>
         </div>
       </Transition>
     </Teleport>
@@ -159,11 +138,9 @@ import { mainStore } from "@/store";
 const props = defineProps({
   groups: { type: Array, default: () => [] },
   activeValue: { type: String, default: null },
-  showOrderControl: { type: Boolean, default: false },
-  orderDirection: { type: String, default: "normal" },
 });
 
-const emit = defineEmits(["change", "order-change"]);
+const emit = defineEmits(["change"]);
 const store = mainStore();
 const { t } = useI18n({ useScope: "global" });
 const triggerRef = ref(null);
@@ -232,10 +209,11 @@ const updateMenuPosition = () => {
   const rect = triggerRef.value.getBoundingClientRect();
   const viewportWidth = document.documentElement?.clientWidth || window.innerWidth;
   const viewportHeight = document.documentElement?.clientHeight || window.innerHeight;
-  const desktopWidth = props.groups.length > 1
-    ? Math.min(DESKTOP_MENU_MAX_WIDTH, 190 * props.groups.length + 32)
-    : 240;
-  const width = Math.min(isMobile.value ? viewportWidth - EDGE_GAP * 2 : desktopWidth, viewportWidth - EDGE_GAP * 2);
+  const availableWidth = viewportWidth - EDGE_GAP * 2;
+  const measuredWidth = menuRef.value?.getBoundingClientRect?.().width || rect.width;
+  const width = isMobile.value
+    ? availableWidth
+    : Math.min(Math.max(measuredWidth, rect.width), DESKTOP_MENU_MAX_WIDTH, availableWidth);
   const preferredLeft = rect.right - width;
   const left = Math.max(EDGE_GAP, Math.min(preferredLeft, viewportWidth - width - EDGE_GAP));
   const maxHeight = Math.max(180, viewportHeight - EDGE_GAP * 2);
@@ -243,7 +221,7 @@ const updateMenuPosition = () => {
   const belowTop = rect.bottom + 6;
   const showAbove = belowTop + estimatedHeight > viewportHeight && rect.top > estimatedHeight + EDGE_GAP;
   menuStyle.value = {
-    width: `${width}px`,
+    ...(isMobile.value ? { width: `${width}px` } : {}),
     maxWidth: `${width}px`,
     maxHeight: `${Math.min(isMobile.value ? 480 : 420, maxHeight)}px`,
     left: `${left}px`,
@@ -284,10 +262,6 @@ const selectItem = (value) => {
   closeMenu();
 };
 
-const selectOrder = (direction) => {
-  emit("order-change", direction);
-  closeMenu();
-};
 
 const toggleAccordion = (group) => {
   const key = getGroupKey(group);
@@ -395,6 +369,9 @@ onBeforeUnmount(() => {
   --menu-text: var(--n-text-color, #1f2329);
   position: fixed;
   z-index: 900;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 152px;
   overflow: auto;
   padding: 10px;
   border: 1px solid var(--menu-border);
@@ -414,12 +391,14 @@ onBeforeUnmount(() => {
 
 .desktop-menu-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(150px, max-content);
   gap: 8px 12px;
 }
 
 .desktop-menu-grid.single-group {
   display: block;
+  min-width: max-content;
 }
 
 .menu-group-title {
@@ -435,7 +414,6 @@ onBeforeUnmount(() => {
 }
 
 .menu-item,
-.rank-order-option,
 .accordion-heading {
   border: 0;
   background: transparent;
@@ -462,40 +440,8 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
-.rank-order-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 9px;
-  padding: 9px 2px 1px;
-  border-top: 1px solid var(--menu-border);
-}
-
-.rank-order-label {
-  padding-left: 5px;
-  color: var(--n-text-color-3, #8a8f99);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.rank-order-options {
-  display: inline-flex;
-  padding: 2px;
-  border-radius: 999px;
-  background: rgba(127, 127, 127, 0.1);
-}
-
-.rank-order-option {
-  padding: 4px 9px;
-  border-radius: 999px;
-  font-size: 11px;
-}
-
-.rank-order-option.active {
-  background: #ea444d;
-  color: #fff;
-  font-weight: 700;
+.subtype-menu.is-mobile {
+  width: auto;
 }
 
 .mobile-accordion-list {
@@ -562,8 +508,5 @@ onBeforeUnmount(() => {
     padding: 5px 10px;
   }
 
-  .rank-order-row {
-    padding-top: 10px;
-  }
 }
 </style>

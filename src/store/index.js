@@ -14,6 +14,13 @@ const BUILTIN_CATEGORY_MIGRATIONS = {
   xueqiu: { from: "综合", to: "财经" },
 };
 
+const BUILTIN_ORDER_MIGRATIONS = {
+  "global-indexes": { from: 7.95, to: 7.45 },
+  nyse: { from: 7.91, to: 19.5 },
+  twse: { from: 7.92, to: 34.5 },
+  nse: { from: 7.93, to: 49.5 },
+};
+
 export const mainStore = defineStore("mainData", {
   state: () => {
     return {
@@ -119,28 +126,28 @@ export const mainStore = defineStore("mainData", {
         {
           label: "NYSE",
           name: "nyse",
-          order: 7.91,
+          order: 19.5,
           show: true,
           category: "财经",
         },
         {
-          label: "TWSE",
+          label: "台交所",
           name: "twse",
-          order: 7.92,
+          order: 34.5,
           show: true,
           category: "财经",
         },
         {
           label: "NSE",
           name: "nse",
-          order: 7.93,
+          order: 49.5,
           show: true,
           category: "财经",
         },
         {
           label: "全球股指",
           name: "global-indexes",
-          order: 7.95,
+          order: 7.45,
           show: true,
           category: "财经",
         },
@@ -786,6 +793,14 @@ export const mainStore = defineStore("mainData", {
           defaults.category === categoryMigration.to
         ) {
           merged.category = categoryMigration.to;
+        }
+        const orderMigration = BUILTIN_ORDER_MIGRATIONS[item.name];
+        if (
+          orderMigration &&
+          Number(item.order) === orderMigration.from &&
+          Number(defaults.order) === orderMigration.to
+        ) {
+          merged.order = orderMigration.to;
         }
         if (item.name === "paperswithcode") {
           merged.show = false;
