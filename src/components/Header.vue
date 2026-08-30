@@ -1093,18 +1093,41 @@ onBeforeUnmount(() => {
   @media (max-width: 768px) {
     section {
       display: flex;
+      min-width: 0;
+      gap: 10px;
     }
     .logo {
+      flex: 0 0 auto;
+      min-width: 0;
+
       img {
         width: 40px;
         height: 40px;
+        margin-right: 8px;
       }
+
       .name {
+        flex: 0 0 auto;
+        white-space: nowrap;
+
         span {
           &:nth-of-type(1) {
             font-size: 18px;
           }
+
+          &:nth-of-type(2) {
+            display: none;
+          }
         }
+      }
+    }
+    .category-select {
+      flex: 1 1 auto;
+      min-width: 0;
+
+      :deep(.n-select) {
+        width: 100%;
+        min-width: 0;
       }
     }
     .current-time,
@@ -1113,6 +1136,7 @@ onBeforeUnmount(() => {
     }
     .mobile {
       display: block;
+      flex: 0 0 auto;
     }
   }
 }
