@@ -174,6 +174,11 @@ const SOURCE_SUBTYPE_GROUPS = {
       param: "type",
       items: [
         { label: "股票成交额榜", value: "stock" },
+        { label: "股票成交量", value: "stock-volume" },
+        { label: "成交笔数", value: "stock-trades" },
+        { label: "股票涨幅", value: "stock-gain" },
+        { label: "股票跌幅", value: "stock-loss" },
+        { label: "换手率", value: "stock-turnover" },
         { label: "ETF 成交额榜", value: "etf" },
       ],
     },

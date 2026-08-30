@@ -10,11 +10,11 @@ const MARKET_QUOTE_SOURCES = new Set([
 ]);
 
 const MARKET_LABELS = {
-  "zh-CN": { close: "收盘", hkClose: "收市", current: "现价", index: "最新", turnover: "成交额", volume: "成交量", heat: "热度", previousClose: "昨收" },
-  "zh-TW": { close: "收盤", hkClose: "收市", current: "現價", index: "最新", turnover: "成交額", volume: "成交量", heat: "熱度", previousClose: "昨收" },
-  en: { close: "Close", hkClose: "Close", current: "Price", index: "Latest", turnover: "Turnover", volume: "Volume", heat: "Heat", previousClose: "Prev Close" },
-  ja: { close: "終値", hkClose: "終値", current: "現在値", index: "最新", turnover: "売買代金", volume: "出来高", heat: "注目度", previousClose: "前日終値" },
-  ko: { close: "종가", hkClose: "종가", current: "현재가", index: "현재", turnover: "거래대금", volume: "거래량", heat: "인기도", previousClose: "전일 종가" },
+  "zh-CN": { close: "收盘", hkClose: "收市", current: "现价", index: "最新", turnover: "成交额", volume: "成交量", trades: "成交笔数", turnoverRate: "换手率", heat: "热度", previousClose: "昨收" },
+  "zh-TW": { close: "收盤", hkClose: "收市", current: "現價", index: "最新", turnover: "成交額", volume: "成交量", trades: "成交筆數", turnoverRate: "換手率", heat: "熱度", previousClose: "昨收" },
+  en: { close: "Close", hkClose: "Close", current: "Price", index: "Latest", turnover: "Turnover", volume: "Volume", trades: "Trades", turnoverRate: "Turnover rate", heat: "Heat", previousClose: "Prev Close" },
+  ja: { close: "終値", hkClose: "終値", current: "現在値", index: "最新", turnover: "売買代金", volume: "出来高", trades: "約定件数", turnoverRate: "売買回転率", heat: "注目度", previousClose: "前日終値" },
+  ko: { close: "종가", hkClose: "종가", current: "현재가", index: "현재", turnover: "거래대금", volume: "거래량", trades: "거래 건수", turnoverRate: "회전율", heat: "인기도", previousClose: "전일 종가" },
 };
 
 const FUND_LABELS = {
@@ -85,17 +85,25 @@ export const getMarketQuoteView = (item, locale = "zh-CN") => {
       ? "heat"
       : extra.metricKind === "previousClose"
         ? "previousClose"
-        : extra.metric === "volume"
-          ? "volume"
-          : "turnover";
+        : extra.metricKind === "trades"
+          ? "trades"
+          : extra.metricKind === "turnoverRate"
+            ? "turnoverRate"
+            : extra.metric === "volume"
+              ? "volume"
+              : "turnover";
   const metricValue =
     metricKind === "heat"
       ? extra.metricValue
       : metricKind === "previousClose"
         ? extra.metricValue ?? extra.previousClose
-        : metricKind === "volume"
-          ? extra.volume
-          : extra.amount;
+        : metricKind === "trades"
+          ? extra.metricValue ?? extra.tradeCount
+          : metricKind === "turnoverRate"
+            ? extra.metricValue ?? extra.turnoverRate
+            : metricKind === "volume"
+              ? extra.volume
+              : extra.amount;
   const market = String(extra.market || "").toUpperCase();
   const colorConvention =
     extra.colorConvention === "greenUp" || market === "US" ? "western" : "cn";
@@ -119,7 +127,9 @@ export const getMarketQuoteView = (item, locale = "zh-CN") => {
     metric:
       metricKind === "previousClose"
         ? formatNumber(metricValue, targetLocale, 3)
-        : formatCompact(metricValue, targetLocale),
+        : metricKind === "turnoverRate"
+          ? `${formatNumber(metricValue, targetLocale, 2)}%`
+          : formatCompact(metricValue, targetLocale),
     metricLabel: labels[metricKind],
     closeLabel,
     tone: validChangeRate > 0 ? "up" : validChangeRate < 0 ? "down" : "flat",
