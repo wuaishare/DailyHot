@@ -104,7 +104,7 @@
                 :href="getItemLink(item)"
                 :target="linkTarget"
                 rel="noopener noreferrer nofollow"
-                :title="item.originalTitle || undefined"
+                :title="isIndexOverviewSource ? undefined : item.originalTitle || undefined"
                 @click.stop
               >
                 <div class="market-quote-copy">
@@ -119,7 +119,10 @@
                     >
                       {{ item.displayTitle }}
                     </span>
-                    <span v-if="item.marketQuote.region" class="market-quote-region">
+                    <span
+                      v-if="item.marketQuote.region && !isIndexOverviewSource"
+                      class="market-quote-region"
+                    >
                       {{ item.marketQuote.region }}
                     </span>
                     <span class="market-quote-code">{{ item.marketQuote.code }}</span>
@@ -245,6 +248,66 @@
                 </template>
                 {{ t("hotList.viewMore") }}
               </n-popover>
+              <n-popover
+                v-if="isIndexOverviewSource && hotListData.data.length"
+                trigger="click"
+                placement="top-end"
+                :show-arrow="false"
+                @update:show="syncIndexOrderDraft"
+              >
+                <template #trigger>
+                  <n-button
+                    size="tiny"
+                    secondary
+                    strong
+                    round
+                    :aria-label="t('hotList.indexOrder')"
+                    @click.stop
+                  >
+                    <template #icon>
+                      <n-icon :component="SortOne" />
+                    </template>
+                  </n-button>
+                </template>
+                <div class="index-order-panel" @click.stop>
+                  <div class="index-order-heading">
+                    <strong>{{ t("hotList.indexOrder") }}</strong>
+                    <span>{{ t("hotList.indexOrderTip") }}</span>
+                  </div>
+                  <draggable
+                    v-model="indexOrderDraft"
+                    class="index-order-list"
+                    item-key="id"
+                    handle=".index-order-handle"
+                    :animation="160"
+                    :fallback-tolerance="6"
+                    :touch-start-threshold="6"
+                    @end="saveIndexOrderDraft"
+                  >
+                    <template #item="{ element }">
+                      <div class="index-order-item">
+                        <span
+                          class="index-order-handle"
+                          role="button"
+                          :aria-label="t('hotList.dragSort')"
+                        >
+                          <n-icon :component="Drag" />
+                        </span>
+                        <span class="index-order-title">{{ element.displayTitle }}</span>
+                        <span class="index-order-code">{{ element.marketQuote?.code }}</span>
+                      </div>
+                    </template>
+                  </draggable>
+                  <n-button
+                    size="tiny"
+                    quaternary
+                    class="index-order-reset"
+                    @click.stop="restoreIndexOrder"
+                  >
+                    {{ t("hotList.indexOrderReset") }}
+                  </n-button>
+                </div>
+              </n-popover>
               <n-popover>
                 <template #trigger>
                   <span
@@ -323,7 +386,8 @@
 </template>
 
 <script setup>
-import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
+import { Drag, Fire, Refresh, More, SortOne } from "@icon-park/vue-next";
+import draggable from "vuedraggable";
 import { getHotListsWithFallback } from "@/api";
 import { formatTime } from "@/utils/getTime";
 import { getCacheVersion } from "@/utils/cache";
@@ -353,6 +417,12 @@ import {
   localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
 import { buildRankPath } from "@/utils/locale";
+import {
+  applyGlobalIndexOrder,
+  readGlobalIndexOrder,
+  resetGlobalIndexOrder,
+  saveGlobalIndexOrder,
+} from "@/utils/globalIndexOrder";
 import {
   enhanceReadableResultTitles,
   shouldProtectEntityTitleTranslation,
@@ -392,6 +462,8 @@ const lastClickTime = ref(
 
 // 热榜数据
 const hotListData = ref(null);
+const indexCustomOrder = ref(readGlobalIndexOrder());
+const indexOrderDraft = ref([]);
 const scrollbarRef = ref(null);
 const listLoading = ref(false);
 const loadingError = ref(false);
@@ -514,12 +586,15 @@ const formatPreviewHot = (value) => {
 };
 const visibleItems = computed(() => {
   const items = hotListData.value?.data || [];
-  return (isIndexOverviewSource.value ? items : items.slice(0, HOT_LIST_VISIBLE_LIMIT)).map((item) => {
+  const decoratedItems = (isIndexOverviewSource.value ? items : items.slice(0, HOT_LIST_VISIBLE_LIMIT)).map((item) => {
     const originalTitle = String(item?.originalTitle || "");
     const originalDesc = String(item?.originalDesc || "");
     const displayTitle = item?.title || originalTitle;
     const rawDisplayDesc = item?.desc || originalDesc;
-    const displayDesc = isDuplicateDesc(
+    const marketQuote = isMarketQuoteSource(props.hotData.name)
+      ? getMarketQuoteView(item, locale.value)
+      : null;
+    const defaultDisplayDesc = isDuplicateDesc(
       rawDisplayDesc,
       originalTitle,
       item?.title,
@@ -527,15 +602,25 @@ const visibleItems = computed(() => {
     )
       ? ""
       : stripPreviewText(rawDisplayDesc);
+    const displayDesc =
+      isIndexOverviewSource.value && marketQuote
+        ? [
+            marketQuote.region,
+            marketQuote.code,
+            `${marketQuote.closeLabel} ${marketQuote.price}`,
+            `${marketQuote.metricLabel} ${marketQuote.metric}`,
+            marketQuote.change,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : defaultDisplayDesc;
     return {
       ...item,
       originalTitle,
       originalDesc,
       displayTitle,
       displayDesc,
-      marketQuote: isMarketQuoteSource(props.hotData.name)
-        ? getMarketQuoteView(item, locale.value)
-        : null,
+      marketQuote,
       fundMetric: getFundMetricView(item, locale.value),
       hasReadableTranslation:
         shouldProtectEntityTitles.value ||
@@ -545,7 +630,31 @@ const visibleItems = computed(() => {
           displayTitle.trim() !== originalTitle.trim()),
     };
   });
+  return isIndexOverviewSource.value
+    ? applyGlobalIndexOrder(decoratedItems, indexCustomOrder.value)
+    : decoratedItems;
 });
+const syncIndexOrderDraft = (show) => {
+  if (!show) return;
+  indexOrderDraft.value = visibleItems.value.map((item) => ({ ...item }));
+};
+
+const saveIndexOrderDraft = () => {
+  const ids = indexOrderDraft.value.map((item) => item?.id).filter(Boolean);
+  indexCustomOrder.value = saveGlobalIndexOrder(ids);
+  $message.success(t("hotList.indexOrderSaved"));
+};
+
+const restoreIndexOrder = () => {
+  resetGlobalIndexOrder();
+  indexCustomOrder.value = [];
+  indexOrderDraft.value = applyGlobalIndexOrder(
+    visibleItems.value,
+    []
+  ).map((item) => ({ ...item }));
+  $message.success(t("hotList.indexOrderResetDone"));
+};
+
 const syncReadableTitleDom = (items = []) => {
   nextTick(() => {
     const root =
@@ -559,7 +668,7 @@ const syncReadableTitleDom = (items = []) => {
       const titleNode = titles[index];
       if (!linkNode || !titleNode) return;
       titleNode.textContent = item.displayTitle || item.originalTitle || "";
-      if (item.originalTitle) {
+      if (item.originalTitle && !isIndexOverviewSource.value) {
         linkNode.setAttribute("title", item.originalTitle);
       } else {
         linkNode.removeAttribute("title");
@@ -918,7 +1027,7 @@ const openPreview = async (item, target, requestId) => {
 };
 
 const showPreview = (item, event) => {
-  if (item?.marketQuote || item?.fundMetric) return;
+  if ((item?.marketQuote && !isIndexOverviewSource.value) || item?.fundMetric) return;
   if (!isClient || !isDesktop.value || !event?.currentTarget) return;
   if (!hasPreviewContent(item)) return;
   if (previewOpenTimer) window.clearTimeout(previewOpenTimer);
@@ -1522,6 +1631,89 @@ onBeforeUnmount(() => {
     .loading {
       height: 24px;
     }
+  }
+}
+
+.index-order-panel {
+  width: min(360px, calc(100vw - 32px));
+  padding: 4px;
+
+  .index-order-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 8px;
+
+    strong {
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    span {
+      color: var(--n-text-color-3);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+  }
+
+  .index-order-list {
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .index-order-item {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    min-height: 30px;
+    padding: 3px 4px;
+    border-radius: 6px;
+    background: var(--n-color);
+
+    & + .index-order-item {
+      margin-top: 2px;
+    }
+  }
+
+  .index-order-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    color: var(--n-text-color-3);
+    cursor: grab;
+    touch-action: none;
+
+    &:hover {
+      color: var(--n-text-color);
+      background: rgba(127, 127, 127, 0.12);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  .index-order-title {
+    overflow: hidden;
+    font-size: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .index-order-code {
+    color: var(--n-text-color-3);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .index-order-reset {
+    width: 100%;
+    margin-top: 8px;
   }
 }
 

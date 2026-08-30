@@ -126,7 +126,7 @@
                   :href="getItemLink(item)"
                   :target="linkTarget"
                   rel="noopener noreferrer nofollow"
-                  :title="item.originalTitle || undefined"
+                  :title="getItemHoverTitle(item)"
                   @click="trackEvent({
                     event: 'rank_item_click',
                     source: listType,
@@ -152,7 +152,10 @@
                           :translate="item.hasReadableTranslation ? 'no' : undefined"
                           v-html="item.displayTitle"
                         />
-                        <span v-if="item.marketQuote?.region" class="market-quote-region">
+                        <span
+                          v-if="item.marketQuote?.region && !isIndexOverviewSource"
+                          class="market-quote-region"
+                        >
                           {{ item.marketQuote.region }}
                         </span>
                         <span v-if="item.marketQuote" class="market-quote-code">
@@ -255,6 +258,7 @@ import {
   isMarketQuoteSource,
 } from "@/utils/marketQuote";
 import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
+import { applyGlobalIndexOrder, readGlobalIndexOrder } from "@/utils/globalIndexOrder";
 import { trackEvent } from "@/utils/track";
 import {
   getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
@@ -335,6 +339,7 @@ const pageNumber = ref(
     : 1
 );
 const listData = ref(null);
+const globalIndexOrder = ref(readGlobalIndexOrder());
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const typeTrackRef = ref(null);
 const typeCanScrollLeft = ref(false);
@@ -403,8 +408,14 @@ const isDuplicateDesc = (desc = "", ...titles) => {
     return normalizedTitle && normalizedDesc === normalizedTitle;
   });
 };
+const orderedListItems = computed(() => {
+  const items = listData.value?.data || [];
+  return isIndexOverviewSource.value
+    ? applyGlobalIndexOrder(items, globalIndexOrder.value)
+    : items;
+});
 const currentPageItems = computed(() =>
-  (listData.value?.data || [])
+  orderedListItems.value
     .slice(pageNumber.value * 20 - 20, pageNumber.value * 20)
     .map((item) => {
       const originalTitle = String(item?.originalTitle || "");
@@ -435,6 +446,14 @@ const currentPageItems = computed(() =>
       };
     })
 );
+const getItemHoverTitle = (item) => {
+  const title = item?.originalTitle || item?.displayTitle || "";
+  if (isIndexOverviewSource.value && item?.marketQuote?.region) {
+    return [item.marketQuote.region, title].filter(Boolean).join(" · ");
+  }
+  return title || undefined;
+};
+
 const syncReadableTitleDom = (items = []) => {
   nextTick(() => {
     const rows = document.querySelectorAll(".all .n-list-item");
@@ -445,8 +464,9 @@ const syncReadableTitleDom = (items = []) => {
       const titleNode = row.querySelector(".content .copy .title");
       if (!linkNode || !titleNode) return;
       titleNode.textContent = item.displayTitle || item.originalTitle || "";
-      if (item.originalTitle) {
-        linkNode.setAttribute("title", item.originalTitle);
+      const hoverTitle = getItemHoverTitle(item);
+      if (hoverTitle) {
+        linkNode.setAttribute("title", hoverTitle);
       } else {
         linkNode.removeAttribute("title");
       }

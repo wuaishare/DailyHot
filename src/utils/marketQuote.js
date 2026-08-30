@@ -112,7 +112,7 @@ export const getMarketQuoteView = (item, locale = "zh-CN") => {
 
   return {
     code: String(extra.code),
-    region: regionLabels[market] || "",
+    region: String(extra.region || regionLabels[market] || ""),
     price,
     change: `${changePrefix}${formatNumber(validChangeRate, targetLocale, 2)}%`,
     metric:
