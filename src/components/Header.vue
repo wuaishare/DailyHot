@@ -44,7 +44,9 @@
                 size="small"
                 text
                 strong
-                :type="cat.value === activeCategoryLocal ? 'primary' : 'default'"
+                :type="
+                  cat.value === activeCategoryLocal ? 'primary' : 'default'
+                "
                 class="cat-btn"
                 @click.stop="selectCategory(cat.value)"
               >
@@ -78,7 +80,9 @@
                     :style="localeFlagStyle"
                   />
                 </template>
-                <span v-if="!isSmallScreen">{{ currentLocaleMeta.shortLabel }}</span>
+                <span v-if="!isSmallScreen">{{
+                  currentLocaleMeta.shortLabel
+                }}</span>
               </n-button>
             </div>
           </n-dropdown>
@@ -102,14 +106,20 @@
                   <template #icon>
                     <n-icon :component="Refresh" />
                   </template>
-                  <span v-if="countdownText && !isSmallScreen" class="countdown">{{ countdownText }}</span>
+                  <span
+                    v-if="countdownText && !isSmallScreen"
+                    class="countdown"
+                    >{{ countdownText }}</span
+                  >
                 </n-button>
               </div>
             </template>
             <div class="refresh-panel" @click.stop>
               <div class="panel-header">
                 <n-text>{{ t("header.refreshControl") }}</n-text>
-                <n-text depth="3" v-if="countdownText">{{ t("header.nextRefresh") }}: {{ countdownText }}</n-text>
+                <n-text depth="3" v-if="countdownText"
+                  >{{ t("header.nextRefresh") }}: {{ countdownText }}</n-text
+                >
               </div>
               <n-button
                 block
@@ -124,54 +134,63 @@
                 {{ t("header.refreshNow") }}
               </n-button>
               <div class="auto-row">
-              <n-space align="center" justify="space-between">
-                <n-space align="center">
-                  <n-switch
+                <n-space align="center" justify="space-between">
+                  <n-space align="center">
+                    <n-switch
+                      size="small"
+                      v-model:value="autoEnabled"
+                      @update:value="toggleAutoRefresh"
+                    />
+                    <n-text>{{ t("header.autoRefresh") }}</n-text>
+                  </n-space>
+                  <n-button
+                    text
                     size="small"
-                    v-model:value="autoEnabled"
-                    @update:value="toggleAutoRefresh"
-                  />
-                  <n-text>{{ t("header.autoRefresh") }}</n-text>
+                    @click="togglePause"
+                    :disabled="!store.autoRefreshEnabled"
+                  >
+                    {{
+                      store.autoRefreshPaused
+                        ? t("header.resume")
+                        : t("header.pause")
+                    }}
+                  </n-button>
                 </n-space>
-                <n-button text size="small" @click="togglePause" :disabled="!store.autoRefreshEnabled">
-                  {{ store.autoRefreshPaused ? t("header.resume") : t("header.pause") }}
-                </n-button>
-              </n-space>
-              <div class="time-inputs">
-                <div class="time-item">
-                  <n-input-number
-                    size="small"
-                    v-model:value="timeForm.hour"
-                    :min="0"
-                    :max="23"
-                    button-placement="both"
-                    @update:value="applyAutoInterval"
-                  />
-                  <span class="unit">{{ t("header.hour") }}</span>
+                <div class="time-inputs">
+                  <div class="time-item">
+                    <n-input-number
+                      size="small"
+                      v-model:value="timeForm.hour"
+                      :min="0"
+                      :max="23"
+                      button-placement="both"
+                      @update:value="applyAutoInterval"
+                    />
+                    <span class="unit">{{ t("header.hour") }}</span>
+                  </div>
+                  <div class="time-item">
+                    <n-input-number
+                      size="small"
+                      v-model:value="timeForm.minute"
+                      :min="0"
+                      :max="59"
+                      button-placement="both"
+                      @update:value="applyAutoInterval"
+                    />
+                    <span class="unit">{{ t("header.minute") }}</span>
+                  </div>
+                  <div class="time-item">
+                    <n-input-number
+                      size="small"
+                      v-model:value="timeForm.second"
+                      :min="0"
+                      :max="59"
+                      button-placement="both"
+                      @update:value="applyAutoInterval"
+                    />
+                    <span class="unit">{{ t("header.second") }}</span>
+                  </div>
                 </div>
-                <div class="time-item">
-                  <n-input-number
-                    size="small"
-                    v-model:value="timeForm.minute"
-                    :min="0"
-                    :max="59"
-                    button-placement="both"
-                    @update:value="applyAutoInterval"
-                  />
-                  <span class="unit">{{ t("header.minute") }}</span>
-                </div>
-                <div class="time-item">
-                  <n-input-number
-                    size="small"
-                    v-model:value="timeForm.second"
-                    :min="0"
-                    :max="59"
-                    button-placement="both"
-                    @update:value="applyAutoInterval"
-                  />
-                  <span class="unit">{{ t("header.second") }}</span>
-                </div>
-              </div>
                 <n-text depth="3" class="tip">
                   {{ t("header.refreshTip") }}
                 </n-text>
@@ -198,7 +217,11 @@
                 </n-button>
               </div>
             </template>
-            {{ store.siteTheme === "light" ? t("common.darkMode") : t("common.lightMode") }}
+            {{
+              store.siteTheme === "light"
+                ? t("common.darkMode")
+                : t("common.lightMode")
+            }}
           </n-popover>
           <n-popover>
             <template #trigger>
@@ -208,8 +231,8 @@
                   secondary
                   strong
                   round
-                  :aria-label="t('common.settings')"
-                  :title="t('common.settings')"
+                  :aria-label="hotboardManagerLabel"
+                  :title="hotboardManagerLabel"
                   @click.stop="goSetting"
                 >
                   <template #icon>
@@ -218,7 +241,7 @@
                 </n-button>
               </div>
             </template>
-            {{ t("common.settings") }}
+            {{ hotboardManagerLabel }}
           </n-popover>
         </n-space>
       </div>
@@ -247,6 +270,10 @@
       </div>
     </section>
   </n-card>
+  <HotboardManager
+    v-model:show="hotboardManagerOpen"
+    @advanced="goAdvancedSetting"
+  />
 </template>
 
 <script setup>
@@ -260,10 +287,11 @@ import {
 import { getCurrentTime } from "@/utils/getTime.js";
 import { getPublicAssetUrl } from "@/utils/publicAssets";
 import { mainStore } from "@/store";
+import { getCategoryByRef, getSourceCategoryIds } from "@/utils/categoryTree";
 import { NText, NIcon } from "naive-ui";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { h } from "vue";
+import { defineAsyncComponent, h } from "vue";
 import {
   buildCategoryPath,
   buildFixedLocalePath,
@@ -279,7 +307,11 @@ import {
 
 const router = useRouter();
 const route = useRoute();
+const HotboardManager = defineAsyncComponent(
+  () => import("@/components/HotboardManager.vue"),
+);
 const store = mainStore();
+const hotboardManagerOpen = ref(false);
 const { t, locale } = useI18n({ useScope: "global" });
 const timeInterval = ref(null);
 const siteLogoUrl = getPublicAssetUrl("/ico/favicon.png");
@@ -295,8 +327,8 @@ const timeForm = reactive({
 });
 const isSmallScreen = ref(false);
 const isTabletScreen = ref(false);
-const isSettingPage = computed(
-  () => ["setting", "setting-locale"].includes(router.currentRoute.value?.name)
+const isSettingPage = computed(() =>
+  ["setting", "setting-locale"].includes(router.currentRoute.value?.name),
 );
 const isRefreshEnabledRoute = (routeName) =>
   [
@@ -313,18 +345,18 @@ const isRefreshEnabledRoute = (routeName) =>
 const currentLocaleMeta = computed(
   () =>
     getSupportedLocales().find((item) => item.code === locale.value) ||
-    getSupportedLocales()[0]
+    getSupportedLocales()[0],
 );
 const refreshButtonLabel = computed(() =>
   countdownText.value
     ? `${t("header.refreshPage")} ${countdownText.value}`
-    : t("header.refreshPage")
+    : t("header.refreshPage"),
 );
 const canManualRefresh = computed(
-  () => showRefresh.value && !isSettingPage.value
+  () => showRefresh.value && !isSettingPage.value,
 );
 const themeToggleLabel = computed(() =>
-  store.siteTheme === "light" ? t("common.darkMode") : t("common.lightMode")
+  store.siteTheme === "light" ? t("common.darkMode") : t("common.lightMode"),
 );
 const toggleTheme = () => {
   store.setSiteTheme(store.siteTheme === "light" ? "dark" : "light");
@@ -337,7 +369,7 @@ const buildCalendarDate = (timeData) => {
     Number(timeData.time.day),
     Number(timeData.time.hour),
     Number(timeData.time.minute),
-    Number(timeData.time.second)
+    Number(timeData.time.second),
   );
 };
 const formatHeaderDate = (timeData) => {
@@ -367,7 +399,10 @@ const activeCategoryLocal = computed({
     const targetPath =
       val === "全部"
         ? buildHomePath(locale.value)
-        : buildCategoryPath(locale.value, getCategorySlugByName(val));
+        : buildCategoryPath(
+            locale.value,
+            getCategorySlugByName(val, store.categories),
+          );
     if (router.currentRoute.value.fullPath !== targetPath) {
       router.push(targetPath);
     }
@@ -381,14 +416,23 @@ const goHome = () => {
 };
 const availableCategorySet = computed(() => {
   const availableNews = store.newsArr.filter((item) => item.show);
-  return new Set(availableNews.map((item) => item.category || "综合"));
+  return new Set(
+    availableNews.flatMap((item) =>
+      getSourceCategoryIds(item, store.categories)
+        .map((id) => getCategoryByRef(store.categories, id)?.name)
+        .filter(Boolean),
+    ),
+  );
 });
 const categoryOptions = computed(() => {
   const base = store.categories
     .slice()
     .sort((a, b) => a.order - b.order)
-    .filter((cat) => availableCategorySet.value.has(cat.name))
-    .map((c) => ({ label: getCategoryLabel(c.name, locale.value), value: c.name }));
+    .filter((cat) => !cat.parentId && availableCategorySet.value.has(cat.name))
+    .map((c) => ({
+      label: getCategoryLabel(c.name, locale.value),
+      value: c.name,
+    }));
   return [{ label: t("categories.all"), value: "全部" }, ...base];
 });
 const categoryNavOptions = computed(() => categoryOptions.value);
@@ -396,24 +440,20 @@ const languageOptions = computed(() =>
   getSupportedLocales().map((item) => ({
     key: item.code,
     label: () =>
-      h(
-        "div",
-        { class: "locale-option", style: localeOptionStyle },
-        [
-          h("img", {
-            class: "locale-option-flag",
-            src: item.flag,
-            alt: item.label,
-            style: localeFlagStyle,
-          }),
-          h(
-            "span",
-            { class: "locale-option-label", style: localeOptionLabelStyle },
-            item.label
-          ),
-        ]
-      ),
-  }))
+      h("div", { class: "locale-option", style: localeOptionStyle }, [
+        h("img", {
+          class: "locale-option-flag",
+          src: item.flag,
+          alt: item.label,
+          style: localeFlagStyle,
+        }),
+        h(
+          "span",
+          { class: "locale-option-label", style: localeOptionLabelStyle },
+          item.label,
+        ),
+      ]),
+  })),
 );
 const localeOptionStyle = {
   display: "inline-flex",
@@ -472,18 +512,31 @@ const timeRender = () => {
     [
       h(NText, null, {
         default: () =>
-          store.timeData ? store.timeData.time.text : t("header.timeLoadFailed"),
+          store.timeData
+            ? store.timeData.time.text
+            : t("header.timeLoadFailed"),
       }),
       h(
         NText,
         { depth: 3, style: "font-size: 12px" },
         {
           default: () => formatHeaderDate(store.timeData),
-        }
+        },
       ),
-    ]
+    ],
   );
 };
+
+const hotboardManagerLabels = {
+  "zh-CN": "热榜管理",
+  en: "Hotboard Manager",
+  "zh-TW": "熱榜管理",
+  ja: "ランキング管理",
+  ko: "인기 목록 관리",
+};
+const hotboardManagerLabel = computed(
+  () => hotboardManagerLabels[locale.value] || hotboardManagerLabels["zh-CN"],
+);
 
 // 移动端菜单
 const menuOptions = computed(() => [
@@ -532,7 +585,7 @@ const menuOptions = computed(() => [
     },
   },
   {
-    label: t("common.settings"),
+    label: hotboardManagerLabel.value,
     key: "setting",
     icon: () => {
       return h(NIcon, null, {
@@ -557,6 +610,12 @@ const menuOptionsSelect = (val) => {
 };
 
 const goSetting = () => {
+  hotboardManagerOpen.value = true;
+  mobileMenuOpen.value = false;
+};
+
+const goAdvancedSetting = () => {
+  hotboardManagerOpen.value = false;
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("dailyhot:freeze-auto-refresh-route"));
   }
@@ -717,9 +776,11 @@ const setupCountdown = () => {
 const updateScreen = () => {
   if (typeof window === "undefined") return;
   const width = window.innerWidth;
-  const hasCoarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches === true;
+  const hasCoarsePointer =
+    window.matchMedia?.("(pointer: coarse)")?.matches === true;
   const hasTouch = Number(window.navigator?.maxTouchPoints || 0) > 0;
-  const tabletCompact = width > 768 && width <= 1180 && (hasCoarsePointer || hasTouch);
+  const tabletCompact =
+    width > 768 && width <= 1180 && (hasCoarsePointer || hasTouch);
 
   isTabletScreen.value = tabletCompact;
   isSmallScreen.value = width <= 768 || tabletCompact;
@@ -740,26 +801,32 @@ watch(
     syncTimeForm();
     setupCountdown();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // 监听路由参数变化
 watch(
   () => router.currentRoute.value,
   (val) => {
-    const categoryName = getCategoryNameBySlug(val.params?.categorySlug);
+    const categoryName = getCategoryNameBySlug(
+      val.params?.categorySlug,
+      store.categories,
+    );
     store.setActiveCategory(categoryName || "全部");
     locale.value = getLocaleFromRoute(val);
     showRefresh.value = isRefreshEnabledRoute(val?.name);
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 onMounted(() => {
   window.$timeInterval = timeInterval.value = setInterval(() => {
     store.timeData = getCurrentTime();
   }, 1000);
-  const categoryName = getCategoryNameBySlug(router.currentRoute.value?.params?.categorySlug);
+  const categoryName = getCategoryNameBySlug(
+    router.currentRoute.value?.params?.categorySlug,
+    store.categories,
+  );
   store.setActiveCategory(categoryName || "全部");
   locale.value = getLocaleFromRoute(router.currentRoute.value);
   showRefresh.value = isRefreshEnabledRoute(router.currentRoute.value?.name);

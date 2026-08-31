@@ -38,7 +38,12 @@
           >
             {{ getSourceDisplayLabel(item) }}
             <template #avatar>
-              <img :src="logoSrc(item.name)" alt="logo" class="logo" @error="handleLogoError" />
+              <img
+                :src="logoSrc(item.name)"
+                alt="logo"
+                class="logo"
+                @error="handleLogoError"
+              />
             </template>
           </n-tag>
         </div>
@@ -68,20 +73,24 @@
           <template v-else>
             <div class="header">
               <div class="logo">
-                <img :src="logoSrc(listType)" alt="logo" @error="handleLogoError" />
+                <img
+                  :src="logoSrc(listType)"
+                  alt="logo"
+                  @error="handleLogoError"
+                />
               </div>
               <div class="name">
                 <n-text class="title">{{ listHeaderTitle }}</n-text>
-                <n-text v-if="listHeaderSubtitle && !subtypeGroups.length" class="subtitle" :depth="3">
+                <n-text
+                  v-if="listHeaderSubtitle && !subtypeGroups.length"
+                  class="subtitle"
+                  :depth="3"
+                >
                   {{ listHeaderSubtitle }}
                 </n-text>
               </div>
               <div class="data">
-                <n-text
-                  v-if="listData.total"
-                  :depth="3"
-                  class="total"
-                >
+                <n-text v-if="listData.total" :depth="3" class="total">
                   {{ t("list.totalSummary", { total: listData.total }) }}
                 </n-text>
                 <n-text :depth="3" class="time" v-html="updateTime" />
@@ -137,7 +146,12 @@
             <n-list v-else hoverable style="width: 100%">
               <n-list-item
                 v-for="(item, index) in currentPageItems"
-                :key="item.id || item.url || item.mobileUrl || `${listType}-${pageNumber}-${index}-${item.originalTitle}`"
+                :key="
+                  item.id ||
+                  item.url ||
+                  item.mobileUrl ||
+                  `${listType}-${pageNumber}-${index}-${item.originalTitle}`
+                "
               >
                 <template #prefix>
                   <n-text
@@ -147,10 +161,10 @@
                       index + 1 + (pageNumber - 1) * 20 === 1
                         ? 'one'
                         : index + 1 + (pageNumber - 1) * 20 === 2
-                        ? 'two'
-                        : index + 1 + (pageNumber - 1) * 20 === 3
-                        ? 'three'
-                        : null
+                          ? 'two'
+                          : index + 1 + (pageNumber - 1) * 20 === 3
+                            ? 'three'
+                            : null
                     "
                     :depth="2"
                   >
@@ -163,18 +177,20 @@
                   :target="linkTarget"
                   rel="noopener noreferrer nofollow"
                   :title="getItemHoverTitle(item)"
-                  @click="trackEvent({
-                    event: 'rank_item_click',
-                    source: listType,
-                    subtype: listSubType,
-                    category: store.activeCategory,
-                    href: getItemLink(item),
-                    meta: {
-                      itemId: item.id,
-                      itemTitle: item.title,
-                      rankIndex: index + 1 + (pageNumber - 1) * 20,
-                    },
-                  })"
+                  @click="
+                    trackEvent({
+                      event: 'rank_item_click',
+                      source: listType,
+                      subtype: listSubType,
+                      category: store.activeCategory,
+                      href: getItemLink(item),
+                      meta: {
+                        itemId: item.id,
+                        itemTitle: item.title,
+                        rankIndex: index + 1 + (pageNumber - 1) * 20,
+                      },
+                    })
+                  "
                 >
                   <div class="content">
                     <div class="copy">
@@ -185,7 +201,9 @@
                             'no-auto-translate': item.hasReadableTranslation,
                             notranslate: item.hasReadableTranslation,
                           }"
-                          :translate="item.hasReadableTranslation ? 'no' : undefined"
+                          :translate="
+                            item.hasReadableTranslation ? 'no' : undefined
+                          "
                           v-html="item.displayTitle"
                         />
                         <span v-if="item.marketQuote" class="market-quote-code">
@@ -194,7 +212,8 @@
                       </div>
                       <div v-if="item.marketQuote" class="market-quote-detail">
                         <span>
-                          {{ item.marketQuote.closeLabel }} {{ item.marketQuote.price }}
+                          {{ item.marketQuote.closeLabel }}
+                          {{ item.marketQuote.price }}
                         </span>
                         <span
                           class="market-quote-change"
@@ -206,10 +225,14 @@
                           {{ item.marketQuote.change }}
                         </span>
                         <span>
-                          {{ item.marketQuote.metricLabel }} {{ item.marketQuote.metric }}
+                          {{ item.marketQuote.metricLabel }}
+                          {{ item.marketQuote.metric }}
                         </span>
                       </div>
-                      <div v-else-if="item.fundMetric" class="fund-metric-detail">
+                      <div
+                        v-else-if="item.fundMetric"
+                        class="fund-metric-detail"
+                      >
                         <span>{{ item.fundMetric.label }}</span>
                         <span
                           class="fund-metric-value"
@@ -228,14 +251,20 @@
                         <div class="message">
                           <div class="hot" v-if="item.hot">
                             <n-icon :depth="3" :component="Fire" />
-                            <n-text class="hot-text" :depth="3" v-html="item.hot" />
+                            <n-text
+                              class="hot-text"
+                              :depth="3"
+                              v-html="item.hot"
+                            />
                           </div>
                         </div>
                       </template>
                     </div>
                     <div
                       class="cover-wrapper"
-                      v-if="showImages && item.cover && !coverErrorMap[item.cover]"
+                      v-if="
+                        showImages && item.cover && !coverErrorMap[item.cover]
+                      "
                     >
                       <img
                         class="cover"
@@ -250,7 +279,11 @@
               </n-list-item>
             </n-list>
             <n-pagination
-              v-if="orderedListItems.length && !isIndexOverviewSource && !isProfessionalMarketSource"
+              v-if="
+                orderedListItems.length &&
+                !isIndexOverviewSource &&
+                !isProfessionalMarketSource
+              "
               class="pagination"
               :page-slot="5"
               :item-count="orderedListItems.length"
@@ -267,6 +300,7 @@
 <script setup>
 import { Fire } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
+import { sourceBelongsToCategory } from "@/utils/categoryTree";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { formatTime } from "@/utils/getTime";
@@ -293,7 +327,11 @@ import {
   getMarketQuoteView,
   isMarketQuoteSource,
 } from "@/utils/marketQuote";
-import { buildRankPath, getLocaleFromRoute, getSourceNameBySlug } from "@/utils/locale";
+import {
+  buildRankPath,
+  getLocaleFromRoute,
+  getSourceNameBySlug,
+} from "@/utils/locale";
 import { applyGlobalIndexPreferences } from "@/utils/globalIndexOrder";
 import {
   applyMarketListSort,
@@ -322,7 +360,9 @@ const store = mainStore();
 const { locale, t } = useI18n({ useScope: "global" });
 const isClient = typeof window !== "undefined";
 const isPrerender =
-  isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
+  isClient &&
+  window.__PRERENDER_INJECTED &&
+  window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
 const SOURCE_FAMILY_ALIASES = {
   "clawhub-skills": "clawhub",
@@ -334,7 +374,8 @@ const SOURCE_FAMILY_ALIASES = {
   "hf-models": "huggingface",
   "hf-papers": "huggingface",
 };
-const normalizeSourceFamily = (name = "") => SOURCE_FAMILY_ALIASES[name] || name;
+const normalizeSourceFamily = (name = "") =>
+  SOURCE_FAMILY_ALIASES[name] || name;
 const API_LOCALIZED_SOURCE_NAMES = new Set([
   "designarena",
   "clawhub",
@@ -353,7 +394,9 @@ const availableNews = computed(() => {
   return store.newsArr
     .filter((item) => item.show)
     .filter((item) =>
-      categoryOn && currentCat !== "全部" ? item.category === currentCat : true
+      categoryOn && currentCat !== "全部"
+        ? sourceBelongsToCategory(item, currentCat, store.categories)
+        : true,
     )
     .sort((a, b) => a.order - b.order);
 });
@@ -365,21 +408,21 @@ const sourceRows = computed(() =>
       rows[index % typeRowCount.value].push(item);
       return rows;
     },
-    Array.from({ length: typeRowCount.value }, () => [])
-  )
+    Array.from({ length: typeRowCount.value }, () => []),
+  ),
 );
 const resolveRouteType = (targetRoute) =>
   getSourceNameBySlug(
-    targetRoute?.params?.sourceSlug || targetRoute?.query?.type || availableNews.value[0]?.name
+    targetRoute?.params?.sourceSlug ||
+      targetRoute?.query?.type ||
+      availableNews.value[0]?.name,
   );
-const listType = ref(
-  resolveRouteType(router.currentRoute.value)
-);
+const listType = ref(resolveRouteType(router.currentRoute.value));
 const listSubType = ref(null);
 const pageNumber = ref(
   router.currentRoute.value.query.page
     ? Number(router.currentRoute.value.query.page)
-    : 1
+    : 1,
 );
 const listData = ref(null);
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
@@ -393,7 +436,7 @@ let typeDragStartScrollLeft = 0;
 let typePointerCaptured = false;
 let typeResizeObserver = null;
 const linkTarget = computed(() =>
-  store.linkOpenType === "open" ? "_blank" : "_self"
+  store.linkOpenType === "open" ? "_blank" : "_self",
 );
 const showImages = computed(() => store.showImages);
 const logoSrc = (name) => getSourceLogo(name);
@@ -403,47 +446,65 @@ const getSourceDisplayLabel = (item) =>
   getLocalizedSourceDisplayLabel(
     item?.name,
     locale.value,
-    item?.label || item?.name
+    item?.label || item?.name,
   );
 const currentSourceMeta = computed(
   () =>
     store.newsArr.find((item) => item.name === listType.value) ||
     store.defaultNewsArr.find((item) => item.name === listType.value) ||
-    null
+    null,
 );
-const PROFESSIONAL_MARKET_SOURCES = new Set(["sse", "szse", "hkex", "nasdaq", "nyse", "twse", "nse", "asx"]);
-const isIndexOverviewSource = computed(() => listType.value === "global-indexes");
+const PROFESSIONAL_MARKET_SOURCES = new Set([
+  "sse",
+  "szse",
+  "hkex",
+  "nasdaq",
+  "nyse",
+  "twse",
+  "nse",
+  "asx",
+]);
+const isIndexOverviewSource = computed(
+  () => listType.value === "global-indexes",
+);
 const isProfessionalMarketSource = computed(() =>
-  PROFESSIONAL_MARKET_SOURCES.has(listType.value)
+  PROFESSIONAL_MARKET_SOURCES.has(listType.value),
 );
-const isSortableMarketSource = computed(() => isMarketListSortable(listType.value));
+const isSortableMarketSource = computed(() =>
+  isMarketListSortable(listType.value),
+);
 const showNativeOrderControl = computed(() =>
-  isNativeMarketRanking(listType.value, listSubType.value)
+  isNativeMarketRanking(listType.value, listSubType.value),
 );
 const marketRankDirection = computed(() =>
-  readMarketRankDirection(listType.value, listSubType.value)
+  readMarketRankDirection(listType.value, listSubType.value),
 );
 const showMarketSortControl = computed(
-  () => isSortableMarketSource.value && !showNativeOrderControl.value
+  () => isSortableMarketSource.value && !showNativeOrderControl.value,
 );
-const listHeaderTitle = computed(
-  () => getSourceDisplayLabel(currentSourceMeta.value || { name: listType.value, label: listData.value?.title || listType.value })
+const listHeaderTitle = computed(() =>
+  getSourceDisplayLabel(
+    currentSourceMeta.value || {
+      name: listType.value,
+      label: listData.value?.title || listType.value,
+    },
+  ),
 );
 const shouldEnhanceReadableTitles = computed(() =>
   shouldUseReadableTitleTranslation(
     listType.value,
     locale.value,
-    listSubType.value
-  )
+    listSubType.value,
+  ),
 );
 const shouldProtectEntityTitles = computed(() =>
-  shouldProtectEntityTitleTranslation(listType.value, listSubType.value)
+  shouldProtectEntityTitleTranslation(listType.value, listSubType.value),
 );
 const listHeaderSubtitle = computed(() => {
   const rawSubtitle =
     currentSourceMeta.value &&
     Object.prototype.hasOwnProperty.call(currentSourceMeta.value, "subtype")
-      ? currentSourceMeta.value.subtype ?? ""
+      ? (currentSourceMeta.value.subtype ?? "")
       : listData.value?.subtitle || listData.value?.type || "";
   const subtitle = getSourceSubtitleLabel(rawSubtitle, locale.value);
   if (isGenericSourceSubtitleLabel(subtitle, locale.value)) {
@@ -470,7 +531,8 @@ const orderedListItems = computed(() => {
   if (showNativeOrderControl.value) {
     return applyMarketRankDirection(items, listType.value, listSubType.value);
   }
-  if (showMarketSortControl.value) return applyMarketListSort(items, listType.value);
+  if (showMarketSortControl.value)
+    return applyMarketListSort(items, listType.value);
   return items;
 });
 const currentPageItems = computed(() =>
@@ -485,7 +547,12 @@ const currentPageItems = computed(() =>
       const rawDisplayDesc = item?.desc || originalDesc;
       const displayDesc =
         locale.value !== "zh-CN" &&
-        isDuplicateDesc(rawDisplayDesc, originalTitle, item?.title, displayTitle)
+        isDuplicateDesc(
+          rawDisplayDesc,
+          originalTitle,
+          item?.title,
+          displayTitle,
+        )
           ? ""
           : rawDisplayDesc;
       return {
@@ -505,7 +572,7 @@ const currentPageItems = computed(() =>
             Boolean(displayTitle) &&
             displayTitle.trim() !== originalTitle.trim()),
       };
-    })
+    }),
 );
 const getItemHoverTitle = (item) => {
   const title = item?.displayTitle || item?.originalTitle || "";
@@ -548,10 +615,10 @@ const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };
 const subtypeGroups = computed(() =>
-  localizeSubtypeGroups(getSourceSubtypeGroups(listType.value), locale.value)
+  localizeSubtypeGroups(getSourceSubtypeGroups(listType.value), locale.value),
 );
 const activeTypeOptions = computed(() =>
-  subtypeGroups.value.flatMap((group) => group.items || [])
+  subtypeGroups.value.flatMap((group) => group.items || []),
 );
 
 const resolveSubType = (route) => {
@@ -578,7 +645,7 @@ const enhanceAndApplyListResult = async (
   result,
   requestId,
   name,
-  shouldTranslate
+  shouldTranslate,
 ) => {
   if (!shouldTranslate) {
     applyListResult(result);
@@ -627,8 +694,10 @@ const getHotListsData = async (name, isNew = false) => {
   if (isPrerender) {
     const label = getSourceDisplayLabel(
       store.newsArr.find((item) => item.name === name) ||
-        store.defaultNewsArr.find((item) => item.name === name) ||
-        { name, label: name }
+        store.defaultNewsArr.find((item) => item.name === name) || {
+          name,
+          label: name,
+        },
     );
     listData.value = {
       title: label,
@@ -667,9 +736,12 @@ const getHotListsData = async (name, isNew = false) => {
       {
         useApi2,
         forceNoCache: Boolean(isNew),
-      }
+      },
     );
-    if (response?.result?.code !== 200 && isCurrentListRequest(requestId, item.name)) {
+    if (
+      response?.result?.code !== 200 &&
+      isCurrentListRequest(requestId, item.name)
+    ) {
       await new Promise((resolve) => setTimeout(resolve, 800));
       response = await getHotListsWithFallback(item.name, true, requestParams, {
         useApi2,
@@ -683,7 +755,12 @@ const getHotListsData = async (name, isNew = false) => {
     }
     if (result.code === 200) {
       store.markAvailable(item.name);
-      await enhanceAndApplyListResult(result, requestId, item.name, shouldTranslate);
+      await enhanceAndApplyListResult(
+        result,
+        requestId,
+        item.name,
+        shouldTranslate,
+      );
     } else {
       store.markUnavailable(item.name);
       applyListFailureResult(item, result);
@@ -692,10 +769,15 @@ const getHotListsData = async (name, isNew = false) => {
   } catch {
     if (!isCurrentListRequest(requestId, item.name)) return;
     try {
-      const retryResponse = await getHotListsWithFallback(item.name, true, requestParams, {
-        useApi2,
-        forceNoCache: true,
-      });
+      const retryResponse = await getHotListsWithFallback(
+        item.name,
+        true,
+        requestParams,
+        {
+          useApi2,
+          forceNoCache: true,
+        },
+      );
       if (!isCurrentListRequest(requestId, item.name)) return;
       if (retryResponse?.result?.code === 200) {
         store.markAvailable(item.name);
@@ -703,7 +785,7 @@ const getHotListsData = async (name, isNew = false) => {
           retryResponse.result,
           requestId,
           item.name,
-          shouldTranslate
+          shouldTranslate,
         );
         return;
       }
@@ -875,9 +957,11 @@ const changeType = (type, event) => {
   });
   const nextSubtype = resolveSourceSubtype(
     getSourceSubtypeOptions(type),
-    readSourceSubtype(type)
+    readSourceSubtype(type),
   );
-  router.push(buildRankPath(getLocaleFromRoute(route), type, nextSubtype || ""));
+  router.push(
+    buildRankPath(getLocaleFromRoute(route), type, nextSubtype || ""),
+  );
 };
 
 const changeMarketRankDirection = (direction) => {
@@ -893,7 +977,9 @@ const changeSubType = (subtype) => {
     category: store.activeCategory,
   });
   persistSourceSubtype(listType.value, subtype);
-  router.push(buildRankPath(getLocaleFromRoute(route), listType.value, subtype));
+  router.push(
+    buildRankPath(getLocaleFromRoute(route), listType.value, subtype),
+  );
 };
 
 // 实时改变更新时间
@@ -903,7 +989,7 @@ watch(
     if (listData.value) {
       updateTime.value = formatTime(listData.value.updateTime, locale.value);
     }
-  }
+  },
 );
 
 watch(
@@ -916,13 +1002,19 @@ watch(
       getHotListsData(listType.value);
       return;
     }
-    if (!listData.value || !shouldUseReadableTitleTranslation(listType.value, targetLocale)) {
+    if (
+      !listData.value ||
+      !shouldUseReadableTitleTranslation(listType.value, targetLocale)
+    ) {
       return;
     }
     const requestId = listRequestId;
     const sourceResult = listData.value;
     try {
-      const enhancedResult = await enhanceListResult(sourceResult, targetLocale);
+      const enhancedResult = await enhanceListResult(
+        sourceResult,
+        targetLocale,
+      );
       if (requestId === listRequestId && locale.value === targetLocale) {
         listData.value = enhancedResult;
       }
@@ -931,7 +1023,7 @@ watch(
         listData.value = sourceResult;
       }
     }
-  }
+  },
 );
 
 watch(
@@ -939,7 +1031,7 @@ watch(
   (items) => {
     syncReadableTitleDom(items);
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 watch(
@@ -947,7 +1039,7 @@ watch(
   (total) => {
     const maxPage = Math.max(1, Math.ceil(total / 20));
     if (pageNumber.value > maxPage) pageNumber.value = maxPage;
-  }
+  },
 );
 
 // 页数变化
@@ -961,12 +1053,12 @@ watch(
       path: buildRankPath(
         getLocaleFromRoute(route),
         listType.value,
-        listSubType.value || ""
+        listSubType.value || "",
       ),
       query,
     });
     document.querySelector(".n-back-top")?.click();
-  }
+  },
 );
 
 // 类别变化
@@ -980,7 +1072,7 @@ watch(
       persistSourceSubtype(listType.value, listSubType.value);
       getHotListsData(listType.value);
     }
-  }
+  },
 );
 
 watch(
@@ -994,7 +1086,7 @@ watch(
     }
     refreshTypeScrollState();
   },
-  { deep: true }
+  { deep: true },
 );
 
 watch(
@@ -1005,7 +1097,7 @@ watch(
     listSubType.value = nextSubtype;
     refreshTypeScrollState();
   },
-  { deep: true }
+  { deep: true },
 );
 
 onMounted(() => {
@@ -1097,26 +1189,29 @@ onBeforeUnmount(() => {
     }
   }
 
-    .type-row {
-      display: flex;
-      width: max-content;
-      min-width: 100%;
-      gap: 8px;
+  .type-row {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+    gap: 8px;
 
-      &::after {
-        content: "";
-        flex: 0 0 42px;
-      }
+    &::after {
+      content: "";
+      flex: 0 0 42px;
+    }
 
-      & + .type-row {
-        margin-top: 6px;
-      }
+    & + .type-row {
+      margin-top: 6px;
+    }
 
     .tag {
       flex: 0 0 auto;
       width: max-content;
       cursor: pointer;
-      transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+      transition:
+        background 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
 
       &.is-active-source {
         background: rgba(234, 68, 77, 0.12);

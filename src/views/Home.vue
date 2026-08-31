@@ -1,6 +1,32 @@
 <template>
   <div class="home">
-    <router-link v-if="isWoolCategory" :to="woolTopicPath" class="wool-topic-entry">
+    <nav
+      v-if="categoryTrail.length > 1 || childCategories.length"
+      class="category-subnav"
+      aria-label="分类导航"
+    >
+      <div class="category-breadcrumb">
+        <router-link
+          v-for="item in categoryTrail"
+          :key="item.id"
+          :to="categoryPath(item)"
+          >{{ categoryLabel(item) }}</router-link
+        >
+      </div>
+      <div v-if="childCategories.length" class="category-children">
+        <router-link
+          v-for="item in childCategories"
+          :key="item.id"
+          :to="categoryPath(item)"
+          >{{ categoryLabel(item) }}</router-link
+        >
+      </div>
+    </nav>
+    <router-link
+      v-if="isWoolCategory"
+      :to="woolTopicPath"
+      class="wool-topic-entry"
+    >
       <div>
         <span>{{ woolTopicCopy.eyebrow }}</span>
         <strong>{{ woolTopicCopy.title }}</strong>
@@ -42,7 +68,9 @@
       </template>
     </draggable>
     <div class="error" v-if="renderNews[0] && sortableNews.length === 0">
-      <n-divider dashed class="tip"> {{ t("common.emptyCategory") }} </n-divider>
+      <n-divider dashed class="tip">
+        {{ t("common.emptyCategory") }}
+      </n-divider>
     </div>
     <div class="error" v-else-if="!renderNews[0]">
       <n-divider dashed class="tip"> {{ t("common.noContent") }} </n-divider>
@@ -61,8 +89,16 @@ import HotList from "@/components/HotList.vue";
 import draggable from "vuedraggable";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
-import { buildFixedLocalePath, getCategoryNameBySlug, getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
+import {
+  buildCategoryPath,
+  buildFixedLocalePath,
+  getCategoryLabel,
+  getCategoryNameBySlug,
+  getLocaleFromRoute,
+  normalizeLocale,
+} from "@/utils/locale";
 import { WOOL_TOPIC_METADATA } from "@/config/site-metadata.mjs";
+import { sourceBelongsToCategory } from "@/utils/categoryTree";
 
 const store = mainStore();
 const { t } = useI18n({ useScope: "global" });
@@ -76,19 +112,57 @@ const renderNews = computed(() => {
     .filter((item) => item.show)
     .sort((a, b) => a.order - b.order);
 });
-const forcedCategoryName = computed(() => getCategoryNameBySlug(route.params?.categorySlug));
+const forcedCategoryName = computed(() =>
+  getCategoryNameBySlug(route.params?.categorySlug, store.categories),
+);
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
+const currentCategory = computed(
+  () =>
+    store.categories.find((item) => item.name === forcedCategoryName.value) ||
+    null,
+);
+const childCategories = computed(() =>
+  currentCategory.value
+    ? store.categories
+        .filter((item) => item.parentId === currentCategory.value.id)
+        .sort((a, b) => a.order - b.order)
+    : [],
+);
+const categoryTrail = computed(() => {
+  const result = [];
+  const seen = new Set();
+  let node = currentCategory.value;
+  while (node && !seen.has(node.id)) {
+    seen.add(node.id);
+    result.unshift(node);
+    node = node.parentId
+      ? store.categories.find((item) => item.id === node.parentId)
+      : null;
+  }
+  return result;
+});
+const categoryLabel = (item) =>
+  item.builtin ? getCategoryLabel(item.name, locale.value) : item.name;
+const categoryPath = (item) => buildCategoryPath(locale.value, item.slug);
 const isWoolCategory = computed(() => forcedCategoryName.value === "羊毛");
-const woolTopicCopy = computed(() => WOOL_TOPIC_METADATA[locale.value] || WOOL_TOPIC_METADATA["zh-CN"]);
-const woolTopicPath = computed(() => buildFixedLocalePath(locale.value, "/topic/wool"));
+const woolTopicCopy = computed(
+  () => WOOL_TOPIC_METADATA[locale.value] || WOOL_TOPIC_METADATA["zh-CN"],
+);
+const woolTopicPath = computed(() =>
+  buildFixedLocalePath(locale.value, "/topic/wool"),
+);
 const filteredNews = computed(() => {
   if (forcedCategoryName.value) {
-    return renderNews.value.filter((item) => item.category === forcedCategoryName.value);
+    return renderNews.value.filter((item) =>
+      sourceBelongsToCategory(item, forcedCategoryName.value, store.categories),
+    );
   }
   if (!store.categoryEnabled || store.activeCategory === "全部") {
     return renderNews.value;
   }
-  return renderNews.value.filter((item) => item.category === store.activeCategory);
+  return renderNews.value.filter((item) =>
+    sourceBelongsToCategory(item, store.activeCategory, store.categories),
+  );
 });
 const syncSortableNews = () => {
   sortableNews.value = filteredNews.value.slice();
@@ -101,18 +175,24 @@ watch(
   () => {
     if (!isCardDragging.value) syncSortableNews();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 onMounted(() => {
   window.setTimeout(() => {
     enableCardEntrance.value = false;
   }, 400);
-  window.addEventListener("dailyhot:subtype-interaction", handleSubtypeInteraction);
+  window.addEventListener(
+    "dailyhot:subtype-interaction",
+    handleSubtypeInteraction,
+  );
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("dailyhot:subtype-interaction", handleSubtypeInteraction);
+  window.removeEventListener(
+    "dailyhot:subtype-interaction",
+    handleSubtypeInteraction,
+  );
   if (subtypeInteractionTimer) clearTimeout(subtypeInteractionTimer);
 });
 
@@ -190,11 +270,23 @@ const reset = () => {
     margin-bottom: 4px;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: .06em;
+    letter-spacing: 0.06em;
   }
-  .wool-topic-entry strong { display: block; font-size: 16px; }
-  .wool-topic-entry p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; }
-  .wool-topic-entry em { flex: 0 0 auto; font-size: 12px; font-style: normal; white-space: nowrap; }
+  .wool-topic-entry strong {
+    display: block;
+    font-size: 16px;
+  }
+  .wool-topic-entry p {
+    margin: 5px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .wool-topic-entry em {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-style: normal;
+    white-space: nowrap;
+  }
 
   .news-grid {
     display: grid;
@@ -269,6 +361,49 @@ const reset = () => {
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.category-subnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+.category-breadcrumb,
+.category-children {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.category-breadcrumb::-webkit-scrollbar,
+.category-children::-webkit-scrollbar {
+  display: none;
+}
+.category-breadcrumb a,
+.category-children a {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
+  border-radius: 8px;
+  color: var(--n-text-color-2, #555);
+  font-size: 12px;
+  text-decoration: none;
+}
+.category-breadcrumb a:last-child {
+  color: var(--n-text-color, #222);
+  font-weight: 650;
+}
+@media (max-width: 680px) {
+  .category-subnav {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
   }
 }
 </style>

@@ -52,7 +52,8 @@ export const normalizeLocale = (input) => {
 export const getLocaleFromRoute = (route) =>
   normalizeLocale(route?.params?.lang || DEFAULT_LOCALE);
 
-export const getRoutePrefix = (locale) => getLocaleMeta(locale)?.routePrefix || "";
+export const getRoutePrefix = (locale) =>
+  getLocaleMeta(locale)?.routePrefix || "";
 
 export const withLocalePrefix = (locale, path = "/") => {
   const prefix = getRoutePrefix(locale);
@@ -85,7 +86,9 @@ export const getPreferredLocale = () => {
 };
 
 export const getBrowserLocale = () =>
-  typeof navigator === "undefined" ? DEFAULT_LOCALE : normalizeLocale(navigator.language);
+  typeof navigator === "undefined"
+    ? DEFAULT_LOCALE
+    : normalizeLocale(navigator.language);
 
 export const resolveInitialLocale = (path = "/") => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -107,18 +110,31 @@ export const setDocumentLanguage = (locale) => {
   }
 };
 
-export const getCategoryMetaByName = (name) =>
-  CATEGORY_NAME_TO_META.get(name) || null;
+export const getCategoryMetaByName = (name, categories = BUILTIN_CATEGORIES) =>
+  categories.find((item) => item.name === name) ||
+  CATEGORY_NAME_TO_META.get(name) ||
+  null;
 
-export const getCategoryMetaById = (id) => CATEGORY_ID_TO_META.get(id) || null;
+export const getCategoryMetaById = (id, categories = BUILTIN_CATEGORIES) =>
+  categories.find((item) => item.id === id) ||
+  CATEGORY_ID_TO_META.get(id) ||
+  null;
 
-export const getCategorySlugByName = (name) => {
-  const meta = getCategoryMetaByName(name);
+export const getCategorySlugByName = (
+  name,
+  categories = BUILTIN_CATEGORIES,
+) => {
+  const meta = getCategoryMetaByName(name, categories);
   return meta?.slug || null;
 };
 
-export const getCategoryNameBySlug = (slug) => {
-  const meta = BUILTIN_CATEGORIES.find((item) => item.slug === slug);
+export const getCategoryNameBySlug = (
+  slug,
+  categories = BUILTIN_CATEGORIES,
+) => {
+  const meta =
+    categories.find((item) => item.slug === slug) ||
+    BUILTIN_CATEGORIES.find((item) => item.slug === slug);
   return meta?.name || null;
 };
 
@@ -129,7 +145,10 @@ export const getSourceNameBySlug = (slug) => normalizeSourceSlug(slug);
 export const buildHomePath = (locale = DEFAULT_LOCALE) =>
   withLocalePrefix(locale, "/");
 
-export const buildCategoryPath = (locale = DEFAULT_LOCALE, categorySlug = "") =>
+export const buildCategoryPath = (
+  locale = DEFAULT_LOCALE,
+  categorySlug = "",
+) =>
   categorySlug
     ? withLocalePrefix(locale, `/category/${categorySlug}`)
     : buildHomePath(locale);
@@ -158,7 +177,7 @@ export const buildLocalePathFromRoute = (route, locale = DEFAULT_LOCALE) => {
   const categorySlug = route?.params?.categorySlug;
   if (sourceSlug) {
     const normalizedSourceSlug = getSourceNameBySlug(
-      Array.isArray(sourceSlug) ? sourceSlug[0] : sourceSlug
+      Array.isArray(sourceSlug) ? sourceSlug[0] : sourceSlug,
     );
     const routeSubtypeSlug = Array.isArray(subtypeSlug)
       ? subtypeSlug[0]
@@ -171,7 +190,7 @@ export const buildLocalePathFromRoute = (route, locale = DEFAULT_LOCALE) => {
     return buildRankPath(
       normalizedLocale,
       normalizedSourceSlug,
-      effectiveSubtypeSlug
+      effectiveSubtypeSlug,
     );
   }
   if (categorySlug) {
@@ -204,8 +223,6 @@ export const getCategoryLabel = (category, locale = DEFAULT_LOCALE) => {
     };
     return messages[normalizeLocale(locale)] || messages[DEFAULT_LOCALE];
   }
-  const meta =
-    getCategoryMetaByName(category) ||
-    getCategoryMetaById(category);
+  const meta = getCategoryMetaByName(category) || getCategoryMetaById(category);
   return meta?.labels?.[normalizeLocale(locale)] || meta?.name || category;
 };

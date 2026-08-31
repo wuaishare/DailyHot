@@ -130,12 +130,7 @@
           <n-tag type="success">
             {{ t("settings.analyticsRequiredTag") }}
           </n-tag>
-          <n-button
-            size="small"
-            secondary
-            strong
-            @click="openConsentSettings"
-          >
+          <n-button size="small" secondary strong @click="openConsentSettings">
             {{ t("settings.manageAdPreferences") }}
           </n-button>
           <n-button
@@ -250,8 +245,16 @@
             :content-style="{ display: 'flex', alignItems: 'center' }"
           >
             <div class="desc" :style="{ opacity: element.show ? null : 0.6 }">
-              <img class="logo" :src="logoSrc(element.name)" alt="logo" @error="handleLogoError" />
-              <n-text class="news-name" v-html="getSourceDisplayLabel(element)" />
+              <img
+                class="logo"
+                :src="logoSrc(element.name)"
+                alt="logo"
+                @error="handleLogoError"
+              />
+              <n-text
+                class="news-name"
+                v-html="getSourceDisplayLabel(element)"
+              />
               <n-tag
                 size="small"
                 type="warning"
@@ -263,16 +266,21 @@
             <n-select
               size="small"
               class="category-select"
+              multiple
+              max-tag-count="responsive"
               :options="categoryOptions"
-              v-model:value="element.category"
+              :value="element.categoryIds"
               :placeholder="t('settings.categoryPlaceholder')"
               :disabled="!categoryEnabled"
+              @update:value="(value) => updateSourceCategories(element, value)"
             />
             <n-switch
               class="switch"
               :round="false"
               v-model:value="element.show"
-              @update:value="saveSoreData(getSourceDisplayLabel(element), element.show)"
+              @update:value="
+                saveSoreData(getSourceDisplayLabel(element), element.show)
+              "
             />
           </n-card>
         </template>
@@ -415,9 +423,8 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import draggable from "vuedraggable";
 import { buildFixedLocalePath, getCategoryLabel } from "@/utils/locale";
-import {
-  getSourceDisplayLabel as getLocalizedSourceDisplayLabel,
-} from "@/utils/sourceLabels";
+import { getCategoryDepth, getSourceCategoryIds } from "@/utils/categoryTree";
+import { getSourceDisplayLabel as getLocalizedSourceDisplayLabel } from "@/utils/sourceLabels";
 
 const store = mainStore();
 const osThemeRef = useOsTheme();
@@ -439,13 +446,13 @@ const {
   activeCategory,
 } = storeToRefs(store);
 const categories = computed(() =>
-  store.categories.slice().sort((a, b) => a.order - b.order)
+  store.categories.slice().sort((a, b) => a.order - b.order),
 );
 const categoryOptions = computed(() =>
   categories.value.map((c) => ({
-    label: getCategoryLabel(c.name, locale.value),
-    value: c.name,
-  }))
+    label: `${"—".repeat(Math.max(0, getCategoryDepth(categories.value, c.id) - 1))}${getCategoryLabel(c.name, locale.value)}`,
+    value: c.id,
+  })),
 );
 const newCategory = ref("");
 const cacheVersion = ref(getCacheVersion());
@@ -458,7 +465,7 @@ const getSourceDisplayLabel = (item) =>
   getLocalizedSourceDisplayLabel(
     item?.name,
     locale.value,
-    item?.label || item?.name
+    item?.label || item?.name,
   );
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
@@ -533,9 +540,7 @@ const restoreDefaultOrder = () => {
     .slice()
     .sort((a, b) => a.order - b.order);
   const defaultNames = new Set(defaultOrder.map((item) => item.name));
-  const currentByName = new Map(
-    newsArr.value.map((item) => [item.name, item])
-  );
+  const currentByName = new Map(newsArr.value.map((item) => [item.name, item]));
   const restored = defaultOrder.map((item, idx) => {
     const current = currentByName.get(item.name) || item;
     return { ...current, order: idx };
@@ -549,21 +554,31 @@ const restoreDefaultOrder = () => {
   $message.success(t("settings.restoreOrderSuccess"));
 };
 
+const updateSourceCategories = (item, value) => {
+  store.setSourceCategories(item.name, value);
+};
+
 const restoreDefaultCategory = () => {
   const defaultCategoryMap = new Map(
-    store.defaultNewsArr.map((item) => [item.name, item.category])
+    store.defaultNewsArr.map((item) => [
+      item.name,
+      getSourceCategoryIds(item, store.categories),
+    ]),
   );
-  newsArr.value = newsArr.value.map((item) => ({
-    ...item,
-    category:
-      defaultCategoryMap.get(item.name) || item.category || "综合",
-  }));
+  newsArr.value.forEach((item) => {
+    const categoryIds =
+      defaultCategoryMap.get(item.name) ||
+      getSourceCategoryIds(item, store.categories);
+    store.setSourceCategories(item.name, categoryIds);
+    const target = newsArr.value.find((source) => source.name === item.name);
+    if (target) target.categoryIdsCustomized = false;
+  });
   $message.success(t("settings.restoreCategorySuccess"));
 };
 
 const restoreDefaultStatus = () => {
   const defaultStatusMap = new Map(
-    store.defaultNewsArr.map((item) => [item.name, item.show])
+    store.defaultNewsArr.map((item) => [item.name, item.show]),
   );
   newsArr.value = newsArr.value.map((item) => ({
     ...item,
@@ -583,7 +598,7 @@ const saveSoreData = (name = null, open = false) => {
       ? t(open ? "settings.sourceEnabled" : "settings.sourceDisabled", {
           name,
         })
-      : t("settings.sortSuccess")
+      : t("settings.sortSuccess"),
   );
 };
 
@@ -733,7 +748,7 @@ watch(
   () => {
     syncAutoTime();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch(
@@ -743,7 +758,7 @@ watch(
       activeCategory.value = "全部";
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 

@@ -1,15 +1,21 @@
 import { defineStore } from "pinia";
+import { BUILTIN_CATEGORIES as SITE_BUILTIN_CATEGORIES } from "@/config/site-metadata.mjs";
+import {
+  MAX_CATEGORY_DEPTH,
+  canMoveCategory,
+  getCategoryByRef,
+  getCategoryDepth,
+  getSourceCategoryIds,
+  normalizeCategoryTree,
+  syncLegacyPrimaryCategory,
+} from "@/utils/categoryTree";
 
-const BUILTIN_CATEGORIES = [
-  { id: "general", name: "综合", order: 0, builtin: true },
-  { id: "tech", name: "科技", order: 1, builtin: true },
-  { id: "finance", name: "财经", order: 2, builtin: true },
-  { id: "wool", name: "羊毛", order: 3, builtin: true },
-  { id: "life", name: "生活", order: 4, builtin: true },
-  { id: "games", name: "游戏", order: 5, builtin: true },
-  { id: "community", name: "社区", order: 6, builtin: true },
-  { id: "ai", name: "AI", order: 7, builtin: true },
-];
+const BUILTIN_CATEGORIES = SITE_BUILTIN_CATEGORIES.map((item, order) => ({
+  ...item,
+  order,
+  parentId: null,
+  builtin: true,
+}));
 
 const BUILTIN_CATEGORY_MIGRATIONS = {
   xueqiu: { from: "综合", to: "财经" },
@@ -187,6 +193,7 @@ export const mainStore = defineStore("mainData", {
           order: 11,
           show: true,
           category: "生活",
+          categoryIds: ["life", "wool"],
         },
         {
           label: "澎湃新闻",
@@ -494,6 +501,7 @@ export const mainStore = defineStore("mainData", {
           order: 51.8,
           show: true,
           category: "羊毛",
+          categoryIds: ["wool", "community"],
           subtype: "wool",
         },
         {
@@ -502,6 +510,7 @@ export const mainStore = defineStore("mainData", {
           order: 51.9,
           show: true,
           category: "羊毛",
+          categoryIds: ["wool", "community"],
           subtype: "buy",
         },
         {
@@ -510,6 +519,7 @@ export const mainStore = defineStore("mainData", {
           order: 51.95,
           show: true,
           category: "羊毛",
+          categoryIds: ["wool", "life"],
           subtype: "catlife",
         },
         {
@@ -518,6 +528,7 @@ export const mainStore = defineStore("mainData", {
           order: 52,
           show: true,
           category: "羊毛",
+          categoryIds: ["wool", "games"],
         },
         {
           label: "简书",
@@ -776,17 +787,23 @@ export const mainStore = defineStore("mainData", {
   getters: {},
   actions: {
     ensureBuiltinCategories() {
-      const current = Array.isArray(this.categories) ? this.categories : [];
+      const current = normalizeCategoryTree(
+        Array.isArray(this.categories) ? this.categories : [],
+      );
       const mergedBuiltin = BUILTIN_CATEGORIES.map((builtin) => {
         const existing = current.find(
-          (item) => item?.id === builtin.id || item?.name === builtin.name
+          (item) => item?.id === builtin.id || item?.name === builtin.name,
         );
         return {
           ...builtin,
           ...existing,
           id: builtin.id,
           name: builtin.name,
-          order: builtin.order,
+          slug: builtin.slug,
+          parentId: null,
+          order: Number.isFinite(Number(existing?.order))
+            ? Number(existing.order)
+            : builtin.order,
           builtin: true,
         };
       });
@@ -795,12 +812,14 @@ export const mainStore = defineStore("mainData", {
           (item) =>
             item &&
             !BUILTIN_CATEGORIES.some(
-              (builtin) => builtin.id === item.id || builtin.name === item.name
-            )
+              (builtin) => builtin.id === item.id || builtin.name === item.name,
+            ),
         )
         .map((item, index) => ({
           ...item,
-          order: BUILTIN_CATEGORIES.length + index,
+          order: Number.isFinite(Number(item.order))
+            ? Number(item.order)
+            : BUILTIN_CATEGORIES.length + index,
           builtin: false,
         }));
       this.categories = mergedBuiltin.concat(custom);
@@ -812,16 +831,13 @@ export const mainStore = defineStore("mainData", {
       }
     },
     ensureCategoriesForNews(list) {
-      const fallback = "综合";
-      return list.map((item) => ({
-        ...item,
-        category: item.category || fallback,
-      }));
+      const categories = this.categories || BUILTIN_CATEGORIES;
+      return list.map((item) => syncLegacyPrimaryCategory(item, categories));
     },
     mergeNewsWithDefaults(list) {
       list = this.normalizeLegacySources(list);
       const defaultByName = new Map(
-        this.defaultNewsArr.map((item) => [item.name, item])
+        this.defaultNewsArr.map((item) => [item.name, item]),
       );
       return this.ensureCategoriesForNews(list).map((item) => {
         const defaults = defaultByName.get(item.name) || {};
@@ -829,6 +845,21 @@ export const mainStore = defineStore("mainData", {
           ...defaults,
           ...item,
         };
+        if (
+          !item.categoryIdsCustomized &&
+          Array.isArray(defaults.categoryIds)
+        ) {
+          merged.categoryIds = [
+            ...new Set([
+              ...getSourceCategoryIds(item, this.categories),
+              ...defaults.categoryIds,
+            ]),
+          ];
+        }
+        Object.assign(
+          merged,
+          syncLegacyPrimaryCategory(merged, this.categories),
+        );
         if (defaults.label) {
           merged.label = defaults.label;
         }
@@ -842,6 +873,20 @@ export const mainStore = defineStore("mainData", {
           defaults.category === categoryMigration.to
         ) {
           merged.category = categoryMigration.to;
+          const targetCategory = getCategoryByRef(
+            this.categories,
+            categoryMigration.to,
+          );
+          if (targetCategory && !merged.categoryIdsCustomized) {
+            merged.categoryIds = [
+              ...new Set([
+                targetCategory.id,
+                ...(Array.isArray(defaults.categoryIds)
+                  ? defaults.categoryIds
+                  : []),
+              ]),
+            ];
+          }
         }
         const orderMigration = BUILTIN_ORDER_MIGRATIONS[item.name];
         if (
@@ -871,8 +916,7 @@ export const mainStore = defineStore("mainData", {
           ...current,
           ...item,
           label: item.label || current.label,
-          order:
-            typeof current.order === "number" ? current.order : item.order,
+          order: typeof current.order === "number" ? current.order : item.order,
         });
       }
       return Array.from(byName.values());
@@ -880,15 +924,20 @@ export const mainStore = defineStore("mainData", {
     normalizeLegacySources(list) {
       if (!Array.isArray(list) || !list.length) return list;
       const mergeGroup = (items, targetName, legacyNames) => {
-        const targetDefault = this.defaultNewsArr.find((item) => item.name === targetName);
+        const targetDefault = this.defaultNewsArr.find(
+          (item) => item.name === targetName,
+        );
         if (!targetDefault) return items;
         const existingTarget = items.find((item) => item?.name === targetName);
-        const legacyItems = items.filter((item) => legacyNames.includes(item?.name));
+        const legacyItems = items.filter((item) =>
+          legacyNames.includes(item?.name),
+        );
         if (!existingTarget && !legacyItems.length) {
           return items;
         }
         const keep = items.filter(
-          (item) => item?.name !== targetName && !legacyNames.includes(item?.name)
+          (item) =>
+            item?.name !== targetName && !legacyNames.includes(item?.name),
         );
         const sourceItems = [existingTarget, ...legacyItems].filter(Boolean);
         const merged = sourceItems.reduce(
@@ -902,7 +951,7 @@ export const mainStore = defineStore("mainData", {
             category: targetDefault.category,
             show: acc.show || item.show,
           }),
-          { ...targetDefault, show: false }
+          { ...targetDefault, show: false },
         );
         const orders = sourceItems
           .map((item) => item.order)
@@ -931,45 +980,131 @@ export const mainStore = defineStore("mainData", {
       ]);
       return normalized;
     },
-    addCategory(name) {
-      if (!name) return false;
-      const limit = 10;
-      const exists = this.categories.some(
-        (cat) => cat.name === name || cat.id === name
-      );
+    addCategory(name, parentId = null) {
+      const cleanName = String(name || "").trim();
+      if (!cleanName) return false;
+      const limit = 40;
+      const exists = this.categories.some((cat) => cat.name === cleanName);
       if (exists) return false;
       if (this.categories.length >= limit) {
         $message?.warning?.(`最多创建 ${limit} 个分类`);
         return false;
       }
+      const parent = parentId
+        ? getCategoryByRef(this.categories, parentId)
+        : null;
+      if (
+        parent &&
+        getCategoryDepth(this.categories, parent.id) >= MAX_CATEGORY_DEPTH
+      ) {
+        $message?.warning?.(`最多支持 ${MAX_CATEGORY_DEPTH} 级分类`);
+        return false;
+      }
+      const id = `custom-${Date.now()}`;
       this.categories.push({
-        id: `${Date.now()}`,
-        name,
+        id,
+        name: cleanName,
+        slug: id,
+        parentId: parent?.id || null,
         order: this.categories.length,
         builtin: false,
       });
-      return true;
+      return id;
     },
     removeCategory(id) {
-      const cat = this.categories.find((c) => c.id === id);
+      const cat = getCategoryByRef(this.categories, id);
       if (!cat || cat.builtin) return;
-      this.categories = this.categories.filter((c) => c.id !== id);
-      this.newsArr = this.newsArr.map((item) =>
-        item.category === cat.name ? { ...item, category: "综合" } : item
+      const removed = new Set([cat.id]);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        this.categories.forEach((item) => {
+          if (
+            item.parentId &&
+            removed.has(item.parentId) &&
+            !removed.has(item.id)
+          ) {
+            removed.add(item.id);
+            changed = true;
+          }
+        });
+      }
+      const activeCategoryBeforeDelete = getCategoryByRef(
+        this.categories,
+        this.activeCategory,
       );
-      if (this.activeCategory === cat.name) {
+      this.categories = this.categories.filter((item) => !removed.has(item.id));
+      this.newsArr = this.newsArr.map((item) => {
+        const categoryIds = getSourceCategoryIds(item, this.categories).filter(
+          (categoryId) => !removed.has(categoryId),
+        );
+        return syncLegacyPrimaryCategory(
+          {
+            ...item,
+            categoryIds: categoryIds.length ? categoryIds : ["general"],
+            categoryIdsCustomized: true,
+          },
+          this.categories,
+        );
+      });
+      if (
+        activeCategoryBeforeDelete &&
+        removed.has(activeCategoryBeforeDelete.id)
+      ) {
         this.activeCategory = "全部";
       }
     },
     renameCategory(id, newName) {
-      if (!newName) return;
-      const cat = this.categories.find((c) => c.id === id);
+      const cleanName = String(newName || "").trim();
+      if (!cleanName) return;
+      const cat = getCategoryByRef(this.categories, id);
       if (!cat || cat.builtin) return;
-      const oldName = cat.name;
-      cat.name = newName;
+      cat.name = cleanName;
       this.newsArr = this.newsArr.map((item) =>
-        item.category === oldName ? { ...item, category: newName } : item
+        syncLegacyPrimaryCategory(item, this.categories),
       );
+    },
+    moveCategory(id, parentId = null) {
+      const cat = getCategoryByRef(this.categories, id);
+      if (!cat || cat.builtin) return false;
+      if (!canMoveCategory(this.categories, cat.id, parentId)) return false;
+      const parent = parentId
+        ? getCategoryByRef(this.categories, parentId)
+        : null;
+      cat.parentId = parent?.id || null;
+      return true;
+    },
+    setSourceCategories(sourceName, categoryIds = []) {
+      const target = this.newsArr.find((item) => item.name === sourceName);
+      if (!target) return false;
+      const valid = [...new Set(categoryIds.map(String))].filter((id) =>
+        getCategoryByRef(this.categories, id),
+      );
+      Object.assign(
+        target,
+        syncLegacyPrimaryCategory(
+          {
+            ...target,
+            categoryIds: valid.length ? valid : ["general"],
+            categoryIdsCustomized: true,
+          },
+          this.categories,
+        ),
+      );
+      return true;
+    },
+    reorderCategories(orderedIds = []) {
+      const orderMap = new Map(
+        orderedIds.map((id, index) => [String(id), index]),
+      );
+      this.categories = this.categories
+        .map((item) => ({
+          ...item,
+          order: orderMap.has(String(item.id))
+            ? orderMap.get(String(item.id))
+            : item.order,
+        }))
+        .sort((a, b) => a.order - b.order);
     },
     setActiveCategory(name) {
       this.activeCategory = name;
@@ -986,7 +1121,7 @@ export const mainStore = defineStore("mainData", {
         .slice()
         .sort((a, b) => a.order - b.order)
         .map((item) =>
-          scopedSet.has(item.name) ? orderedItems[scopedIndex++] || item : item
+          scopedSet.has(item.name) ? orderedItems[scopedIndex++] || item : item,
         )
         .map((item, index) => ({
           ...item,
@@ -1020,7 +1155,7 @@ export const mainStore = defineStore("mainData", {
     markAvailable(name) {
       if (!name) return;
       this.unavailableSources = this.unavailableSources.filter(
-        (item) => item !== name
+        (item) => item !== name,
       );
     },
     setSourceApi2(name, value = true) {
@@ -1057,7 +1192,9 @@ export const mainStore = defineStore("mainData", {
       // 执行比较并迁移
       if (this.newsArr.length > 0) {
         for (const newItem of this.defaultNewsArr) {
-          const exists = this.newsArr.some((news) => newItem.name === news.name);
+          const exists = this.newsArr.some(
+            (news) => newItem.name === news.name,
+          );
           if (!exists) {
             console.log("列表有更新：", newItem);
             updatedNum++;
