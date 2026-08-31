@@ -16,13 +16,24 @@
             <strong>{{ copy.title }}</strong>
             <span>{{ copy.subtitle }}</span>
           </div>
-          <n-button quaternary size="small" @click="emit('advanced')">{{
-            copy.advanced
-          }}</n-button>
+          <div class="manager-section-tabs" role="tablist" :aria-label="copy.settingsTabs">
+            <n-button
+              size="small"
+              :type="activeSection === 'boards' ? 'primary' : 'default'"
+              :secondary="activeSection !== 'boards'"
+              @click="activeSection = 'boards'"
+            >{{ copy.boardsTab }}</n-button>
+            <n-button
+              size="small"
+              :type="activeSection === 'general' ? 'primary' : 'default'"
+              :secondary="activeSection !== 'general'"
+              @click="activeSection = 'general'"
+            >{{ copy.generalTab }}</n-button>
+          </div>
         </div>
       </template>
 
-      <div class="manager-layout">
+      <div v-if="activeSection === 'boards'" class="manager-layout">
         <aside class="category-panel">
           <div class="panel-toolbar">
             <strong>{{ copy.categories }}</strong>
@@ -182,12 +193,19 @@
           />
         </section>
       </div>
+      <div v-else class="hotboard-general-settings">
+        <GeneralSettings embedded />
+      </div>
 
       <template #footer>
         <div class="manager-footer">
-          <n-button quaternary size="small" @click="restoreDefaults">{{
-            copy.restore
-          }}</n-button>
+          <n-button
+            v-if="activeSection === 'boards'"
+            quaternary
+            size="small"
+            @click="restoreDefaults"
+          >{{ copy.restore }}</n-button>
+          <span v-else></span>
           <n-button
             type="primary"
             size="small"
@@ -215,11 +233,16 @@ import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { useI18n } from "vue-i18n";
 import { Drag } from "@icon-park/vue-next";
 import { BUILTIN_CATEGORIES } from "@/config/site-metadata.mjs";
+import GeneralSettings from "@/components/GeneralSettings.vue";
 
-const props = defineProps({ show: { type: Boolean, default: false } });
-const emit = defineEmits(["update:show", "advanced"]);
+const props = defineProps({
+  show: { type: Boolean, default: false },
+  initialSection: { type: String, default: "boards" },
+});
+const emit = defineEmits(["update:show"]);
 const store = mainStore();
 const { locale } = useI18n({ useScope: "global" });
+const activeSection = ref(props.initialSection === "general" ? "general" : "boards");
 const selectedCategoryId = ref("all");
 const search = ref("");
 const addingCategory = ref(false);
@@ -234,7 +257,9 @@ const COPY = {
   "zh-CN": {
     title: "热榜管理",
     subtitle: "分类、归属、启停与排序集中管理",
-    advanced: "高级设置",
+    settingsTabs: "设置栏目",
+    boardsTab: "榜单管理",
+    generalTab: "通用设置",
     categories: "分类",
     add: "新增",
     allBoards: "全部榜单",
@@ -255,7 +280,9 @@ const COPY = {
   en: {
     title: "Hotboard Manager",
     subtitle: "Manage categories, visibility and order",
-    advanced: "Advanced",
+    settingsTabs: "Settings sections",
+    boardsTab: "Boards",
+    generalTab: "General",
     categories: "Categories",
     add: "Add",
     allBoards: "All boards",
@@ -276,7 +303,9 @@ const COPY = {
   "zh-TW": {
     title: "熱榜管理",
     subtitle: "集中管理分類、歸屬、顯示與排序",
-    advanced: "進階設定",
+    settingsTabs: "設定分頁",
+    boardsTab: "榜單管理",
+    generalTab: "通用設定",
     categories: "分類",
     add: "新增",
     allBoards: "全部榜單",
@@ -297,7 +326,9 @@ const COPY = {
   ja: {
     title: "ランキング管理",
     subtitle: "カテゴリ・所属・表示・並び順をまとめて管理",
-    advanced: "詳細設定",
+    settingsTabs: "設定セクション",
+    boardsTab: "ランキング管理",
+    generalTab: "一般設定",
     categories: "カテゴリ",
     add: "追加",
     allBoards: "すべてのランキング",
@@ -319,7 +350,9 @@ const COPY = {
   ko: {
     title: "인기 목록 관리",
     subtitle: "분류·소속·표시·정렬을 한곳에서 관리",
-    advanced: "고급 설정",
+    settingsTabs: "설정 섹션",
+    boardsTab: "목록 관리",
+    generalTab: "일반 설정",
     categories: "분류",
     add: "추가",
     allBoards: "전체 목록",
@@ -445,6 +478,7 @@ watch(
   () => props.show,
   (value) => {
     if (value) {
+      activeSection.value = props.initialSection === "general" ? "general" : "boards";
       store.ensureNewsList();
       store.ensureBuiltinCategories();
       syncSources();
@@ -514,8 +548,23 @@ const restoreDefaults = () => {
 <style scoped>
 .hotboard-manager {
   width: min(1120px, calc(100vw - 32px));
+  height: min(820px, calc(100vh - 32px));
   max-height: min(820px, calc(100vh - 32px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-radius: 16px;
+  background: var(--n-color, #fff);
+}
+.hotboard-manager :deep(.n-card__content) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+.manager-section-tabs {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
 }
 .manager-title,
 .boards-toolbar,
@@ -549,8 +598,9 @@ const restoreDefaults = () => {
 .manager-layout {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr);
-  min-height: 520px;
-  max-height: calc(100vh - 190px);
+  height: 100%;
+  min-height: 0;
+  max-height: none;
 }
 .category-panel {
   padding-right: 14px;
@@ -559,8 +609,17 @@ const restoreDefaults = () => {
 }
 .boards-panel {
   min-width: 0;
+  min-height: 0;
   padding-left: 16px;
   overflow: auto;
+}
+.hotboard-general-settings {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 2px 4px 4px 2px;
+  background: var(--n-color, #fff);
 }
 .panel-toolbar,
 .boards-toolbar {
@@ -683,11 +742,14 @@ const restoreDefaults = () => {
 @media (max-width: 680px) {
   .hotboard-manager {
     width: calc(100vw - 16px);
+    height: calc(100vh - 16px);
     max-height: calc(100vh - 16px);
   }
   .manager-layout {
     grid-template-columns: 1fr;
-    max-height: calc(100vh - 180px);
+    grid-template-rows: minmax(0, 210px) minmax(0, 1fr);
+    height: 100%;
+    max-height: none;
   }
   .category-panel {
     max-height: 210px;

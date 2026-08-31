@@ -272,10 +272,7 @@
         </n-dropdown>
       </div>
     </section>
-    <HotboardManager
-      v-model:show="hotboardManagerOpen"
-      @advanced="goAdvancedSetting"
-    />
+    <HotboardManager v-model:show="hotboardManagerOpen" />
   </n-card>
 </template>
 
@@ -297,7 +294,6 @@ import { useI18n } from "vue-i18n";
 import { defineAsyncComponent, h } from "vue";
 import {
   buildCategoryPath,
-  buildFixedLocalePath,
   buildHomePath,
   buildLocalePathFromRoute,
   getCategoryLabel,
@@ -617,14 +613,6 @@ const menuOptionsSelect = (val) => {
 const goSetting = () => {
   hotboardManagerOpen.value = true;
   mobileMenuOpen.value = false;
-};
-
-const goAdvancedSetting = () => {
-  hotboardManagerOpen.value = false;
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("dailyhot:freeze-auto-refresh-route"));
-  }
-  router.push(buildFixedLocalePath(locale.value, "/setting"));
 };
 
 const toggleMobileMenu = () => {
