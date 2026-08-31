@@ -129,11 +129,13 @@
             <div class="opportunity-meta">
               <span class="intent-pill">{{ intentLabel(item.intent) }}</span>
               <span v-if="platformLabel(item)" class="platform-pill">{{ platformLabel(item) }}</span>
+              <strong v-if="primaryPriceLabel(item)" class="price-pill">{{ primaryPriceLabel(item) }}</strong>
+              <span v-for="(benefit, benefitIndex) in visibleBenefits(item)" :key="`${item.id}-${benefit.type}-${benefit.amount}-${benefit.threshold || 0}`" class="benefit-pill" :class="{ 'benefit-pill--secondary': benefitIndex > 0 }">{{ benefitLabel(benefit) }}</span>
               <time :title="formatItemTime(item.timestamp)">{{ formatFreshness(item.timestamp) }}</time>
               <span v-for="keyword in visibleKeywords(item)" :key="`${item.id}-${keyword}`" class="keyword-pill">{{ keyword }}</span>
             </div>
           </div>
-          <span class="opportunity-open">{{ actionLabel(item.intent) }}</span>
+          <span class="opportunity-open">{{ actionLabel(item) }}</span>
         </a>
       </div>
       <n-empty v-else :description="copy.empty" class="topic-empty" />
@@ -173,9 +175,24 @@ const UI_COPY = {
   ja: { sources: "情報源ステータス", type: "種類", time: "時間", search: "お得情報を検索", searchPlaceholder: "JD・Meituan・Claudeを検索…", matches: "件", latest: "最新", oneHour: "1時間", threeHours: "3時間", sixHours: "6時間", today: "今日", allSources: "すべて", sourceUnit: "情報源", updated: "更新", ok: "正常", partial: "一部異常", failed: "異常", actions: { free: "今すぐ受取", coupon: "クーポン取得", giveaway: "参加する", ai: "クレジット確認", game: "今すぐ受取", deal: "詳細を見る" } },
   ko: { sources: "출처 상태", type: "유형", time: "시간", search: "혜택 검색", searchPlaceholder: "JD, Meituan, Claude 검색…", matches: "개 일치", latest: "최신", oneHour: "1시간", threeHours: "3시간", sixHours: "6시간", today: "오늘", allSources: "전체 출처", sourceUnit: "개 출처", updated: "업데이트", ok: "정상", partial: "일부 오류", failed: "오류", actions: { free: "지금 받기", coupon: "쿠폰 받기", giveaway: "참여하기", ai: "크레딧 보기", game: "지금 받기", deal: "혜택 보기" } },
 };
+const ACTION_COPY = {
+  "zh-CN": { claim: "立即领取", claim_coupon: "去领券", join: "参与活动", groupbuy: "去拼单", task: "去参与", view: "查看优惠" },
+  en: { claim: "Claim now", claim_coupon: "Get coupon", join: "Join", groupbuy: "Join group", task: "Take part", view: "View deal" },
+  "zh-TW": { claim: "立即領取", claim_coupon: "領優惠券", join: "參與活動", groupbuy: "去拼單", task: "去參與", view: "查看優惠" },
+  ja: { claim: "今すぐ受取", claim_coupon: "クーポン取得", join: "参加する", groupbuy: "共同購入", task: "参加する", view: "詳細を見る" },
+  ko: { claim: "지금 받기", claim_coupon: "쿠폰 받기", join: "참여하기", groupbuy: "공동구매", task: "참여하기", view: "혜택 보기" },
+};
+const BENEFIT_COPY = {
+  "zh-CN": { coupon: "券", red_packet: "红包", subsidy: "补贴", cash_gift: "礼金", rebate: "返", instant_discount: "立减", discount: "优惠" },
+  en: { coupon: "Coupon", red_packet: "Bonus", subsidy: "Subsidy", cash_gift: "Credit", rebate: "Rebate", instant_discount: "Instant off", discount: "Discount" },
+  "zh-TW": { coupon: "券", red_packet: "紅包", subsidy: "補貼", cash_gift: "禮金", rebate: "返", instant_discount: "立減", discount: "優惠" },
+  ja: { coupon: "クーポン", red_packet: "ボーナス", subsidy: "補助", cash_gift: "特典", rebate: "還元", instant_discount: "即時割引", discount: "割引" },
+  ko: { coupon: "쿠폰", red_packet: "보너스", subsidy: "보조금", cash_gift: "크레딧", rebate: "환급", instant_discount: "즉시할인", discount: "할인" },
+};
 const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
 
-const textForItem = (item) => `${item.title || ""} ${item.desc || ""} ${item.extra?.platform || ""} ${(item.matchedKeywords || []).join(" ")}`.toLowerCase();
+const signalText = (item) => `${item?.signals?.primaryPlatform || ""} ${(item?.signals?.benefits || []).map((benefit) => benefit.raw || "").join(" ")}`;
+const textForItem = (item) => `${item.title || ""} ${item.desc || ""} ${item.extra?.platform || ""} ${(item.matchedKeywords || []).join(" ")} ${signalText(item)}`.toLowerCase();
 const matchesTime = (item, range) => {
   if (range === "all") return true;
   const timestamp = Number(item.timestamp);
@@ -257,8 +274,30 @@ const refreshLabel = computed(() => refreshLabels[locale.value] || refreshLabels
 const sourceLabel = (item) => getSourceLabel(item?.source, locale.value, item?.sourceLabel || item?.source || "");
 const subtypeLabel = (item) => getSourceSubtitleLabel(item?.sourceSubtype || "", locale.value);
 const intentLabel = (intent) => copy.value.intents?.[intent] || copy.value.intents.deal;
-const actionLabel = (intent) => ui.value.actions?.[intent] || copy.value.open;
+const actionLabel = (item) => ACTION_COPY[locale.value]?.[item?.signals?.action] || ui.value.actions?.[item?.intent] || copy.value.open;
 const statusLabel = (status) => ui.value[status] || status;
+const formatMoney = (value) => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "";
+  return `¥${new Intl.NumberFormat(locale.value, { maximumFractionDigits: 2 }).format(amount)}`;
+};
+const primaryPriceLabel = (item) => formatMoney(item?.signals?.primaryPrice?.value);
+const BENEFIT_PRIORITY = { coupon: 1, red_packet: 2, instant_discount: 3, subsidy: 4, cash_gift: 5, rebate: 6, discount: 7 };
+const visibleBenefits = (item) => [...(item?.signals?.benefits || [])]
+  .sort((a, b) => (BENEFIT_PRIORITY[a.type] || 99) - (BENEFIT_PRIORITY[b.type] || 99) || Number(b.amount || 0) - Number(a.amount || 0))
+  .slice(0, 2);
+const benefitLabel = (benefit) => {
+  const labels = BENEFIT_COPY[locale.value] || BENEFIT_COPY["zh-CN"];
+  const name = labels[benefit?.type] || labels.discount;
+  const amount = formatMoney(benefit?.amount);
+  const threshold = formatMoney(benefit?.threshold);
+  if (threshold) {
+    if (locale.value === "zh-CN") return `${name} 满${threshold.slice(1)}减${amount.slice(1)}`;
+    if (locale.value === "zh-TW") return `${name} 滿${threshold.slice(1)}減${amount.slice(1)}`;
+    return `${name} -${amount}/${threshold}`;
+  }
+  return amount ? `${name} ${amount}` : name;
+};
 
 const formatItemTime = (value) => {
   const timestamp = Number(value);
@@ -285,8 +324,11 @@ const PLATFORM_RULES = [
   [/(京东|jd\.com|jdapp)/i, "京东"], [/(淘宝|淘工厂|淘宝闪购)/i, "淘宝"], [/天猫/i, "天猫"], [/美团/i, "美团"], [/(拼多多|pdd)/i, "拼多多"],
   [/(支付宝|蚂蚁)/i, "支付宝"], [/微信/i, "微信"], [/steam/i, "Steam"], [/epic/i, "Epic"], [/(app store|苹果商店)/i, "App Store"], [/饿了么/i, "饿了么"], [/抖音/i, "抖音"],
 ];
-const platformLabel = (item) => item?.extra?.platform || PLATFORM_RULES.find(([pattern]) => pattern.test(textForItem(item)))?.[1] || "";
-const visibleKeywords = (item) => (item?.matchedKeywords || []).filter((keyword) => keyword.length > 1 && !["优惠券", "免费"].includes(keyword)).slice(0, 1);
+const platformLabel = (item) => item?.signals?.primaryPlatform || item?.extra?.platform || PLATFORM_RULES.find(([pattern]) => pattern.test(textForItem(item)))?.[1] || "";
+const visibleKeywords = (item) => {
+  if (item?.signals?.primaryPrice || item?.signals?.benefits?.length) return [];
+  return (item?.matchedKeywords || []).filter((keyword) => keyword.length > 1 && !["优惠券", "免费"].includes(keyword)).slice(0, 1);
+};
 const onLogoError = (event) => { if (event?.target) event.target.src = getSourceLogoFallback(); };
 
 let querySyncTimer;
@@ -612,8 +654,9 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
 }
 .opportunity-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 7px;
+  gap: 5px 7px;
   margin-top: 8px;
   color: var(--n-text-color-3, #777);
   font-size: 11px;
@@ -621,6 +664,24 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
 .platform-pill {
   color: var(--n-text-color-2, #555);
   font-weight: 650;
+}
+.price-pill {
+  color: var(--n-text-color, #222);
+  font-size: 13px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.benefit-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 19px;
+  padding: 0 6px;
+  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.14));
+  border-radius: 999px;
+  color: var(--n-text-color-2, #555);
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
 }
 .keyword-pill {
   display: inline-flex;
@@ -853,6 +914,12 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
   }
   .opportunity-main h3 {
     font-size: 14px;
+  }
+  .opportunity-meta {
+    gap: 4px 6px;
+  }
+  .benefit-pill--secondary {
+    display: none;
   }
   .opportunity-desc {
     -webkit-line-clamp: 2;
