@@ -4,6 +4,9 @@
     class="app-header"
     :class="{ 'tablet-compact': isTabletScreen }"
     content-style="padding: 0"
+    @mouseenter="emit('mouseenter', $event)"
+    @mouseleave="emit('mouseleave', $event)"
+    @click="emit('click', $event)"
   >
     <section>
       <div class="logo" @click="router.push(buildHomePath(locale))">
@@ -269,11 +272,11 @@
         </n-dropdown>
       </div>
     </section>
+    <HotboardManager
+      v-model:show="hotboardManagerOpen"
+      @advanced="goAdvancedSetting"
+    />
   </n-card>
-  <HotboardManager
-    v-model:show="hotboardManagerOpen"
-    @advanced="goAdvancedSetting"
-  />
 </template>
 
 <script setup>
@@ -304,6 +307,8 @@ import {
   getSupportedLocales,
   savePreferredLocale,
 } from "@/utils/locale";
+
+const emit = defineEmits(["mouseenter", "mouseleave", "click"]);
 
 const router = useRouter();
 const route = useRoute();
