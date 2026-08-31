@@ -286,6 +286,7 @@ import {
 } from "@icon-park/vue-next";
 import { getCurrentTime } from "@/utils/getTime.js";
 import { getPublicAssetUrl } from "@/utils/publicAssets";
+import { requestDataRefresh } from "@/utils/dataRefresh";
 import { mainStore } from "@/store";
 import { getCategoryByRef, getSourceCategoryIds } from "@/utils/categoryTree";
 import { NText, NIcon } from "naive-ui";
@@ -340,6 +341,8 @@ const isRefreshEnabledRoute = (routeName) =>
     "list",
     "list-locale",
     "list-legacy",
+    "wool-topic",
+    "wool-topic-locale",
     "setting",
     "setting-locale",
   ].includes(routeName);
@@ -625,18 +628,7 @@ const closeMobileMenu = () => {
 
 const manualRefresh = () => {
   if (!canManualRefresh.value) return;
-  router.go(0);
-  if (
-    typeof window !== "undefined" &&
-    store.autoRefreshEnabled &&
-    !store.autoRefreshPaused &&
-    !window.$autoRefreshPausedByRoute
-  ) {
-    const seconds = Number(store.autoRefreshInterval);
-    if (seconds > 0) {
-      window.$nextAutoRefreshAt = Date.now() + seconds * 1000;
-    }
-  }
+  requestDataRefresh({ reason: "manual", force: true });
 };
 
 const toggleAutoRefresh = (val) => {

@@ -42,6 +42,7 @@ import FloatingActions from "@/components/FloatingActions.vue";
 import AnalyticsConsent from "@/components/AnalyticsConsent.vue";
 import { SpeedInsights } from "@vercel/speed-insights/vue";
 import { useRouter } from "vue-router";
+import { DATA_REFRESH_EVENT, requestDataRefresh } from "@/utils/dataRefresh";
 
 const store = mainStore();
 const router = useRouter();
@@ -68,6 +69,8 @@ const autoRefreshRouteNames = new Set([
   "list",
   "list-locale",
   "list-legacy",
+  "wool-topic",
+  "wool-topic-locale",
 ]);
 const isSettingRoute = computed(
   () => {
@@ -87,7 +90,7 @@ const isAutoRefreshRoute = computed(
     return (
       autoRefreshRouteNames.has(currentRoute?.name) ||
       path === "/" ||
-      /\/(category|rank)(\/|$)/.test(path)
+      /\/(category|rank|topic)(\/|$)/.test(path)
     );
   }
 );
@@ -314,7 +317,7 @@ const setupAutoRefresh = (preferredDelayMs = null) => {
       writeAutoRefreshRemaining(remainingMs);
 
       if (remainingMs <= 0) {
-        router.go(0);
+        requestDataRefresh({ reason: "auto", force: false });
         remainingMs = intervalMs;
         lastTickAt = Date.now();
         writeAutoRefreshRemaining(remainingMs);
@@ -385,6 +388,20 @@ watch(
   }
 );
 
+const handleDataRefreshRequest = (event) => {
+  if (event?.detail?.reason !== "manual") return;
+  const intervalMs = getAutoRefreshIntervalMs();
+  if (
+    store.autoRefreshEnabled &&
+    !store.autoRefreshPaused &&
+    isAutoRefreshRoute.value &&
+    !isDocumentHidden() &&
+    intervalMs > 0
+  ) {
+    setupAutoRefresh(intervalMs);
+  }
+};
+
 watch(
   () => [
     store.autoRefreshEnabled,
@@ -413,6 +430,7 @@ onMounted(() => {
   if (typeof window !== "undefined") {
     window.addEventListener("pageshow", reconcileAutoRefreshAfterVisibilityChange);
     window.addEventListener("popstate", reconcileAutoRefreshAfterVisibilityChange);
+    window.addEventListener(DATA_REFRESH_EVENT, handleDataRefreshRequest);
     window.addEventListener(
       "dailyhot:freeze-auto-refresh-route",
       handleFreezeAutoRefreshRoute
@@ -444,6 +462,7 @@ onBeforeUnmount(() => {
   if (typeof window !== "undefined") {
     window.removeEventListener("pageshow", reconcileAutoRefreshAfterVisibilityChange);
     window.removeEventListener("popstate", reconcileAutoRefreshAfterVisibilityChange);
+    window.removeEventListener(DATA_REFRESH_EVENT, handleDataRefreshRequest);
     window.removeEventListener(
       "dailyhot:freeze-auto-refresh-route",
       handleFreezeAutoRefreshRoute

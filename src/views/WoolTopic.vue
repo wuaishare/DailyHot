@@ -245,6 +245,7 @@
 </template>
 
 <script setup>
+import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { getHotListsWithFallback } from "@/api";
 import { WOOL_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
@@ -1239,10 +1240,35 @@ watch(platformOptions, (options) => {
   )
     activePlatform.value = "all";
 });
-onMounted(() => loadTopic(false));
+const handleGlobalDataRefresh = (event) => {
+  void loadTopic(Boolean(event?.detail?.force));
+};
+
+onMounted(() => {
+  if (typeof window !== "undefined") {
+    window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  }
+  loadTopic(false);
+});
+
+onActivated(() => {
+  if (typeof window !== "undefined") {
+    window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+    window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  }
+});
+
+onDeactivated(() => {
+  if (typeof window !== "undefined") {
+    window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  }
+});
 watch(filteredData, () => void observeVisibleSuperDeals(), { flush: "post" });
 onBeforeUnmount(() => {
   clearTimeout(querySyncTimer);
+  if (typeof window !== "undefined") {
+    window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  }
   superDealVisibilityObserver?.disconnect();
   superDealVisibilityObserver = undefined;
 });

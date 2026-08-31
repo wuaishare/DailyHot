@@ -63,7 +63,7 @@
           :key="`${store.activeCategory}-${item.name}`"
           :style="{ animationDelay: index / 10 + 0.2 + 's' }"
         >
-          <HotList :hotData="item" :eager-load="Boolean(forcedCategoryName)" />
+          <HotList :hotData="item" />
         </div>
       </template>
     </draggable>

@@ -306,6 +306,7 @@ import { useI18n } from "vue-i18n";
 import { formatTime } from "@/utils/getTime";
 import { getHotListsWithFallback } from "@/api";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
+import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import SubtypeBar from "@/components/SubtypeBar.vue";
 import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
 import GlobalIndexTable from "@/components/GlobalIndexTable.vue";
@@ -800,6 +801,10 @@ const getHotListsData = async (name, isNew = false) => {
   }
 };
 
+const handleDataRefresh = (event) => {
+  void getHotListsData(listType.value, Boolean(event?.detail?.force));
+};
+
 const updateIsDesktop = () => {
   if (!isClient) return;
   isDesktop.value = window.innerWidth > 680;
@@ -1105,6 +1110,7 @@ onMounted(() => {
   if (isClient) {
     window.addEventListener("resize", updateIsDesktop);
     window.addEventListener("resize", updateTypeShadow);
+    window.addEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
   }
   refreshTypeScrollState();
   listSubType.value = resolveSubType(router.currentRoute.value);
@@ -1112,6 +1118,10 @@ onMounted(() => {
 });
 
 onActivated(() => {
+  if (isClient) {
+    window.removeEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
+    window.addEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
+  }
   listSubType.value = resolveSubType(router.currentRoute.value);
   if (!listData.value) {
     getHotListsData(listType.value);
@@ -1119,10 +1129,15 @@ onActivated(() => {
   refreshTypeScrollState();
 });
 
+onDeactivated(() => {
+  if (isClient) window.removeEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
+});
+
 onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener("resize", updateIsDesktop);
     window.removeEventListener("resize", updateTypeShadow);
+    window.removeEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
   }
   if (typeResizeObserver) {
     typeResizeObserver.disconnect();

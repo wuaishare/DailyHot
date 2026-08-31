@@ -372,6 +372,7 @@ import {
   isMarketQuoteSource,
 } from "@/utils/marketQuote";
 import { trackEvent } from "@/utils/track";
+import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import {
   getSourceDisplayLabel,
   getSourceSubtitleLabel,
@@ -428,6 +429,11 @@ const lastClickTime = ref(
 // 热榜数据
 const hotListData = ref(null);
 const scrollbarRef = ref(null);
+const componentActive = ref(true);
+const isNearViewport = ref(Boolean(props.eagerLoad));
+let listVisibilityObserver = null;
+let pendingDataRefresh = null;
+let appliedRefreshGeneration = 0;
 const listLoading = ref(false);
 const loadingError = ref(false);
 const previewItem = ref(null);
@@ -1122,25 +1128,66 @@ const toList = () => {
   }
 };
 
-// 判断列表是否显示
+const consumePendingDataRefresh = () => {
+  if (!componentActive.value || !isNearViewport.value || !pendingDataRefresh) return;
+  const request = pendingDataRefresh;
+  pendingDataRefresh = null;
+  appliedRefreshGeneration = Math.max(appliedRefreshGeneration, request.generation);
+  void getHotListsData(props.hotData.name, request.force);
+};
+
+const handleDataRefresh = (event) => {
+  if (isPrerender) return;
+  const generation = Number(event?.detail?.generation) || Date.now();
+  if (generation <= appliedRefreshGeneration) return;
+  pendingDataRefresh = {
+    generation,
+    force: Boolean(event?.detail?.force) || Boolean(pendingDataRefresh?.force),
+  };
+  consumePendingDataRefresh();
+};
+
+// 首次加载与后续刷新共用同一可见性观察器。700px 提前量兼顾滚动体验与 API 负载。
 const checkListShow = () => {
-  if (isPrerender || !isClient || typeof document === "undefined") return;
+  if (
+    !componentActive.value ||
+    isPrerender ||
+    !isClient ||
+    typeof document === "undefined"
+  )
+    return;
   if (props.eagerLoad) {
-    getHotListsData(props.hotData.name);
+    isNearViewport.value = true;
+    if (!hotListData.value) void getHotListsData(props.hotData.name);
+    consumePendingDataRefresh();
     return;
   }
-  const typeName = props.hotData.name;
-  const listId = "hot-list-" + typeName;
-  const listDom = document.getElementById(listId);
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        getHotListsData(props.hotData.name);
-        observer.unobserve(entry.target);
-      }
-    });
-  });
-  observer.observe(listDom);
+  const listDom = document.getElementById(`hot-list-${props.hotData.name}`);
+  if (!listDom || typeof IntersectionObserver === "undefined") {
+    isNearViewport.value = true;
+    if (!hotListData.value) void getHotListsData(props.hotData.name);
+    consumePendingDataRefresh();
+    return;
+  }
+  listVisibilityObserver?.disconnect();
+  const scrollRoot =
+    listDom.closest(".n-scrollbar-container") ||
+    document.querySelector(".n-scrollbar-container");
+  listVisibilityObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        isNearViewport.value = entry.isIntersecting;
+        if (!entry.isIntersecting) return;
+        if (pendingDataRefresh) {
+          consumePendingDataRefresh();
+        } else if (!hotListData.value) {
+          void getHotListsData(props.hotData.name);
+        }
+      });
+    },
+    { root: scrollRoot || null, rootMargin: "700px 0px" },
+  );
+  listVisibilityObserver.observe(listDom);
 };
 
 // 实时改变更新时间
@@ -1193,15 +1240,34 @@ onMounted(() => {
   if (isClient) {
     window.addEventListener("resize", updateIsDesktop);
     window.addEventListener("dailyhot:hide-item-preview", handleGlobalPreviewClose);
+    window.addEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
   }
   checkListShow();
+});
+
+onActivated(() => {
+  componentActive.value = true;
+  nextTick(() => {
+    checkListShow();
+    consumePendingDataRefresh();
+  });
+});
+
+onDeactivated(() => {
+  componentActive.value = false;
+  isNearViewport.value = false;
+  listVisibilityObserver?.disconnect();
+  listVisibilityObserver = null;
 });
 
 onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener("resize", updateIsDesktop);
     window.removeEventListener("dailyhot:hide-item-preview", handleGlobalPreviewClose);
+    window.removeEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
   }
+  listVisibilityObserver?.disconnect();
+  listVisibilityObserver = null;
   hidePreview();
 });
 </script>
