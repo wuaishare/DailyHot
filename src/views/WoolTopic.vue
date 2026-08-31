@@ -63,9 +63,21 @@
           <h2>{{ copy.feedTitle }}</h2>
           <p>{{ copy.method }}</p>
         </div>
-        <n-button size="small" tertiary :loading="loading" @click="loadTopic(true)">
-          {{ refreshLabel }}
-        </n-button>
+        <div class="feed-actions">
+          <button
+            v-if="dashboard?.multiSourceClusterCount"
+            type="button"
+            class="confirmed-toggle"
+            :class="{ active: activeConfirmed }"
+            :aria-pressed="activeConfirmed"
+            @click="activeConfirmed = !activeConfirmed"
+          >
+            {{ ui.confirmed }} <span>{{ confirmedAvailableCount }}</span>
+          </button>
+          <n-button size="small" tertiary :loading="loading" @click="loadTopic(true)">
+            {{ refreshLabel }}
+          </n-button>
+        </div>
       </div>
 
       <div class="filter-stack">
@@ -177,6 +189,7 @@ const activeIntent = ref(validIntents.has(queryValue(route.query.intent)) ? quer
 const activeTime = ref(validTimes.has(queryValue(route.query.time)) ? queryValue(route.query.time) : "all");
 const activeSource = ref(queryValue(route.query.source) || "all");
 const activePlatform = ref(queryValue(route.query.platform) || "all");
+const activeConfirmed = ref(queryValue(route.query.confirmed) === "1");
 const searchQuery = ref(queryValue(route.query.q).trim());
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
 const copy = computed(() => WOOL_TOPIC_METADATA[locale.value] || WOOL_TOPIC_METADATA["zh-CN"]);
@@ -184,11 +197,11 @@ const data = computed(() => result.value?.data || []);
 const dashboard = computed(() => result.value?.dashboard || null);
 
 const UI_COPY = {
-  "zh-CN": { sources: "来源状态", type: "类型", time: "时间", platform: "平台", allPlatforms: "全部平台", search: "搜索机会", searchPlaceholder: "搜索京东、美团、Claude…", matches: "条匹配", latest: "最新", oneHour: "1小时", threeHours: "3小时", sixHours: "6小时", today: "今天", allSources: "全部来源", sourceUnit: "个来源", updated: "更新", ok: "正常", partial: "部分异常", failed: "异常", actions: { free: "立即领取", coupon: "去领券", giveaway: "参与活动", ai: "查看额度", game: "立即领取", deal: "查看优惠" } },
-  en: { sources: "Source Status", type: "Type", time: "Time", platform: "Platform", allPlatforms: "All platforms", search: "Search deals", searchPlaceholder: "Search JD, Meituan, Claude…", matches: "matches", latest: "Latest", oneHour: "1h", threeHours: "3h", sixHours: "6h", today: "Today", allSources: "All sources", sourceUnit: "sources", updated: "updated", ok: "Healthy", partial: "Partial", failed: "Down", actions: { free: "Claim now", coupon: "Get coupon", giveaway: "Join", ai: "View credits", game: "Claim now", deal: "View deal" } },
-  "zh-TW": { sources: "來源狀態", type: "類型", time: "時間", platform: "平台", allPlatforms: "全部平台", search: "搜尋優惠", searchPlaceholder: "搜尋京東、美團、Claude…", matches: "筆符合", latest: "最新", oneHour: "1小時", threeHours: "3小時", sixHours: "6小時", today: "今天", allSources: "全部來源", sourceUnit: "個來源", updated: "更新", ok: "正常", partial: "部分異常", failed: "異常", actions: { free: "立即領取", coupon: "領優惠券", giveaway: "參與活動", ai: "查看額度", game: "立即領取", deal: "查看優惠" } },
-  ja: { sources: "情報源ステータス", type: "種類", time: "時間", platform: "プラットフォーム", allPlatforms: "すべてのプラットフォーム", search: "お得情報を検索", searchPlaceholder: "JD・Meituan・Claudeを検索…", matches: "件", latest: "最新", oneHour: "1時間", threeHours: "3時間", sixHours: "6時間", today: "今日", allSources: "すべて", sourceUnit: "情報源", updated: "更新", ok: "正常", partial: "一部異常", failed: "異常", actions: { free: "今すぐ受取", coupon: "クーポン取得", giveaway: "参加する", ai: "クレジット確認", game: "今すぐ受取", deal: "詳細を見る" } },
-  ko: { sources: "출처 상태", type: "유형", time: "시간", platform: "플랫폼", allPlatforms: "전체 플랫폼", search: "혜택 검색", searchPlaceholder: "JD, Meituan, Claude 검색…", matches: "개 일치", latest: "최신", oneHour: "1시간", threeHours: "3시간", sixHours: "6시간", today: "오늘", allSources: "전체 출처", sourceUnit: "개 출처", updated: "업데이트", ok: "정상", partial: "일부 오류", failed: "오류", actions: { free: "지금 받기", coupon: "쿠폰 받기", giveaway: "참여하기", ai: "크레딧 보기", game: "지금 받기", deal: "혜택 보기" } },
+  "zh-CN": { sources: "来源状态", type: "类型", time: "时间", platform: "平台", allPlatforms: "全部平台", confirmed: "多源确认", search: "搜索机会", searchPlaceholder: "搜索京东、美团、Claude…", matches: "条匹配", latest: "最新", oneHour: "1小时", threeHours: "3小时", sixHours: "6小时", today: "今天", allSources: "全部来源", sourceUnit: "个来源", updated: "更新", ok: "正常", partial: "部分异常", failed: "异常", actions: { free: "立即领取", coupon: "去领券", giveaway: "参与活动", ai: "查看额度", game: "立即领取", deal: "查看优惠" } },
+  en: { sources: "Source Status", type: "Type", time: "Time", platform: "Platform", allPlatforms: "All platforms", confirmed: "Confirmed", search: "Search deals", searchPlaceholder: "Search JD, Meituan, Claude…", matches: "matches", latest: "Latest", oneHour: "1h", threeHours: "3h", sixHours: "6h", today: "Today", allSources: "All sources", sourceUnit: "sources", updated: "updated", ok: "Healthy", partial: "Partial", failed: "Down", actions: { free: "Claim now", coupon: "Get coupon", giveaway: "Join", ai: "View credits", game: "Claim now", deal: "View deal" } },
+  "zh-TW": { sources: "來源狀態", type: "類型", time: "時間", platform: "平台", allPlatforms: "全部平台", confirmed: "多源確認", search: "搜尋優惠", searchPlaceholder: "搜尋京東、美團、Claude…", matches: "筆符合", latest: "最新", oneHour: "1小時", threeHours: "3小時", sixHours: "6小時", today: "今天", allSources: "全部來源", sourceUnit: "個來源", updated: "更新", ok: "正常", partial: "部分異常", failed: "異常", actions: { free: "立即領取", coupon: "領優惠券", giveaway: "參與活動", ai: "查看額度", game: "立即領取", deal: "查看優惠" } },
+  ja: { sources: "情報源ステータス", type: "種類", time: "時間", platform: "プラットフォーム", allPlatforms: "すべてのプラットフォーム", confirmed: "複数確認", search: "お得情報を検索", searchPlaceholder: "JD・Meituan・Claudeを検索…", matches: "件", latest: "最新", oneHour: "1時間", threeHours: "3時間", sixHours: "6時間", today: "今日", allSources: "すべて", sourceUnit: "情報源", updated: "更新", ok: "正常", partial: "一部異常", failed: "異常", actions: { free: "今すぐ受取", coupon: "クーポン取得", giveaway: "参加する", ai: "クレジット確認", game: "今すぐ受取", deal: "詳細を見る" } },
+  ko: { sources: "출처 상태", type: "유형", time: "시간", platform: "플랫폼", allPlatforms: "전체 플랫폼", confirmed: "다중 확인", search: "혜택 검색", searchPlaceholder: "JD, Meituan, Claude 검색…", matches: "개 일치", latest: "최신", oneHour: "1시간", threeHours: "3시간", sixHours: "6시간", today: "오늘", allSources: "전체 출처", sourceUnit: "개 출처", updated: "업데이트", ok: "정상", partial: "일부 오류", failed: "오류", actions: { free: "지금 받기", coupon: "쿠폰 받기", giveaway: "참여하기", ai: "크레딧 보기", game: "지금 받기", deal: "혜택 보기" } },
 };
 const ACTION_COPY = {
   "zh-CN": { claim: "立即领取", claim_coupon: "去领券", join: "参与活动", groupbuy: "去拼单", task: "去参与", view: "查看优惠" },
@@ -223,15 +236,17 @@ const matchesSearch = (item) => {
   if (!query) return true;
   return `${textForItem(item)} ${sourceLabel(item)} ${subtypeLabel(item)}`.toLowerCase().includes(query);
 };
-const matchesBase = (item, { intent = activeIntent.value, source = activeSource.value, time = activeTime.value, platform = activePlatform.value } = {}) =>
+const matchesBase = (item, { intent = activeIntent.value, source = activeSource.value, time = activeTime.value, platform = activePlatform.value, confirmed = activeConfirmed.value } = {}) =>
   (intent === "all" || item.intent === intent) &&
   itemMatchesSource(item, source) &&
   (platform === "all" || platformLabel(item) === platform) &&
+  (!confirmed || Number(item?.cluster?.sourceCount || 0) > 1) &&
   matchesTime(item, time) &&
   matchesSearch(item);
 
 const filteredData = computed(() => data.value.filter((item) => matchesBase(item)));
-const hasActiveFilter = computed(() => activeIntent.value !== "all" || activeTime.value !== "all" || activeSource.value !== "all" || activePlatform.value !== "all");
+const confirmedAvailableCount = computed(() => data.value.filter((item) => matchesBase(item, { confirmed: false }) && Number(item?.cluster?.sourceCount || 0) > 1).length);
+const hasActiveFilter = computed(() => activeIntent.value !== "all" || activeTime.value !== "all" || activeSource.value !== "all" || activePlatform.value !== "all" || activeConfirmed.value);
 const intentOptions = computed(() => [
   { value: "all", label: copy.value.all, count: data.value.filter((item) => matchesBase(item, { intent: "all" })).length },
   ...Object.entries(copy.value.intents).map(([value, label]) => ({
@@ -374,6 +389,7 @@ const syncQuery = () => {
     setOrDelete("q", searchQuery.value.trim());
     setOrDelete("source", activeSource.value, "all");
     setOrDelete("platform", activePlatform.value, "all");
+    setOrDelete("confirmed", activeConfirmed.value ? "1" : "");
     setOrDelete("time", activeTime.value, "all");
     setOrDelete("intent", activeIntent.value, "all");
     const params = new URLSearchParams();
@@ -404,7 +420,7 @@ const loadTopic = async (force = false) => {
 };
 
 watch(locale, () => loadTopic(false));
-watch([searchQuery, activeSource, activePlatform, activeTime, activeIntent], syncQuery);
+watch([searchQuery, activeSource, activePlatform, activeConfirmed, activeTime, activeIntent], syncQuery);
 watch(sourceOptions, (options) => {
   if (activeSource.value !== "all" && !options.some((option) => option.value === activeSource.value)) activeSource.value = "all";
 });
@@ -645,6 +661,29 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.feed-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.confirmed-toggle {
+  appearance: none;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.2));
+  border-radius: 7px;
+  background: transparent;
+  color: var(--n-text-color-2, #555);
+  font-size: 11px;
+  cursor: pointer;
+}
+.confirmed-toggle span { margin-left: 4px; font-variant-numeric: tabular-nums; }
+.confirmed-toggle:hover,
+.confirmed-toggle.active {
+  border-color: currentColor;
+  color: var(--n-text-color, #222);
+}
+.confirmed-toggle:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .filter-stack {
   display: grid;
   gap: 7px;
