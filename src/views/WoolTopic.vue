@@ -315,6 +315,9 @@ const UI_COPY = {
     resetFilters: "清除筛选",
     navigation: {
       official: "官方直达",
+      product: "官方商品",
+      coupon: "官方领券",
+      activity: "官方活动",
       steps: "查看步骤",
       stepsTitle: "操作步骤",
       source: "查看原线报",
@@ -357,6 +360,9 @@ const UI_COPY = {
     resetFilters: "Reset",
     navigation: {
       official: "Official link",
+      product: "Official product",
+      coupon: "Official coupon",
+      activity: "Official activity",
       steps: "View steps",
       stepsTitle: "How to claim",
       source: "View source",
@@ -399,6 +405,9 @@ const UI_COPY = {
     resetFilters: "清除篩選",
     navigation: {
       official: "官方直達",
+      product: "官方商品",
+      coupon: "官方領券",
+      activity: "官方活動",
       steps: "查看步驟",
       stepsTitle: "操作步驟",
       source: "查看原線報",
@@ -441,6 +450,9 @@ const UI_COPY = {
     resetFilters: "リセット",
     navigation: {
       official: "公式へ直行",
+      product: "公式商品",
+      coupon: "公式クーポン",
+      activity: "公式キャンペーン",
       steps: "手順を見る",
       stepsTitle: "利用手順",
       source: "元情報を見る",
@@ -483,6 +495,9 @@ const UI_COPY = {
     resetFilters: "초기화",
     navigation: {
       official: "공식 바로가기",
+      product: "공식 상품",
+      coupon: "공식 쿠폰",
+      activity: "공식 이벤트",
       steps: "단계 보기",
       stepsTitle: "이용 단계",
       source: "원문 보기",
@@ -752,8 +767,10 @@ const handleOpportunityClick = (event, item) => {
 const opportunityActionLabel = (item) => {
   if (item?.source !== "super-deals") return actionLabel(item);
   const navigation = navigationForItem(item);
-  if (navigation?.directType === "official")
-    return ui.value.navigation.official;
+  if (navigation?.directType === "official") {
+    const kind = navigation?.directKind;
+    return ui.value.navigation[kind] || ui.value.navigation.official;
+  }
   if (navigation?.directType === "app" && navigation.instructions)
     return ui.value.navigation.steps;
   if (navigation?.directType === "source") return ui.value.navigation.source;
