@@ -148,10 +148,9 @@ import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
 import { getSourceLabel, getSourceSubtitleLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { enhanceReadableResultTitles } from "@/utils/readableTitles";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 
 const route = useRoute();
-const router = useRouter();
 const result = ref(null);
 const loading = ref(false);
 const loadError = ref("");
@@ -276,9 +275,9 @@ const formatFreshness = (value) => {
   const timestamp = Number(value);
   if (!Number.isFinite(timestamp)) return "—";
   const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
-  if (locale.value === "zh-CN") return minutes < 1 ? "刚刚" : minutes < 60 ? `${minutes}分钟前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小时前` : `${Math.floor(minutes / 1440)}天前`;
-  if (locale.value === "zh-TW") return minutes < 1 ? "剛剛" : minutes < 60 ? `${minutes}分鐘前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小時前` : `${Math.floor(minutes / 1440)}天前`;
-  if (locale.value === "ja") return minutes < 1 ? "たった今" : minutes < 60 ? `${minutes}分前` : minutes < 1440 ? `${Math.floor(minutes / 60)}時間前` : `${Math.floor(minutes / 1440)}日前`;
+  if (locale.value === "zh-CN") return minutes < 1 ? "刚刚" : minutes < 60 ? `${minutes}分钟前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小时前` : `${Math.floor(minutes / 1440)}天�q`;
+  if (locale.value === "zh-TW") return minutes < 1 ? "剛剛" : minutes < 60 ? `${minutes}分鐘�q` : minutes < 1440 ? `${Math.floor(minutes / 60)}小時前` : `${Math.floor(minutes / 1440)}天前`;
+  if (locale.value === "ja") return minutes < 1 ? "たった今" : minutes < 60 ? `${minutes}分前` : minutes < 1440 ? `${Math.floor(minutes / 60)}時間�q` : `${Math.floor(minutes / 1440)}日前`;
   if (locale.value === "ko") return minutes < 1 ? "방금" : minutes < 60 ? `${minutes}분 전` : minutes < 1440 ? `${Math.floor(minutes / 60)}시간 전` : `${Math.floor(minutes / 1440)}일 전`;
   return minutes < 1 ? "just now" : minutes < 60 ? `${minutes}m ago` : minutes < 1440 ? `${Math.floor(minutes / 60)}h ago` : `${Math.floor(minutes / 1440)}d ago`;
 };
@@ -300,7 +299,13 @@ const syncQuery = () => {
     setOrDelete("source", activeSource.value, "all");
     setOrDelete("time", activeTime.value, "all");
     setOrDelete("intent", activeIntent.value, "all");
-    router.replace({ path: route.path, query, hash: route.hash });
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (Array.isArray(value)) value.forEach((item) => params.append(key, String(item)));
+      else if (value !== undefined && value !== null) params.set(key, String(value));
+    });
+    const search = params.toString();
+    window.history.replaceState(window.history.state, "", `${route.path}${search ? `?${search}` : ""}${route.hash || ""}`);
   }, 220);
 };
 
