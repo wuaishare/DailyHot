@@ -3217,6 +3217,13 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     ja: "愛猫バスタブ",
     ko: "고양이 욕조",
   },
+  狗组: {
+    "zh-CN": "狗组",
+    "zh-TW": "狗組",
+    en: "Dog Group",
+    ja: "犬グループ",
+    ko: "강아지 그룹",
+  },
   今日热门: {
     "zh-CN": "今日热门",
     "zh-TW": "今日熱門",

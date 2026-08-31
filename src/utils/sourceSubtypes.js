@@ -139,6 +139,7 @@ const SOURCE_SUBTYPE_GROUPS = {
       items: [
         { label: "爱猫生活", value: "catlife" },
         { label: "爱猫澡盆", value: "bathtub" },
+        { label: "狗组", value: "dog" },
       ],
     },
   ],
