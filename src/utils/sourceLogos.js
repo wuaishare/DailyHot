@@ -10,6 +10,7 @@ const SOURCE_LOGO_MAP = {
   "epic-free-games": "/logo/game/epic.ico",
   "xiaoheihe-deals": "/logo/game/xiaoheihe.png",
   ggdeals: "https://gg.deals/favicon.ico",
+  "gog-deals": "/logo/game/gog.ico",
   xueqiu: "/logo/xueqiu.png",
   sse: "https://www.sse.com.cn/favicon.ico",
   szse: "https://res.szse.cn/common/images/favicon.ico",
@@ -64,4 +65,5 @@ export const getSourceLogo = (name) => {
   return getPublicAssetUrl(path);
 };
 
-export const getSourceLogoFallback = () => getPublicAssetUrl("/ico/favicon.png");
+export const getSourceLogoFallback = () =>
+  getPublicAssetUrl("/ico/favicon.png");

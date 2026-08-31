@@ -190,6 +190,20 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "gog-deals": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "热门折扣", value: "trending" },
+        { label: "正在免费", value: "free" },
+        { label: "75%+ 高折扣", value: "discount75" },
+        { label: "90%+ 超低折扣", value: "discount90" },
+        { label: "10 美元以内", value: "under10" },
+        { label: "30 美元以内", value: "under30" },
+      ],
+    },
+  ],
   smzdm: [
     {
       key: "period",

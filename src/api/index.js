@@ -25,6 +25,7 @@ const DIRECT_PUBLIC_API_SOURCES = new Set([
   "epic-free-games",
   "xiaoheihe-deals",
   "ggdeals",
+  "gog-deals",
   "xueqiu",
   "sse",
   "szse",

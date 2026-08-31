@@ -189,67 +189,67 @@ export const GAME_DEALS_TOPIC_METADATA = {
   "zh-CN": {
     title: "实时游戏优惠与史低",
     description:
-      "聚合 Steam、Epic、小黑盒、GG.deals 与 IT之家喜加一，优先展示免费领取、新史低、史低、90%+ 高折扣和 30 元以内的高价值游戏机会。",
+      "聚合 Steam、Epic、GOG、小黑盒、GG.deals 与 IT之家喜加一，优先展示免费领取、新史低、史低、90%+ 高折扣和 30 元以内的高价值游戏机会。",
     feedTitle: "游戏优惠雷达",
     open: "查看游戏优惠",
     empty: "当前筛选暂无游戏优惠",
     seoTitle: "实时游戏优惠与史低 - Steam 特惠、Epic 免费游戏 | 吾爱热榜",
     seoDescription:
-      "实时聚合 Steam 特惠、Epic 免费游戏、小黑盒史低、GG.deals 与 IT之家喜加一，追踪免费领取、新史低、90%+ 折扣和 10/30 元低价游戏。",
+      "实时聚合 Steam 特惠、Epic 免费游戏、GOG 折扣、小黑盒史低、GG.deals 与 IT之家喜加一，追踪免费领取、新史低、90%+ 折扣和 10/30 元低价游戏。",
     seoKeywords:
-      "游戏优惠,游戏史低,Steam特惠,Epic免费游戏,小黑盒游戏折扣,GG.deals,喜加一,90%折扣,10元游戏,30元游戏,限时免费",
+      "游戏优惠,游戏史低,Steam特惠,Epic免费游戏,GOG游戏折扣,小黑盒游戏折扣,GG.deals,喜加一,90%折扣,10元游戏,30元游戏,限时免费",
   },
   en: {
     title: "Live Game Deals & Historical Lows",
     description:
-      "Track Steam, Epic, Xiaoheihe, GG.deals and ITHome for free games, new historical lows, 90%+ discounts and high-value games under CNY 30.",
+      "Track Steam, Epic, GOG, Xiaoheihe, GG.deals and ITHome for free games, new historical lows, 90%+ discounts and high-value games under CNY 30.",
     feedTitle: "Game Deal Radar",
     open: "View game deals",
     empty: "No game deals match this filter.",
     seoTitle:
       "Live Game Deals & Historical Lows - Steam Sales, Epic Free Games | DailyHot",
     seoDescription:
-      "Track Steam sales, Epic free games, Xiaoheihe historical lows, GG.deals and ITHome for free games, deep discounts and low-price offers.",
+      "Track Steam sales, Epic free games, GOG deals, Xiaoheihe historical lows, GG.deals and ITHome for free games, deep discounts and low-price offers.",
     seoKeywords:
-      "game deals,historical low,Steam sales,Epic free games,Xiaoheihe,GG.deals,free games,90% discount,cheap PC games,DailyHot",
+      "game deals,historical low,Steam sales,Epic free games,GOG deals,Xiaoheihe,GG.deals,free games,90% discount,cheap PC games,DailyHot",
   },
   "zh-TW": {
     title: "即時遊戲優惠與史低",
     description:
-      "彙整 Steam、Epic、小黑盒、GG.deals 與 IT之家喜加一，優先顯示免費領取、新史低、史低、90%+ 折扣與 30 元以內高價值遊戲。",
+      "彙整 Steam、Epic、GOG、小黑盒、GG.deals 與 IT之家喜加一，優先顯示免費領取、新史低、史低、90%+ 折扣與 30 元以內高價值遊戲。",
     feedTitle: "遊戲優惠雷達",
     open: "查看遊戲優惠",
     empty: "目前篩選沒有遊戲優惠",
     seoTitle: "即時遊戲優惠與史低 - Steam 特惠、Epic 免費遊戲 | 吾愛熱榜",
     seoDescription:
-      "即時追蹤 Steam 特惠、Epic 免費遊戲、小黑盒史低、GG.deals 與 IT之家喜加一，涵蓋免費、新史低、90%+ 折扣與低價遊戲。",
+      "即時追蹤 Steam 特惠、Epic 免費遊戲、GOG 折扣、小黑盒史低、GG.deals 與 IT之家喜加一，涵蓋免費、新史低、90%+ 折扣與低價遊戲。",
     seoKeywords:
-      "遊戲優惠,遊戲史低,Steam特惠,Epic免費遊戲,小黑盒遊戲折扣,GG.deals,喜加一,90%折扣,低價遊戲,吾愛熱榜",
+      "遊戲優惠,遊戲史低,Steam特惠,Epic免費遊戲,GOG遊戲折扣,小黑盒遊戲折扣,GG.deals,喜加一,90%折扣,低價遊戲,吾愛熱榜",
   },
   ja: {
     title: "リアルタイムゲームセール・史上最安",
     description:
-      "Steam、Epic、Xiaoheihe、GG.deals、ITHome を集約し、無料配布、新たな史上最安、90%以上の割引、30元以下の高価値ゲームを優先表示します。",
+      "Steam、Epic、GOG、Xiaoheihe、GG.deals、ITHome を集約し、無料配布、新たな史上最安、90%以上の割引、30元以下の高価値ゲームを優先表示します。",
     feedTitle: "ゲームセールレーダー",
     open: "ゲームセールを見る",
     empty: "条件に一致するゲームセールはありません",
     seoTitle: "ゲームセール・史上最安 - Steamセール、Epic無料ゲーム | DailyHot",
     seoDescription:
-      "Steamセール、Epic無料ゲーム、Xiaoheihe史上最安、GG.deals、ITHomeをリアルタイム集約し、無料配布や大幅割引を追跡します。",
+      "Steamセール、Epic無料ゲーム、GOGセール、Xiaoheihe史上最安、GG.deals、ITHomeをリアルタイム集約し、無料配布や大幅割引を追跡します。",
     seoKeywords:
-      "ゲームセール,史上最安,Steamセール,Epic無料ゲーム,Xiaoheihe,GG.deals,無料配布,90%オフ,格安ゲーム,DailyHot",
+      "ゲームセール,史上最安,Steamセール,Epic無料ゲーム,GOGセール,Xiaoheihe,GG.deals,無料配布,90%オフ,格安ゲーム,DailyHot",
   },
   ko: {
     title: "실시간 게임 할인·역대 최저가",
     description:
-      "Steam, Epic, Xiaoheihe, GG.deals, ITHome을 모아 무료 배포, 신규 역대 최저가, 90%+ 할인, 30위안 이하 고가치 게임을 우선 제공합니다.",
+      "Steam, Epic, GOG, Xiaoheihe, GG.deals, ITHome을 모아 무료 배포, 신규 역대 최저가, 90%+ 할인, 30위안 이하 고가치 게임을 우선 제공합니다.",
     feedTitle: "게임 할인 레이더",
     open: "게임 할인 보기",
     empty: "조건에 맞는 게임 할인이 없습니다",
     seoTitle: "게임 할인·역대 최저가 - Steam 할인, Epic 무료 게임 | DailyHot",
     seoDescription:
-      "Steam 할인, Epic 무료 게임, Xiaoheihe 역대 최저가, GG.deals, ITHome을 실시간으로 모아 무료 배포와 초특가를 추적합니다.",
+      "Steam 할인, Epic 무료 게임, GOG 할인, Xiaoheihe 역대 최저가, GG.deals, ITHome을 실시간으로 모아 무료 배포와 초특가를 추적합니다.",
     seoKeywords:
-      "게임 할인,역대 최저가,Steam 할인,Epic 무료 게임,Xiaoheihe,GG.deals,무료 배포,90% 할인,저가 게임,DailyHot",
+      "게임 할인,역대 최저가,Steam 할인,Epic 무료 게임,GOG 할인,Xiaoheihe,GG.deals,무료 배포,90% 할인,저가 게임,DailyHot",
   },
 };

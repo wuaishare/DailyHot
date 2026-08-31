@@ -584,6 +584,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ja: "GG.deals ゲームセール",
     ko: "GG.deals 게임 할인",
   },
+  "gog-deals": {
+    "zh-CN": "GOG 游戏折扣",
+    "zh-TW": "GOG 遊戲折扣",
+    en: "GOG Game Deals",
+    ja: "GOG ゲームセール",
+    ko: "GOG 게임 할인",
+  },
   "ithome-xijiayi": {
     "zh-CN": "IT之家「喜加一」",
     "zh-TW": "IT之家「喜加一」",
@@ -3286,6 +3293,20 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     en: "Under ¥30",
     ja: "30元以下",
     ko: "30위안 이하",
+  },
+  "10 美元以内": {
+    "zh-CN": "10 美元以内",
+    "zh-TW": "10 美元以內",
+    en: "Under $10",
+    ja: "10ドル以下",
+    ko: "$10 이하",
+  },
+  "30 美元以内": {
+    "zh-CN": "30 美元以内",
+    "zh-TW": "30 美元以內",
+    en: "Under $30",
+    ja: "30ドル以下",
+    ko: "$30 이하",
   },
   正在免费: {
     "zh-CN": "正在免费",

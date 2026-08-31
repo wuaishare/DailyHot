@@ -481,17 +481,22 @@ const numberValue = (value) => {
 const currentPrice = (item) => numberValue(item?.extra?.currentPrice);
 const originalPrice = (item) => numberValue(item?.extra?.originalPrice);
 const discount = (item) => numberValue(item?.extra?.discountPercent);
-const money = (value) =>
-  Number.isInteger(value) ? `¥${value}` : `¥${value.toFixed(2)}`;
+const currency = (item) => String(item?.extra?.currency || "CNY").toUpperCase();
+const currencySymbol = (code) =>
+  ({ CNY: "¥", RMB: "¥", USD: "$", EUR: "€", GBP: "£" })[code] || `${code} `;
+const money = (value, item) => {
+  const text = Number.isInteger(value) ? String(value) : value.toFixed(2);
+  return `${currencySymbol(currency(item))}${text}`;
+};
 const priceLabel = (item) =>
   tags(item).includes("free")
     ? ui.value.free
     : currentPrice(item) !== undefined
-      ? money(currentPrice(item))
+      ? money(currentPrice(item), item)
       : "";
 const originalPriceLabel = (item) =>
   originalPrice(item) && originalPrice(item) > (currentPrice(item) ?? -1)
-    ? `${ui.value.original} ${money(originalPrice(item))}`
+    ? `${ui.value.original} ${money(originalPrice(item), item)}`
     : "";
 const discountLabel = (item) => (discount(item) ? `-${discount(item)}%` : "");
 const score = (item) => numberValue(gameDeal(item).score) || 0;
@@ -513,11 +518,17 @@ const filteredData = computed(() => {
     return true;
   });
   return [...rows].sort((a, b) => {
-    if (activeSort.value === "price")
+    if (activeSort.value === "price") {
+      const currencyOrder = { CNY: 0, RMB: 0, USD: 1, EUR: 2, GBP: 3 };
+      const currencyA = currencyOrder[currency(a)] ?? 9;
+      const currencyB = currencyOrder[currency(b)] ?? 9;
       return (
+        currencyA - currencyB ||
         (currentPrice(a) ?? Number.MAX_SAFE_INTEGER) -
-          (currentPrice(b) ?? Number.MAX_SAFE_INTEGER) || score(b) - score(a)
+          (currentPrice(b) ?? Number.MAX_SAFE_INTEGER) ||
+        score(b) - score(a)
       );
+    }
     if (activeSort.value === "discount")
       return (discount(b) || 0) - (discount(a) || 0) || score(b) - score(a);
     return score(b) - score(a) || Number(b.hot || 0) - Number(a.hot || 0);
@@ -568,7 +579,11 @@ const deadlineTitle = (item) => {
 const confirmationTitle = (item) =>
   (gameDeal(item).confirmations || [])
     .map((entry) =>
-      getSourceLabel(entry.source, locale.value, entry.sourceLabel || entry.source),
+      getSourceLabel(
+        entry.source,
+        locale.value,
+        entry.sourceLabel || entry.source,
+      ),
     )
     .join(" + ");
 const actionLabel = (item) =>

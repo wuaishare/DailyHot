@@ -133,7 +133,7 @@ const CATEGORY_SEO_MAP = {
     title: "羊毛优惠",
     titleTail: "限免、优惠券、免费福利与实测线报实时聚合",
     description:
-      "羊毛优惠聚合超级线报、0818团、NodeLoc、豆瓣优惠及 Steam、Epic、小黑盒、GG.deals 游戏福利，覆盖限免、优惠券、史低、超低价、抽奖、免费额度与游戏免费领取。",
+      "羊毛优惠聚合超级线报、0818团、NodeLoc、豆瓣优惠及 Steam、Epic、GOG、小黑盒、GG.deals 游戏福利，覆盖限免、优惠券、史低、超低价、抽奖、免费额度与游戏免费领取。",
     keywords: [
       "羊毛",
       "优惠线报",
@@ -809,6 +809,11 @@ const LIST_SEO_MAP = {
     label: "GG.deals 游戏优惠",
     keywords: "GG.deals,游戏免费,游戏折扣,游戏包,game freebies,game deals",
     description: "聚合 GG.deals 官方公开的 Freebies、Deals 与 Bundles RSS，追踪全球游戏免费领取、促销与游戏包情报。",
+  },
+  "gog-deals": {
+    label: "GOG 游戏折扣",
+    keywords: "GOG游戏折扣,GOG特惠,GOG 90%折扣,GOG低价游戏,DRM-free游戏",
+    description: "基于 GOG 官方 Catalog 聚合当前 DRM-free 游戏折扣，覆盖热门促销、75%+/90%+ 高折扣与美元低价游戏。",
   },
   weibo: {
     label: "微博热搜",

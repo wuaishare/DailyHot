@@ -567,6 +567,15 @@ export const mainStore = defineStore("mainData", {
           subtype: "freebies",
         },
         {
+          label: "GOG 游戏折扣",
+          name: "gog-deals",
+          order: 52.5,
+          show: true,
+          category: "游戏",
+          categoryIds: ["games", "wool"],
+          subtype: "trending",
+        },
+        {
           label: "简书",
           name: "jianshu",
           order: 53,
