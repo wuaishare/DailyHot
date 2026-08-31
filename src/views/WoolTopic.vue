@@ -275,9 +275,9 @@ const formatFreshness = (value) => {
   const timestamp = Number(value);
   if (!Number.isFinite(timestamp)) return "—";
   const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
-  if (locale.value === "zh-CN") return minutes < 1 ? "刚刚" : minutes < 60 ? `${minutes}分钟前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小时前` : `${Math.floor(minutes / 1440)}天�q`;
-  if (locale.value === "zh-TW") return minutes < 1 ? "剛剛" : minutes < 60 ? `${minutes}分鐘�q` : minutes < 1440 ? `${Math.floor(minutes / 60)}小時前` : `${Math.floor(minutes / 1440)}天前`;
-  if (locale.value === "ja") return minutes < 1 ? "たった今" : minutes < 60 ? `${minutes}分前` : minutes < 1440 ? `${Math.floor(minutes / 60)}時間�q` : `${Math.floor(minutes / 1440)}日前`;
+  if (locale.value === "zh-CN") return minutes < 1 ? "刚刚" : minutes < 60 ? `${minutes}分钟前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小时前` : `${Math.floor(minutes / 1440)}天前`;
+  if (locale.value === "zh-TW") return minutes < 1 ? "剛剛" : minutes < 60 ? `${minutes}分鐘前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小時前` : `${Math.floor(minutes / 1440)}天前`;
+  if (locale.value === "ja") return minutes < 1 ? "たった今" : minutes < 60 ? `${minutes}分前` : minutes < 1440 ? `${Math.floor(minutes / 60)}時間前` : `${Math.floor(minutes / 1440)}日前`;
   if (locale.value === "ko") return minutes < 1 ? "방금" : minutes < 60 ? `${minutes}분 전` : minutes < 1440 ? `${Math.floor(minutes / 60)}시간 전` : `${Math.floor(minutes / 1440)}일 전`;
   return minutes < 1 ? "just now" : minutes < 60 ? `${minutes}m ago` : minutes < 1440 ? `${Math.floor(minutes / 60)}h ago` : `${Math.floor(minutes / 1440)}d ago`;
 };
