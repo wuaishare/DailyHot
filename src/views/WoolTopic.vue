@@ -149,13 +149,13 @@
         <n-skeleton text :repeat="8" />
       </div>
       <div v-else-if="filteredData.length" class="opportunity-list">
-        <a
+        <article
           v-for="(item, index) in filteredData"
           :key="item.id"
-          :href="item.url"
-          target="_blank"
-          rel="noopener noreferrer"
           class="opportunity-item"
+          :data-super-deal-id="rawSuperDealId(item) || undefined"
+          @mouseenter="prefetchSuperDealNavigation(item)"
+          @focusin="prefetchSuperDealNavigation(item)"
         >
           <span class="opportunity-rank">{{
             String(index + 1).padStart(2, "0")
@@ -170,7 +170,15 @@
               <span>{{ sourceLabel(item) }}</span>
               <em>{{ subtypeLabel(item) }}</em>
             </div>
-            <h3>{{ item.title }}</h3>
+            <a
+              class="opportunity-title-link"
+              :href="opportunityHref(item)"
+              target="_blank"
+              rel="noopener noreferrer"
+              @click="handleOpportunityClick($event, item)"
+            >
+              <h3>{{ item.title }}</h3>
+            </a>
             <p v-if="item.desc && locale === 'zh-CN'" class="opportunity-desc">
               {{ item.desc }}
             </p>
@@ -206,9 +214,30 @@
                 >{{ keyword }}</span
               >
             </div>
+            <div
+              v-if="showSuperDealInstructions(item)"
+              class="opportunity-instructions"
+            >
+              <strong>{{ ui.navigation.stepsTitle }}</strong>
+              <span>{{ navigationForItem(item)?.instructions }}</span>
+              <a
+                :href="navigationForItem(item)?.sourceUrl || item.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                @click.stop
+                >{{ ui.navigation.source }}</a
+              >
+            </div>
           </div>
-          <span class="opportunity-open">{{ actionLabel(item) }}</span>
-        </a>
+          <a
+            class="opportunity-open"
+            :href="opportunityHref(item)"
+            target="_blank"
+            rel="noopener noreferrer"
+            @click="handleOpportunityClick($event, item)"
+            >{{ opportunityActionLabel(item) }}</a
+          >
+        </article>
       </div>
       <n-empty v-else :description="copy.empty" class="topic-empty" />
     </section>
@@ -265,6 +294,12 @@ const copy = computed(
 );
 const data = computed(() => result.value?.data || []);
 const dashboard = computed(() => result.value?.dashboard || null);
+const superDealNavigationById = ref({});
+const superDealInstructionOpen = ref({});
+const superDealResolvePromises = new Map();
+const publicApi2Base =
+  import.meta.env.VITE_GLOBAL_API2 ||
+  (import.meta.env.PROD ? "https://hotapi2.wuaishare.cn" : "/api");
 
 const UI_COPY = {
   "zh-CN": {
@@ -278,6 +313,12 @@ const UI_COPY = {
     smartSort: "综合",
     newestSort: "最新优先",
     resetFilters: "清除筛选",
+    navigation: {
+      official: "官方直达",
+      steps: "查看步骤",
+      stepsTitle: "操作步骤",
+      source: "查看原线报",
+    },
     allPlatforms: "全部平台",
     confirmed: "多源确认",
     search: "搜索机会",
@@ -314,6 +355,12 @@ const UI_COPY = {
     smartSort: "Smart",
     newestSort: "Newest",
     resetFilters: "Reset",
+    navigation: {
+      official: "Official link",
+      steps: "View steps",
+      stepsTitle: "How to claim",
+      source: "View source",
+    },
     allPlatforms: "All platforms",
     confirmed: "Confirmed",
     search: "Search deals",
@@ -350,6 +397,12 @@ const UI_COPY = {
     smartSort: "綜合",
     newestSort: "最新優先",
     resetFilters: "清除篩選",
+    navigation: {
+      official: "官方直達",
+      steps: "查看步驟",
+      stepsTitle: "操作步驟",
+      source: "查看原線報",
+    },
     allPlatforms: "全部平台",
     confirmed: "多源確認",
     search: "搜尋優惠",
@@ -386,6 +439,12 @@ const UI_COPY = {
     smartSort: "総合",
     newestSort: "新着順",
     resetFilters: "リセット",
+    navigation: {
+      official: "公式へ直行",
+      steps: "手順を見る",
+      stepsTitle: "利用手順",
+      source: "元情報を見る",
+    },
     allPlatforms: "すべてのプラットフォーム",
     confirmed: "複数確認",
     search: "お得情報を検索",
@@ -422,6 +481,12 @@ const UI_COPY = {
     smartSort: "종합",
     newestSort: "최신순",
     resetFilters: "초기화",
+    navigation: {
+      official: "공식 바로가기",
+      steps: "단계 보기",
+      stepsTitle: "이용 단계",
+      source: "원문 보기",
+    },
     allPlatforms: "전체 플랫폼",
     confirmed: "다중 확인",
     search: "혜택 검색",
@@ -538,6 +603,162 @@ const BENEFIT_COPY = {
   },
 };
 const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
+
+const rawSuperDealId = (item) => {
+  if (item?.source !== "super-deals") return "";
+  return (
+    String(item.id || "")
+      .split(":")
+      .pop() || ""
+  );
+};
+const navigationForItem = (item) => {
+  const id = rawSuperDealId(item);
+  return id ? superDealNavigationById.value[id] || null : null;
+};
+const superDealPlatform = (item) =>
+  item?.extra?.platform || item?.signals?.primaryPlatform || "";
+const superDealGoUrl = (item) => {
+  const id = rawSuperDealId(item);
+  if (!id) return item?.url || "#";
+  const base = `${String(publicApi2Base).replace(/\/$/, "")}/go/super-deals/${encodeURIComponent(id)}`;
+  const platform = superDealPlatform(item);
+  return platform ? `${base}?platform=${encodeURIComponent(platform)}` : base;
+};
+const resolveSuperDealNavigation = async (item) => {
+  const id = rawSuperDealId(item);
+  if (!id) return null;
+  if (superDealNavigationById.value[id])
+    return superDealNavigationById.value[id];
+  if (superDealResolvePromises.has(id)) return superDealResolvePromises.get(id);
+
+  const promise = getHotListsWithFallback(
+    "super-deals",
+    false,
+    {
+      id,
+      platform: superDealPlatform(item),
+      locale: locale.value,
+      translate_limit: 1,
+    },
+    { timeout: 6500 },
+  )
+    .then((response) => {
+      const resolvedItem = response?.result?.data?.[0];
+      const navigation = resolvedItem?.navigation;
+      if (!navigation) return null;
+      const normalized = {
+        ...navigation,
+        instructions: resolvedItem?.desc || navigation.instructions,
+      };
+      superDealNavigationById.value[id] = normalized;
+      return normalized;
+    })
+    .catch(() => null)
+    .finally(() => superDealResolvePromises.delete(id));
+  superDealResolvePromises.set(id, promise);
+  return promise;
+};
+const prefetchSuperDealNavigation = (item) => {
+  if (item?.source === "super-deals") void resolveSuperDealNavigation(item);
+};
+let superDealVisibilityObserver;
+const observeVisibleSuperDeals = async () => {
+  if (
+    typeof window === "undefined" ||
+    typeof IntersectionObserver === "undefined"
+  )
+    return;
+  await nextTick();
+  if (!superDealVisibilityObserver) {
+    superDealVisibilityObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const id = entry.target?.dataset?.superDealId || "";
+          const item = data.value.find(
+            (candidate) => rawSuperDealId(candidate) === id,
+          );
+          if (!item) {
+            superDealVisibilityObserver?.unobserve(entry.target);
+            return;
+          }
+          void resolveSuperDealNavigation(item).then((navigation) => {
+            if (navigation) {
+              superDealVisibilityObserver?.unobserve(entry.target);
+              return;
+            }
+            entry.target.dataset.superDealObserved = "0";
+            window.setTimeout(() => {
+              if (entry.target.isConnected) {
+                entry.target.dataset.superDealObserved = "1";
+                superDealVisibilityObserver?.observe(entry.target);
+              }
+            }, 1200);
+          });
+        });
+      },
+      { rootMargin: "700px 0px", threshold: 0.01 },
+    );
+  }
+  document
+    .querySelectorAll(".opportunity-item[data-super-deal-id]")
+    .forEach((element) => {
+      if (element.dataset.superDealObserved === "1") return;
+      element.dataset.superDealObserved = "1";
+      superDealVisibilityObserver.observe(element);
+    });
+};
+
+const prefetchTopSuperDeals = async () => {
+  const items = data.value
+    .filter((item) => item.source === "super-deals")
+    .slice(0, 8);
+  for (let index = 0; index < items.length; index += 2) {
+    await Promise.allSettled(
+      items.slice(index, index + 2).map(resolveSuperDealNavigation),
+    );
+  }
+};
+const showSuperDealInstructions = (item) => {
+  const id = rawSuperDealId(item);
+  const navigation = navigationForItem(item);
+  return Boolean(
+    id &&
+    superDealInstructionOpen.value[id] &&
+    navigation?.directType === "app" &&
+    navigation?.instructions,
+  );
+};
+const opportunityHref = (item) => {
+  if (item?.source !== "super-deals") return item?.url || "#";
+  const navigation = navigationForItem(item);
+  if (navigation?.directType === "official" && navigation.directUrl)
+    return navigation.directUrl;
+  if (navigation?.directType === "source" && navigation.sourceUrl)
+    return navigation.sourceUrl;
+  if (navigation?.directType === "app" && navigation.sourceUrl)
+    return navigation.sourceUrl;
+  return superDealGoUrl(item);
+};
+const handleOpportunityClick = (event, item) => {
+  if (item?.source !== "super-deals") return;
+  const navigation = navigationForItem(item);
+  if (navigation?.directType !== "app" || !navigation.instructions) return;
+  event.preventDefault();
+  const id = rawSuperDealId(item);
+  superDealInstructionOpen.value[id] = !superDealInstructionOpen.value[id];
+};
+const opportunityActionLabel = (item) => {
+  if (item?.source !== "super-deals") return actionLabel(item);
+  const navigation = navigationForItem(item);
+  if (navigation?.directType === "official")
+    return ui.value.navigation.official;
+  if (navigation?.directType === "app" && navigation.instructions)
+    return ui.value.navigation.steps;
+  if (navigation?.directType === "source") return ui.value.navigation.source;
+  return actionLabel(item);
+};
 
 const signalText = (item) =>
   `${item?.signals?.primaryPlatform || ""} ${(item?.signals?.benefits || []).map((benefit) => benefit.raw || "").join(" ")}`;
@@ -956,6 +1177,8 @@ const loadTopic = async (force = false) => {
     const rawResult = response.result;
     result.value = rawResult;
     loading.value = false;
+    void prefetchTopSuperDeals();
+    void observeVisibleSuperDeals();
     result.value = await enhanceReadableResultTitles(rawResult, locale.value, {
       includeDescriptions: false,
       limit: 60,
@@ -968,7 +1191,11 @@ const loadTopic = async (force = false) => {
   }
 };
 
-watch(locale, () => loadTopic(false));
+watch(locale, () => {
+  superDealNavigationById.value = {};
+  superDealInstructionOpen.value = {};
+  void loadTopic(false);
+});
 watch(
   [
     searchQuery,
@@ -996,7 +1223,12 @@ watch(platformOptions, (options) => {
     activePlatform.value = "all";
 });
 onMounted(() => loadTopic(false));
-onBeforeUnmount(() => clearTimeout(querySyncTimer));
+watch(filteredData, () => void observeVisibleSuperDeals(), { flush: "post" });
+onBeforeUnmount(() => {
+  clearTimeout(querySyncTimer);
+  superDealVisibilityObserver?.disconnect();
+  superDealVisibilityObserver = undefined;
+});
 </script>
 <style scoped>
 .wool-topic {
@@ -1461,6 +1693,45 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+.opportunity-title-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.opportunity-title-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.opportunity-instructions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.14));
+  border-radius: 8px;
+  background: color-mix(
+    in srgb,
+    var(--n-color, #fff) 96%,
+    var(--n-text-color, #222) 4%
+  );
+  font-size: 11px;
+  line-height: 1.55;
+}
+.opportunity-instructions strong {
+  white-space: nowrap;
+}
+.opportunity-instructions span {
+  min-width: 0;
+  color: var(--n-text-color-2, #555);
+}
+.opportunity-instructions a {
+  color: var(--n-text-color-2, #555);
+  white-space: nowrap;
+  text-underline-offset: 2px;
+}
 .opportunity-list {
   overflow: hidden;
   border-top: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.16));
@@ -1510,6 +1781,7 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
 }
 .opportunity-open {
   padding-left: 12px;
+  text-decoration: none;
   color: var(--n-text-color-3, #777);
   font-size: 12px;
   white-space: nowrap;
@@ -1764,6 +2036,13 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
     max-width: 112px;
     padding-left: 9px;
     font-size: 11px;
+  }
+  .opportunity-instructions {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .opportunity-instructions a {
+    justify-self: start;
   }
   .opportunity-item {
     grid-template-columns: 28px minmax(0, 1fr);
