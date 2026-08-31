@@ -6,64 +6,52 @@
         <h1>{{ copy.title }}</h1>
         <p class="topic-description">{{ copy.description }}</p>
       </div>
-      <div class="topic-hero-tools" v-if="dashboard">
-        <label class="topic-search">
-          <span class="sr-only">{{ ui.search }}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
-          </svg>
-          <input v-model.trim="searchQuery" type="search" :placeholder="ui.searchPlaceholder" @keydown.esc="searchQuery = ''" />
-        </label>
-        <div class="topic-status">
-          <strong>{{ filteredData.length }}</strong>
-          <span>{{ searchQuery || hasActiveFilter ? ui.matches : copy.feedTitle }}</span>
-        </div>
-      </div>
     </header>
 
-    <n-alert v-if="loadError" type="error" :show-icon="false" class="topic-alert">
+    <n-alert
+      v-if="loadError"
+      type="error"
+      :show-icon="false"
+      class="topic-alert"
+    >
       {{ loadError }}
     </n-alert>
-    <n-alert v-else-if="dashboard?.failedCount" type="warning" :show-icon="false" class="topic-alert">
+    <n-alert
+      v-else-if="dashboard?.failedCount"
+      type="warning"
+      :show-icon="false"
+      class="topic-alert"
+    >
       {{ copy.degraded }}
     </n-alert>
 
-    <section v-if="dashboard && sourceOptions.length" class="topic-section source-section">
-      <div class="section-heading">
-        <h2>{{ ui.sources }}</h2>
-        <span>{{ formatUpdated(result?.updateTime) }}</span>
-      </div>
-      <div class="source-status-grid" role="list" :aria-label="ui.sources">
-        <button
-          v-for="option in sourceOptions"
-          :key="option.value"
-          type="button"
-          class="source-status"
-          :class="{ active: activeSource === option.value }"
-          :aria-pressed="activeSource === option.value"
-          @click="activeSource = option.value"
-        >
-          <span class="source-status-main">
-            <img v-if="option.value !== 'all'" :src="getSourceLogo(option.value)" :alt="option.label" @error="onLogoError" />
-            <span v-else class="source-status-all">{{ dashboard?.sourceCount || 0 }}</span>
-            <strong>{{ option.label }}</strong>
-            <i class="source-health" :class="`is-${option.status}`" :title="statusLabel(option.status)"></i>
-          </span>
-          <span class="source-status-meta">
-            <b>{{ option.count }}</b>
-            <span>{{ option.detail }}</span>
-          </span>
-        </button>
-      </div>
-    </section>
-
     <section class="topic-section feed-section">
-      <div class="section-heading section-heading--feed">
-        <div>
-          <h2>{{ copy.feedTitle }}</h2>
-          <p>{{ copy.method }}</p>
-        </div>
-        <div class="feed-actions">
+      <div class="opportunity-toolbar">
+        <div class="toolbar-primary">
+          <div class="toolbar-heading">
+            <h2>{{ copy.feedTitle }}</h2>
+            <span>{{ formatUpdated(result?.updateTime) }}</span>
+          </div>
+          <label class="topic-search">
+            <span class="sr-only">{{ ui.search }}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+              />
+            </svg>
+            <input
+              v-model.trim="searchQuery"
+              type="search"
+              :placeholder="ui.searchPlaceholder"
+              @keydown.esc="searchQuery = ''"
+            />
+          </label>
+          <div class="topic-status">
+            <strong>{{ filteredData.length }}</strong>
+            <span>{{
+              searchQuery || hasActiveFilter ? ui.matches : copy.feedTitle
+            }}</span>
+          </div>
           <button
             v-if="dashboard?.multiSourceClusterCount"
             type="button"
@@ -74,54 +62,86 @@
           >
             {{ ui.confirmed }} <span>{{ confirmedAvailableCount }}</span>
           </button>
-          <n-button size="small" tertiary :loading="loading" @click="loadTopic(true)">
+          <n-button
+            size="small"
+            tertiary
+            :loading="loading"
+            @click="loadTopic(true)"
+          >
             {{ refreshLabel }}
           </n-button>
         </div>
-      </div>
 
-      <div class="filter-stack">
-        <div class="filter-row">
-          <span class="filter-label">{{ ui.type }}</span>
-          <div class="intent-filter" role="tablist" :aria-label="ui.type">
-            <button
-              v-for="option in intentOptions"
-              :key="option.value"
-              type="button"
-              class="intent-button"
-              :class="{ active: activeIntent === option.value }"
-              :aria-selected="activeIntent === option.value"
-              @click="activeIntent = option.value"
-            >
-              {{ option.label }}
-              <span v-if="option.count !== null">{{ option.count }}</span>
-            </button>
-          </div>
-        </div>
-        <div class="filter-row">
-          <span class="filter-label">{{ ui.time }}</span>
-          <div class="intent-filter time-filter" role="tablist" :aria-label="ui.time">
-            <button
-              v-for="option in timeOptions"
-              :key="option.value"
-              type="button"
-              class="intent-button"
-              :class="{ active: activeTime === option.value }"
-              :aria-selected="activeTime === option.value"
-              @click="activeTime = option.value"
-            >
-              {{ option.label }}
-              <span>{{ option.count }}</span>
-            </button>
-          </div>
-          <label class="platform-filter">
-            <span class="sr-only">{{ ui.platform }}</span>
-            <select v-model="activePlatform" :aria-label="ui.platform">
-              <option v-for="option in platformOptions" :key="option.value" :value="option.value">
-                {{ option.label }} {{ option.count }}
+        <div class="toolbar-filter-strip" role="group" :aria-label="ui.filters">
+          <label class="toolbar-select">
+            <span>{{ ui.source }}</span>
+            <i
+              v-if="selectedSourceOption"
+              class="source-health"
+              :class="`is-${selectedSourceOption.status}`"
+              :title="statusLabel(selectedSourceOption.status)"
+            ></i>
+            <select v-model="activeSource" :aria-label="ui.source">
+              <option
+                v-for="option in sourceOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }} · {{ option.count }}
               </option>
             </select>
           </label>
+          <label class="toolbar-select">
+            <span>{{ ui.type }}</span>
+            <select v-model="activeIntent" :aria-label="ui.type">
+              <option
+                v-for="option in intentOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }} · {{ option.count }}
+              </option>
+            </select>
+          </label>
+          <label class="toolbar-select">
+            <span>{{ ui.time }}</span>
+            <select v-model="activeTime" :aria-label="ui.time">
+              <option
+                v-for="option in timeOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }} · {{ option.count }}
+              </option>
+            </select>
+          </label>
+          <label class="toolbar-select">
+            <span>{{ ui.platform }}</span>
+            <select v-model="activePlatform" :aria-label="ui.platform">
+              <option
+                v-for="option in platformOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }} · {{ option.count }}
+              </option>
+            </select>
+          </label>
+          <label class="toolbar-select">
+            <span>{{ ui.sort }}</span>
+            <select v-model="activeSort" :aria-label="ui.sort">
+              <option value="smart">{{ ui.smartSort }}</option>
+              <option value="latest">{{ ui.newestSort }}</option>
+            </select>
+          </label>
+          <button
+            v-if="searchQuery || hasActiveFilter"
+            type="button"
+            class="reset-filter"
+            @click="resetFilters"
+          >
+            {{ ui.resetFilters }}
+          </button>
         </div>
       </div>
 
@@ -137,28 +157,54 @@
           rel="noopener noreferrer"
           class="opportunity-item"
         >
-          <span class="opportunity-rank">{{ String(index + 1).padStart(2, '0') }}</span>
+          <span class="opportunity-rank">{{
+            String(index + 1).padStart(2, "0")
+          }}</span>
           <div class="opportunity-main">
             <div class="opportunity-source">
-              <img :src="getSourceLogo(item.source)" :alt="sourceLabel(item)" @error="onLogoError" />
+              <img
+                :src="getSourceLogo(item.source)"
+                :alt="sourceLabel(item)"
+                @error="onLogoError"
+              />
               <span>{{ sourceLabel(item) }}</span>
               <em>{{ subtypeLabel(item) }}</em>
             </div>
             <h3>{{ item.title }}</h3>
-            <p v-if="item.desc && locale === 'zh-CN'" class="opportunity-desc">{{ item.desc }}</p>
+            <p v-if="item.desc && locale === 'zh-CN'" class="opportunity-desc">
+              {{ item.desc }}
+            </p>
             <div class="opportunity-meta">
               <span class="intent-pill">{{ intentLabel(item.intent) }}</span>
-              <span v-if="platformLabel(item)" class="platform-pill">{{ platformLabel(item) }}</span>
+              <span v-if="platformLabel(item)" class="platform-pill">{{
+                platformLabel(item)
+              }}</span>
               <span
                 v-if="confirmationCount(item) > 1"
                 class="confirmation-pill"
                 :title="confirmationTitle(item)"
                 :aria-label="confirmationTitle(item)"
-              >{{ confirmationLabel(item) }}</span>
-              <strong v-if="primaryPriceLabel(item)" class="price-pill">{{ primaryPriceLabel(item) }}</strong>
-              <span v-for="(benefit, benefitIndex) in visibleBenefits(item)" :key="`${item.id}-${benefit.type}-${benefit.amount}-${benefit.threshold || 0}`" class="benefit-pill" :class="{ 'benefit-pill--secondary': benefitIndex > 0 }">{{ benefitLabel(benefit) }}</span>
-              <time :title="formatItemTime(item.timestamp)">{{ formatFreshness(item.timestamp) }}</time>
-              <span v-for="keyword in visibleKeywords(item)" :key="`${item.id}-${keyword}`" class="keyword-pill">{{ keyword }}</span>
+                >{{ confirmationLabel(item) }}</span
+              >
+              <strong v-if="primaryPriceLabel(item)" class="price-pill">{{
+                primaryPriceLabel(item)
+              }}</strong>
+              <span
+                v-for="(benefit, benefitIndex) in visibleBenefits(item)"
+                :key="`${item.id}-${benefit.type}-${benefit.amount}-${benefit.threshold || 0}`"
+                class="benefit-pill"
+                :class="{ 'benefit-pill--secondary': benefitIndex > 0 }"
+                >{{ benefitLabel(benefit) }}</span
+              >
+              <time :title="formatItemTime(item.timestamp)">{{
+                formatFreshness(item.timestamp)
+              }}</time>
+              <span
+                v-for="keyword in visibleKeywords(item)"
+                :key="`${item.id}-${keyword}`"
+                class="keyword-pill"
+                >{{ keyword }}</span
+              >
             </div>
           </div>
           <span class="opportunity-open">{{ actionLabel(item) }}</span>
@@ -182,61 +228,355 @@ const route = useRoute();
 const result = ref(null);
 const loading = ref(false);
 const loadError = ref("");
-const validIntents = new Set(["all", "free", "coupon", "giveaway", "ai", "game", "deal"]);
+const validIntents = new Set([
+  "all",
+  "free",
+  "coupon",
+  "giveaway",
+  "ai",
+  "game",
+  "deal",
+]);
 const validTimes = new Set(["all", "1h", "3h", "6h", "today"]);
+const validSorts = new Set(["smart", "latest"]);
 const queryValue = (value) => (typeof value === "string" ? value : "");
-const activeIntent = ref(validIntents.has(queryValue(route.query.intent)) ? queryValue(route.query.intent) : "all");
-const activeTime = ref(validTimes.has(queryValue(route.query.time)) ? queryValue(route.query.time) : "all");
+const activeIntent = ref(
+  validIntents.has(queryValue(route.query.intent))
+    ? queryValue(route.query.intent)
+    : "all",
+);
+const activeTime = ref(
+  validTimes.has(queryValue(route.query.time))
+    ? queryValue(route.query.time)
+    : "all",
+);
 const activeSource = ref(queryValue(route.query.source) || "all");
 const activePlatform = ref(queryValue(route.query.platform) || "all");
+const activeSort = ref(
+  validSorts.has(queryValue(route.query.sort))
+    ? queryValue(route.query.sort)
+    : "smart",
+);
 const activeConfirmed = ref(queryValue(route.query.confirmed) === "1");
 const searchQuery = ref(queryValue(route.query.q).trim());
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
-const copy = computed(() => WOOL_TOPIC_METADATA[locale.value] || WOOL_TOPIC_METADATA["zh-CN"]);
+const copy = computed(
+  () => WOOL_TOPIC_METADATA[locale.value] || WOOL_TOPIC_METADATA["zh-CN"],
+);
 const data = computed(() => result.value?.data || []);
 const dashboard = computed(() => result.value?.dashboard || null);
 
 const UI_COPY = {
-  "zh-CN": { sources: "来源状态", type: "类型", time: "时间", platform: "平台", allPlatforms: "全部平台", confirmed: "多源确认", search: "搜索机会", searchPlaceholder: "搜索京东、美团、Claude…", matches: "条匹配", latest: "最新", oneHour: "1小时", threeHours: "3小时", sixHours: "6小时", today: "今天", allSources: "全部来源", sourceUnit: "个来源", updated: "更新", ok: "正常", partial: "部分异常", failed: "异常", actions: { free: "立即领取", coupon: "去领券", giveaway: "参与活动", ai: "查看额度", game: "立即领取", deal: "查看优惠" } },
-  en: { sources: "Source Status", type: "Type", time: "Time", platform: "Platform", allPlatforms: "All platforms", confirmed: "Confirmed", search: "Search deals", searchPlaceholder: "Search JD, Meituan, Claude…", matches: "matches", latest: "Latest", oneHour: "1h", threeHours: "3h", sixHours: "6h", today: "Today", allSources: "All sources", sourceUnit: "sources", updated: "updated", ok: "Healthy", partial: "Partial", failed: "Down", actions: { free: "Claim now", coupon: "Get coupon", giveaway: "Join", ai: "View credits", game: "Claim now", deal: "View deal" } },
-  "zh-TW": { sources: "來源狀態", type: "類型", time: "時間", platform: "平台", allPlatforms: "全部平台", confirmed: "多源確認", search: "搜尋優惠", searchPlaceholder: "搜尋京東、美團、Claude…", matches: "筆符合", latest: "最新", oneHour: "1小時", threeHours: "3小時", sixHours: "6小時", today: "今天", allSources: "全部來源", sourceUnit: "個來源", updated: "更新", ok: "正常", partial: "部分異常", failed: "異常", actions: { free: "立即領取", coupon: "領優惠券", giveaway: "參與活動", ai: "查看額度", game: "立即領取", deal: "查看優惠" } },
-  ja: { sources: "情報源ステータス", type: "種類", time: "時間", platform: "プラットフォーム", allPlatforms: "すべてのプラットフォーム", confirmed: "複数確認", search: "お得情報を検索", searchPlaceholder: "JD・Meituan・Claudeを検索…", matches: "件", latest: "最新", oneHour: "1時間", threeHours: "3時間", sixHours: "6時間", today: "今日", allSources: "すべて", sourceUnit: "情報源", updated: "更新", ok: "正常", partial: "一部異常", failed: "異常", actions: { free: "今すぐ受取", coupon: "クーポン取得", giveaway: "参加する", ai: "クレジット確認", game: "今すぐ受取", deal: "詳細を見る" } },
-  ko: { sources: "출처 상태", type: "유형", time: "시간", platform: "플랫폼", allPlatforms: "전체 플랫폼", confirmed: "다중 확인", search: "혜택 검색", searchPlaceholder: "JD, Meituan, Claude 검색…", matches: "개 일치", latest: "최신", oneHour: "1시간", threeHours: "3시간", sixHours: "6시간", today: "오늘", allSources: "전체 출처", sourceUnit: "개 출처", updated: "업데이트", ok: "정상", partial: "일부 오류", failed: "오류", actions: { free: "지금 받기", coupon: "쿠폰 받기", giveaway: "참여하기", ai: "크레딧 보기", game: "지금 받기", deal: "혜택 보기" } },
+  "zh-CN": {
+    sources: "来源状态",
+    source: "来源",
+    filters: "机会筛选",
+    type: "类型",
+    time: "时间",
+    platform: "平台",
+    sort: "排序",
+    smartSort: "综合",
+    newestSort: "最新优先",
+    resetFilters: "清除筛选",
+    allPlatforms: "全部平台",
+    confirmed: "多源确认",
+    search: "搜索机会",
+    searchPlaceholder: "搜索京东、美团、Claude…",
+    matches: "条匹配",
+    latest: "最新",
+    oneHour: "1小时",
+    threeHours: "3小时",
+    sixHours: "6小时",
+    today: "今天",
+    allSources: "全部来源",
+    sourceUnit: "个来源",
+    updated: "更新",
+    ok: "正常",
+    partial: "部分异常",
+    failed: "异常",
+    actions: {
+      free: "立即领取",
+      coupon: "去领券",
+      giveaway: "参与活动",
+      ai: "查看额度",
+      game: "立即领取",
+      deal: "查看优惠",
+    },
+  },
+  en: {
+    sources: "Source Status",
+    source: "Source",
+    filters: "Deal filters",
+    type: "Type",
+    time: "Time",
+    platform: "Platform",
+    sort: "Sort",
+    smartSort: "Smart",
+    newestSort: "Newest",
+    resetFilters: "Reset",
+    allPlatforms: "All platforms",
+    confirmed: "Confirmed",
+    search: "Search deals",
+    searchPlaceholder: "Search JD, Meituan, Claude…",
+    matches: "matches",
+    latest: "Latest",
+    oneHour: "1h",
+    threeHours: "3h",
+    sixHours: "6h",
+    today: "Today",
+    allSources: "All sources",
+    sourceUnit: "sources",
+    updated: "updated",
+    ok: "Healthy",
+    partial: "Partial",
+    failed: "Down",
+    actions: {
+      free: "Claim now",
+      coupon: "Get coupon",
+      giveaway: "Join",
+      ai: "View credits",
+      game: "Claim now",
+      deal: "View deal",
+    },
+  },
+  "zh-TW": {
+    sources: "來源狀態",
+    source: "來源",
+    filters: "優惠篩選",
+    type: "類型",
+    time: "時間",
+    platform: "平台",
+    sort: "排序",
+    smartSort: "綜合",
+    newestSort: "最新優先",
+    resetFilters: "清除篩選",
+    allPlatforms: "全部平台",
+    confirmed: "多源確認",
+    search: "搜尋優惠",
+    searchPlaceholder: "搜尋京東、美團、Claude…",
+    matches: "筆符合",
+    latest: "最新",
+    oneHour: "1小時",
+    threeHours: "3小時",
+    sixHours: "6小時",
+    today: "今天",
+    allSources: "全部來源",
+    sourceUnit: "個來源",
+    updated: "更新",
+    ok: "正常",
+    partial: "部分異常",
+    failed: "異常",
+    actions: {
+      free: "立即領取",
+      coupon: "領優惠券",
+      giveaway: "參與活動",
+      ai: "查看額度",
+      game: "立即領取",
+      deal: "查看優惠",
+    },
+  },
+  ja: {
+    sources: "情報源ステータス",
+    source: "情報源",
+    filters: "お得情報フィルター",
+    type: "種類",
+    time: "時間",
+    platform: "プラットフォーム",
+    sort: "並び順",
+    smartSort: "総合",
+    newestSort: "新着順",
+    resetFilters: "リセット",
+    allPlatforms: "すべてのプラットフォーム",
+    confirmed: "複数確認",
+    search: "お得情報を検索",
+    searchPlaceholder: "JD・Meituan・Claudeを検索…",
+    matches: "件",
+    latest: "最新",
+    oneHour: "1時間",
+    threeHours: "3時間",
+    sixHours: "6時間",
+    today: "今日",
+    allSources: "すべて",
+    sourceUnit: "情報源",
+    updated: "更新",
+    ok: "正常",
+    partial: "一部異常",
+    failed: "異常",
+    actions: {
+      free: "今すぐ受取",
+      coupon: "クーポン取得",
+      giveaway: "参加する",
+      ai: "クレジット確認",
+      game: "今すぐ受取",
+      deal: "詳細を見る",
+    },
+  },
+  ko: {
+    sources: "출처 상태",
+    source: "출처",
+    filters: "혜택 필터",
+    type: "유형",
+    time: "시간",
+    platform: "플랫폼",
+    sort: "정렬",
+    smartSort: "종합",
+    newestSort: "최신순",
+    resetFilters: "초기화",
+    allPlatforms: "전체 플랫폼",
+    confirmed: "다중 확인",
+    search: "혜택 검색",
+    searchPlaceholder: "JD, Meituan, Claude 검색…",
+    matches: "개 일치",
+    latest: "최신",
+    oneHour: "1시간",
+    threeHours: "3시간",
+    sixHours: "6시간",
+    today: "오늘",
+    allSources: "전체 출처",
+    sourceUnit: "개 출처",
+    updated: "업데이트",
+    ok: "정상",
+    partial: "일부 오류",
+    failed: "오류",
+    actions: {
+      free: "지금 받기",
+      coupon: "쿠폰 받기",
+      giveaway: "참여하기",
+      ai: "크레딧 보기",
+      game: "지금 받기",
+      deal: "혜택 보기",
+    },
+  },
 };
 const ACTION_COPY = {
-  "zh-CN": { claim: "立即领取", claim_coupon: "去领券", join: "参与活动", groupbuy: "去拼单", task: "去参与", view: "查看优惠" },
-  en: { claim: "Claim now", claim_coupon: "Get coupon", join: "Join", groupbuy: "Join group", task: "Take part", view: "View deal" },
-  "zh-TW": { claim: "立即領取", claim_coupon: "領優惠券", join: "參與活動", groupbuy: "去拼單", task: "去參與", view: "查看優惠" },
-  ja: { claim: "今すぐ受取", claim_coupon: "クーポン取得", join: "参加する", groupbuy: "共同購入", task: "参加する", view: "詳細を見る" },
-  ko: { claim: "지금 받기", claim_coupon: "쿠폰 받기", join: "참여하기", groupbuy: "공동구매", task: "참여하기", view: "혜택 보기" },
+  "zh-CN": {
+    claim: "立即领取",
+    claim_coupon: "去领券",
+    join: "参与活动",
+    groupbuy: "去拼单",
+    task: "去参与",
+    view: "查看优惠",
+  },
+  en: {
+    claim: "Claim now",
+    claim_coupon: "Get coupon",
+    join: "Join",
+    groupbuy: "Join group",
+    task: "Take part",
+    view: "View deal",
+  },
+  "zh-TW": {
+    claim: "立即領取",
+    claim_coupon: "領優惠券",
+    join: "參與活動",
+    groupbuy: "去拼單",
+    task: "去參與",
+    view: "查看優惠",
+  },
+  ja: {
+    claim: "今すぐ受取",
+    claim_coupon: "クーポン取得",
+    join: "参加する",
+    groupbuy: "共同購入",
+    task: "参加する",
+    view: "詳細を見る",
+  },
+  ko: {
+    claim: "지금 받기",
+    claim_coupon: "쿠폰 받기",
+    join: "참여하기",
+    groupbuy: "공동구매",
+    task: "참여하기",
+    view: "혜택 보기",
+  },
 };
 const BENEFIT_COPY = {
-  "zh-CN": { coupon: "券", red_packet: "红包", subsidy: "补贴", cash_gift: "礼金", rebate: "返", instant_discount: "立减", discount: "优惠" },
-  en: { coupon: "Coupon", red_packet: "Bonus", subsidy: "Subsidy", cash_gift: "Credit", rebate: "Rebate", instant_discount: "Instant off", discount: "Discount" },
-  "zh-TW": { coupon: "券", red_packet: "紅包", subsidy: "補貼", cash_gift: "禮金", rebate: "返", instant_discount: "立減", discount: "優惠" },
-  ja: { coupon: "クーポン", red_packet: "ボーナス", subsidy: "補助", cash_gift: "特典", rebate: "還元", instant_discount: "即時割引", discount: "割引" },
-  ko: { coupon: "쿠폰", red_packet: "보너스", subsidy: "보조금", cash_gift: "크레딧", rebate: "환급", instant_discount: "즉시할인", discount: "할인" },
+  "zh-CN": {
+    coupon: "券",
+    red_packet: "红包",
+    subsidy: "补贴",
+    cash_gift: "礼金",
+    rebate: "返",
+    instant_discount: "立减",
+    discount: "优惠",
+  },
+  en: {
+    coupon: "Coupon",
+    red_packet: "Bonus",
+    subsidy: "Subsidy",
+    cash_gift: "Credit",
+    rebate: "Rebate",
+    instant_discount: "Instant off",
+    discount: "Discount",
+  },
+  "zh-TW": {
+    coupon: "券",
+    red_packet: "紅包",
+    subsidy: "補貼",
+    cash_gift: "禮金",
+    rebate: "返",
+    instant_discount: "立減",
+    discount: "優惠",
+  },
+  ja: {
+    coupon: "クーポン",
+    red_packet: "ボーナス",
+    subsidy: "補助",
+    cash_gift: "特典",
+    rebate: "還元",
+    instant_discount: "即時割引",
+    discount: "割引",
+  },
+  ko: {
+    coupon: "쿠폰",
+    red_packet: "보너스",
+    subsidy: "보조금",
+    cash_gift: "크레딧",
+    rebate: "환급",
+    instant_discount: "즉시할인",
+    discount: "할인",
+  },
 };
 const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
 
-const signalText = (item) => `${item?.signals?.primaryPlatform || ""} ${(item?.signals?.benefits || []).map((benefit) => benefit.raw || "").join(" ")}`;
-const clusterText = (item) => (item?.cluster?.sources || []).map((source) => `${source.sourceLabel || ""} ${source.title || ""}`).join(" ");
-const textForItem = (item) => `${item.title || ""} ${item.desc || ""} ${item.extra?.platform || ""} ${(item.matchedKeywords || []).join(" ")} ${signalText(item)} ${clusterText(item)}`.toLowerCase();
-const itemMatchesSource = (item, source) => source === "all" || item.source === source || (item?.cluster?.sources || []).some((evidence) => evidence.source === source);
+const signalText = (item) =>
+  `${item?.signals?.primaryPlatform || ""} ${(item?.signals?.benefits || []).map((benefit) => benefit.raw || "").join(" ")}`;
+const clusterText = (item) =>
+  (item?.cluster?.sources || [])
+    .map((source) => `${source.sourceLabel || ""} ${source.title || ""}`)
+    .join(" ");
+const textForItem = (item) =>
+  `${item.title || ""} ${item.desc || ""} ${item.extra?.platform || ""} ${(item.matchedKeywords || []).join(" ")} ${signalText(item)} ${clusterText(item)}`.toLowerCase();
+const itemMatchesSource = (item, source) =>
+  source === "all" ||
+  item.source === source ||
+  (item?.cluster?.sources || []).some((evidence) => evidence.source === source);
 const matchesTime = (item, range) => {
   if (range === "all") return true;
   const timestamp = Number(item.timestamp);
   if (!Number.isFinite(timestamp)) return false;
-  if (range === "today") return new Date(timestamp).toDateString() === new Date().toDateString();
+  if (range === "today")
+    return new Date(timestamp).toDateString() === new Date().toDateString();
   const limits = { "1h": 1, "3h": 3, "6h": 6 };
   return Date.now() - timestamp <= limits[range] * 60 * 60 * 1000;
 };
 const matchesSearch = (item) => {
   const query = searchQuery.value.trim().toLowerCase();
   if (!query) return true;
-  return `${textForItem(item)} ${sourceLabel(item)} ${subtypeLabel(item)}`.toLowerCase().includes(query);
+  return `${textForItem(item)} ${sourceLabel(item)} ${subtypeLabel(item)}`
+    .toLowerCase()
+    .includes(query);
 };
-const matchesBase = (item, { intent = activeIntent.value, source = activeSource.value, time = activeTime.value, platform = activePlatform.value, confirmed = activeConfirmed.value } = {}) =>
+const matchesBase = (
+  item,
+  {
+    intent = activeIntent.value,
+    source = activeSource.value,
+    time = activeTime.value,
+    platform = activePlatform.value,
+    confirmed = activeConfirmed.value,
+  } = {},
+) =>
   (intent === "all" || item.intent === intent) &&
   itemMatchesSource(item, source) &&
   (platform === "all" || platformLabel(item) === platform) &&
@@ -244,37 +584,76 @@ const matchesBase = (item, { intent = activeIntent.value, source = activeSource.
   matchesTime(item, time) &&
   matchesSearch(item);
 
-const filteredData = computed(() => data.value.filter((item) => matchesBase(item)));
-const confirmedAvailableCount = computed(() => data.value.filter((item) => matchesBase(item, { confirmed: false }) && Number(item?.cluster?.sourceCount || 0) > 1).length);
-const hasActiveFilter = computed(() => activeIntent.value !== "all" || activeTime.value !== "all" || activeSource.value !== "all" || activePlatform.value !== "all" || activeConfirmed.value);
+const filteredData = computed(() => {
+  const items = data.value.filter((item) => matchesBase(item));
+  if (activeSort.value === "latest") {
+    return items
+      .slice()
+      .sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
+  }
+  return items;
+});
+const confirmedAvailableCount = computed(
+  () =>
+    data.value.filter(
+      (item) =>
+        matchesBase(item, { confirmed: false }) &&
+        Number(item?.cluster?.sourceCount || 0) > 1,
+    ).length,
+);
+const hasActiveFilter = computed(
+  () =>
+    activeIntent.value !== "all" ||
+    activeTime.value !== "all" ||
+    activeSource.value !== "all" ||
+    activePlatform.value !== "all" ||
+    activeSort.value !== "smart" ||
+    activeConfirmed.value,
+);
 const intentOptions = computed(() => [
-  { value: "all", label: copy.value.all, count: data.value.filter((item) => matchesBase(item, { intent: "all" })).length },
+  {
+    value: "all",
+    label: copy.value.all,
+    count: data.value.filter((item) => matchesBase(item, { intent: "all" }))
+      .length,
+  },
   ...Object.entries(copy.value.intents).map(([value, label]) => ({
     value,
     label,
-    count: data.value.filter((item) => matchesBase(item, { intent: value })).length,
+    count: data.value.filter((item) => matchesBase(item, { intent: value }))
+      .length,
   })),
 ]);
-const timeOptions = computed(() => [
-  ["all", ui.value.latest],
-  ["1h", ui.value.oneHour],
-  ["3h", ui.value.threeHours],
-  ["6h", ui.value.sixHours],
-  ["today", ui.value.today],
-].map(([value, label]) => ({
-  value,
-  label,
-  count: data.value.filter((item) => matchesBase(item, { time: value })).length,
-})));
+const timeOptions = computed(() =>
+  [
+    ["all", ui.value.latest],
+    ["1h", ui.value.oneHour],
+    ["3h", ui.value.threeHours],
+    ["6h", ui.value.sixHours],
+    ["today", ui.value.today],
+  ].map(([value, label]) => ({
+    value,
+    label,
+    count: data.value.filter((item) => matchesBase(item, { time: value }))
+      .length,
+  })),
+);
 const platformOptions = computed(() => {
-  const values = [...new Set(data.value.map((item) => platformLabel(item)).filter(Boolean))]
-    .sort((a, b) => String(a).localeCompare(String(b), locale.value));
+  const values = [
+    ...new Set(data.value.map((item) => platformLabel(item)).filter(Boolean)),
+  ].sort((a, b) => String(a).localeCompare(String(b), locale.value));
   return [
-    { value: "all", label: ui.value.allPlatforms, count: data.value.filter((item) => matchesBase(item, { platform: "all" })).length },
+    {
+      value: "all",
+      label: ui.value.allPlatforms,
+      count: data.value.filter((item) => matchesBase(item, { platform: "all" }))
+        .length,
+    },
     ...values.map((value) => ({
       value,
       label: value,
-      count: data.value.filter((item) => matchesBase(item, { platform: value })).length,
+      count: data.value.filter((item) => matchesBase(item, { platform: value }))
+        .length,
     })),
   ];
 });
@@ -287,62 +666,138 @@ const sourceOptions = computed(() => {
   const feeds = dashboard.value?.feeds || [];
   const grouped = new Map();
   feeds.forEach((feed) => {
-    const current = grouped.get(feed.source) || { source: feed.source, label: feed.label, feeds: [] };
+    const current = grouped.get(feed.source) || {
+      source: feed.source,
+      label: feed.label,
+      feeds: [],
+    };
     current.feeds.push(feed);
     grouped.set(feed.source, current);
   });
-  const allStatus = dashboard.value?.failedCount ? (dashboard.value.failedCount >= feeds.length ? "failed" : "partial") : "ok";
-  const options = [{
-    value: "all",
-    label: ui.value.allSources,
-    count: data.value.length,
-    status: allStatus,
-    detail: `${dashboard.value?.sourceCount || 0} ${ui.value.sourceUnit}`,
-  }];
+  const allStatus = dashboard.value?.failedCount
+    ? dashboard.value.failedCount >= feeds.length
+      ? "failed"
+      : "partial"
+    : "ok";
+  const options = [
+    {
+      value: "all",
+      label: ui.value.allSources,
+      count: data.value.length,
+      status: allStatus,
+      detail: `${dashboard.value?.sourceCount || 0} ${ui.value.sourceUnit}`,
+    },
+  ];
   grouped.forEach((group, source) => {
     const okCount = group.feeds.filter((feed) => feed.status === "ok").length;
-    const status = okCount === 0 ? "failed" : okCount === group.feeds.length ? "ok" : "partial";
-    const updateTime = group.feeds.map((feed) => feed.updateTime).sort((a, b) => parseUpdateTime(b) - parseUpdateTime(a))[0];
+    const status =
+      okCount === 0
+        ? "failed"
+        : okCount === group.feeds.length
+          ? "ok"
+          : "partial";
+    const updateTime = group.feeds
+      .map((feed) => feed.updateTime)
+      .sort((a, b) => parseUpdateTime(b) - parseUpdateTime(a))[0];
     options.push({
       value: source,
       label: getSourceLabel(source, locale.value, group.label || source),
-      count: data.value.filter((item) => item.source === source).length,
+      count: data.value.filter((item) => itemMatchesSource(item, source))
+        .length,
       status,
-      detail: updateTime ? `${formatUpdated(updateTime)} ${ui.value.updated}` : statusLabel(status),
+      detail: updateTime
+        ? `${formatUpdated(updateTime)} ${ui.value.updated}`
+        : statusLabel(status),
     });
   });
   return options;
 });
 
-const refreshLabels = { "zh-CN": "刷新", en: "Refresh", "zh-TW": "重新整理", ja: "更新", ko: "새로고침" };
-const refreshLabel = computed(() => refreshLabels[locale.value] || refreshLabels["zh-CN"]);
-const sourceLabel = (item) => getSourceLabel(item?.source, locale.value, item?.sourceLabel || item?.source || "");
-const subtypeLabel = (item) => getSourceSubtitleLabel(item?.sourceSubtype || "", locale.value);
-const intentLabel = (intent) => copy.value.intents?.[intent] || copy.value.intents.deal;
-const actionLabel = (item) => ACTION_COPY[locale.value]?.[item?.signals?.action] || ui.value.actions?.[item?.intent] || copy.value.open;
+const selectedSourceOption = computed(() =>
+  sourceOptions.value.find((option) => option.value === activeSource.value),
+);
+
+const refreshLabels = {
+  "zh-CN": "刷新",
+  en: "Refresh",
+  "zh-TW": "重新整理",
+  ja: "更新",
+  ko: "새로고침",
+};
+const refreshLabel = computed(
+  () => refreshLabels[locale.value] || refreshLabels["zh-CN"],
+);
+const sourceLabel = (item) =>
+  getSourceLabel(
+    item?.source,
+    locale.value,
+    item?.sourceLabel || item?.source || "",
+  );
+const subtypeLabel = (item) =>
+  getSourceSubtitleLabel(item?.sourceSubtype || "", locale.value);
+const intentLabel = (intent) =>
+  copy.value.intents?.[intent] || copy.value.intents.deal;
+const actionLabel = (item) =>
+  ACTION_COPY[locale.value]?.[item?.signals?.action] ||
+  ui.value.actions?.[item?.intent] ||
+  copy.value.open;
 const statusLabel = (status) => ui.value[status] || status;
-const CONFIRMATION_LABELS = { "zh-CN": "源确认", en: "sources", "zh-TW": "來源確認", ja: "ソース確認", ko: "개 출처 확인" };
+const CONFIRMATION_LABELS = {
+  "zh-CN": "源确认",
+  en: "sources",
+  "zh-TW": "來源確認",
+  ja: "ソース確認",
+  ko: "개 출처 확인",
+};
 const confirmationCount = (item) => Number(item?.cluster?.sourceCount || 0);
-const confirmationLabel = (item) => `${confirmationCount(item)}${locale.value === "en" ? " " : ""}${CONFIRMATION_LABELS[locale.value] || CONFIRMATION_LABELS["zh-CN"]}`;
-const confirmationTitle = (item) => [...new Set((item?.cluster?.sources || []).map((source) => getSourceLabel(source.source, locale.value, source.sourceLabel || source.source)))].join(" + ");
+const confirmationLabel = (item) =>
+  `${confirmationCount(item)}${locale.value === "en" ? " " : ""}${CONFIRMATION_LABELS[locale.value] || CONFIRMATION_LABELS["zh-CN"]}`;
+const confirmationTitle = (item) =>
+  [
+    ...new Set(
+      (item?.cluster?.sources || []).map((source) =>
+        getSourceLabel(
+          source.source,
+          locale.value,
+          source.sourceLabel || source.source,
+        ),
+      ),
+    ),
+  ].join(" + ");
 const formatMoney = (value) => {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return "";
   return `¥${new Intl.NumberFormat(locale.value, { maximumFractionDigits: 2 }).format(amount)}`;
 };
-const primaryPriceLabel = (item) => formatMoney(item?.signals?.primaryPrice?.value);
-const BENEFIT_PRIORITY = { coupon: 1, red_packet: 2, instant_discount: 3, subsidy: 4, cash_gift: 5, rebate: 6, discount: 7 };
-const visibleBenefits = (item) => [...(item?.signals?.benefits || [])]
-  .sort((a, b) => (BENEFIT_PRIORITY[a.type] || 99) - (BENEFIT_PRIORITY[b.type] || 99) || Number(b.amount || 0) - Number(a.amount || 0))
-  .slice(0, 2);
+const primaryPriceLabel = (item) =>
+  formatMoney(item?.signals?.primaryPrice?.value);
+const BENEFIT_PRIORITY = {
+  coupon: 1,
+  red_packet: 2,
+  instant_discount: 3,
+  subsidy: 4,
+  cash_gift: 5,
+  rebate: 6,
+  discount: 7,
+};
+const visibleBenefits = (item) =>
+  [...(item?.signals?.benefits || [])]
+    .sort(
+      (a, b) =>
+        (BENEFIT_PRIORITY[a.type] || 99) - (BENEFIT_PRIORITY[b.type] || 99) ||
+        Number(b.amount || 0) - Number(a.amount || 0),
+    )
+    .slice(0, 2);
 const benefitLabel = (benefit) => {
   const labels = BENEFIT_COPY[locale.value] || BENEFIT_COPY["zh-CN"];
   const name = labels[benefit?.type] || labels.discount;
   const amount = formatMoney(benefit?.amount);
   const threshold = formatMoney(benefit?.threshold);
   if (threshold) {
-    if (locale.value === "zh-CN") return `${name} 满${threshold.slice(1)}减${amount.slice(1)}`;
-    if (locale.value === "zh-TW") return `${name} 滿${threshold.slice(1)}減${amount.slice(1)}`;
+    if (locale.value === "zh-CN")
+      return `${name} 满${threshold.slice(1)}减${amount.slice(1)}`;
+    if (locale.value === "zh-TW")
+      return `${name} 滿${threshold.slice(1)}減${amount.slice(1)}`;
     return `${name} -${amount}/${threshold}`;
   }
   return amount ? `${name} ${amount}` : name;
@@ -351,67 +806,161 @@ const benefitLabel = (benefit) => {
 const formatItemTime = (value) => {
   const timestamp = Number(value);
   if (!Number.isFinite(timestamp)) return "—";
-  return new Intl.DateTimeFormat(locale.value, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(timestamp));
+  return new Intl.DateTimeFormat(locale.value, {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
 };
 const formatUpdated = (value) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat(locale.value, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
+  return new Intl.DateTimeFormat(locale.value, {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 };
 const formatFreshness = (value) => {
   const timestamp = Number(value);
   if (!Number.isFinite(timestamp)) return "—";
   const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
-  if (locale.value === "zh-CN") return minutes < 1 ? "刚刚" : minutes < 60 ? `${minutes}分钟前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小时前` : `${Math.floor(minutes / 1440)}天前`;
-  if (locale.value === "zh-TW") return minutes < 1 ? "剛剛" : minutes < 60 ? `${minutes}分鐘前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小時前` : `${Math.floor(minutes / 1440)}天前`;
-  if (locale.value === "ja") return minutes < 1 ? "たった今" : minutes < 60 ? `${minutes}分前` : minutes < 1440 ? `${Math.floor(minutes / 60)}時間前` : `${Math.floor(minutes / 1440)}日前`;
-  if (locale.value === "ko") return minutes < 1 ? "방금" : minutes < 60 ? `${minutes}분 전` : minutes < 1440 ? `${Math.floor(minutes / 60)}시간 전` : `${Math.floor(minutes / 1440)}일 전`;
-  return minutes < 1 ? "just now" : minutes < 60 ? `${minutes}m ago` : minutes < 1440 ? `${Math.floor(minutes / 60)}h ago` : `${Math.floor(minutes / 1440)}d ago`;
+  if (locale.value === "zh-CN")
+    return minutes < 1
+      ? "刚刚"
+      : minutes < 60
+        ? `${minutes}分钟前`
+        : minutes < 1440
+          ? `${Math.floor(minutes / 60)}小时前`
+          : `${Math.floor(minutes / 1440)}天前`;
+  if (locale.value === "zh-TW")
+    return minutes < 1
+      ? "剛剛"
+      : minutes < 60
+        ? `${minutes}分鐘前`
+        : minutes < 1440
+          ? `${Math.floor(minutes / 60)}小時前`
+          : `${Math.floor(minutes / 1440)}天前`;
+  if (locale.value === "ja")
+    return minutes < 1
+      ? "たった今"
+      : minutes < 60
+        ? `${minutes}分前`
+        : minutes < 1440
+          ? `${Math.floor(minutes / 60)}時間前`
+          : `${Math.floor(minutes / 1440)}日前`;
+  if (locale.value === "ko")
+    return minutes < 1
+      ? "방금"
+      : minutes < 60
+        ? `${minutes}분 전`
+        : minutes < 1440
+          ? `${Math.floor(minutes / 60)}시간 전`
+          : `${Math.floor(minutes / 1440)}일 전`;
+  return minutes < 1
+    ? "just now"
+    : minutes < 60
+      ? `${minutes}m ago`
+      : minutes < 1440
+        ? `${Math.floor(minutes / 60)}h ago`
+        : `${Math.floor(minutes / 1440)}d ago`;
 };
 const PLATFORM_RULES = [
-  [/(京东|jd\.com|jdapp)/i, "京东"], [/(淘宝|淘工厂|淘宝闪购)/i, "淘宝"], [/天猫/i, "天猫"], [/美团/i, "美团"], [/(拼多多|pdd)/i, "拼多多"],
-  [/(支付宝|蚂蚁)/i, "支付宝"], [/微信/i, "微信"], [/steam/i, "Steam"], [/epic/i, "Epic"], [/(app store|苹果商店)/i, "App Store"], [/饿了么/i, "饿了么"], [/抖音/i, "抖音"],
+  [/(京东|jd\.com|jdapp)/i, "京东"],
+  [/(淘宝|淘工厂|淘宝闪购)/i, "淘宝"],
+  [/天猫/i, "天猫"],
+  [/美团/i, "美团"],
+  [/(拼多多|pdd)/i, "拼多多"],
+  [/(支付宝|蚂蚁)/i, "支付宝"],
+  [/微信/i, "微信"],
+  [/steam/i, "Steam"],
+  [/epic/i, "Epic"],
+  [/(app store|苹果商店)/i, "App Store"],
+  [/饿了么/i, "饿了么"],
+  [/抖音/i, "抖音"],
 ];
-const platformLabel = (item) => item?.signals?.primaryPlatform || item?.extra?.platform || PLATFORM_RULES.find(([pattern]) => pattern.test(textForItem(item)))?.[1] || "";
+const platformLabel = (item) =>
+  item?.signals?.primaryPlatform ||
+  item?.extra?.platform ||
+  PLATFORM_RULES.find(([pattern]) => pattern.test(textForItem(item)))?.[1] ||
+  "";
 const visibleKeywords = (item) => {
   if (item?.signals?.primaryPrice || item?.signals?.benefits?.length) return [];
-  return (item?.matchedKeywords || []).filter((keyword) => keyword.length > 1 && !["优惠券", "免费"].includes(keyword)).slice(0, 1);
+  return (item?.matchedKeywords || [])
+    .filter(
+      (keyword) => keyword.length > 1 && !["优惠券", "免费"].includes(keyword),
+    )
+    .slice(0, 1);
 };
-const onLogoError = (event) => { if (event?.target) event.target.src = getSourceLogoFallback(); };
+const onLogoError = (event) => {
+  if (event?.target) event.target.src = getSourceLogoFallback();
+};
 
 let querySyncTimer;
 const syncQuery = () => {
   clearTimeout(querySyncTimer);
   querySyncTimer = setTimeout(() => {
     const query = { ...route.query };
-    const setOrDelete = (key, value, defaultValue = "") => value && value !== defaultValue ? (query[key] = value) : delete query[key];
+    const setOrDelete = (key, value, defaultValue = "") =>
+      value && value !== defaultValue
+        ? (query[key] = value)
+        : delete query[key];
     setOrDelete("q", searchQuery.value.trim());
     setOrDelete("source", activeSource.value, "all");
     setOrDelete("platform", activePlatform.value, "all");
+    setOrDelete("sort", activeSort.value, "smart");
     setOrDelete("confirmed", activeConfirmed.value ? "1" : "");
     setOrDelete("time", activeTime.value, "all");
     setOrDelete("intent", activeIntent.value, "all");
     const params = new URLSearchParams();
     Object.entries(query).forEach(([key, value]) => {
-      if (Array.isArray(value)) value.forEach((item) => params.append(key, String(item)));
-      else if (value !== undefined && value !== null) params.set(key, String(value));
+      if (Array.isArray(value))
+        value.forEach((item) => params.append(key, String(item)));
+      else if (value !== undefined && value !== null)
+        params.set(key, String(value));
     });
     const search = params.toString();
-    window.history.replaceState(window.history.state, "", `${route.path}${search ? `?${search}` : ""}${route.hash || ""}`);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${route.path}${search ? `?${search}` : ""}${route.hash || ""}`,
+    );
   }, 220);
+};
+
+const resetFilters = () => {
+  searchQuery.value = "";
+  activeSource.value = "all";
+  activeIntent.value = "all";
+  activeTime.value = "all";
+  activePlatform.value = "all";
+  activeSort.value = "smart";
+  activeConfirmed.value = false;
 };
 
 const loadTopic = async (force = false) => {
   loading.value = true;
   loadError.value = "";
   try {
-    const response = await getHotListsWithFallback("wool-topic", force, { locale: locale.value, translate_limit: 60 }, { forceNoCache: force });
-    if (response?.result?.code !== 200) throw new Error(response?.result?.message || "request failed");
+    const response = await getHotListsWithFallback(
+      "wool-topic",
+      force,
+      { locale: locale.value, translate_limit: 60 },
+      { forceNoCache: force },
+    );
+    if (response?.result?.code !== 200)
+      throw new Error(response?.result?.message || "request failed");
     const rawResult = response.result;
     result.value = rawResult;
     loading.value = false;
-    result.value = await enhanceReadableResultTitles(rawResult, locale.value, { includeDescriptions: false, limit: 60, sourceName: "wool-topic" });
+    result.value = await enhanceReadableResultTitles(rawResult, locale.value, {
+      includeDescriptions: false,
+      limit: 60,
+      sourceName: "wool-topic",
+    });
   } catch (error) {
     loadError.value = error?.message || "Failed to load";
   } finally {
@@ -420,12 +969,31 @@ const loadTopic = async (force = false) => {
 };
 
 watch(locale, () => loadTopic(false));
-watch([searchQuery, activeSource, activePlatform, activeConfirmed, activeTime, activeIntent], syncQuery);
+watch(
+  [
+    searchQuery,
+    activeSource,
+    activePlatform,
+    activeSort,
+    activeConfirmed,
+    activeTime,
+    activeIntent,
+  ],
+  syncQuery,
+);
 watch(sourceOptions, (options) => {
-  if (activeSource.value !== "all" && !options.some((option) => option.value === activeSource.value)) activeSource.value = "all";
+  if (
+    activeSource.value !== "all" &&
+    !options.some((option) => option.value === activeSource.value)
+  )
+    activeSource.value = "all";
 });
 watch(platformOptions, (options) => {
-  if (activePlatform.value !== "all" && !options.some((option) => option.value === activePlatform.value)) activePlatform.value = "all";
+  if (
+    activePlatform.value !== "all" &&
+    !options.some((option) => option.value === activePlatform.value)
+  )
+    activePlatform.value = "all";
 });
 onMounted(() => loadTopic(false));
 onBeforeUnmount(() => clearTimeout(querySyncTimer));
@@ -597,7 +1165,11 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
 .source-status:hover,
 .source-status.active {
   border-color: var(--n-text-color-2, #555);
-  background: color-mix(in srgb, var(--n-color, #fff) 96%, var(--n-text-color, #222) 4%);
+  background: color-mix(
+    in srgb,
+    var(--n-color, #fff) 96%,
+    var(--n-text-color, #222) 4%
+  );
 }
 .source-status:focus-visible {
   outline: 2px solid currentColor;
@@ -622,7 +1194,11 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
 .source-status-all {
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--n-color, #fff) 88%, var(--n-text-color, #222) 12%);
+  background: color-mix(
+    in srgb,
+    var(--n-color, #fff) 88%,
+    var(--n-text-color, #222) 12%
+  );
   font-size: 10px;
   font-weight: 800;
 }
@@ -641,9 +1217,15 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
   border-radius: 50%;
   background: var(--n-text-color-3, #888);
 }
-.source-health.is-ok { background: #2f9e44; }
-.source-health.is-partial { background: #d08b14; }
-.source-health.is-failed { background: #d9485f; }
+.source-health.is-ok {
+  background: #2f9e44;
+}
+.source-health.is-partial {
+  background: #d08b14;
+}
+.source-health.is-failed {
+  background: #d9485f;
+}
 .source-status-meta {
   justify-content: space-between;
   gap: 8px;
@@ -677,13 +1259,19 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
   font-size: 11px;
   cursor: pointer;
 }
-.confirmed-toggle span { margin-left: 4px; font-variant-numeric: tabular-nums; }
+.confirmed-toggle span {
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
 .confirmed-toggle:hover,
 .confirmed-toggle.active {
   border-color: currentColor;
   color: var(--n-text-color, #222);
 }
-.confirmed-toggle:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.confirmed-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 .filter-stack {
   display: grid;
   gap: 7px;
@@ -817,7 +1405,11 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
   min-height: 19px;
   padding: 0 6px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--n-color, #fff) 92%, var(--n-text-color, #222) 8%);
+  background: color-mix(
+    in srgb,
+    var(--n-color, #fff) 92%,
+    var(--n-text-color, #222) 8%
+  );
   color: var(--n-text-color-3, #666);
   font-size: 10px;
 }
@@ -828,7 +1420,11 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
   padding: 0 7px;
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.16));
   border-radius: 999px;
-  background: color-mix(in srgb, var(--n-color, #fff) 90%, var(--n-text-color, #222) 10%);
+  background: color-mix(
+    in srgb,
+    var(--n-color, #fff) 90%,
+    var(--n-text-color, #222) 10%
+  );
   color: var(--n-text-color-2, #555);
   font-size: 10px;
   font-weight: 650;
@@ -921,6 +1517,138 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
 .topic-loading,
 .topic-empty {
   padding: 24px 0;
+}
+/* Unified opportunity controls: keep all operations in one compact panel. */
+.opportunity-toolbar {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.toolbar-primary {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar-heading {
+  min-width: 118px;
+}
+.toolbar-heading h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.2;
+}
+.toolbar-heading span {
+  display: block;
+  margin-top: 3px;
+  color: var(--n-text-color-3, #777);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.opportunity-toolbar .topic-search {
+  width: 100%;
+  min-width: 150px;
+  max-width: none;
+}
+.opportunity-toolbar .topic-status {
+  position: static;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 54px;
+  text-align: left;
+  white-space: nowrap;
+}
+.opportunity-toolbar .topic-status strong {
+  display: inline;
+  font-size: 18px;
+  line-height: 1;
+}
+.opportunity-toolbar .topic-status span {
+  display: inline;
+  margin: 0;
+  font-size: 10px;
+}
+.toolbar-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+.toolbar-filter-strip::-webkit-scrollbar {
+  display: none;
+}
+.toolbar-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  height: 31px;
+  padding: 0 7px;
+  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
+  border-radius: 8px;
+  background: color-mix(
+    in srgb,
+    var(--n-color, #fff) 97%,
+    var(--n-text-color, #222) 3%
+  );
+}
+.toolbar-select > span {
+  color: var(--n-text-color-3, #777);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.toolbar-select .source-health {
+  margin-left: 0;
+}
+.toolbar-select select {
+  max-width: 160px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--n-text-color, #222);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.toolbar-select select:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.reset-filter {
+  flex: 0 0 auto;
+  height: 31px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--n-text-color-3, #777);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.reset-filter:hover,
+.reset-filter:focus-visible {
+  background: color-mix(
+    in srgb,
+    var(--n-color, #fff) 92%,
+    var(--n-text-color, #222) 8%
+  );
+  color: var(--n-text-color, #222);
+}
+@media (max-width: 900px) {
+  .toolbar-primary {
+    grid-template-columns: minmax(180px, 1fr) auto auto auto;
+  }
+  .toolbar-heading {
+    display: none;
+  }
 }
 @media (max-width: 980px) {
   .source-status-grid {
@@ -1056,6 +1784,49 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
   }
   .opportunity-desc {
     -webkit-line-clamp: 2;
+  }
+}
+@media (max-width: 640px) {
+  .topic-hero-copy {
+    padding-right: 0;
+  }
+  .toolbar-primary {
+    grid-template-columns: minmax(120px, 1fr) auto auto auto;
+    gap: 5px;
+  }
+  .opportunity-toolbar .topic-search {
+    width: 100%;
+    min-width: 0;
+    height: 30px;
+  }
+  .opportunity-toolbar .topic-status {
+    position: static;
+    top: auto;
+    right: auto;
+    min-width: 22px;
+  }
+  .opportunity-toolbar .topic-status strong {
+    font-size: 16px;
+  }
+  .opportunity-toolbar .topic-status span {
+    display: none;
+  }
+  .confirmed-toggle {
+    min-height: 28px;
+    padding: 0 6px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .toolbar-filter-strip {
+    gap: 6px;
+  }
+  .toolbar-select {
+    height: 30px;
+    padding: 0 6px;
+  }
+  .toolbar-select select {
+    max-width: 136px;
+    font-size: 11px;
   }
 }
 </style>
