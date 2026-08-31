@@ -24,7 +24,8 @@
         <h2>{{ copy.highlights }}</h2>
         <span>{{ formatUpdated(result?.updateTime) }}</span>
       </div>
-      <div class="highlight-grid">        <article v-for="item in highlights" :key="`highlight-${item.id}`" class="highlight-card">
+      <div class="highlight-grid">
+        <article v-for="item in highlights" :key="`highlight-${item.id}`" class="highlight-card">
           <div class="highlight-source">
             <img :src="getSourceLogo(item.source)" :alt="sourceLabel(item)" @error="onLogoError" />
             <span>{{ sourceLabel(item) }}</span>
@@ -56,7 +57,8 @@
         <button
           v-for="option in intentOptions"
           :key="option.value"
-          type="button"          class="intent-button"
+          type="button"
+          class="intent-button"
           :class="{ active: activeIntent === option.value }"
           :aria-selected="activeIntent === option.value"
           @click="activeIntent = option.value"
@@ -84,7 +86,8 @@
               <img :src="getSourceLogo(item.source)" :alt="sourceLabel(item)" @error="onLogoError" />
               <span>{{ sourceLabel(item) }}</span>
               <em>{{ subtypeLabel(item) }}</em>
-            </div>            <h3>{{ item.title }}</h3>
+            </div>
+            <h3>{{ item.title }}</h3>
             <p v-if="item.desc && locale === 'zh-CN'" class="opportunity-desc">{{ item.desc }}</p>
             <div class="opportunity-meta">
               <span class="intent-pill">{{ intentLabel(item.intent) }}</span>
@@ -220,8 +223,13 @@ onMounted(() => loadTopic(false));
 </script>
 <style scoped>
 .wool-topic {
+  --wool-section-gap: 14px;
+  --wool-section-padding: 16px;
+  --wool-card-gap: 10px;
+  --wool-card-padding: 12px;
+  --wool-list-padding-y: 11px;
   display: grid;
-  gap: 24px;
+  gap: var(--wool-section-gap);
 }
 .topic-hero,
 .topic-section {
@@ -231,61 +239,63 @@ onMounted(() => loadTopic(false));
 }
 .topic-hero {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 28px 30px;
+  gap: 20px;
+  padding: 18px 20px;
 }
 .topic-eyebrow {
-  margin: 0 0 8px;
+  margin: 0 0 5px;
   color: var(--n-text-color-3, #777);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .topic-hero h1 {
   margin: 0;
-  font-size: clamp(26px, 3vw, 38px);
-  line-height: 1.18;
+  font-size: clamp(24px, 2.5vw, 32px);
+  line-height: 1.2;
 }
 .topic-description {
-  max-width: 780px;
-  margin: 10px 0 0;
+  max-width: 860px;
+  margin: 7px 0 0;
   color: var(--n-text-color-2, #555);
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.55;
 }
 .topic-status {
-  min-width: 88px;
+  min-width: 76px;
   text-align: right;
 }
 .topic-status strong {
   display: block;
-  font-size: 32px;
+  font-size: 28px;
   line-height: 1;
 }
 .topic-status span {
   display: block;
-  margin-top: 7px;
+  margin-top: 5px;
   color: var(--n-text-color-3, #777);
-  font-size: 12px;
+  font-size: 11px;
 }
 .topic-alert {
   margin: -8px 0 0;
 }
 .topic-section {
-  padding: 22px;
+  min-width: 0;
+  padding: var(--wool-section-padding);
 }
 .section-heading {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 .section-heading h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
 }
 .section-heading > span,
 .section-heading p {
@@ -297,19 +307,19 @@ onMounted(() => loadTopic(false));
   align-items: flex-start;
 }
 .section-heading--feed p {
-  margin-top: 6px;
-  line-height: 1.6;
+  margin-top: 4px;
+  line-height: 1.5;
 }
 .highlight-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--wool-card-gap);
 }
 .highlight-card {
   min-width: 0;
-  padding: 15px;
+  padding: var(--wool-card-padding);
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.16));
-  border-radius: 12px;
+  border-radius: 10px;
 }
 .highlight-source,
 .opportunity-source {
@@ -322,10 +332,10 @@ onMounted(() => loadTopic(false));
 }
 .highlight-source img,
 .opportunity-source img {
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
-  border-radius: 5px;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 4px;
   object-fit: cover;
 }
 .highlight-source span,
@@ -345,13 +355,13 @@ onMounted(() => loadTopic(false));
 }
 .highlight-title {
   display: -webkit-box;
-  min-height: 48px;
-  margin-top: 12px;
+  min-height: 42px;
+  margin-top: 9px;
   overflow: hidden;
   color: var(--n-text-color, #222);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  line-height: 1.6;
+  line-height: 1.5;
   text-decoration: none;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -360,33 +370,33 @@ onMounted(() => loadTopic(false));
 .opportunity-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 7px;
+  margin-top: 8px;
   color: var(--n-text-color-3, #777);
-  font-size: 12px;
+  font-size: 11px;
 }
 .intent-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 0 9px;
+  min-height: 21px;
+  padding: 0 7px;
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.16));
   border-radius: 999px;
-  background: color-mix(in srgb, var(--n-color, #fff) 88%, var(--n-text-color, #222) 12%);
+  background: color-mix(in srgb, var(--n-color, #fff) 90%, var(--n-text-color, #222) 10%);
   color: var(--n-text-color-2, #555);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 650;
 }
 .intent-filter {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 6px;
+  margin-bottom: 9px;
 }
 .intent-button {
   appearance: none;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 30px;
+  padding: 0 10px;
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.2));
   border-radius: 999px;
   background: transparent;
@@ -403,16 +413,22 @@ onMounted(() => loadTopic(false));
   border-color: currentColor;
   color: var(--n-text-color, #222);
 }
+.intent-button:focus-visible,
+.highlight-title:focus-visible,
+.opportunity-item:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 .opportunity-list {
   overflow: hidden;
   border-top: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.16));
 }
 .opportunity-item {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  gap: 14px;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
-  padding: 17px 4px;
+  padding: var(--wool-list-padding-y) 2px;
   border-bottom: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.13));
   color: inherit;
   text-decoration: none;
@@ -435,20 +451,20 @@ onMounted(() => loadTopic(false));
   min-width: 0;
 }
 .opportunity-main h3 {
-  margin: 7px 0 0;
+  margin: 5px 0 0;
   color: var(--n-text-color, #222);
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.45;
 }
 .opportunity-desc {
   display: -webkit-box;
-  margin: 7px 0 0;
+  margin: 5px 0 0;
   overflow: hidden;
   color: var(--n-text-color-2, #555);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.45;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
 }
 .opportunity-open {
   padding-left: 12px;
@@ -460,54 +476,116 @@ onMounted(() => loadTopic(false));
 .topic-empty {
   padding: 24px 0;
 }
+@media (max-width: 1280px) {
+  .highlight-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
 @media (max-width: 980px) {
+  .highlight-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
   .highlight-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 640px) {
   .wool-topic {
-    gap: 14px;
+    --wool-section-gap: 10px;
+    --wool-section-padding: 13px;
+    --wool-card-gap: 8px;
+    --wool-card-padding: 11px;
+    --wool-list-padding-y: 10px;
   }
   .topic-hero,
   .topic-section {
     border-radius: 12px;
   }
   .topic-hero {
-    align-items: flex-start;
-    padding: 20px 18px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+  }
+  .topic-eyebrow {
+    display: none;
+  }
+  .topic-hero h1 {
+    font-size: 18px;
+    line-height: 1.3;
   }
   .topic-status {
-    min-width: 54px;
+    min-width: 44px;
   }
   .topic-status strong {
-    font-size: 26px;
+    font-size: 22px;
   }
   .topic-description {
-    font-size: 13px;
-  }
-  .topic-section {
-    padding: 16px;
+    display: -webkit-box;
+    margin-top: 4px;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
   .highlight-grid {
-    grid-template-columns: 1fr;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(220px, 78vw);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+    scrollbar-width: none;
+  }
+  .highlight-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .highlight-card {
+    scroll-snap-align: start;
   }
   .highlight-title {
-    min-height: 0;
+    min-height: 42px;
   }
   .section-heading--feed {
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-heading--feed p {
+    display: none;
+  }
+  .intent-filter {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+  .intent-filter::-webkit-scrollbar {
+    display: none;
+  }
+  .intent-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
   .opportunity-item {
-    grid-template-columns: 30px minmax(0, 1fr);
-    gap: 9px;
-    padding: 15px 0;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px;
+    padding: var(--wool-list-padding-y) 0;
   }
   .opportunity-open {
     display: none;
   }
   .opportunity-main h3 {
-    font-size: 15px;
+    font-size: 14px;
+  }
+  .opportunity-desc {
+    -webkit-line-clamp: 2;
   }
 }
 </style>
