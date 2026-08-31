@@ -15,6 +15,7 @@ const SAME_ORIGIN_API_SOURCES = new Set([
 const DIRECT_PUBLIC_API_SOURCES = new Set([
   "super-deals",
   "wool-topic",
+  "game-deals-topic",
   "0818tuan",
   "nodeloc-deals",
   "douban-wool",

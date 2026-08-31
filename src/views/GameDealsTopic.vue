@@ -1,0 +1,1094 @@
+<template>
+  <section class="game-topic">
+    <header class="topic-hero">
+      <div>
+        <h1>{{ copy.title }}</h1>
+        <p>{{ copy.description }}</p>
+      </div>
+      <div v-if="dashboard" class="hero-stats" :aria-label="ui.stats">
+        <strong>{{ dashboard.total || data.length }}</strong>
+        <span>{{ ui.deals }}</span>
+        <em>{{ dashboard.sourceCount }} {{ ui.sources }}</em>
+      </div>
+    </header>
+
+    <n-alert
+      v-if="loadError"
+      type="error"
+      :show-icon="false"
+      class="topic-alert"
+    >
+      {{ loadError }}
+    </n-alert>
+
+    <section class="topic-section">
+      <div class="deal-toolbar">
+        <div class="toolbar-primary">
+          <div class="toolbar-title">
+            <h2>{{ copy.feedTitle }}</h2>
+            <span>{{ formatUpdated(result?.updateTime) }}</span>
+          </div>
+          <label class="topic-search">
+            <span class="sr-only">{{ ui.search }}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+              />
+            </svg>
+            <input
+              v-model.trim="searchQuery"
+              type="search"
+              :placeholder="ui.searchPlaceholder"
+              @keydown.esc="searchQuery = ''"
+            />
+          </label>
+          <div class="result-count">
+            <strong>{{ filteredData.length }}</strong
+            ><span>{{ ui.matches }}</span>
+          </div>
+          <button
+            v-if="dashboard?.multiSourceCount"
+            type="button"
+            class="confirmed-toggle"
+            :class="{ active: activeConfirmed }"
+            :aria-pressed="activeConfirmed"
+            @click="activeConfirmed = !activeConfirmed"
+          >
+            {{ ui.confirmed }} <span>{{ dashboard.multiSourceCount }}</span>
+          </button>
+          <n-button
+            size="small"
+            tertiary
+            :loading="loading"
+            @click="loadTopic(true)"
+            >{{ ui.refresh }}</n-button
+          >
+        </div>
+
+        <div class="toolbar-filters" role="group" :aria-label="ui.filters">
+          <label class="toolbar-select">
+            <span>{{ ui.type }}</span>
+            <select v-model="activeTag" :aria-label="ui.type">
+              <option
+                v-for="option in tagOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }} · {{ option.count }}
+              </option>
+            </select>
+          </label>
+          <label class="toolbar-select">
+            <span>{{ ui.source }}</span>
+            <select v-model="activeSource" :aria-label="ui.source">
+              <option
+                v-for="option in sourceOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }} · {{ option.count }}
+              </option>
+            </select>
+          </label>
+          <label class="toolbar-select">
+            <span>{{ ui.sort }}</span>
+            <select v-model="activeSort" :aria-label="ui.sort">
+              <option value="smart">{{ ui.smart }}</option>
+              <option value="price">{{ ui.priceLow }}</option>
+              <option value="discount">{{ ui.discountHigh }}</option>
+            </select>
+          </label>
+          <button
+            v-if="hasFilters"
+            type="button"
+            class="reset-filter"
+            @click="resetFilters"
+          >
+            {{ ui.reset }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="loading && !result" class="topic-loading">
+        <n-skeleton text :repeat="9" />
+      </div>
+      <div v-else-if="filteredData.length" class="deal-list">
+        <article
+          v-for="(item, index) in filteredData"
+          :key="item.id"
+          class="deal-item"
+        >
+          <span class="deal-rank">{{
+            String(index + 1).padStart(2, "0")
+          }}</span>
+          <a
+            class="deal-cover"
+            :href="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            tabindex="-1"
+          >
+            <img
+              :src="item.cover || getSourceLogo(primarySource(item))"
+              :alt="item.title"
+              loading="lazy"
+              @error="onCoverError($event, item)"
+            />
+          </a>
+          <div class="deal-main">
+            <div class="deal-source">
+              <img
+                :src="getSourceLogo(primarySource(item))"
+                :alt="primarySourceLabel(item)"
+                @error="onLogoError"
+              />
+              <span>{{ primarySourceLabel(item) }}</span>
+              <em v-if="sourceCount(item) > 1" :title="confirmationTitle(item)"
+                >{{ sourceCount(item) }}{{ ui.sourceConfirm }}</em
+              >
+            </div>
+            <a
+              class="deal-title"
+              :href="item.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              ><h3>{{ item.title }}</h3></a
+            >
+            <div class="deal-meta">
+              <strong v-if="priceLabel(item)" class="price">{{
+                priceLabel(item)
+              }}</strong>
+              <span v-if="originalPriceLabel(item)" class="original-price">{{
+                originalPriceLabel(item)
+              }}</span>
+              <span v-if="discountLabel(item)" class="discount">{{
+                discountLabel(item)
+              }}</span>
+              <span
+                v-for="tag in visibleTags(item)"
+                :key="`${item.id}-${tag}`"
+                class="tag"
+                :class="`tag-${tag}`"
+                >{{ tagLabel(tag) }}</span
+              >
+              <time v-if="deadlineLabel(item)" :title="deadlineTitle(item)">{{
+                deadlineLabel(item)
+              }}</time>
+            </div>
+          </div>
+          <a
+            class="deal-open"
+            :href="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            >{{ actionLabel(item) }}</a
+          >
+        </article>
+      </div>
+      <n-empty v-else :description="copy.empty" class="topic-empty" />
+    </section>
+  </section>
+</template>
+
+<script setup>
+import { getHotListsWithFallback } from "@/api";
+import { GAME_DEALS_TOPIC_METADATA } from "@/config/site-metadata.mjs";
+import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
+import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
+import { getSourceLabel } from "@/utils/sourceLabels";
+import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
+import { enhanceReadableResultTitles } from "@/utils/readableTitles";
+import { useRoute } from "vue-router";
+
+const route = useRoute();
+const result = ref(null);
+const loading = ref(false);
+const loadError = ref("");
+const searchQuery = ref(
+  typeof route.query.q === "string" ? route.query.q.trim() : "",
+);
+const activeTag = ref(
+  typeof route.query.type === "string" ? route.query.type : "all",
+);
+const activeSource = ref(
+  typeof route.query.source === "string" ? route.query.source : "all",
+);
+const activeSort = ref(
+  ["smart", "price", "discount"].includes(route.query.sort)
+    ? route.query.sort
+    : "smart",
+);
+const activeConfirmed = ref(route.query.confirmed === "1");
+const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
+const copy = computed(
+  () =>
+    GAME_DEALS_TOPIC_METADATA[locale.value] ||
+    GAME_DEALS_TOPIC_METADATA["zh-CN"],
+);
+const data = computed(() => result.value?.data || []);
+const dashboard = computed(() => result.value?.dashboard || null);
+
+const UI_COPY = {
+  "zh-CN": {
+    stats: "专题统计",
+    deals: "条优惠",
+    sources: "个来源",
+    search: "搜索游戏",
+    searchPlaceholder: "搜索游戏名称…",
+    matches: "条结果",
+    confirmed: "多源确认",
+    refresh: "刷新",
+    filters: "游戏优惠筛选",
+    type: "类型",
+    source: "来源",
+    sort: "排序",
+    smart: "综合价值",
+    priceLow: "价格从低到高",
+    discountHigh: "折扣从高到低",
+    reset: "清除筛选",
+    all: "全部",
+    sourceConfirm: "源确认",
+    free: "正在免费",
+    upcoming: "即将免费",
+    newLowest: "新史低",
+    lowest: "史低",
+    discount90: "90%+",
+    discount75: "75%+",
+    under10: "10元内",
+    under30: "30元内",
+    bundle: "游戏包",
+    deal: "优惠",
+    claim: "免费领取",
+    view: "查看优惠",
+    bundleAction: "查看游戏包",
+    upcomingAction: "查看活动",
+    original: "原价",
+  },
+  en: {
+    stats: "Topic stats",
+    deals: "deals",
+    sources: "sources",
+    search: "Search games",
+    searchPlaceholder: "Search game titles…",
+    matches: "results",
+    confirmed: "Multi-source",
+    refresh: "Refresh",
+    filters: "Game deal filters",
+    type: "Type",
+    source: "Source",
+    sort: "Sort",
+    smart: "Best value",
+    priceLow: "Lowest price",
+    discountHigh: "Biggest discount",
+    reset: "Reset",
+    all: "All",
+    sourceConfirm: " sources",
+    free: "Free now",
+    upcoming: "Free soon",
+    newLowest: "New low",
+    lowest: "Historical low",
+    discount90: "90%+ off",
+    discount75: "75%+ off",
+    under10: "Under ¥10",
+    under30: "Under ¥30",
+    bundle: "Bundles",
+    deal: "Deals",
+    claim: "Claim free",
+    view: "View deal",
+    bundleAction: "View bundle",
+    upcomingAction: "View offer",
+    original: "Was",
+  },
+  "zh-TW": {
+    stats: "專題統計",
+    deals: "筆優惠",
+    sources: "個來源",
+    search: "搜尋遊戲",
+    searchPlaceholder: "搜尋遊戲名稱…",
+    matches: "筆結果",
+    confirmed: "多源確認",
+    refresh: "重新整理",
+    filters: "遊戲優惠篩選",
+    type: "類型",
+    source: "來源",
+    sort: "排序",
+    smart: "綜合價值",
+    priceLow: "價格由低到高",
+    discountHigh: "折扣由高到低",
+    reset: "清除篩選",
+    all: "全部",
+    sourceConfirm: "源確認",
+    free: "正在免費",
+    upcoming: "即將免費",
+    newLowest: "新史低",
+    lowest: "史低",
+    discount90: "90%+",
+    discount75: "75%+",
+    under10: "10元內",
+    under30: "30元內",
+    bundle: "遊戲包",
+    deal: "優惠",
+    claim: "免費領取",
+    view: "查看優惠",
+    bundleAction: "查看遊戲包",
+    upcomingAction: "查看活動",
+    original: "原價",
+  },
+  ja: {
+    stats: "トピック統計",
+    deals: "件",
+    sources: "情報源",
+    search: "ゲーム検索",
+    searchPlaceholder: "ゲーム名を検索…",
+    matches: "件",
+    confirmed: "複数ソース確認",
+    refresh: "更新",
+    filters: "ゲームセール絞り込み",
+    type: "種類",
+    source: "情報源",
+    sort: "並び順",
+    smart: "価値順",
+    priceLow: "価格が安い順",
+    discountHigh: "割引率順",
+    reset: "解除",
+    all: "すべて",
+    sourceConfirm: "ソース確認",
+    free: "無料配布中",
+    upcoming: "近日無料",
+    newLowest: "新史上最安",
+    lowest: "史上最安",
+    discount90: "90%以上",
+    discount75: "75%以上",
+    under10: "10元以下",
+    under30: "30元以下",
+    bundle: "バンドル",
+    deal: "セール",
+    claim: "無料で入手",
+    view: "セールを見る",
+    bundleAction: "バンドルを見る",
+    upcomingAction: "詳細を見る",
+    original: "通常",
+  },
+  ko: {
+    stats: "주제 통계",
+    deals: "개 혜택",
+    sources: "개 출처",
+    search: "게임 검색",
+    searchPlaceholder: "게임 이름 검색…",
+    matches: "개 결과",
+    confirmed: "다중 출처 확인",
+    refresh: "새로고침",
+    filters: "게임 할인 필터",
+    type: "유형",
+    source: "출처",
+    sort: "정렬",
+    smart: "가치순",
+    priceLow: "낮은 가격순",
+    discountHigh: "할인율순",
+    reset: "초기화",
+    all: "전체",
+    sourceConfirm: "개 출처 확인",
+    free: "현재 무료",
+    upcoming: "곧 무료",
+    newLowest: "신규 역대 최저",
+    lowest: "역대 최저",
+    discount90: "90%+ 할인",
+    discount75: "75%+ 할인",
+    under10: "¥10 이하",
+    under30: "¥30 이하",
+    bundle: "번들",
+    deal: "할인",
+    claim: "무료 받기",
+    view: "할인 보기",
+    bundleAction: "번들 보기",
+    upcomingAction: "행사 보기",
+    original: "정가",
+  },
+};
+const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
+const TAG_ORDER = [
+  "free",
+  "upcoming-free",
+  "new-lowest",
+  "lowest",
+  "discount90",
+  "discount75",
+  "under10",
+  "under30",
+  "bundle",
+  "deal",
+];
+const validTags = new Set(["all", ...TAG_ORDER]);
+if (!validTags.has(activeTag.value)) activeTag.value = "all";
+
+const gameDeal = (item) => item?.extra?.gameDeal || {};
+const tags = (item) =>
+  Array.isArray(gameDeal(item).tags) ? gameDeal(item).tags : [];
+const sourceCount = (item) => Number(gameDeal(item).sourceCount || 1);
+const primarySource = (item) =>
+  gameDeal(item).primarySource || "game-deals-topic";
+const primarySourceLabel = (item) =>
+  getSourceLabel(
+    primarySource(item),
+    locale.value,
+    gameDeal(item).primarySourceLabel || primarySource(item),
+  );
+const sourceList = (item) =>
+  Array.isArray(gameDeal(item).sources)
+    ? gameDeal(item).sources
+    : [primarySource(item)];
+
+const tagLabel = (tag) =>
+  ({
+    free: ui.value.free,
+    "upcoming-free": ui.value.upcoming,
+    "new-lowest": ui.value.newLowest,
+    lowest: ui.value.lowest,
+    discount90: ui.value.discount90,
+    discount75: ui.value.discount75,
+    under10: ui.value.under10,
+    under30: ui.value.under30,
+    bundle: ui.value.bundle,
+    deal: ui.value.deal,
+  })[tag] || tag;
+const visibleTags = (item) =>
+  tags(item)
+    .filter((tag) => !["under30", "deal", "free"].includes(tag))
+    .slice(0, 3);
+const tagOptions = computed(() => [
+  { value: "all", label: ui.value.all, count: data.value.length },
+  ...TAG_ORDER.filter((tag) => tag !== "deal")
+    .map((tag) => ({
+      value: tag,
+      label: tagLabel(tag),
+      count: data.value.filter((item) => tags(item).includes(tag)).length,
+    }))
+    .filter((item) => item.count > 0),
+]);
+const sourceOptions = computed(() => [
+  { value: "all", label: ui.value.all, count: data.value.length },
+  ...(dashboard.value?.sources || []).map((item) => ({
+    value: item.source,
+    label: getSourceLabel(item.source, locale.value) || item.label,
+    count: item.count,
+  })),
+]);
+
+const numberValue = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
+const currentPrice = (item) => numberValue(item?.extra?.currentPrice);
+const originalPrice = (item) => numberValue(item?.extra?.originalPrice);
+const discount = (item) => numberValue(item?.extra?.discountPercent);
+const money = (value) =>
+  Number.isInteger(value) ? `¥${value}` : `¥${value.toFixed(2)}`;
+const priceLabel = (item) =>
+  tags(item).includes("free")
+    ? ui.value.free
+    : currentPrice(item) !== undefined
+      ? money(currentPrice(item))
+      : "";
+const originalPriceLabel = (item) =>
+  originalPrice(item) && originalPrice(item) > (currentPrice(item) ?? -1)
+    ? `${ui.value.original} ${money(originalPrice(item))}`
+    : "";
+const discountLabel = (item) => (discount(item) ? `-${discount(item)}%` : "");
+const score = (item) => numberValue(gameDeal(item).score) || 0;
+const textFor = (item) =>
+  `${item.title || ""} ${item.desc || ""}`.toLowerCase();
+
+const filteredData = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  const rows = data.value.filter((item) => {
+    if (query && !textFor(item).includes(query)) return false;
+    if (activeTag.value !== "all" && !tags(item).includes(activeTag.value))
+      return false;
+    if (
+      activeSource.value !== "all" &&
+      !sourceList(item).includes(activeSource.value)
+    )
+      return false;
+    if (activeConfirmed.value && sourceCount(item) < 2) return false;
+    return true;
+  });
+  return [...rows].sort((a, b) => {
+    if (activeSort.value === "price")
+      return (
+        (currentPrice(a) ?? Number.MAX_SAFE_INTEGER) -
+          (currentPrice(b) ?? Number.MAX_SAFE_INTEGER) || score(b) - score(a)
+      );
+    if (activeSort.value === "discount")
+      return (discount(b) || 0) - (discount(a) || 0) || score(b) - score(a);
+    return score(b) - score(a) || Number(b.hot || 0) - Number(a.hot || 0);
+  });
+});
+const hasFilters = computed(() =>
+  Boolean(
+    searchQuery.value ||
+    activeTag.value !== "all" ||
+    activeSource.value !== "all" ||
+    activeSort.value !== "smart" ||
+    activeConfirmed.value,
+  ),
+);
+const resetFilters = () => {
+  searchQuery.value = "";
+  activeTag.value = "all";
+  activeSource.value = "all";
+  activeSort.value = "smart";
+  activeConfirmed.value = false;
+};
+
+const formatUpdated = (value) =>
+  value
+    ? new Intl.DateTimeFormat(locale.value, {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(new Date(value))
+    : "";
+const eventTime = (item) =>
+  tags(item).includes("upcoming-free")
+    ? numberValue(item?.extra?.startsAt)
+    : numberValue(item?.extra?.expiresAt);
+const deadlineLabel = (item) => {
+  const value = eventTime(item);
+  if (!value) return "";
+  const d = new Date(value);
+  const prefix = tags(item).includes("upcoming-free") ? ui.value.upcoming : "";
+  return `${prefix ? `${prefix} · ` : ""}${new Intl.DateTimeFormat(locale.value, { month: "2-digit", day: "2-digit" }).format(d)}`;
+};
+const deadlineTitle = (item) => {
+  const value = eventTime(item);
+  return value ? new Date(value).toLocaleString(locale.value) : "";
+};
+const confirmationTitle = (item) =>
+  (gameDeal(item).confirmations || [])
+    .map((entry) =>
+      getSourceLabel(entry.source, locale.value, entry.sourceLabel || entry.source),
+    )
+    .join(" + ");
+const actionLabel = (item) =>
+  tags(item).includes("free")
+    ? ui.value.claim
+    : tags(item).includes("upcoming-free")
+      ? ui.value.upcomingAction
+      : tags(item).includes("bundle")
+        ? ui.value.bundleAction
+        : ui.value.view;
+const onLogoError = (event) => {
+  if (event?.target) event.target.src = getSourceLogoFallback();
+};
+const onCoverError = (event, item) => {
+  if (event?.target) event.target.src = getSourceLogo(primarySource(item));
+};
+
+let querySyncTimer;
+const syncQuery = () => {
+  clearTimeout(querySyncTimer);
+  querySyncTimer = setTimeout(() => {
+    const query = {};
+    if (searchQuery.value.trim()) query.q = searchQuery.value.trim();
+    if (activeTag.value !== "all") query.type = activeTag.value;
+    if (activeSource.value !== "all") query.source = activeSource.value;
+    if (activeSort.value !== "smart") query.sort = activeSort.value;
+    if (activeConfirmed.value) query.confirmed = "1";
+    const params = new URLSearchParams(query);
+    const search = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${route.path}${search ? `?${search}` : ""}`,
+    );
+  }, 180);
+};
+watch(
+  [searchQuery, activeTag, activeSource, activeSort, activeConfirmed],
+  syncQuery,
+);
+watch(sourceOptions, (options) => {
+  if (
+    activeSource.value !== "all" &&
+    !options.some((item) => item.value === activeSource.value)
+  )
+    activeSource.value = "all";
+});
+watch(tagOptions, (options) => {
+  if (
+    activeTag.value !== "all" &&
+    !options.some((item) => item.value === activeTag.value)
+  )
+    activeTag.value = "all";
+});
+
+const loadTopic = async (force = false) => {
+  loading.value = true;
+  loadError.value = "";
+  try {
+    const response = await getHotListsWithFallback(
+      "game-deals-topic",
+      force,
+      { locale: locale.value, translate_limit: 80 },
+      { forceNoCache: force, timeout: 12000 },
+    );
+    if (response?.result?.code !== 200)
+      throw new Error(response?.result?.message || "request failed");
+    const rawResult = response.result;
+    result.value = rawResult;
+    loading.value = false;
+    result.value = await enhanceReadableResultTitles(rawResult, locale.value, {
+      includeDescriptions: false,
+      limit: 80,
+      sourceName: "game-deals-topic",
+    });
+  } catch (error) {
+    loadError.value = error?.message || "Failed to load";
+  } finally {
+    loading.value = false;
+  }
+};
+const handleGlobalDataRefresh = (event) =>
+  void loadTopic(Boolean(event?.detail?.force));
+onMounted(() => {
+  window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  void loadTopic(false);
+});
+onActivated(() => {
+  window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+});
+onDeactivated(() =>
+  window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh),
+);
+onBeforeUnmount(() => {
+  clearTimeout(querySyncTimer);
+  window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+});
+watch(locale, () => void loadTopic(false));
+</script>
+
+<style scoped>
+.game-topic {
+  display: grid;
+  gap: 14px;
+}
+.topic-hero,
+.topic-section {
+  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
+  background: var(--n-color, #fff);
+  border-radius: 16px;
+}
+.topic-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 20px;
+}
+.topic-hero h1 {
+  margin: 0;
+  font-size: clamp(24px, 2.4vw, 32px);
+  line-height: 1.2;
+}
+.topic-hero p {
+  max-width: 900px;
+  margin: 7px 0 0;
+  color: var(--n-text-color-3);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.hero-stats {
+  display: grid;
+  min-width: 98px;
+  justify-items: end;
+}
+.hero-stats strong {
+  font-size: 28px;
+  line-height: 1;
+}
+.hero-stats span,
+.hero-stats em {
+  color: var(--n-text-color-3);
+  font-size: 11px;
+  font-style: normal;
+}
+.topic-alert {
+  border-radius: 12px;
+}
+.topic-section {
+  min-width: 0;
+  padding: 16px;
+}
+.deal-toolbar {
+  display: grid;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+.toolbar-primary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.toolbar-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-right: 3px;
+  white-space: nowrap;
+}
+.toolbar-title h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.toolbar-title span {
+  color: var(--n-text-color-3);
+  font-size: 11px;
+}
+.topic-search {
+  display: flex;
+  align-items: center;
+  flex: 1 1 280px;
+  max-width: 520px;
+  min-width: 160px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 8px;
+  background: var(--n-color);
+}
+.topic-search svg {
+  width: 15px;
+  height: 15px;
+  margin-right: 7px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  color: var(--n-text-color-3);
+}
+.topic-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--n-text-color);
+  font: inherit;
+  font-size: 12px;
+}
+.result-count {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+.result-count strong {
+  font-size: 17px;
+}
+.result-count span {
+  color: var(--n-text-color-3);
+  font-size: 11px;
+}
+.confirmed-toggle,
+.reset-filter {
+  min-height: 30px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--n-text-color-2);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.confirmed-toggle {
+  padding: 0 9px;
+}
+.confirmed-toggle span {
+  font-variant-numeric: tabular-nums;
+}
+.confirmed-toggle.active {
+  border-color: currentColor;
+  color: var(--n-text-color);
+  background: var(--n-action-color);
+}
+.toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.toolbar-filters::-webkit-scrollbar {
+  display: none;
+}
+.toolbar-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 7px;
+}
+.toolbar-select > span {
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.toolbar-select select {
+  max-width: 170px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--n-text-color);
+  font-size: 11px;
+  cursor: pointer;
+}
+.reset-filter {
+  flex: 0 0 auto;
+  padding: 0 9px;
+}
+.deal-list {
+  display: grid;
+}
+.deal-item {
+  display: grid;
+  grid-template-columns: 30px 72px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px 2px;
+  border-top: 1px solid var(--n-border-color);
+}
+.deal-rank {
+  align-self: start;
+  padding-top: 3px;
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.deal-cover {
+  width: 72px;
+  height: 40px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--n-action-color);
+}
+.deal-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.deal-main {
+  min-width: 0;
+}
+.deal-source {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--n-text-color-3);
+  font-size: 10px;
+}
+.deal-source img {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  object-fit: contain;
+}
+.deal-source span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.deal-source em {
+  padding: 1px 5px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 999px;
+  color: var(--n-text-color);
+  font-style: normal;
+  white-space: nowrap;
+}
+.deal-title {
+  color: inherit;
+  text-decoration: none;
+}
+.deal-title h3 {
+  margin: 4px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.deal-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.price {
+  color: var(--n-text-color);
+  font-size: 14px;
+}
+.original-price {
+  text-decoration: line-through;
+}
+.discount {
+  font-weight: 600;
+  color: #d03050;
+}
+.tag {
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--n-action-color);
+  color: var(--n-text-color-2);
+}
+.tag-free,
+.tag-new-lowest {
+  font-weight: 600;
+  color: #18a058;
+}
+.tag-upcoming-free {
+  color: #2080f0;
+}
+.tag-lowest {
+  color: #d03050;
+}
+.deal-open {
+  min-width: 70px;
+  padding: 6px 9px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 7px;
+  color: var(--n-text-color);
+  font-size: 11px;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.deal-title:hover h3,
+.deal-open:hover {
+  text-decoration: underline;
+}
+.topic-loading {
+  padding: 10px 2px;
+}
+.topic-empty {
+  padding: 44px 0;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 720px) {
+  .game-topic {
+    gap: 10px;
+  }
+  .topic-hero,
+  .topic-section {
+    border-radius: 12px;
+  }
+  .topic-hero {
+    padding: 14px;
+    gap: 10px;
+  }
+  .topic-hero h1 {
+    font-size: 18px;
+  }
+  .topic-hero p {
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .hero-stats {
+    min-width: 52px;
+  }
+  .hero-stats strong {
+    font-size: 21px;
+  }
+  .hero-stats em {
+    display: none;
+  }
+  .topic-section {
+    padding: 13px;
+  }
+  .toolbar-primary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 7px;
+  }
+  .toolbar-title {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+  .topic-search {
+    min-width: 0;
+    max-width: none;
+    height: 30px;
+  }
+  .result-count {
+    display: none;
+  }
+  .confirmed-toggle {
+    padding: 0 7px;
+  }
+  .toolbar-filters {
+    margin-right: -13px;
+    padding-right: 13px;
+  }
+  .deal-item {
+    grid-template-columns: 24px 54px minmax(0, 1fr);
+    gap: 7px;
+    padding: 10px 0;
+  }
+  .deal-cover {
+    width: 54px;
+    height: 32px;
+  }
+  .deal-open {
+    display: none;
+  }
+  .deal-source em {
+    max-width: 86px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .deal-title h3 {
+    font-size: 13px;
+  }
+  .deal-meta {
+    gap: 5px;
+  }
+  .price {
+    font-size: 13px;
+  }
+  .original-price {
+    display: none;
+  }
+  .deal-meta .tag:nth-of-type(n + 3) {
+    display: none;
+  }
+}
+</style>

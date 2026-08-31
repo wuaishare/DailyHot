@@ -23,6 +23,17 @@
       </div>
     </nav>
     <router-link
+      v-if="isGamesCategory"
+      :to="gameDealsTopicPath"
+      class="wool-topic-entry"
+    >
+      <div>
+        <strong>{{ gameDealsTopicCopy.title }}</strong>
+        <p>{{ gameDealsTopicCopy.description }}</p>
+      </div>
+      <em>{{ gameDealsTopicCopy.open }} →</em>
+    </router-link>
+    <router-link
       v-if="isWoolCategory"
       :to="woolTopicPath"
       class="wool-topic-entry"
@@ -97,7 +108,10 @@ import {
   getLocaleFromRoute,
   normalizeLocale,
 } from "@/utils/locale";
-import { WOOL_TOPIC_METADATA } from "@/config/site-metadata.mjs";
+import {
+  GAME_DEALS_TOPIC_METADATA,
+  WOOL_TOPIC_METADATA,
+} from "@/config/site-metadata.mjs";
 import { sourceBelongsToCategory } from "@/utils/categoryTree";
 
 const store = mainStore();
@@ -145,6 +159,15 @@ const categoryLabel = (item) =>
   item.builtin ? getCategoryLabel(item.name, locale.value) : item.name;
 const categoryPath = (item) => buildCategoryPath(locale.value, item.slug);
 const isWoolCategory = computed(() => forcedCategoryName.value === "羊毛");
+const isGamesCategory = computed(() => forcedCategoryName.value === "游戏");
+const gameDealsTopicCopy = computed(
+  () =>
+    GAME_DEALS_TOPIC_METADATA[locale.value] ||
+    GAME_DEALS_TOPIC_METADATA["zh-CN"],
+);
+const gameDealsTopicPath = computed(() =>
+  buildFixedLocalePath(locale.value, "/topic/game-deals"),
+);
 const woolTopicCopy = computed(
   () => WOOL_TOPIC_METADATA[locale.value] || WOOL_TOPIC_METADATA["zh-CN"],
 );

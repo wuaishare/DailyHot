@@ -1,4 +1,4 @@
-import { WOOL_TOPIC_METADATA } from "@/config/site-metadata.mjs";
+import { GAME_DEALS_TOPIC_METADATA, WOOL_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 
 const localePattern = ":lang(en|zh-tw|ja|ko)";
 
@@ -103,6 +103,66 @@ const routes = [
       }),
     },
     component: () => import("@/views/WoolTopic.vue"),
+  },
+  {
+    path: "/topic/game-deals",
+    name: "game-deals-topic",
+    meta: {
+      title: "实时游戏优惠",
+      seoTitle: ({ locale }) =>
+        (
+          GAME_DEALS_TOPIC_METADATA[locale] ||
+          GAME_DEALS_TOPIC_METADATA["zh-CN"]
+        ).seoTitle,
+      description: ({ locale }) =>
+        (
+          GAME_DEALS_TOPIC_METADATA[locale] ||
+          GAME_DEALS_TOPIC_METADATA["zh-CN"]
+        ).seoDescription,
+      keywords: ({ locale }) =>
+        (
+          GAME_DEALS_TOPIC_METADATA[locale] ||
+          GAME_DEALS_TOPIC_METADATA["zh-CN"]
+        ).seoKeywords,
+      jsonLd: ({ canonical, title, description }) => ({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        url: canonical,
+      }),
+    },
+    component: () => import("@/views/GameDealsTopic.vue"),
+  },
+  {
+    path: `/${localePattern}/topic/game-deals`,
+    name: "game-deals-topic-locale",
+    meta: {
+      title: "实时游戏优惠",
+      seoTitle: ({ locale }) =>
+        (
+          GAME_DEALS_TOPIC_METADATA[locale] ||
+          GAME_DEALS_TOPIC_METADATA["zh-CN"]
+        ).seoTitle,
+      description: ({ locale }) =>
+        (
+          GAME_DEALS_TOPIC_METADATA[locale] ||
+          GAME_DEALS_TOPIC_METADATA["zh-CN"]
+        ).seoDescription,
+      keywords: ({ locale }) =>
+        (
+          GAME_DEALS_TOPIC_METADATA[locale] ||
+          GAME_DEALS_TOPIC_METADATA["zh-CN"]
+        ).seoKeywords,
+      jsonLd: ({ canonical, title, description }) => ({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        url: canonical,
+      }),
+    },
+    component: () => import("@/views/GameDealsTopic.vue"),
   },
   // 新闻列表
   {

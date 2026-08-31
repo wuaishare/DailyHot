@@ -201,6 +201,7 @@ export const buildLocalePathFromRoute = (route, locale = DEFAULT_LOCALE) => {
     pathWithoutLocale === "/privacy" ||
     pathWithoutLocale === "/analytics" ||
     pathWithoutLocale === "/topic/wool" ||
+    pathWithoutLocale === "/topic/game-deals" ||
     pathWithoutLocale === "/test" ||
     pathWithoutLocale === "/403" ||
     pathWithoutLocale === "/404" ||

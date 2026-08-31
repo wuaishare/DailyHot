@@ -684,6 +684,7 @@ function main() {
   const supportedLocales = parseConstant(siteMetadataSource, "SUPPORTED_LOCALES");
   const builtinCategories = parseConstant(siteMetadataSource, "BUILTIN_CATEGORIES");
   const woolTopicMetadata = parseConstant(siteMetadataSource, "WOOL_TOPIC_METADATA");
+  const gameDealsTopicMetadata = parseConstant(siteMetadataSource, "GAME_DEALS_TOPIC_METADATA");
   const sourceNames = getSourceNames(storeSource);
   const subtypeValues = getSubtypeValues(sourceSubtypeGroups);
   const defaultSubtypeValues = getDefaultSubtypeValues(subtypeValues);
@@ -817,6 +818,26 @@ function main() {
       htmlLang,
       robots: "index,follow",
       alternateLinks: buildAlternateLinks("/topic/wool", supportedLocales),
+      jsonLd: buildWebPageJsonLd({ title, description, canonical, htmlLang }),
+    };
+  };
+
+  const buildGameDealsTopicMeta = (localeMeta, pathname) => {
+    const locale = localeMeta.code;
+    const htmlLang = localeMeta.htmlLang;
+    const meta = gameDealsTopicMetadata[locale] || gameDealsTopicMetadata["zh-CN"] || {};
+    const canonical = buildAbsoluteUrl(pathname);
+    const title = meta.seoTitle || meta.title || "Live Game Deals";
+    const description =
+      meta.seoDescription || meta.description || "Live game deals and historical lows.";
+    return {
+      title,
+      description,
+      keywords: meta.seoKeywords || mergeKeywords(title, brandNameZh),
+      canonical,
+      htmlLang,
+      robots: "index,follow",
+      alternateLinks: buildAlternateLinks("/topic/game-deals", supportedLocales),
       jsonLd: buildWebPageJsonLd({ title, description, canonical, htmlLang }),
     };
   };
@@ -1011,6 +1032,12 @@ function main() {
     writeRouteShell(
       woolTopicPathname,
       buildWoolTopicMeta(localeMeta, woolTopicPathname)
+    );
+
+    const gameDealsTopicPathname = withLocalePrefix(localeMeta, "/topic/game-deals");
+    writeRouteShell(
+      gameDealsTopicPathname,
+      buildGameDealsTopicMeta(localeMeta, gameDealsTopicPathname)
     );
 
     SYSTEM_ROUTES.forEach((systemRoute) => {
