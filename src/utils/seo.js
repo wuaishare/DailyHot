@@ -66,6 +66,36 @@ const CATEGORY_SEO_MAP = {
       "掘金热榜",
     ],
   },
+  游戏: {
+    en: {
+      title: "Game Deals & Rankings - Steam sales, Epic freebies and game trends | DailyHot",
+      description:
+        "Game Deals & Rankings combine Steam official sales, Epic free games, Xiaoheihe historical lows, GG.deals freebies and bundles with gaming news and community trends.",
+      keywords:
+        "game deals,Steam sales,Epic free games,historical low game prices,Xiaoheihe,GG.deals,game bundles,game rankings,DailyHot",
+    },
+    "zh-TW": {
+      title: "遊戲優惠與熱榜 - Steam 特惠、Epic 免費遊戲與史低情報 | 吾愛熱榜",
+      description:
+        "遊戲優惠與熱榜彙整 Steam 官方特惠、Epic 免費遊戲、小黑盒史低與高折扣、GG.deals 免費及遊戲包情報，並結合遊戲資訊與玩家社群趨勢。",
+      keywords:
+        "遊戲優惠,Steam特惠,Epic免費遊戲,遊戲史低,小黑盒,GG.deals,遊戲包,遊戲熱榜,吾愛熱榜",
+    },
+    ja: {
+      title: "ゲームセール・ランキング - Steam セール、Epic 無料配布、史上最安 | DailyHot",
+      description:
+        "Steam 公式セール、Epic 無料ゲーム、Xiaoheihe の史上最安・高割引、GG.deals の無料配布・バンドルとゲームニュースをまとめます。",
+      keywords:
+        "ゲームセール,Steamセール,Epic無料ゲーム,史上最安,Xiaoheihe,GG.deals,ゲームバンドル,ゲームランキング,DailyHot",
+    },
+    ko: {
+      title: "게임 할인·랭킹 - Steam 세일, Epic 무료 게임, 역대 최저가 | DailyHot",
+      description:
+        "Steam 공식 세일, Epic 무료 게임, Xiaoheihe 역대 최저가·고할인, GG.deals 무료 배포·번들과 게임 뉴스 및 커뮤니티 트렌드를 함께 제공합니다.",
+      keywords:
+        "게임 할인,Steam 세일,Epic 무료 게임,역대 최저가,Xiaoheihe,GG.deals,게임 번들,게임 랭킹,DailyHot",
+    },
+  },
   "财经": {
     title: "财经热榜",
     titleTail: "股票、ETF、证券市场与投资话题趋势聚合",
@@ -103,7 +133,7 @@ const CATEGORY_SEO_MAP = {
     title: "羊毛优惠",
     titleTail: "限免、优惠券、免费福利与实测线报实时聚合",
     description:
-      "羊毛优惠聚合超级线报、0818团、NodeLoc优惠与 IT之家喜加一等高时效信息，覆盖限免、免费额度、优惠券、秒杀、抽奖、补贴与游戏免费领取，帮助你快速发现值得立即行动的福利线报。",
+      "羊毛优惠聚合超级线报、0818团、NodeLoc、豆瓣优惠及 Steam、Epic、小黑盒、GG.deals 游戏福利，覆盖限免、优惠券、史低、超低价、抽奖、免费额度与游戏免费领取。",
     keywords: [
       "羊毛",
       "优惠线报",
@@ -139,7 +169,7 @@ const CATEGORY_SEO_MAP = {
     title: "游戏热榜",
     titleTail: "游戏资讯、官方公告与玩家社区讨论聚合",
     description:
-      "游戏热榜聚合游戏葡萄、游研社、米游社、原神、崩坏：星穹铁道、英雄联盟等热门榜单，覆盖游戏资讯、官方动态、版本公告与玩家讨论热点。",
+      "游戏热榜聚合 Steam 官方特惠、Epic 免费游戏、小黑盒史低与高折扣、GG.deals 免费及促销情报，并结合游戏葡萄、游研社、米游社等资讯社区，覆盖免费领取、史低、超低价、游戏资讯与玩家讨论。",
     keywords: [
       "游戏热榜",
       "游戏资讯",
@@ -149,6 +179,12 @@ const CATEGORY_SEO_MAP = {
       "星穹铁道热榜",
       "英雄联盟热榜",
       "游戏公告",
+      "Steam 特惠",
+      "Epic 免费游戏",
+      "游戏史低",
+      "游戏折扣",
+      "小黑盒",
+      "GG.deals",
     ],
   },
   "社区": {
@@ -753,6 +789,26 @@ const LIST_SEO_MAP = {
     label: "豆瓣宠物羊毛",
     keywords: "豆瓣宠物羊毛,爱猫生活,爱猫澡盆,豆瓣狗组,宠物好价,猫粮优惠,猫砂优惠,狗粮优惠,宠物团购",
     description: "从豆瓣爱猫生活、爱猫澡盆与豆瓣狗组中筛选高信噪宠物消费机会，只保留团购、开车、作业、拼团、试用与明确好价，过滤领养、求助、闲置、转卖和医疗讨论。",
+  },
+  "steam-deals": {
+    label: "Steam 特惠",
+    keywords: "Steam特惠,Steam折扣,Steam低价,Steam 90%折扣,Steam游戏优惠",
+    description: "基于 Steam 官方当前特惠，筛选热门折扣、75%+、90%+ 与 10/30 元以内低价游戏。",
+  },
+  "epic-free-games": {
+    label: "Epic 免费游戏",
+    keywords: "Epic免费游戏,Epic喜加一,Epic限免,免费领取游戏",
+    description: "聚合 Epic Games Store 官方正在免费与即将免费的游戏，直接跳转官方商店领取。",
+  },
+  "xiaoheihe-deals": {
+    label: "小黑盒游戏折扣",
+    keywords: "小黑盒游戏折扣,Steam史低,游戏史低,90%折扣,低价游戏",
+    description: "使用小黑盒公开折扣情报识别 Steam 史低、新史低、高折扣与低价游戏，并直达 Steam 官方商品页。",
+  },
+  ggdeals: {
+    label: "GG.deals 游戏优惠",
+    keywords: "GG.deals,游戏免费,游戏折扣,游戏包,game freebies,game deals",
+    description: "聚合 GG.deals 官方公开的 Freebies、Deals 与 Bundles RSS，追踪全球游戏免费领取、促销与游戏包情报。",
   },
   weibo: {
     label: "微博热搜",

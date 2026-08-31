@@ -143,6 +143,53 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "steam-deals": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "热门特惠", value: "featured" },
+        { label: "75%+ 高折扣", value: "discount75" },
+        { label: "90%+ 超低折扣", value: "discount90" },
+        { label: "10 元以内", value: "under10" },
+        { label: "30 元以内", value: "under30" },
+      ],
+    },
+  ],
+  "epic-free-games": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "正在免费", value: "current" },
+        { label: "即将免费", value: "upcoming" },
+      ],
+    },
+  ],
+  "xiaoheihe-deals": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "热门折扣", value: "popular" },
+        { label: "史低游戏", value: "lowest" },
+        { label: "90%+ 超低折扣", value: "discount90" },
+        { label: "10 元以内", value: "under10" },
+        { label: "30 元以内", value: "under30" },
+      ],
+    },
+  ],
+  ggdeals: [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "免费游戏", value: "freebies" },
+        { label: "优惠资讯", value: "deals" },
+        { label: "游戏包", value: "bundles" },
+      ],
+    },
+  ],
   smzdm: [
     {
       key: "period",
