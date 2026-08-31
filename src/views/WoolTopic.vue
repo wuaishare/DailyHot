@@ -137,6 +137,12 @@
             <div class="opportunity-meta">
               <span class="intent-pill">{{ intentLabel(item.intent) }}</span>
               <span v-if="platformLabel(item)" class="platform-pill">{{ platformLabel(item) }}</span>
+              <span
+                v-if="confirmationCount(item) > 1"
+                class="confirmation-pill"
+                :title="confirmationTitle(item)"
+                :aria-label="confirmationTitle(item)"
+              >{{ confirmationLabel(item) }}</span>
               <strong v-if="primaryPriceLabel(item)" class="price-pill">{{ primaryPriceLabel(item) }}</strong>
               <span v-for="(benefit, benefitIndex) in visibleBenefits(item)" :key="`${item.id}-${benefit.type}-${benefit.amount}-${benefit.threshold || 0}`" class="benefit-pill" :class="{ 'benefit-pill--secondary': benefitIndex > 0 }">{{ benefitLabel(benefit) }}</span>
               <time :title="formatItemTime(item.timestamp)">{{ formatFreshness(item.timestamp) }}</time>
@@ -201,7 +207,9 @@ const BENEFIT_COPY = {
 const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
 
 const signalText = (item) => `${item?.signals?.primaryPlatform || ""} ${(item?.signals?.benefits || []).map((benefit) => benefit.raw || "").join(" ")}`;
-const textForItem = (item) => `${item.title || ""} ${item.desc || ""} ${item.extra?.platform || ""} ${(item.matchedKeywords || []).join(" ")} ${signalText(item)}`.toLowerCase();
+const clusterText = (item) => (item?.cluster?.sources || []).map((source) => `${source.sourceLabel || ""} ${source.title || ""}`).join(" ");
+const textForItem = (item) => `${item.title || ""} ${item.desc || ""} ${item.extra?.platform || ""} ${(item.matchedKeywords || []).join(" ")} ${signalText(item)} ${clusterText(item)}`.toLowerCase();
+const itemMatchesSource = (item, source) => source === "all" || item.source === source || (item?.cluster?.sources || []).some((evidence) => evidence.source === source);
 const matchesTime = (item, range) => {
   if (range === "all") return true;
   const timestamp = Number(item.timestamp);
@@ -217,7 +225,7 @@ const matchesSearch = (item) => {
 };
 const matchesBase = (item, { intent = activeIntent.value, source = activeSource.value, time = activeTime.value, platform = activePlatform.value } = {}) =>
   (intent === "all" || item.intent === intent) &&
-  (source === "all" || item.source === source) &&
+  itemMatchesSource(item, source) &&
   (platform === "all" || platformLabel(item) === platform) &&
   matchesTime(item, time) &&
   matchesSearch(item);
@@ -298,6 +306,10 @@ const subtypeLabel = (item) => getSourceSubtitleLabel(item?.sourceSubtype || "",
 const intentLabel = (intent) => copy.value.intents?.[intent] || copy.value.intents.deal;
 const actionLabel = (item) => ACTION_COPY[locale.value]?.[item?.signals?.action] || ui.value.actions?.[item?.intent] || copy.value.open;
 const statusLabel = (status) => ui.value[status] || status;
+const CONFIRMATION_LABELS = { "zh-CN": "源确认", en: "sources", "zh-TW": "來源確認", ja: "ソース確認", ko: "개 출처 확인" };
+const confirmationCount = (item) => Number(item?.cluster?.sourceCount || 0);
+const confirmationLabel = (item) => `${confirmationCount(item)}${locale.value === "en" ? " " : ""}${CONFIRMATION_LABELS[locale.value] || CONFIRMATION_LABELS["zh-CN"]}`;
+const confirmationTitle = (item) => [...new Set((item?.cluster?.sources || []).map((source) => getSourceLabel(source.source, locale.value, source.sourceLabel || source.source)))].join(" + ");
 const formatMoney = (value) => {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return "";
@@ -729,6 +741,18 @@ onBeforeUnmount(() => clearTimeout(querySyncTimer));
 .platform-pill {
   color: var(--n-text-color-2, #555);
   font-weight: 650;
+}
+.confirmation-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 19px;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--n-text-color-2, #555);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 .price-pill {
   color: var(--n-text-color, #222);
