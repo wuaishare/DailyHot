@@ -56,6 +56,16 @@
           >
             {{ ui.confirmed }} <span>{{ dashboard.multiSourceCount }}</span>
           </button>
+          <button
+            v-if="endingSoonCount"
+            type="button"
+            class="confirmed-toggle ending-toggle"
+            :class="{ active: activeEnding }"
+            :aria-pressed="activeEnding"
+            @click="activeEnding = !activeEnding"
+          >
+            {{ ui.endingSoon }} <span>{{ endingSoonCount }}</span>
+          </button>
           <n-button
             size="small"
             tertiary
@@ -96,6 +106,7 @@
               <option value="smart">{{ ui.smart }}</option>
               <option value="price">{{ ui.priceLow }}</option>
               <option value="discount">{{ ui.discountHigh }}</option>
+              <option value="deadline">{{ ui.deadlineSoon }}</option>
             </select>
           </label>
           <button
@@ -214,11 +225,14 @@ const activeSource = ref(
   typeof route.query.source === "string" ? route.query.source : "all",
 );
 const activeSort = ref(
-  ["smart", "price", "discount"].includes(route.query.sort)
+  ["smart", "price", "discount", "deadline"].includes(route.query.sort)
     ? route.query.sort
     : "smart",
 );
 const activeConfirmed = ref(route.query.confirmed === "1");
+const activeEnding = ref(route.query.ending === "1");
+const nowTick = ref(Date.now());
+const ENDING_SOON_MS = 72 * 60 * 60 * 1000;
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
 const copy = computed(
   () =>
@@ -237,6 +251,7 @@ const UI_COPY = {
     searchPlaceholder: "搜索游戏名称…",
     matches: "条结果",
     confirmed: "多源确认",
+    endingSoon: "即将结束",
     refresh: "刷新",
     filters: "游戏优惠筛选",
     type: "类型",
@@ -245,6 +260,12 @@ const UI_COPY = {
     smart: "综合价值",
     priceLow: "价格从低到高",
     discountHigh: "折扣从高到低",
+    deadlineSoon: "截止时间",
+    ended: "已结束",
+    todayEnds: "今日结束",
+    hoursLeft: "剩 {hours}小时",
+    daysHoursLeft: "剩 {days}天{hours}小时",
+    endingUrgent: "即将结束",
     reset: "清除筛选",
     all: "全部",
     sourceConfirm: "源确认",
@@ -272,6 +293,7 @@ const UI_COPY = {
     searchPlaceholder: "Search game titles…",
     matches: "results",
     confirmed: "Multi-source",
+    endingSoon: "Ending soon",
     refresh: "Refresh",
     filters: "Game deal filters",
     type: "Type",
@@ -280,6 +302,12 @@ const UI_COPY = {
     smart: "Best value",
     priceLow: "Lowest price",
     discountHigh: "Biggest discount",
+    deadlineSoon: "Ending soon",
+    ended: "Ended",
+    todayEnds: "Ends today",
+    hoursLeft: "{hours}h left",
+    daysHoursLeft: "{days}d {hours}h left",
+    endingUrgent: "Ending soon",
     reset: "Reset",
     all: "All",
     sourceConfirm: " sources",
@@ -307,6 +335,7 @@ const UI_COPY = {
     searchPlaceholder: "搜尋遊戲名稱…",
     matches: "筆結果",
     confirmed: "多源確認",
+    endingSoon: "即將結束",
     refresh: "重新整理",
     filters: "遊戲優惠篩選",
     type: "類型",
@@ -315,6 +344,12 @@ const UI_COPY = {
     smart: "綜合價值",
     priceLow: "價格由低到高",
     discountHigh: "折扣由高到低",
+    deadlineSoon: "截止時間",
+    ended: "已結束",
+    todayEnds: "今日結束",
+    hoursLeft: "剩 {hours}小時",
+    daysHoursLeft: "剩 {days}天{hours}小時",
+    endingUrgent: "即將結束",
     reset: "清除篩選",
     all: "全部",
     sourceConfirm: "源確認",
@@ -342,6 +377,7 @@ const UI_COPY = {
     searchPlaceholder: "ゲーム名を検索…",
     matches: "件",
     confirmed: "複数ソース確認",
+    endingSoon: "まもなく終了",
     refresh: "更新",
     filters: "ゲームセール絞り込み",
     type: "種類",
@@ -350,6 +386,12 @@ const UI_COPY = {
     smart: "価値順",
     priceLow: "価格が安い順",
     discountHigh: "割引率順",
+    deadlineSoon: "終了が近い順",
+    ended: "終了",
+    todayEnds: "本日終了",
+    hoursLeft: "残り{hours}時間",
+    daysHoursLeft: "残り{days}日{hours}時間",
+    endingUrgent: "まもなく終了",
     reset: "解除",
     all: "すべて",
     sourceConfirm: "ソース確認",
@@ -377,6 +419,7 @@ const UI_COPY = {
     searchPlaceholder: "게임 이름 검색…",
     matches: "개 결과",
     confirmed: "다중 출처 확인",
+    endingSoon: "곧 종료",
     refresh: "새로고침",
     filters: "게임 할인 필터",
     type: "유형",
@@ -385,6 +428,12 @@ const UI_COPY = {
     smart: "가치순",
     priceLow: "낮은 가격순",
     discountHigh: "할인율순",
+    deadlineSoon: "마감 임박순",
+    ended: "종료됨",
+    todayEnds: "오늘 종료",
+    hoursLeft: "{hours}시간 남음",
+    daysHoursLeft: "{days}일 {hours}시간 남음",
+    endingUrgent: "곧 종료",
     reset: "초기화",
     all: "전체",
     sourceConfirm: "개 출처 확인",
@@ -502,6 +551,20 @@ const discountLabel = (item) => (discount(item) ? `-${discount(item)}%` : "");
 const score = (item) => numberValue(gameDeal(item).score) || 0;
 const textFor = (item) =>
   `${item.title || ""} ${item.desc || ""}`.toLowerCase();
+const expiresAt = (item) => numberValue(item?.extra?.expiresAt);
+const remainingMs = (item) => {
+  const value = expiresAt(item);
+  return value ? value - nowTick.value : undefined;
+};
+const isEndingSoon = (item) => {
+  const remaining = remainingMs(item);
+  return remaining !== undefined && remaining > 0 && remaining <= ENDING_SOON_MS;
+};
+const endingSoonCount = computed(() => data.value.filter(isEndingSoon).length);
+const deadlineSortValue = (item) => {
+  const value = expiresAt(item);
+  return value && value > nowTick.value ? value : Number.MAX_SAFE_INTEGER;
+};
 
 const filteredData = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
@@ -515,6 +578,7 @@ const filteredData = computed(() => {
     )
       return false;
     if (activeConfirmed.value && sourceCount(item) < 2) return false;
+    if (activeEnding.value && !isEndingSoon(item)) return false;
     return true;
   });
   return [...rows].sort((a, b) => {
@@ -531,6 +595,8 @@ const filteredData = computed(() => {
     }
     if (activeSort.value === "discount")
       return (discount(b) || 0) - (discount(a) || 0) || score(b) - score(a);
+    if (activeSort.value === "deadline")
+      return deadlineSortValue(a) - deadlineSortValue(b) || score(b) - score(a);
     return score(b) - score(a) || Number(b.hot || 0) - Number(a.hot || 0);
   });
 });
@@ -540,7 +606,8 @@ const hasFilters = computed(() =>
     activeTag.value !== "all" ||
     activeSource.value !== "all" ||
     activeSort.value !== "smart" ||
-    activeConfirmed.value,
+    activeConfirmed.value ||
+    activeEnding.value,
   ),
 );
 const resetFilters = () => {
@@ -549,6 +616,7 @@ const resetFilters = () => {
   activeSource.value = "all";
   activeSort.value = "smart";
   activeConfirmed.value = false;
+  activeEnding.value = false;
 };
 
 const formatUpdated = (value) =>
@@ -565,12 +633,36 @@ const eventTime = (item) =>
   tags(item).includes("upcoming-free")
     ? numberValue(item?.extra?.startsAt)
     : numberValue(item?.extra?.expiresAt);
+const interpolate = (template, values) =>
+  Object.entries(values).reduce(
+    (text, [key, value]) => text.replace(`{${key}}`, String(value)),
+    template,
+  );
+const sameLocalDay = (a, b) =>
+  new Intl.DateTimeFormat(locale.value, { year: "numeric", month: "2-digit", day: "2-digit" }).format(a) ===
+  new Intl.DateTimeFormat(locale.value, { year: "numeric", month: "2-digit", day: "2-digit" }).format(b);
 const deadlineLabel = (item) => {
   const value = eventTime(item);
   if (!value) return "";
   const d = new Date(value);
-  const prefix = tags(item).includes("upcoming-free") ? ui.value.upcoming : "";
-  return `${prefix ? `${prefix} · ` : ""}${new Intl.DateTimeFormat(locale.value, { month: "2-digit", day: "2-digit" }).format(d)}`;
+  if (tags(item).includes("upcoming-free")) {
+    return `${ui.value.upcoming} · ${new Intl.DateTimeFormat(locale.value, { month: "2-digit", day: "2-digit" }).format(d)}`;
+  }
+  const remaining = value - nowTick.value;
+  if (remaining <= 0) return ui.value.ended;
+  const hours = Math.max(1, Math.floor(remaining / (60 * 60 * 1000)));
+  if (remaining <= 6 * 60 * 60 * 1000)
+    return `${ui.value.endingUrgent} · ${interpolate(ui.value.hoursLeft, { hours })}`;
+  if (remaining < 24 * 60 * 60 * 1000 && sameLocalDay(new Date(nowTick.value), d))
+    return `${ui.value.todayEnds} · ${interpolate(ui.value.hoursLeft, { hours })}`;
+  if (remaining <= ENDING_SOON_MS) {
+    const days = Math.floor(hours / 24);
+    const restHours = hours % 24;
+    return days > 0
+      ? interpolate(ui.value.daysHoursLeft, { days, hours: restHours })
+      : interpolate(ui.value.hoursLeft, { hours });
+  }
+  return new Intl.DateTimeFormat(locale.value, { month: "2-digit", day: "2-digit" }).format(d);
 };
 const deadlineTitle = (item) => {
   const value = eventTime(item);
@@ -611,6 +703,7 @@ const syncQuery = () => {
     if (activeSource.value !== "all") query.source = activeSource.value;
     if (activeSort.value !== "smart") query.sort = activeSort.value;
     if (activeConfirmed.value) query.confirmed = "1";
+    if (activeEnding.value) query.ending = "1";
     const params = new URLSearchParams(query);
     const search = params.toString();
     window.history.replaceState(
@@ -621,7 +714,7 @@ const syncQuery = () => {
   }, 180);
 };
 watch(
-  [searchQuery, activeTag, activeSource, activeSort, activeConfirmed],
+  [searchQuery, activeTag, activeSource, activeSort, activeConfirmed, activeEnding],
   syncQuery,
 );
 watch(sourceOptions, (options) => {
@@ -667,19 +760,32 @@ const loadTopic = async (force = false) => {
 };
 const handleGlobalDataRefresh = (event) =>
   void loadTopic(Boolean(event?.detail?.force));
+let countdownTimer;
+const startCountdown = () => {
+  clearInterval(countdownTimer);
+  nowTick.value = Date.now();
+  countdownTimer = window.setInterval(() => {
+    nowTick.value = Date.now();
+  }, 60 * 1000);
+};
+const stopCountdown = () => clearInterval(countdownTimer);
 onMounted(() => {
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  startCountdown();
   void loadTopic(false);
 });
 onActivated(() => {
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  startCountdown();
 });
-onDeactivated(() =>
-  window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh),
-);
+onDeactivated(() => {
+  window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  stopCountdown();
+});
 onBeforeUnmount(() => {
   clearTimeout(querySyncTimer);
+  stopCountdown();
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
 });
 watch(locale, () => void loadTopic(false));
