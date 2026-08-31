@@ -549,6 +549,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ja: "Douban お得情報",
     ko: "Douban 혜택",
   },
+  "douban-pet-wool": {
+    "zh-CN": "豆瓣宠物羊毛",
+    "zh-TW": "豆瓣寵物優惠",
+    en: "Douban Pet Deals",
+    ja: "Douban ペットお得情報",
+    ko: "Douban 반려동물 혜택",
+  },
   "ithome-xijiayi": {
     "zh-CN": "IT之家「喜加一」",
     "zh-TW": "IT之家「喜加一」",
@@ -3195,6 +3202,20 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     en: "Group Buy",
     ja: "共同購入グループ",
     ko: "공동구매 그룹",
+  },
+  爱猫生活: {
+    "zh-CN": "爱猫生活",
+    "zh-TW": "愛貓生活",
+    en: "Cat Life",
+    ja: "猫との暮らし",
+    ko: "고양이 생활",
+  },
+  爱猫澡盆: {
+    "zh-CN": "爱猫澡盆",
+    "zh-TW": "愛貓澡盆",
+    en: "Cat Bath",
+    ja: "愛猫バスタブ",
+    ko: "고양이 욕조",
   },
   今日热门: {
     "zh-CN": "今日热门",

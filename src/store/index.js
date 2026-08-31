@@ -505,6 +505,14 @@ export const mainStore = defineStore("mainData", {
           subtype: "buy",
         },
         {
+          label: "豆瓣宠物羊毛",
+          name: "douban-pet-wool",
+          order: 51.95,
+          show: true,
+          category: "羊毛",
+          subtype: "catlife",
+        },
+        {
           label: "IT之家「喜加一」",
           name: "ithome-xijiayi",
           order: 52,

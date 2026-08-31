@@ -132,6 +132,16 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "douban-pet-wool": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "爱猫生活", value: "catlife" },
+        { label: "爱猫澡盆", value: "bathtub" },
+      ],
+    },
+  ],
   smzdm: [
     {
       key: "period",

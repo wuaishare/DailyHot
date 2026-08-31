@@ -5,6 +5,7 @@ const SOURCE_LOGO_MAP = {
   "0818tuan": "/logo/wool/0818tuan.png",
   "nodeloc-deals": "/logo/wool/nodeloc.png",
   "douban-wool": "/logo/douban-group.png",
+  "douban-pet-wool": "/logo/douban-group.png",
   xueqiu: "/logo/xueqiu.png",
   sse: "https://www.sse.com.cn/favicon.ico",
   szse: "https://res.szse.cn/common/images/favicon.ico",
