@@ -122,6 +122,16 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "douban-wool": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "买组", value: "buy" },
+        { label: "拼组", value: "groupbuy" },
+      ],
+    },
+  ],
   smzdm: [
     {
       key: "period",

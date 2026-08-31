@@ -542,6 +542,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ja: "NodeLoc",
     ko: "NodeLoc",
   },
+  "douban-wool": {
+    "zh-CN": "豆瓣羊毛",
+    "zh-TW": "豆瓣優惠",
+    en: "Douban Deals",
+    ja: "Douban お得情報",
+    ko: "Douban 혜택",
+  },
   "ithome-xijiayi": {
     "zh-CN": "IT之家「喜加一」",
     "zh-TW": "IT之家「喜加一」",
@@ -3174,6 +3181,20 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     en: "Deals",
     ja: "お得情報",
     ko: "할인 정보",
+  },
+  买组: {
+    "zh-CN": "买组",
+    "zh-TW": "買組",
+    en: "Buy Group",
+    ja: "購入グループ",
+    ko: "구매 그룹",
+  },
+  拼组: {
+    "zh-CN": "拼组",
+    "zh-TW": "拼組",
+    en: "Group Buy",
+    ja: "共同購入グループ",
+    ko: "공동구매 그룹",
   },
   今日热门: {
     "zh-CN": "今日热门",

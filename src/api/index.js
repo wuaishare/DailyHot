@@ -17,6 +17,7 @@ const DIRECT_PUBLIC_API_SOURCES = new Set([
   "wool-topic",
   "0818tuan",
   "nodeloc-deals",
+  "douban-wool",
   "ithome-xijiayi",
   "xueqiu",
   "sse",

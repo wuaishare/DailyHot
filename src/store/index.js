@@ -497,6 +497,14 @@ export const mainStore = defineStore("mainData", {
           subtype: "wool",
         },
         {
+          label: "豆瓣羊毛",
+          name: "douban-wool",
+          order: 51.9,
+          show: true,
+          category: "羊毛",
+          subtype: "buy",
+        },
+        {
           label: "IT之家「喜加一」",
           name: "ithome-xijiayi",
           order: 52,
