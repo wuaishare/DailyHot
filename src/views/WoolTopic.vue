@@ -1,14 +1,23 @@
 <template>
   <section class="wool-topic">
     <header class="topic-hero">
-      <div>
+      <div class="topic-hero-copy">
         <p class="topic-eyebrow">{{ copy.eyebrow }}</p>
         <h1>{{ copy.title }}</h1>
         <p class="topic-description">{{ copy.description }}</p>
       </div>
-      <div class="topic-status" v-if="dashboard">
-        <strong>{{ data.length }}</strong>
-        <span>{{ copy.feedTitle }}</span>
+      <div class="topic-hero-tools" v-if="dashboard">
+        <label class="topic-search">
+          <span class="sr-only">{{ ui.search }}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
+          </svg>
+          <input v-model.trim="searchQuery" type="search" :placeholder="ui.searchPlaceholder" @keydown.esc="searchQuery = ''" />
+        </label>
+        <div class="topic-status">
+          <strong>{{ filteredData.length }}</strong>
+          <span>{{ searchQuery || hasActiveFilter ? ui.matches : copy.feedTitle }}</span>
+        </div>
       </div>
     </header>
 
@@ -19,26 +28,32 @@
       {{ copy.degraded }}
     </n-alert>
 
-    <section v-if="highlights.length" class="topic-section">
+    <section v-if="sourceOptions.length" class="topic-section source-section">
       <div class="section-heading">
-        <h2>{{ copy.highlights }}</h2>
+        <h2>{{ ui.sources }}</h2>
         <span>{{ formatUpdated(result?.updateTime) }}</span>
       </div>
-      <div class="highlight-grid">
-        <article v-for="item in highlights" :key="`highlight-${item.id}`" class="highlight-card">
-          <div class="highlight-source">
-            <img :src="getSourceLogo(item.source)" :alt="sourceLabel(item)" @error="onLogoError" />
-            <span>{{ sourceLabel(item) }}</span>
-            <em>{{ subtypeLabel(item) }}</em>
-          </div>
-          <a :href="item.url" target="_blank" rel="noopener noreferrer" class="highlight-title">
-            {{ item.title }}
-          </a>
-          <div class="highlight-meta">
-            <span class="intent-pill">{{ intentLabel(item.intent) }}</span>
-            <time>{{ formatItemTime(item.timestamp) }}</time>
-          </div>
-        </article>
+      <div class="source-status-grid" role="list" :aria-label="ui.sources">
+        <button
+          v-for="option in sourceOptions"
+          :key="option.value"
+          type="button"
+          class="source-status"
+          :class="{ active: activeSource === option.value }"
+          :aria-pressed="activeSource === option.value"
+          @click="activeSource = option.value"
+        >
+          <span class="source-status-main">
+            <img v-if="option.value !== 'all'" :src="getSourceLogo(option.value)" :alt="option.label" @error="onLogoError" />
+            <span v-else class="source-status-all">{{ dashboard?.sourceCount || 0 }}</span>
+            <strong>{{ option.label }}</strong>
+            <i class="source-health" :class="`is-${option.status}`" :title="statusLabel(option.status)"></i>
+          </span>
+          <span class="source-status-meta">
+            <b>{{ option.count }}</b>
+            <span>{{ option.detail }}</span>
+          </span>
+        </button>
       </div>
     </section>
 
@@ -53,19 +68,41 @@
         </n-button>
       </div>
 
-      <div class="intent-filter" role="tablist" :aria-label="copy.feedTitle">
-        <button
-          v-for="option in intentOptions"
-          :key="option.value"
-          type="button"
-          class="intent-button"
-          :class="{ active: activeIntent === option.value }"
-          :aria-selected="activeIntent === option.value"
-          @click="activeIntent = option.value"
-        >
-          {{ option.label }}
-          <span v-if="option.count !== null">{{ option.count }}</span>
-        </button>
+      <div class="filter-stack">
+        <div class="filter-row">
+          <span class="filter-label">{{ ui.type }}</span>
+          <div class="intent-filter" role="tablist" :aria-label="ui.type">
+            <button
+              v-for="option in intentOptions"
+              :key="option.value"
+              type="button"
+              class="intent-button"
+              :class="{ active: activeIntent === option.value }"
+              :aria-selected="activeIntent === option.value"
+              @click="activeIntent = option.value"
+            >
+              {{ option.label }}
+              <span v-if="option.count !== null">{{ option.count }}</span>
+            </button>
+          </div>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">{{ ui.time }}</span>
+          <div class="intent-filter time-filter" role="tablist" :aria-label="ui.time">
+            <button
+              v-for="option in timeOptions"
+              :key="option.value"
+              type="button"
+              class="intent-button"
+              :class="{ active: activeTime === option.value }"
+              :aria-selected="activeTime === option.value"
+              @click="activeTime = option.value"
+            >
+              {{ option.label }}
+              <span>{{ option.count }}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div v-if="loading && !result" class="topic-loading">
@@ -91,11 +128,12 @@
             <p v-if="item.desc && locale === 'zh-CN'" class="opportunity-desc">{{ item.desc }}</p>
             <div class="opportunity-meta">
               <span class="intent-pill">{{ intentLabel(item.intent) }}</span>
-              <time>{{ formatItemTime(item.timestamp) }}</time>
-              <span v-if="item.extra?.platform">{{ item.extra.platform }}</span>
+              <span v-if="platformLabel(item)" class="platform-pill">{{ platformLabel(item) }}</span>
+              <time :title="formatItemTime(item.timestamp)">{{ formatFreshness(item.timestamp) }}</time>
+              <span v-for="keyword in visibleKeywords(item)" :key="`${item.id}-${keyword}`" class="keyword-pill">{{ keyword }}</span>
             </div>
           </div>
-          <span class="opportunity-open">{{ copy.open }}</span>
+          <span class="opportunity-open">{{ actionLabel(item.intent) }}</span>
         </a>
       </div>
       <n-empty v-else :description="copy.empty" class="topic-empty" />
@@ -110,107 +148,172 @@ import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
 import { getSourceLabel, getSourceSubtitleLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { enhanceReadableResultTitles } from "@/utils/readableTitles";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
+const router = useRouter();
 const result = ref(null);
 const loading = ref(false);
 const loadError = ref("");
-const activeIntent = ref("all");
+const validIntents = new Set(["all", "free", "coupon", "giveaway", "ai", "game", "deal"]);
+const validTimes = new Set(["all", "1h", "3h", "6h", "today"]);
+const queryValue = (value) => (typeof value === "string" ? value : "");
+const activeIntent = ref(validIntents.has(queryValue(route.query.intent)) ? queryValue(route.query.intent) : "all");
+const activeTime = ref(validTimes.has(queryValue(route.query.time)) ? queryValue(route.query.time) : "all");
+const activeSource = ref(queryValue(route.query.source) || "all");
+const searchQuery = ref(queryValue(route.query.q).trim());
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
 const copy = computed(() => WOOL_TOPIC_METADATA[locale.value] || WOOL_TOPIC_METADATA["zh-CN"]);
-const data = computed(() => result.value?.data || []);const dashboard = computed(() => result.value?.dashboard || null);
-const highlights = computed(() => dashboard.value?.sourceHighlights || []);
-const getIntentItems = (intent) => {
-  if (intent === "all") return data.value;
-  const matches = data.value.filter((item) => item.intent === intent);
-  const seen = new Set(matches.map((item) => String(item.id)));
-  highlights.value.forEach((item) => {
-    if (item.intent === intent && !seen.has(String(item.id))) {
-      matches.push(item);
-      seen.add(String(item.id));
-    }
-  });
-  return matches;
+const data = computed(() => result.value?.data || []);
+const dashboard = computed(() => result.value?.dashboard || null);
+
+const UI_COPY = {
+  "zh-CN": { sources: "来源状态", type: "类型", time: "时间", search: "搜索机会", searchPlaceholder: "搜索京东、美团、Claude…", matches: "条匹配", latest: "最新", oneHour: "1小时", threeHours: "3小时", sixHours: "6小时", today: "今天", allSources: "全部来源", sourceUnit: "个来源", updated: "更新", ok: "正常", partial: "部分异常", failed: "异常", actions: { free: "立即领取", coupon: "去领券", giveaway: "参与活动", ai: "查看额度", game: "立即领取", deal: "查看优惠" } },
+  en: { sources: "Source Status", type: "Type", time: "Time", search: "Search deals", searchPlaceholder: "Search JD, Meituan, Claude…", matches: "matches", latest: "Latest", oneHour: "1h", threeHours: "3h", sixHours: "6h", today: "Today", allSources: "All sources", sourceUnit: "sources", updated: "updated", ok: "Healthy", partial: "Partial", failed: "Down", actions: { free: "Claim now", coupon: "Get coupon", giveaway: "Join", ai: "View credits", game: "Claim now", deal: "View deal" } },
+  "zh-TW": { sources: "來源狀態", type: "類型", time: "時間", search: "搜尋優惠", searchPlaceholder: "搜尋京東、美團、Claude…", matches: "筆符合", latest: "最新", oneHour: "1小時", threeHours: "3小時", sixHours: "6小時", today: "今天", allSources: "全部來源", sourceUnit: "個來源", updated: "更新", ok: "正常", partial: "部分異常", failed: "異常", actions: { free: "立即領取", coupon: "領優惠券", giveaway: "參與活動", ai: "查看額度", game: "立即領取", deal: "查看優惠" } },
+  ja: { sources: "情報源ステータス", type: "種類", time: "時間", search: "お得情報を検索", searchPlaceholder: "JD・Meituan・Claudeを検索…", matches: "件", latest: "最新", oneHour: "1時間", threeHours: "3時間", sixHours: "6時間", today: "今日", allSources: "すべて", sourceUnit: "情報源", updated: "更新", ok: "正常", partial: "一部異常", failed: "異常", actions: { free: "今すぐ受取", coupon: "クーポン取得", giveaway: "参加する", ai: "クレジット確認", game: "今すぐ受取", deal: "詳細を見る" } },
+  ko: { sources: "출처 상태", type: "유형", time: "시간", search: "혜택 검색", searchPlaceholder: "JD, Meituan, Claude 검색…", matches: "개 일치", latest: "최신", oneHour: "1시간", threeHours: "3시간", sixHours: "6시간", today: "오늘", allSources: "전체 출처", sourceUnit: "개 출처", updated: "업데이트", ok: "정상", partial: "일부 오류", failed: "오류", actions: { free: "지금 받기", coupon: "쿠폰 받기", giveaway: "참여하기", ai: "크레딧 보기", game: "지금 받기", deal: "혜택 보기" } },
 };
-const filteredData = computed(() => getIntentItems(activeIntent.value));
+const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
+
+const textForItem = (item) => `${item.title || ""} ${item.desc || ""} ${item.extra?.platform || ""} ${(item.matchedKeywords || []).join(" ")}`.toLowerCase();
+const matchesTime = (item, range) => {
+  if (range === "all") return true;
+  const timestamp = Number(item.timestamp);
+  if (!Number.isFinite(timestamp)) return false;
+  if (range === "today") return new Date(timestamp).toDateString() === new Date().toDateString();
+  const limits = { "1h": 1, "3h": 3, "6h": 6 };
+  return Date.now() - timestamp <= limits[range] * 60 * 60 * 1000;
+};
+const matchesSearch = (item) => {
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) return true;
+  return `${textForItem(item)} ${sourceLabel(item)} ${subtypeLabel(item)}`.toLowerCase().includes(query);
+};
+const matchesBase = (item, { intent = activeIntent.value, source = activeSource.value, time = activeTime.value } = {}) =>
+  (intent === "all" || item.intent === intent) &&
+  (source === "all" || item.source === source) &&
+  matchesTime(item, time) &&
+  matchesSearch(item);
+
+const filteredData = computed(() => data.value.filter((item) => matchesBase(item)));
+const hasActiveFilter = computed(() => activeIntent.value !== "all" || activeTime.value !== "all" || activeSource.value !== "all");
 const intentOptions = computed(() => [
-  { value: "all", label: copy.value.all, count: data.value.length },
+  { value: "all", label: copy.value.all, count: data.value.filter((item) => matchesBase(item, { intent: "all" })).length },
   ...Object.entries(copy.value.intents).map(([value, label]) => ({
     value,
     label,
-    count: getIntentItems(value).length,
+    count: data.value.filter((item) => matchesBase(item, { intent: value })).length,
   })),
 ]);
-const refreshLabels = {
-  "zh-CN": "刷新",
-  en: "Refresh",
-  "zh-TW": "重新整理",
-  ja: "更新",
-  ko: "새로고침",
-};
-const refreshLabel = computed(() => refreshLabels[locale.value] || refreshLabels["zh-CN"]);
+const timeOptions = computed(() => [
+  ["all", ui.value.latest],
+  ["1h", ui.value.oneHour],
+  ["3h", ui.value.threeHours],
+  ["6h", ui.value.sixHours],
+  ["today", ui.value.today],
+].map(([value, label]) => ({
+  value,
+  label,
+  count: data.value.filter((item) => matchesBase(item, { time: value })).length,
+})));
 
-const sourceLabel = (item) =>
-  getSourceLabel(item?.source, locale.value, item?.sourceLabel || item?.source || "");
+const parseUpdateTime = (value) => {
+  const time = new Date(value || "").getTime();
+  return Number.isFinite(time) ? time : 0;
+};
+const sourceOptions = computed(() => {
+  const feeds = dashboard.value?.feeds || [];
+  const grouped = new Map();
+  feeds.forEach((feed) => {
+    const current = grouped.get(feed.source) || { source: feed.source, label: feed.label, feeds: [] };
+    current.feeds.push(feed);
+    grouped.set(feed.source, current);
+  });
+  const allStatus = dashboard.value?.failedCount ? (dashboard.value.failedCount >= feeds.length ? "failed" : "partial") : "ok";
+  const options = [{
+    value: "all",
+    label: ui.value.allSources,
+    count: data.value.length,
+    status: allStatus,
+    detail: `${dashboard.value?.sourceCount || 0} ${ui.value.sourceUnit}`,
+  }];
+  grouped.forEach((group, source) => {
+    const okCount = group.feeds.filter((feed) => feed.status === "ok").length;
+    const status = okCount === 0 ? "failed" : okCount === group.feeds.length ? "ok" : "partial";
+    const updateTime = group.feeds.map((feed) => feed.updateTime).sort((a, b) => parseUpdateTime(b) - parseUpdateTime(a))[0];
+    options.push({
+      value: source,
+      label: getSourceLabel(source, locale.value, group.label || source),
+      count: data.value.filter((item) => item.source === source).length,
+      status,
+      detail: updateTime ? `${formatUpdated(updateTime)} ${ui.value.updated}` : statusLabel(status),
+    });
+  });
+  return options;
+});
+
+const refreshLabels = { "zh-CN": "刷新", en: "Refresh", "zh-TW": "重新整理", ja: "更新", ko: "새로고침" };
+const refreshLabel = computed(() => refreshLabels[locale.value] || refreshLabels["zh-CN"]);
+const sourceLabel = (item) => getSourceLabel(item?.source, locale.value, item?.sourceLabel || item?.source || "");
 const subtypeLabel = (item) => getSourceSubtitleLabel(item?.sourceSubtype || "", locale.value);
 const intentLabel = (intent) => copy.value.intents?.[intent] || copy.value.intents.deal;
+const actionLabel = (intent) => ui.value.actions?.[intent] || copy.value.open;
+const statusLabel = (status) => ui.value[status] || status;
+
 const formatItemTime = (value) => {
   const timestamp = Number(value);
   if (!Number.isFinite(timestamp)) return "—";
-  return new Intl.DateTimeFormat(locale.value, {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(timestamp));
-};const formatUpdated = (value) => {
+  return new Intl.DateTimeFormat(locale.value, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(timestamp));
+};
+const formatUpdated = (value) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat(locale.value, {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  return new Intl.DateTimeFormat(locale.value, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
 };
-const onLogoError = (event) => {
-  if (event?.target) event.target.src = getSourceLogoFallback();
+const formatFreshness = (value) => {
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp)) return "—";
+  const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+  if (locale.value === "zh-CN") return minutes < 1 ? "刚刚" : minutes < 60 ? `${minutes}分钟前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小时前` : `${Math.floor(minutes / 1440)}天前`;
+  if (locale.value === "zh-TW") return minutes < 1 ? "剛剛" : minutes < 60 ? `${minutes}分鐘前` : minutes < 1440 ? `${Math.floor(minutes / 60)}小時前` : `${Math.floor(minutes / 1440)}天前`;
+  if (locale.value === "ja") return minutes < 1 ? "たった今" : minutes < 60 ? `${minutes}分前` : minutes < 1440 ? `${Math.floor(minutes / 60)}時間前` : `${Math.floor(minutes / 1440)}日前`;
+  if (locale.value === "ko") return minutes < 1 ? "방금" : minutes < 60 ? `${minutes}분 전` : minutes < 1440 ? `${Math.floor(minutes / 60)}시간 전` : `${Math.floor(minutes / 1440)}일 전`;
+  return minutes < 1 ? "just now" : minutes < 60 ? `${minutes}m ago` : minutes < 1440 ? `${Math.floor(minutes / 60)}h ago` : `${Math.floor(minutes / 1440)}d ago`;
+};
+const PLATFORM_RULES = [
+  [/(京东|jd\.com|jdapp)/i, "京东"], [/(淘宝|淘工厂|淘宝闪购)/i, "淘宝"], [/天猫/i, "天猫"], [/美团/i, "美团"], [/(拼多多|pdd)/i, "拼多多"],
+  [/(支付宝|蚂蚁)/i, "支付宝"], [/微信/i, "微信"], [/steam/i, "Steam"], [/epic/i, "Epic"], [/(app store|苹果商店)/i, "App Store"], [/饿了么/i, "饿了么"], [/抖音/i, "抖音"],
+];
+const platformLabel = (item) => item?.extra?.platform || PLATFORM_RULES.find(([pattern]) => pattern.test(textForItem(item)))?.[1] || "";
+const visibleKeywords = (item) => (item?.matchedKeywords || []).filter((keyword) => keyword.length > 1 && !["优惠券", "免费"].includes(keyword)).slice(0, 1);
+const onLogoError = (event) => { if (event?.target) event.target.src = getSourceLogoFallback(); };
+
+let querySyncTimer;
+const syncQuery = () => {
+  clearTimeout(querySyncTimer);
+  querySyncTimer = setTimeout(() => {
+    const query = { ...route.query };
+    const setOrDelete = (key, value, defaultValue = "") => value && value !== defaultValue ? (query[key] = value) : delete query[key];
+    setOrDelete("q", searchQuery.value.trim());
+    setOrDelete("source", activeSource.value, "all");
+    setOrDelete("time", activeTime.value, "all");
+    setOrDelete("intent", activeIntent.value, "all");
+    router.replace({ path: route.path, query, hash: route.hash });
+  }, 220);
 };
 
 const loadTopic = async (force = false) => {
   loading.value = true;
   loadError.value = "";
   try {
-    const response = await getHotListsWithFallback(
-      "wool-topic",
-      force,
-      { locale: locale.value, translate_limit: 60 },
-      { forceNoCache: force }
-    );
-    if (response?.result?.code !== 200) {
-      throw new Error(response?.result?.message || "request failed");
-    }
+    const response = await getHotListsWithFallback("wool-topic", force, { locale: locale.value, translate_limit: 60 }, { forceNoCache: force });
+    if (response?.result?.code !== 200) throw new Error(response?.result?.message || "request failed");
     const rawResult = response.result;
     result.value = rawResult;
     loading.value = false;
-    const enhanced = await enhanceReadableResultTitles(rawResult, locale.value, {
-      includeDescriptions: false,
-      limit: 60,
-      sourceName: "wool-topic",
-    });
-    const translatedById = new Map((enhanced?.data || []).map((item) => [String(item.id), item]));
-    if (enhanced?.dashboard?.sourceHighlights) {
-      enhanced.dashboard = {
-        ...enhanced.dashboard,
-        sourceHighlights: enhanced.dashboard.sourceHighlights.map((item) => ({
-          ...item,
-          title: translatedById.get(String(item.id))?.title || item.title,
-        })),
-      };
-    }
-    result.value = enhanced;
+    result.value = await enhanceReadableResultTitles(rawResult, locale.value, { includeDescriptions: false, limit: 60, sourceName: "wool-topic" });
   } catch (error) {
     loadError.value = error?.message || "Failed to load";
   } finally {
@@ -219,14 +322,17 @@ const loadTopic = async (force = false) => {
 };
 
 watch(locale, () => loadTopic(false));
+watch([searchQuery, activeSource, activeTime, activeIntent], syncQuery);
+watch(sourceOptions, (options) => {
+  if (activeSource.value !== "all" && !options.some((option) => option.value === activeSource.value)) activeSource.value = "all";
+});
 onMounted(() => loadTopic(false));
+onBeforeUnmount(() => clearTimeout(querySyncTimer));
 </script>
 <style scoped>
 .wool-topic {
   --wool-section-gap: 14px;
   --wool-section-padding: 16px;
-  --wool-card-gap: 10px;
-  --wool-card-padding: 12px;
   --wool-list-padding-y: 11px;
   display: grid;
   gap: var(--wool-section-gap);
@@ -243,6 +349,66 @@ onMounted(() => loadTopic(false));
   justify-content: space-between;
   gap: 20px;
   padding: 18px 20px;
+}
+.topic-hero-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.topic-hero-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex: 0 1 390px;
+  min-width: 280px;
+}
+.topic-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(300px, 100%);
+  min-width: 200px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.2));
+  border-radius: 9px;
+  color: var(--n-text-color-3, #777);
+}
+.topic-search:focus-within {
+  border-color: var(--n-text-color-2, #555);
+}
+.topic-search svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.topic-search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--n-text-color, #222);
+  font: inherit;
+  font-size: 12px;
+}
+.topic-search input::placeholder {
+  color: var(--n-text-color-3, #888);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .topic-eyebrow {
   margin: 0 0 5px;
@@ -310,18 +476,107 @@ onMounted(() => loadTopic(false));
   margin-top: 4px;
   line-height: 1.5;
 }
-.highlight-grid {
+
+.source-status-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--wool-card-gap);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
 }
-.highlight-card {
+.source-status {
+  appearance: none;
   min-width: 0;
-  padding: var(--wool-card-padding);
+  padding: 10px 11px;
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.16));
-  border-radius: 10px;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
 }
-.highlight-source,
+.source-status:hover,
+.source-status.active {
+  border-color: var(--n-text-color-2, #555);
+  background: color-mix(in srgb, var(--n-color, #fff) 96%, var(--n-text-color, #222) 4%);
+}
+.source-status:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.source-status-main,
+.source-status-meta {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.source-status-main {
+  gap: 7px;
+}
+.source-status-main img,
+.source-status-all {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 4px;
+}
+.source-status-all {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--n-color, #fff) 88%, var(--n-text-color, #222) 12%);
+  font-size: 10px;
+  font-weight: 800;
+}
+.source-status-main strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.source-health {
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: var(--n-text-color-3, #888);
+}
+.source-health.is-ok { background: #2f9e44; }
+.source-health.is-partial { background: #d08b14; }
+.source-health.is-failed { background: #d9485f; }
+.source-status-meta {
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  color: var(--n-text-color-3, #777);
+  font-size: 10px;
+}
+.source-status-meta b {
+  color: var(--n-text-color, #222);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.source-status-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.filter-stack {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 9px;
+}
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.filter-label {
+  flex: 0 0 30px;
+  color: var(--n-text-color-3, #777);
+  font-size: 11px;
+  font-weight: 700;
+}
 .opportunity-source {
   display: flex;
   align-items: center;
@@ -330,7 +585,6 @@ onMounted(() => loadTopic(false));
   color: var(--n-text-color-3, #777);
   font-size: 12px;
 }
-.highlight-source img,
 .opportunity-source img {
   width: 18px;
   height: 18px;
@@ -338,7 +592,6 @@ onMounted(() => loadTopic(false));
   border-radius: 4px;
   object-fit: cover;
 }
-.highlight-source span,
 .opportunity-source span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -346,27 +599,12 @@ onMounted(() => loadTopic(false));
   color: var(--n-text-color, #222);
   font-weight: 650;
 }
-.highlight-source em,
 .opportunity-source em {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-style: normal;
 }
-.highlight-title {
-  display: -webkit-box;
-  min-height: 42px;
-  margin-top: 9px;
-  overflow: hidden;
-  color: var(--n-text-color, #222);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.5;
-  text-decoration: none;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.highlight-meta,
 .opportunity-meta {
   display: flex;
   align-items: center;
@@ -374,6 +612,20 @@ onMounted(() => loadTopic(false));
   margin-top: 8px;
   color: var(--n-text-color-3, #777);
   font-size: 11px;
+}
+.platform-pill {
+  color: var(--n-text-color-2, #555);
+  font-weight: 650;
+}
+.keyword-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 19px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--n-color, #fff) 92%, var(--n-text-color, #222) 8%);
+  color: var(--n-text-color-3, #666);
+  font-size: 10px;
 }
 .intent-pill {
   display: inline-flex;
@@ -391,7 +643,8 @@ onMounted(() => loadTopic(false));
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 9px;
+  margin-bottom: 0;
+  min-width: 0;
 }
 .intent-button {
   appearance: none;
@@ -414,7 +667,6 @@ onMounted(() => loadTopic(false));
   color: var(--n-text-color, #222);
 }
 .intent-button:focus-visible,
-.highlight-title:focus-visible,
 .opportunity-item:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
@@ -476,18 +728,13 @@ onMounted(() => loadTopic(false));
 .topic-empty {
   padding: 24px 0;
 }
-@media (max-width: 1280px) {
-  .highlight-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
 @media (max-width: 980px) {
-  .highlight-grid {
+  .source-status-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (max-width: 720px) {
-  .highlight-grid {
+  .source-status-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -495,8 +742,6 @@ onMounted(() => loadTopic(false));
   .wool-topic {
     --wool-section-gap: 10px;
     --wool-section-padding: 13px;
-    --wool-card-gap: 8px;
-    --wool-card-padding: 11px;
     --wool-list-padding-y: 10px;
   }
   .topic-hero,
@@ -504,11 +749,22 @@ onMounted(() => loadTopic(false));
     border-radius: 12px;
   }
   .topic-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    padding: 14px;
+    position: relative;
+    display: block;
+    padding: 13px;
+  }
+  .topic-hero-copy {
+    padding-right: 50px;
+  }
+  .topic-hero-tools {
+    display: block;
+    min-width: 0;
+    margin-top: 8px;
+  }
+  .topic-search {
+    width: 100%;
+    min-width: 0;
+    height: 32px;
   }
   .topic-eyebrow {
     display: none;
@@ -518,7 +774,10 @@ onMounted(() => loadTopic(false));
     line-height: 1.3;
   }
   .topic-status {
-    min-width: 44px;
+    position: absolute;
+    top: 14px;
+    right: 13px;
+    min-width: 42px;
   }
   .topic-status strong {
     font-size: 22px;
@@ -530,28 +789,25 @@ onMounted(() => loadTopic(false));
     font-size: 12px;
     line-height: 1.45;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
   }
-  .highlight-grid {
+  .source-status-grid {
     width: 100%;
     min-width: 0;
     max-width: 100%;
     grid-template-columns: none;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(220px, 78vw);
+    grid-auto-columns: minmax(150px, 48vw);
     overflow-x: auto;
     overscroll-behavior-inline: contain;
     scroll-snap-type: inline proximity;
     scrollbar-width: none;
   }
-  .highlight-grid::-webkit-scrollbar {
+  .source-status-grid::-webkit-scrollbar {
     display: none;
   }
-  .highlight-card {
+  .source-status {
     scroll-snap-align: start;
-  }
-  .highlight-title {
-    min-height: 42px;
   }
   .section-heading--feed {
     align-items: center;
@@ -560,7 +816,16 @@ onMounted(() => loadTopic(false));
   .section-heading--feed p {
     display: none;
   }
+  .filter-row {
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .filter-label {
+    flex-basis: 28px;
+    padding-top: 7px;
+  }
   .intent-filter {
+    flex: 1 1 auto;
     flex-wrap: nowrap;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
