@@ -685,6 +685,7 @@ function main() {
   const builtinCategories = parseConstant(siteMetadataSource, "BUILTIN_CATEGORIES");
   const woolTopicMetadata = parseConstant(siteMetadataSource, "WOOL_TOPIC_METADATA");
   const gameDealsTopicMetadata = parseConstant(siteMetadataSource, "GAME_DEALS_TOPIC_METADATA");
+  const chiguaTopicMetadata = parseConstant(siteMetadataSource, "CHIGUA_TOPIC_METADATA");
   const sourceNames = getSourceNames(storeSource);
   const subtypeValues = getSubtypeValues(sourceSubtypeGroups);
   const defaultSubtypeValues = getDefaultSubtypeValues(subtypeValues);
@@ -818,6 +819,26 @@ function main() {
       htmlLang,
       robots: "index,follow",
       alternateLinks: buildAlternateLinks("/topic/wool", supportedLocales),
+      jsonLd: buildWebPageJsonLd({ title, description, canonical, htmlLang }),
+    };
+  };
+
+  const buildChiguaTopicMeta = (localeMeta, pathname) => {
+    const locale = localeMeta.code;
+    const htmlLang = localeMeta.htmlLang;
+    const meta = chiguaTopicMetadata[locale] || chiguaTopicMetadata["zh-CN"] || {};
+    const canonical = buildAbsoluteUrl(pathname);
+    const title = meta.seoTitle || meta.title || "Trending Events";
+    const description =
+      meta.seoDescription || meta.description || "Cross-platform trending events.";
+    return {
+      title,
+      description,
+      keywords: meta.seoKeywords || mergeKeywords(title, brandNameZh),
+      canonical,
+      htmlLang,
+      robots: "index,follow",
+      alternateLinks: buildAlternateLinks("/topic/chigua", supportedLocales),
       jsonLd: buildWebPageJsonLd({ title, description, canonical, htmlLang }),
     };
   };
@@ -1027,6 +1048,12 @@ function main() {
       const meta = buildCategoryMeta(category, localeMeta, pathname);
       if (meta) writeRouteShell(pathname, meta);
     });
+
+    const chiguaTopicPathname = withLocalePrefix(localeMeta, "/topic/chigua");
+    writeRouteShell(
+      chiguaTopicPathname,
+      buildChiguaTopicMeta(localeMeta, chiguaTopicPathname)
+    );
 
     const woolTopicPathname = withLocalePrefix(localeMeta, "/topic/wool");
     writeRouteShell(
