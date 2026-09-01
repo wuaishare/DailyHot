@@ -1528,4 +1528,20 @@ watch(locale, () => void loadTopic(false));
     overflow-x: auto;
   }
 }
+@media (max-width: 480px) {
+  .toolbar-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 6px;
+    margin-right: 0;
+    padding-right: 0;
+    overflow: visible;
+  }
+  .toolbar-filters :deep(.compact-filter),
+  .toolbar-filters :deep(.compact-filter:nth-child(2)) {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+}
 </style>
