@@ -46,7 +46,7 @@
             <CompactFilter v-model="activeTag" :label="ui.type" :aria-label="ui.type" :options="tagOptions" />
             <CompactFilter v-model="activeSource" :label="ui.source" :aria-label="ui.source" :options="sourceOptions" />
             <CompactFilter v-model="activeSort" :label="ui.sort" :aria-label="ui.sort" :options="sortOptions" :show-count="false" />
-            <CompactFilter v-model="pageSize" :label="ui.perPage" :aria-label="ui.perPage" :options="pageSizeOptions" :show-count="false" />
+            <CompactFilter v-model="pageSize" :label="ui.perPage" :aria-label="ui.perPage" :options="pageSizeOptions" :show-count="false" :default-value="30" />
             <button v-if="hasFilters" type="button" class="reset-filter" @click="resetFilters">{{ ui.reset }}</button>
           </div>
           <div class="toolbar-actions">
@@ -229,7 +229,6 @@ const activeSort = ref(
 );
 const activeConfirmed = ref(route.query.confirmed === "1");
 const activeEnding = ref(route.query.ending === "1");
-const activeValueLane = ref(route.query.value === "1");
 const PAGE_SIZE_VALUES = [20, 30, 50, 100];
 const routePage = Number.parseInt(String(route.query.page || "1"), 10);
 const routePageSize = Number.parseInt(String(route.query.size || "30"), 10);
@@ -491,7 +490,8 @@ const TAG_ORDER = [
   "bundle",
   "deal",
 ];
-const validTags = new Set(["all", ...TAG_ORDER]);
+const FEATURED_FILTER_TAGS = ["value", "ending"];
+const validTags = new Set(["all", ...FEATURED_FILTER_TAGS, ...TAG_ORDER]);
 if (!validTags.has(activeTag.value)) activeTag.value = "all";
 
 const gameDeal = (item) => item?.extra?.gameDeal || {};
@@ -523,21 +523,37 @@ const tagLabel = (tag) =>
     under30: ui.value.under30,
     bundle: ui.value.bundle,
     deal: ui.value.deal,
+    value: ui.value.valuePick,
+    ending: ui.value.endingSoon,
   })[tag] || tag;
 const visibleTags = (item) =>
   tags(item)
     .filter((tag) => !["under30", "deal", "free"].includes(tag))
     .slice(0, 3);
-const tagOptions = computed(() => [
-  { value: "all", label: ui.value.all, count: data.value.length },
-  ...TAG_ORDER.filter((tag) => tag !== "deal")
-    .map((tag) => ({
-      value: tag,
-      label: tagLabel(tag),
-      count: data.value.filter((item) => tags(item).includes(tag)).length,
-    }))
-    .filter((item) => item.count > 0),
-]);
+const tagOptions = computed(() => {
+  const valueCount = data.value.filter((item) =>
+    tags(item).some((tag) =>
+      ["new-lowest", "lowest", "discount90", "discount75"].includes(tag),
+    ),
+  ).length;
+  const endingCount = data.value.filter(isEndingSoon).length;
+  return [
+    { value: "all", label: ui.value.all, count: data.value.length },
+    ...(valueCount
+      ? [{ value: "value", label: ui.value.valuePick, count: valueCount }]
+      : []),
+    ...(endingCount
+      ? [{ value: "ending", label: ui.value.endingSoon, count: endingCount }]
+      : []),
+    ...TAG_ORDER.filter((tag) => tag !== "deal")
+      .map((tag) => ({
+        value: tag,
+        label: tagLabel(tag),
+        count: data.value.filter((item) => tags(item).includes(tag)).length,
+      }))
+      .filter((item) => item.count > 0),
+  ];
+});
 const sourceOptions = computed(() => [
   { value: "all", label: ui.value.all, count: data.value.length },
   ...(dashboard.value?.sources || []).map((item) => ({
@@ -600,7 +616,7 @@ const deadlineSortValue = (item) => {
   const value = expiresAt(item);
   return value && value > nowTick.value ? value : Number.MAX_SAFE_INTEGER;
 };
-const FEATURED_LANE_LIMIT = 5;
+const FEATURED_LANE_LIMIT = 3;
 const featuredGroups = computed(() => {
   const byScore = (items) => items.slice().sort((a, b) => score(b) - score(a));
   const freeItems = byScore(
@@ -648,13 +664,8 @@ const selectFeaturedLane = (lane) => {
   activeSource.value = "all";
   activeConfirmed.value = false;
   activeSort.value = "smart";
-  activeEnding.value = Boolean(lane?.filter?.ending);
-  activeValueLane.value = lane?.filter?.tag === "value";
-  if (lane?.filter?.tag === "free") {
-    activeTag.value = "free";
-  } else {
-    activeTag.value = "all";
-  }
+  activeEnding.value = false;
+  activeTag.value = lane?.filter?.ending ? "ending" : lane?.filter?.tag || "all";
   currentPage.value = 1;
   nextTick(() =>
     dealListRef.value?.scrollIntoView({ behavior: "smooth", block: "start" }),
@@ -665,7 +676,19 @@ const filteredData = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   const rows = data.value.filter((item) => {
     if (query && !textFor(item).includes(query)) return false;
-    if (activeTag.value !== "all" && !tags(item).includes(activeTag.value))
+    if (
+      activeTag.value === "value" &&
+      !tags(item).some((tag) =>
+        ["new-lowest", "lowest", "discount90", "discount75"].includes(tag),
+      )
+    )
+      return false;
+    if (activeTag.value === "ending" && !isEndingSoon(item)) return false;
+    if (
+      activeTag.value !== "all" &&
+      !FEATURED_FILTER_TAGS.includes(activeTag.value) &&
+      !tags(item).includes(activeTag.value)
+    )
       return false;
     if (
       activeSource.value !== "all" &&
@@ -674,13 +697,6 @@ const filteredData = computed(() => {
       return false;
     if (activeConfirmed.value && sourceCount(item) < 2) return false;
     if (activeEnding.value && !isEndingSoon(item)) return false;
-    if (
-      activeValueLane.value &&
-      !tags(item).some((tag) =>
-        ["new-lowest", "lowest", "discount90", "discount75"].includes(tag),
-      )
-    )
-      return false;
     return true;
   });
   return [...rows].sort((a, b) => {
@@ -732,8 +748,7 @@ const hasFilters = computed(() =>
     activeSource.value !== "all" ||
     activeSort.value !== "smart" ||
     activeConfirmed.value ||
-    activeEnding.value ||
-    activeValueLane.value,
+    activeEnding.value,
   ),
 );
 const resetFilters = () => {
@@ -743,7 +758,6 @@ const resetFilters = () => {
   activeSort.value = "smart";
   activeConfirmed.value = false;
   activeEnding.value = false;
-  activeValueLane.value = false;
   currentPage.value = 1;
 };
 
@@ -846,7 +860,6 @@ const syncQuery = () => {
     if (activeSort.value !== "smart") query.sort = activeSort.value;
     if (activeConfirmed.value) query.confirmed = "1";
     if (activeEnding.value) query.ending = "1";
-    if (activeValueLane.value) query.value = "1";
     if (currentPage.value > 1) query.page = String(currentPage.value);
     if (pageSize.value !== 30) query.size = String(pageSize.value);
     const params = new URLSearchParams(query);
@@ -866,7 +879,6 @@ watch(
     activeSort,
     activeConfirmed,
     activeEnding,
-    activeValueLane,
     currentPage,
     pageSize,
   ],
@@ -880,7 +892,6 @@ watch(
     activeSort,
     activeConfirmed,
     activeEnding,
-    activeValueLane,
     pageSize,
   ],
   () => {
@@ -903,9 +914,6 @@ watch(tagOptions, (options) => {
     !options.some((item) => item.value === activeTag.value)
   )
     activeTag.value = "all";
-});
-watch(activeTag, (tag) => {
-  if (tag !== "all" && activeValueLane.value) activeValueLane.value = false;
 });
 
 const loadTopic = async (force = false) => {

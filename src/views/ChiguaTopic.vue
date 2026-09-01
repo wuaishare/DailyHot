@@ -9,7 +9,7 @@
       {{ loadError }}
     </n-alert>
     <n-alert
-      v-else-if="dashboard?.failedSourceCount"
+      v-else-if="showDegradedWarning"
       type="warning"
       :show-icon="false"
       class="topic-alert"
@@ -55,7 +55,7 @@
             <CompactFilter v-model="activeCategory" :label="ui.category" :aria-label="ui.category" :options="categoryOptions" />
             <CompactFilter v-model="activeSource" :label="ui.source" :aria-label="ui.source" :options="sourceOptions" />
             <CompactFilter v-model="activeSort" :label="ui.sort" :aria-label="ui.sort" :options="sortOptions" :show-count="false" />
-            <CompactFilter v-model="pageSize" :label="ui.perPage" :aria-label="ui.perPage" :options="pageSizeOptions" :show-count="false" />
+            <CompactFilter v-model="pageSize" :label="ui.perPage" :aria-label="ui.perPage" :options="pageSizeOptions" :show-count="false" :default-value="30" />
             <button v-if="hasFilters" type="button" class="reset-filter" @click="resetFilters">{{ ui.reset }}</button>
           </div>
           <div class="toolbar-actions">
@@ -247,6 +247,12 @@ const copy = computed(
 );
 const data = computed(() => result.value?.data || []);
 const dashboard = computed(() => result.value?.dashboard || null);
+const failedSourceCount = computed(() =>
+  Number(dashboard.value?.failedSourceCount || 0),
+);
+const showDegradedWarning = computed(() =>
+  failedSourceCount.value >= 3 || (data.value.length > 0 && data.value.length < 100),
+);
 
 const UI_COPY = {
   "zh-CN": {
@@ -505,8 +511,15 @@ const categoryOptions = computed(() => [
 ]);
 const sourceOptions = computed(() => {
   const feeds = dashboard.value?.feeds || [];
+  const failed = feeds.filter((feed) => feed.status === "failed").length;
   return [
-    { value: "all", label: ui.value.all, count: data.value.length },
+    {
+      value: "all",
+      label: ui.value.all,
+      count: data.value.length,
+      status: failed ? "partial" : "ok",
+      detail: failed ? copy.value.degraded : formatUpdated(result.value?.updateTime),
+    },
     ...feeds
       .filter((feed) => feed.count > 0)
       .map((feed) => ({
@@ -519,6 +532,11 @@ const sourceOptions = computed(() => {
         count: data.value.filter((item) =>
           eventSources(item).includes(feed.source),
         ).length,
+        status: feed.status === "failed" ? "failed" : "ok",
+        detail:
+          feed.status === "failed"
+            ? feed.message || copy.value.degraded
+            : formatUpdated(feed.updateTime),
       })),
   ];
 });

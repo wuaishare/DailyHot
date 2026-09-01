@@ -9,7 +9,7 @@
       {{ loadError }}
     </n-alert>
     <n-alert
-      v-else-if="woolFailedCount"
+      v-else-if="showDegradedWarning"
       type="warning"
       :show-icon="false"
       class="topic-alert"
@@ -83,6 +83,7 @@
               :aria-label="ui.perPage"
               :options="pageSizeOptions"
               :show-count="false"
+              :default-value="30"
             />
             <button
               v-if="searchQuery || hasActiveFilter"
@@ -308,6 +309,15 @@ const woolFeeds = computed(() =>
 const woolFailedCount = computed(
   () => woolFeeds.value.filter((feed) => feed.status !== "ok").length,
 );
+const showDegradedWarning = computed(() => {
+  const totalFeeds = woolFeeds.value.length;
+  if (!totalFeeds) return false;
+  const severeFailureCount = Math.max(4, Math.ceil(totalFeeds * 0.35));
+  return (
+    woolFailedCount.value >= severeFailureCount ||
+    (data.value.length > 0 && data.value.length < 30)
+  );
+});
 const superDealNavigationById = ref({});
 const superDealInstructionOpen = ref({});
 const superDealResolvePromises = new Map();

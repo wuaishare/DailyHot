@@ -571,6 +571,7 @@ const categoryNavOptions = computed(() =>
   }),
 );
 const isCategoryNavActive = (option) => {
+  if (activeTopic.value) return false;
   if (option.value === activeCategoryLocal.value) return true;
   let current = getCategoryByRef(store.categories, activeCategoryLocal.value);
   while (current?.parentId) {
@@ -581,10 +582,32 @@ const isCategoryNavActive = (option) => {
 const activeTopic = computed(() => getTopicByRouteName(route.name)?.id || "");
 const topicNavLabel = computed(() => getTopicNavLabel(locale.value));
 const topicMenuOptions = computed(() =>
-  TOPIC_REGISTRY.map((topic) => ({
-    label: getTopicLabel(topic, locale.value),
-    key: `topic:${topic.id}`,
-  })),
+  TOPIC_REGISTRY.map((topic) => {
+    const isActive = topic.id === activeTopic.value;
+    return {
+      label: () =>
+        h(
+          "span",
+          {
+            style: {
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "7px",
+              color: isActive ? "#d03050" : "inherit",
+              fontWeight: isActive ? "700" : "500",
+            },
+            "aria-current": isActive ? "page" : undefined,
+          },
+          [
+            isActive
+              ? h("span", { style: { fontSize: "8px", lineHeight: "1" } }, "●")
+              : null,
+            getTopicLabel(topic, locale.value),
+          ],
+        ),
+      key: `topic:${topic.id}`,
+    };
+  }),
 );
 const selectTopic = (key) => {
   activeHeaderDropdown.value = "";

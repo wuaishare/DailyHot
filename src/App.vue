@@ -108,15 +108,10 @@ const backTopChange = (val) => {
 
 const handleHeaderEnter = () => {
   clearTimeout(collapseTimer.value);
-  headerExpanded.value = true;
 };
 
 const handleHeaderLeave = () => {
-  if (!store.headerCollapsed) return;
   clearTimeout(collapseTimer.value);
-  collapseTimer.value = setTimeout(() => {
-    headerExpanded.value = false;
-  }, 200);
 };
 
 const handleHeaderClick = () => {

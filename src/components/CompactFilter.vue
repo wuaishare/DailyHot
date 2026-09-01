@@ -13,6 +13,7 @@
       @mouseenter="handleTriggerEnter"
       @mouseleave="handleTriggerLeave"
       class="compact-filter"
+      :class="{ 'is-active': hasExplicitSelection }"
       :aria-label="ariaLabel || label"
       aria-haspopup="listbox"
     >
@@ -42,6 +43,7 @@ const props = defineProps({
   ariaLabel: { type: String, default: "" },
   options: { type: Array, default: () => [] },
   showCount: { type: Boolean, default: true },
+  defaultValue: { type: [String, Number], default: undefined },
 });
 const emit = defineEmits(["update:modelValue"]);
 const hoverCapable = ref(false);
@@ -100,6 +102,11 @@ const triggerMode = computed(() => (hoverCapable.value ? "manual" : "click"));
 const activeOption = computed(
   () => props.options.find((item) => item.value === props.modelValue) || props.options[0],
 );
+const hasExplicitSelection = computed(() => {
+  const defaultValue =
+    props.defaultValue !== undefined ? props.defaultValue : props.options[0]?.value;
+  return defaultValue !== undefined && props.modelValue !== defaultValue;
+});
 const activeText = computed(() => {
   const option = activeOption.value;
   if (!option) return "";
@@ -146,6 +153,17 @@ const handleSelect = (value) => {
 .compact-filter:focus-visible {
   border-color: var(--n-text-color-3);
   outline: none;
+}
+.compact-filter.is-active {
+  border-color: color-mix(in srgb, var(--n-primary-color, #d03050) 58%, var(--n-border-color));
+  background: color-mix(in srgb, var(--n-primary-color, #d03050) 7%, transparent);
+}
+.compact-filter.is-active .compact-filter__label,
+.compact-filter.is-active svg {
+  color: var(--n-primary-color, #d03050);
+}
+.compact-filter.is-active .compact-filter__value {
+  font-weight: 700;
 }
 .compact-filter__label {
   color: var(--n-text-color-3);
