@@ -71,6 +71,8 @@ const autoRefreshRouteNames = new Set([
   "list-legacy",
   "wool-topic",
   "wool-topic-locale",
+  "game-deals-topic",
+  "game-deals-topic-locale",
 ]);
 const isSettingRoute = computed(
   () => {

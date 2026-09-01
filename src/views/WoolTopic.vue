@@ -1,12 +1,5 @@
 <template>
   <section class="wool-topic">
-    <header class="topic-hero">
-      <div class="topic-hero-copy">
-        <p class="topic-eyebrow">{{ copy.eyebrow }}</p>
-        <h1>{{ copy.title }}</h1>
-        <p class="topic-description">{{ copy.description }}</p>
-      </div>
-    </header>
 
     <n-alert
       v-if="loadError"
@@ -17,7 +10,7 @@
       {{ loadError }}
     </n-alert>
     <n-alert
-      v-else-if="dashboard?.failedCount"
+      v-else-if="woolFailedCount"
       type="warning"
       :show-icon="false"
       class="topic-alert"
@@ -26,6 +19,13 @@
     </n-alert>
 
     <section class="topic-section feed-section">
+      <div class="topic-workspace-header">
+        <TopicSwitcher active-topic="wool" :locale="locale" />
+        <div class="topic-workspace-title">
+          <h1>{{ copy.title }}</h1>
+          <p class="topic-description">{{ copy.description }}</p>
+        </div>
+      </div>
       <div class="opportunity-toolbar">
         <div class="toolbar-primary">
           <div class="toolbar-heading">
@@ -46,30 +46,32 @@
               @keydown.esc="searchQuery = ''"
             />
           </label>
-          <div class="topic-status">
-            <strong>{{ filteredData.length }}</strong>
-            <span>{{
-              searchQuery || hasActiveFilter ? ui.matches : copy.feedTitle
-            }}</span>
+          <div class="toolbar-actions">
+            <div class="topic-status">
+              <strong>{{ filteredData.length }}</strong>
+              <span>{{
+                searchQuery || hasActiveFilter ? ui.matches : copy.feedTitle
+              }}</span>
+            </div>
+            <button
+              v-if="confirmedAvailableCount"
+              type="button"
+              class="confirmed-toggle"
+              :class="{ active: activeConfirmed }"
+              :aria-pressed="activeConfirmed"
+              @click="activeConfirmed = !activeConfirmed"
+            >
+              {{ ui.confirmed }} <span>{{ confirmedAvailableCount }}</span>
+            </button>
+            <n-button
+              size="small"
+              tertiary
+              :loading="loading"
+              @click="loadTopic(true)"
+            >
+              {{ refreshLabel }}
+            </n-button>
           </div>
-          <button
-            v-if="dashboard?.multiSourceClusterCount"
-            type="button"
-            class="confirmed-toggle"
-            :class="{ active: activeConfirmed }"
-            :aria-pressed="activeConfirmed"
-            @click="activeConfirmed = !activeConfirmed"
-          >
-            {{ ui.confirmed }} <span>{{ confirmedAvailableCount }}</span>
-          </button>
-          <n-button
-            size="small"
-            tertiary
-            :loading="loading"
-            @click="loadTopic(true)"
-          >
-            {{ refreshLabel }}
-          </n-button>
         </div>
 
         <div class="toolbar-filter-strip" role="group" :aria-label="ui.filters">
@@ -183,7 +185,7 @@
               {{ item.desc }}
             </p>
             <div class="opportunity-meta">
-              <span class="intent-pill">{{ intentLabel(item.intent) }}</span>
+              <span class="intent-pill">{{ intentLabel(woolType(item)) }}</span>
               <span v-if="platformLabel(item)" class="platform-pill">{{
                 platformLabel(item)
               }}</span>
@@ -245,9 +247,11 @@
 </template>
 
 <script setup>
+import TopicSwitcher from "@/components/TopicSwitcher.vue";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { getHotListsWithFallback } from "@/api";
 import { WOOL_TOPIC_METADATA } from "@/config/site-metadata.mjs";
+import { GAME_DEAL_SOURCE_IDS } from "@/config/topics";
 import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
 import { getSourceLabel, getSourceSubtitleLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
@@ -261,10 +265,12 @@ const loadError = ref("");
 const validIntents = new Set([
   "all",
   "free",
+  "red_packet",
   "coupon",
+  "delivery",
+  "ride",
   "giveaway",
   "ai",
-  "game",
   "deal",
 ]);
 const validTimes = new Set(["all", "1h", "3h", "6h", "today"]);
@@ -293,8 +299,22 @@ const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
 const copy = computed(
   () => WOOL_TOPIC_METADATA[locale.value] || WOOL_TOPIC_METADATA["zh-CN"],
 );
-const data = computed(() => result.value?.data || []);
+const GAME_DEAL_SOURCES = new Set(GAME_DEAL_SOURCE_IDS);
+const rawData = computed(() => result.value?.data || []);
+const data = computed(() =>
+  rawData.value.filter(
+    (item) => item?.intent !== "game" && !GAME_DEAL_SOURCES.has(item?.source),
+  ),
+);
 const dashboard = computed(() => result.value?.dashboard || null);
+const woolFeeds = computed(() =>
+  (dashboard.value?.feeds || []).filter(
+    (feed) => !GAME_DEAL_SOURCES.has(feed?.source),
+  ),
+);
+const woolFailedCount = computed(
+  () => woolFeeds.value.filter((feed) => feed.status !== "ok").length,
+);
 const superDealNavigationById = ref({});
 const superDealInstructionOpen = ref({});
 const superDealResolvePromises = new Map();
@@ -786,6 +806,21 @@ const clusterText = (item) =>
     .join(" ");
 const textForItem = (item) =>
   `${item.title || ""} ${item.desc || ""} ${item.extra?.platform || ""} ${(item.matchedKeywords || []).join(" ")} ${signalText(item)} ${clusterText(item)}`.toLowerCase();
+const hasBenefitType = (item, type) =>
+  (item?.signals?.benefits || []).some((benefit) => benefit?.type === type);
+const woolType = (item) => {
+  const text = textForItem(item);
+  if (hasBenefitType(item, "red_packet") || /红包|洪包|紅包/.test(text))
+    return "red_packet";
+  if (/外卖|外賣|闪购|閃購|饿了么|餓了麼|美团买菜|美團買菜|即时零售|即時零售/.test(text))
+    return "delivery";
+  if (/打车|打車|滴滴|花小猪|花小豬|高德打车|高德打車|曹操出行|t3出行/.test(text))
+    return "ride";
+  if (item?.intent === "coupon" || hasBenefitType(item, "coupon"))
+    return "coupon";
+  if (["free", "giveaway", "ai"].includes(item?.intent)) return item.intent;
+  return "deal";
+};
 const itemMatchesSource = (item, source) =>
   source === "all" ||
   item.source === source ||
@@ -816,7 +851,7 @@ const matchesBase = (
     confirmed = activeConfirmed.value,
   } = {},
 ) =>
-  (intent === "all" || item.intent === intent) &&
+  (intent === "all" || woolType(item) === intent) &&
   itemMatchesSource(item, source) &&
   (platform === "all" || platformLabel(item) === platform) &&
   (!confirmed || Number(item?.cluster?.sourceCount || 0) > 1) &&
@@ -902,7 +937,7 @@ const parseUpdateTime = (value) => {
   return Number.isFinite(time) ? time : 0;
 };
 const sourceOptions = computed(() => {
-  const feeds = dashboard.value?.feeds || [];
+  const feeds = woolFeeds.value;
   const grouped = new Map();
   feeds.forEach((feed) => {
     const current = grouped.get(feed.source) || {
@@ -913,8 +948,9 @@ const sourceOptions = computed(() => {
     current.feeds.push(feed);
     grouped.set(feed.source, current);
   });
-  const allStatus = dashboard.value?.failedCount
-    ? dashboard.value.failedCount >= feeds.length
+  const failedFeedCount = feeds.filter((feed) => feed.status !== "ok").length;
+  const allStatus = failedFeedCount
+    ? failedFeedCount >= feeds.length
       ? "failed"
       : "partial"
     : "ok";
@@ -924,7 +960,7 @@ const sourceOptions = computed(() => {
       label: ui.value.allSources,
       count: data.value.length,
       status: allStatus,
-      detail: `${dashboard.value?.sourceCount || 0} ${ui.value.sourceUnit}`,
+      detail: `${grouped.size} ${ui.value.sourceUnit}`,
     },
   ];
   grouped.forEach((group, source) => {
@@ -1281,32 +1317,30 @@ onBeforeUnmount(() => {
   display: grid;
   gap: var(--wool-section-gap);
 }
-.topic-hero,
 .topic-section {
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
   background: var(--n-color, #fff);
   border-radius: 16px;
 }
-.topic-hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 18px 20px;
+.topic-workspace-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 16px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
 }
-.topic-hero-copy {
+.topic-workspace-title {
   min-width: 0;
-  flex: 1 1 auto;
 }
-.topic-hero-tools {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  flex: 0 1 390px;
-  min-width: 280px;
+.topic-workspace-title h1 {
+  margin: 0;
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.2;
 }
 .topic-search {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1354,22 +1388,9 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   border: 0;
 }
-.topic-eyebrow {
-  margin: 0 0 5px;
-  color: var(--n-text-color-3, #777);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.topic-hero h1 {
-  margin: 0;
-  font-size: clamp(24px, 2.5vw, 32px);
-  line-height: 1.2;
-}
 .topic-description {
-  max-width: 860px;
-  margin: 7px 0 0;
+  max-width: 1080px;
+  margin: 4px 0 0;
   color: var(--n-text-color-2, #555);
   font-size: 13px;
   line-height: 1.55;
@@ -1390,7 +1411,7 @@ onBeforeUnmount(() => {
   font-size: 11px;
 }
 .topic-alert {
-  margin: -8px 0 0;
+  margin: -4px 0 0;
 }
 .topic-section {
   min-width: 0;
@@ -1841,7 +1862,7 @@ onBeforeUnmount(() => {
 }
 .toolbar-primary {
   display: grid;
-  grid-template-columns: auto minmax(180px, 1fr) auto auto auto;
+  grid-template-columns: auto minmax(180px, 1fr) auto;
   align-items: center;
   gap: 8px;
 }
@@ -1865,6 +1886,14 @@ onBeforeUnmount(() => {
   width: 100%;
   min-width: 150px;
   max-width: none;
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  min-width: max-content;
+  white-space: nowrap;
 }
 .opportunity-toolbar .topic-status {
   position: static;
@@ -1959,7 +1988,7 @@ onBeforeUnmount(() => {
 }
 @media (max-width: 900px) {
   .toolbar-primary {
-    grid-template-columns: minmax(180px, 1fr) auto auto auto;
+    grid-template-columns: minmax(180px, 1fr) auto;
   }
   .toolbar-heading {
     display: none;
@@ -1981,43 +2010,24 @@ onBeforeUnmount(() => {
     --wool-section-padding: 13px;
     --wool-list-padding-y: 10px;
   }
-  .topic-hero,
   .topic-section {
     border-radius: 12px;
   }
-  .topic-hero {
-    position: relative;
-    display: block;
-    padding: 13px;
+  .topic-workspace-header {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 6px;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
   }
-  .topic-hero-copy {
-    padding-right: 50px;
-  }
-  .topic-hero-tools {
-    display: block;
-    min-width: 0;
-    margin-top: 8px;
+  .topic-workspace-title h1 {
+    font-size: 18px;
+    line-height: 1.3;
   }
   .topic-search {
     width: 100%;
     min-width: 0;
     height: 32px;
-  }
-  .topic-eyebrow {
-    display: none;
-  }
-  .topic-hero h1 {
-    font-size: 18px;
-    line-height: 1.3;
-  }
-  .topic-status {
-    position: absolute;
-    top: 14px;
-    right: 13px;
-    min-width: 42px;
-  }
-  .topic-status strong {
-    font-size: 22px;
   }
   .topic-description {
     display: -webkit-box;
@@ -2109,12 +2119,12 @@ onBeforeUnmount(() => {
   }
 }
 @media (max-width: 640px) {
-  .topic-hero-copy {
-    padding-right: 0;
-  }
   .toolbar-primary {
-    grid-template-columns: minmax(120px, 1fr) auto auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 5px;
+  }
+  .toolbar-actions {
+    gap: 4px;
   }
   .opportunity-toolbar .topic-search {
     width: 100%;

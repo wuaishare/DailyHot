@@ -1,16 +1,5 @@
 <template>
   <section class="game-topic">
-    <header class="topic-hero">
-      <div>
-        <h1>{{ copy.title }}</h1>
-        <p>{{ copy.description }}</p>
-      </div>
-      <div v-if="dashboard" class="hero-stats" :aria-label="ui.stats">
-        <strong>{{ dashboard.total || data.length }}</strong>
-        <span>{{ ui.deals }}</span>
-        <em>{{ dashboard.sourceCount }} {{ ui.sources }}</em>
-      </div>
-    </header>
 
     <n-alert
       v-if="loadError"
@@ -22,6 +11,20 @@
     </n-alert>
 
     <section class="topic-section">
+      <div class="topic-workspace-header">
+        <TopicSwitcher active-topic="game-deals" :locale="locale" />
+        <div class="topic-workspace-summary">
+          <div class="topic-workspace-title">
+            <h1>{{ copy.title }}</h1>
+            <p>{{ copy.description }}</p>
+          </div>
+          <div v-if="dashboard" class="hero-stats" :aria-label="ui.stats">
+            <strong>{{ dashboard.total || data.length }}</strong>
+            <span>{{ ui.deals }}</span>
+            <em>{{ dashboard.sourceCount }} {{ ui.sources }}</em>
+          </div>
+        </div>
+      </div>
       <div class="deal-toolbar">
         <div class="toolbar-primary">
           <div class="toolbar-title">
@@ -42,37 +45,39 @@
               @keydown.esc="searchQuery = ''"
             />
           </label>
-          <div class="result-count">
-            <strong>{{ filteredData.length }}</strong
-            ><span>{{ ui.matches }}</span>
+          <div class="toolbar-actions">
+            <div class="result-count">
+              <strong>{{ filteredData.length }}</strong
+              ><span>{{ ui.matches }}</span>
+            </div>
+            <button
+              v-if="dashboard?.multiSourceCount"
+              type="button"
+              class="confirmed-toggle"
+              :class="{ active: activeConfirmed }"
+              :aria-pressed="activeConfirmed"
+              @click="activeConfirmed = !activeConfirmed"
+            >
+              {{ ui.confirmed }} <span>{{ dashboard.multiSourceCount }}</span>
+            </button>
+            <button
+              v-if="endingSoonCount"
+              type="button"
+              class="confirmed-toggle ending-toggle"
+              :class="{ active: activeEnding }"
+              :aria-pressed="activeEnding"
+              @click="activeEnding = !activeEnding"
+            >
+              {{ ui.endingSoon }} <span>{{ endingSoonCount }}</span>
+            </button>
+            <n-button
+              size="small"
+              tertiary
+              :loading="loading"
+              @click="loadTopic(true)"
+              >{{ ui.refresh }}</n-button
+            >
           </div>
-          <button
-            v-if="dashboard?.multiSourceCount"
-            type="button"
-            class="confirmed-toggle"
-            :class="{ active: activeConfirmed }"
-            :aria-pressed="activeConfirmed"
-            @click="activeConfirmed = !activeConfirmed"
-          >
-            {{ ui.confirmed }} <span>{{ dashboard.multiSourceCount }}</span>
-          </button>
-          <button
-            v-if="endingSoonCount"
-            type="button"
-            class="confirmed-toggle ending-toggle"
-            :class="{ active: activeEnding }"
-            :aria-pressed="activeEnding"
-            @click="activeEnding = !activeEnding"
-          >
-            {{ ui.endingSoon }} <span>{{ endingSoonCount }}</span>
-          </button>
-          <n-button
-            size="small"
-            tertiary
-            :loading="loading"
-            @click="loadTopic(true)"
-            >{{ ui.refresh }}</n-button
-          >
         </div>
 
         <div class="toolbar-filters" role="group" :aria-label="ui.filters">
@@ -202,6 +207,7 @@
 </template>
 
 <script setup>
+import TopicSwitcher from "@/components/TopicSwitcher.vue";
 import { getHotListsWithFallback } from "@/api";
 import { GAME_DEALS_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
@@ -796,30 +802,40 @@ watch(locale, () => void loadTopic(false));
   display: grid;
   gap: 14px;
 }
-.topic-hero,
 .topic-section {
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
   background: var(--n-color, #fff);
   border-radius: 16px;
 }
-.topic-hero {
+.topic-workspace-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 16px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
+}
+.topic-workspace-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 18px 20px;
+  gap: 18px;
 }
-.topic-hero h1 {
+.topic-workspace-title {
+  min-width: 0;
+}
+.topic-workspace-title h1 {
   margin: 0;
-  font-size: clamp(24px, 2.4vw, 32px);
+  font-size: clamp(20px, 2vw, 26px);
   line-height: 1.2;
 }
-.topic-hero p {
-  max-width: 900px;
-  margin: 7px 0 0;
+.topic-workspace-title p {
+  max-width: 980px;
+  margin: 4px 0 0;
   color: var(--n-text-color-3);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.45;
 }
 .hero-stats {
   display: grid;
@@ -869,11 +885,21 @@ watch(locale, () => void loadTopic(false));
   color: var(--n-text-color-3);
   font-size: 11px;
 }
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-width: max-content;
+  white-space: nowrap;
+}
 .topic-search {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   flex: 1 1 280px;
-  max-width: 520px;
+  max-width: none;
   min-width: 160px;
   height: 32px;
   padding: 0 10px;
@@ -1123,25 +1149,30 @@ watch(locale, () => void loadTopic(false));
   .game-topic {
     gap: 10px;
   }
-  .topic-hero,
   .topic-section {
     border-radius: 12px;
   }
-  .topic-hero {
-    padding: 14px;
-    gap: 10px;
+  .topic-workspace-header {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 6px;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
   }
-  .topic-hero h1 {
+  .topic-workspace-summary {
+    gap: 8px;
+  }
+  .topic-workspace-title h1 {
     font-size: 18px;
   }
-  .topic-hero p {
-    margin-top: 4px;
-    font-size: 11px;
-    line-height: 1.45;
+  .topic-workspace-title p {
     display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    margin-top: 3px;
     overflow: hidden;
+    font-size: 11px;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
   }
   .hero-stats {
     min-width: 52px;
@@ -1157,12 +1188,14 @@ watch(locale, () => void loadTopic(false));
   }
   .toolbar-primary {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    gap: 7px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
   }
   .toolbar-title {
-    grid-column: 1 / -1;
-    justify-content: space-between;
+    display: none;
+  }
+  .toolbar-actions {
+    gap: 4px;
   }
   .topic-search {
     min-width: 0;

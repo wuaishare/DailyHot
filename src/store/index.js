@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { BUILTIN_CATEGORIES as SITE_BUILTIN_CATEGORIES } from "@/config/site-metadata.mjs";
+import { GAME_DEAL_SOURCE_IDS } from "@/config/topics";
 import {
   MAX_CATEGORY_DEPTH,
   canMoveCategory,
@@ -19,8 +20,9 @@ const BUILTIN_CATEGORIES = SITE_BUILTIN_CATEGORIES.map((item, order) => ({
 
 const BUILTIN_CATEGORY_MIGRATIONS = {
   xueqiu: { from: "综合", to: "财经" },
-  "ithome-xijiayi": { from: "科技", to: "羊毛" },
 };
+
+const BUILTIN_CATEGORY_ID_RESETS = new Set(GAME_DEAL_SOURCE_IDS);
 
 const BUILTIN_ORDER_MIGRATIONS = {
   "global-indexes": { from: 7.95, to: 7.45 },
@@ -527,8 +529,8 @@ export const mainStore = defineStore("mainData", {
           name: "ithome-xijiayi",
           order: 52,
           show: true,
-          category: "羊毛",
-          categoryIds: ["wool", "games"],
+          category: "游戏",
+          categoryIds: ["games"],
         },
         {
           label: "Steam 特惠",
@@ -536,7 +538,7 @@ export const mainStore = defineStore("mainData", {
           order: 52.1,
           show: true,
           category: "游戏",
-          categoryIds: ["games", "wool"],
+          categoryIds: ["games"],
           subtype: "featured",
         },
         {
@@ -545,7 +547,7 @@ export const mainStore = defineStore("mainData", {
           order: 52.2,
           show: true,
           category: "游戏",
-          categoryIds: ["games", "wool"],
+          categoryIds: ["games"],
           subtype: "current",
         },
         {
@@ -554,7 +556,7 @@ export const mainStore = defineStore("mainData", {
           order: 52.3,
           show: true,
           category: "游戏",
-          categoryIds: ["games", "wool"],
+          categoryIds: ["games"],
           subtype: "popular",
         },
         {
@@ -563,7 +565,7 @@ export const mainStore = defineStore("mainData", {
           order: 52.4,
           show: true,
           category: "游戏",
-          categoryIds: ["games", "wool"],
+          categoryIds: ["games"],
           subtype: "freebies",
         },
         {
@@ -572,7 +574,7 @@ export const mainStore = defineStore("mainData", {
           order: 52.5,
           show: true,
           category: "游戏",
-          categoryIds: ["games", "wool"],
+          categoryIds: ["games"],
           subtype: "trending",
         },
         {
@@ -900,6 +902,13 @@ export const mainStore = defineStore("mainData", {
               ...defaults.categoryIds,
             ]),
           ];
+        }
+        if (
+          BUILTIN_CATEGORY_ID_RESETS.has(item.name) &&
+          !item.categoryIdsCustomized &&
+          Array.isArray(defaults.categoryIds)
+        ) {
+          merged.categoryIds = defaults.categoryIds.slice();
         }
         Object.assign(
           merged,

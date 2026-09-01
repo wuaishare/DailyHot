@@ -36,7 +36,7 @@
           </div>
         </div>
         <div v-else-if="!isSmallScreen" class="category-nav">
-          <n-space align="center" justify="center" wrap>
+          <n-space align="center" justify="center">
             <div
               v-for="cat in categoryNavOptions"
               :key="cat.value"
@@ -56,6 +56,23 @@
                 {{ cat.label }}
               </n-button>
             </div>
+            <n-dropdown
+              trigger="click"
+              :options="topicMenuOptions"
+              @select="selectTopic"
+            >
+              <div class="category-hit-area topic-nav-trigger">
+                <n-button
+                  size="small"
+                  text
+                  strong
+                  :type="activeTopic ? 'primary' : 'default'"
+                  class="cat-btn"
+                >
+                  {{ topicNavLabel }}
+                </n-button>
+              </div>
+            </n-dropdown>
           </n-space>
         </div>
         <n-select
@@ -289,6 +306,13 @@ import { getPublicAssetUrl } from "@/utils/publicAssets";
 import { requestDataRefresh } from "@/utils/dataRefresh";
 import { mainStore } from "@/store";
 import { getCategoryByRef, getSourceCategoryIds } from "@/utils/categoryTree";
+import {
+  TOPIC_REGISTRY,
+  buildTopicPath,
+  getTopicByRouteName,
+  getTopicLabel,
+  getTopicNavLabel,
+} from "@/config/topics";
 import { NText, NIcon } from "naive-ui";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -343,6 +367,8 @@ const isRefreshEnabledRoute = (routeName) =>
     "list-legacy",
     "wool-topic",
     "wool-topic-locale",
+    "game-deals-topic",
+    "game-deals-topic-locale",
     "setting",
     "setting-locale",
   ].includes(routeName);
@@ -440,6 +466,21 @@ const categoryOptions = computed(() => {
   return [{ label: t("categories.all"), value: "全部" }, ...base];
 });
 const categoryNavOptions = computed(() => categoryOptions.value);
+const activeTopic = computed(() => getTopicByRouteName(route.name)?.id || "");
+const topicNavLabel = computed(() => getTopicNavLabel(locale.value));
+const topicMenuOptions = computed(() =>
+  TOPIC_REGISTRY.map((topic) => ({
+    label: getTopicLabel(topic, locale.value),
+    key: `topic:${topic.id}`,
+  })),
+);
+const selectTopic = (key) => {
+  const id = String(key || "").replace(/^topic:/, "");
+  const topic = TOPIC_REGISTRY.find((item) => item.id === id);
+  if (!topic) return;
+  const target = buildTopicPath(topic, locale.value);
+  if (router.currentRoute.value.fullPath !== target) router.push(target);
+};
 const languageOptions = computed(() =>
   getSupportedLocales().map((item) => ({
     key: item.code,
@@ -566,6 +607,15 @@ const menuOptions = computed(() => [
     },
   },
   {
+    key: "topic-divider",
+    type: "divider",
+  },
+  {
+    label: topicNavLabel.value,
+    key: "topics",
+    children: topicMenuOptions.value,
+  },
+  {
     key: "locale-divider",
     type: "divider",
   },
@@ -603,6 +653,8 @@ const menuOptions = computed(() => [
 const menuOptionsSelect = (val) => {
   if (val === "refresh") {
     manualRefresh();
+  } else if (String(val).startsWith("topic:")) {
+    selectTopic(val);
   } else if (String(val).startsWith("locale:")) {
     switchLocale(String(val).replace("locale:", ""));
   } else if (val === "changeTheme") {
@@ -768,7 +820,7 @@ const updateScreen = () => {
     width > 768 && width <= 1180 && (hasCoarsePointer || hasTouch);
 
   isTabletScreen.value = tabletCompact;
-  isSmallScreen.value = width <= 768 || tabletCompact;
+  isSmallScreen.value = width <= 1000 || tabletCompact;
 };
 
 watch(
@@ -862,7 +914,7 @@ onBeforeUnmount(() => {
     max-width: 1800px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: minmax(150px, 0.68fr) minmax(280px, 1.65fr) minmax(210px, 0.78fr);
     align-items: center;
     justify-content: space-between;
     column-gap: 12px;
@@ -995,6 +1047,8 @@ onBeforeUnmount(() => {
       :deep(.n-space) {
         min-height: 56px;
         align-items: stretch !important;
+        flex-wrap: nowrap !important;
+        gap: 12px !important;
       }
       :deep(.n-space > div) {
         display: flex;
@@ -1002,6 +1056,11 @@ onBeforeUnmount(() => {
       }
       .category-hit-area {
         min-height: 56px;
+      }
+      .topic-nav-trigger {
+        margin-left: 4px;
+        padding-left: 8px;
+        border-left: 1px solid var(--n-border-color);
       }
       .cat-btn {
         height: 100%;
