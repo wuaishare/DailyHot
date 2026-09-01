@@ -690,6 +690,20 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ja: "OpenAI",
     ko: "OpenAI",
   },
+  "openai-news": {
+    "zh-CN": "OpenAI 新闻",
+    "zh-TW": "OpenAI 新聞",
+    en: "OpenAI",
+    ja: "OpenAI",
+    ko: "OpenAI",
+  },
+  "openai-research": {
+    "zh-CN": "OpenAI 研究",
+    "zh-TW": "OpenAI 研究",
+    en: "OpenAI Research",
+    ja: "OpenAI Research",
+    ko: "OpenAI Research",
+  },
   "anthropic-news": {
     "zh-CN": "Anthropic",
     "zh-TW": "Anthropic",
@@ -745,6 +759,27 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "Hugging Face",
     ja: "Hugging Face",
     ko: "Hugging Face",
+  },
+  "huggingface-blog": {
+    "zh-CN": "Hugging Face 官方",
+    "zh-TW": "Hugging Face 官方",
+    en: "Hugging Face",
+    ja: "Hugging Face",
+    ko: "Hugging Face",
+  },
+  "hf-models": {
+    "zh-CN": "Hugging Face 模型",
+    "zh-TW": "Hugging Face 模型",
+    en: "Hugging Face Models",
+    ja: "Hugging Face Models",
+    ko: "Hugging Face Models",
+  },
+  "hf-papers": {
+    "zh-CN": "Hugging Face 论文",
+    "zh-TW": "Hugging Face 論文",
+    en: "Hugging Face Papers",
+    ja: "Hugging Face Papers",
+    ko: "Hugging Face Papers",
   },
   paperswithcode: {
     "zh-CN": "Papers with Code",
