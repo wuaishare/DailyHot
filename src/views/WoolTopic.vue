@@ -45,6 +45,54 @@
               @keydown.esc="searchQuery = ''"
             />
           </label>
+          <div class="toolbar-filter-strip" role="group" :aria-label="ui.filters">
+            <CompactFilter
+              v-model="activeSource"
+              :label="ui.source"
+              :aria-label="ui.source"
+              :options="sourceOptions"
+            />
+            <CompactFilter
+              v-model="activeIntent"
+              :label="ui.type"
+              :aria-label="ui.type"
+              :options="intentOptions"
+            />
+            <CompactFilter
+              v-model="activeTime"
+              :label="ui.time"
+              :aria-label="ui.time"
+              :options="timeOptions"
+            />
+            <CompactFilter
+              v-model="activePlatform"
+              :label="ui.platform"
+              :aria-label="ui.platform"
+              :options="platformOptions"
+            />
+            <CompactFilter
+              v-model="activeSort"
+              :label="ui.sort"
+              :aria-label="ui.sort"
+              :options="sortOptions"
+              :show-count="false"
+            />
+            <CompactFilter
+              v-model="pageSize"
+              :label="ui.perPage"
+              :aria-label="ui.perPage"
+              :options="pageSizeOptions"
+              :show-count="false"
+            />
+            <button
+              v-if="searchQuery || hasActiveFilter"
+              type="button"
+              class="reset-filter"
+              @click="resetFilters"
+            >
+              {{ ui.resetFilters }}
+            </button>
+          </div>
           <div class="toolbar-actions">
             <div class="topic-status">
               <strong>{{ filteredData.length }}</strong>
@@ -72,86 +120,14 @@
             </n-button>
           </div>
         </div>
-
-        <div class="toolbar-filter-strip" role="group" :aria-label="ui.filters">
-          <label class="toolbar-select">
-            <span>{{ ui.source }}</span>
-            <i
-              v-if="selectedSourceOption"
-              class="source-health"
-              :class="`is-${selectedSourceOption.status}`"
-              :title="statusLabel(selectedSourceOption.status)"
-            ></i>
-            <select v-model="activeSource" :aria-label="ui.source">
-              <option
-                v-for="option in sourceOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }} · {{ option.count }}
-              </option>
-            </select>
-          </label>
-          <label class="toolbar-select">
-            <span>{{ ui.type }}</span>
-            <select v-model="activeIntent" :aria-label="ui.type">
-              <option
-                v-for="option in intentOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }} · {{ option.count }}
-              </option>
-            </select>
-          </label>
-          <label class="toolbar-select">
-            <span>{{ ui.time }}</span>
-            <select v-model="activeTime" :aria-label="ui.time">
-              <option
-                v-for="option in timeOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }} · {{ option.count }}
-              </option>
-            </select>
-          </label>
-          <label class="toolbar-select">
-            <span>{{ ui.platform }}</span>
-            <select v-model="activePlatform" :aria-label="ui.platform">
-              <option
-                v-for="option in platformOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }} · {{ option.count }}
-              </option>
-            </select>
-          </label>
-          <label class="toolbar-select">
-            <span>{{ ui.sort }}</span>
-            <select v-model="activeSort" :aria-label="ui.sort">
-              <option value="smart">{{ ui.smartSort }}</option>
-              <option value="latest">{{ ui.newestSort }}</option>
-            </select>
-          </label>
-          <button
-            v-if="searchQuery || hasActiveFilter"
-            type="button"
-            class="reset-filter"
-            @click="resetFilters"
-          >
-            {{ ui.resetFilters }}
-          </button>
-        </div>
       </div>
 
       <div v-if="loading && !result" class="topic-loading">
         <n-skeleton text :repeat="8" />
       </div>
-      <div v-else-if="filteredData.length" class="opportunity-list">
+      <div v-else-if="filteredData.length" ref="opportunityListRef" class="opportunity-list">
         <article
-          v-for="(item, index) in filteredData"
+          v-for="(item, index) in pagedData"
           :key="item.id"
           class="opportunity-item"
           :data-super-deal-id="rawSuperDealId(item) || undefined"
@@ -159,7 +135,7 @@
           @focusin="prefetchSuperDealNavigation(item)"
         >
           <span class="opportunity-rank">{{
-            String(index + 1).padStart(2, "0")
+            String(pageStart + index + 1).padStart(2, "0")
           }}</span>
           <div class="opportunity-main">
             <div class="opportunity-source">
@@ -239,6 +215,17 @@
             >{{ opportunityActionLabel(item) }}</a
           >
         </article>
+        <div class="opportunity-pagination">
+          <span>{{ pageRangeText }}</span>
+          <n-pagination
+            v-if="pageCount > 1"
+            v-model:page="currentPage"
+            :page-count="pageCount"
+            :page-slot="7"
+            size="small"
+            @update:page="handlePageChange"
+          />
+        </div>
       </div>
       <n-empty v-else :description="copy.empty" class="topic-empty" />
     </section>
@@ -247,6 +234,7 @@
 
 <script setup>
 import TopicSwitcher from "@/components/TopicSwitcher.vue";
+import CompactFilter from "@/components/CompactFilter.vue";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { getHotListsWithFallback } from "@/api";
 import { WOOL_TOPIC_METADATA } from "@/config/site-metadata.mjs";
@@ -275,6 +263,12 @@ const validIntents = new Set([
 const validTimes = new Set(["all", "1h", "3h", "6h", "today"]);
 const validSorts = new Set(["smart", "latest"]);
 const queryValue = (value) => (typeof value === "string" ? value : "");
+const PAGE_SIZE_VALUES = [20, 30, 50, 100];
+const routePage = Number(queryValue(route.query.page));
+const routePageSize = Number(queryValue(route.query.size));
+const currentPage = ref(Number.isFinite(routePage) && routePage > 0 ? routePage : 1);
+const pageSize = ref(PAGE_SIZE_VALUES.includes(routePageSize) ? routePageSize : 30);
+const opportunityListRef = ref(null);
 const activeIntent = ref(
   validIntents.has(queryValue(route.query.intent))
     ? queryValue(route.query.intent)
@@ -330,6 +324,7 @@ const UI_COPY = {
     time: "时间",
     platform: "平台",
     sort: "排序",
+    perPage: "每页",
     smartSort: "综合",
     newestSort: "最新优先",
     resetFilters: "清除筛选",
@@ -375,6 +370,7 @@ const UI_COPY = {
     time: "Time",
     platform: "Platform",
     sort: "Sort",
+    perPage: "Per page",
     smartSort: "Smart",
     newestSort: "Newest",
     resetFilters: "Reset",
@@ -420,6 +416,7 @@ const UI_COPY = {
     time: "時間",
     platform: "平台",
     sort: "排序",
+    perPage: "每頁",
     smartSort: "綜合",
     newestSort: "最新優先",
     resetFilters: "清除篩選",
@@ -465,6 +462,7 @@ const UI_COPY = {
     time: "時間",
     platform: "プラットフォーム",
     sort: "並び順",
+    perPage: "表示件数",
     smartSort: "総合",
     newestSort: "新着順",
     resetFilters: "リセット",
@@ -510,6 +508,7 @@ const UI_COPY = {
     time: "시간",
     platform: "플랫폼",
     sort: "정렬",
+    perPage: "페이지당",
     smartSort: "종합",
     newestSort: "최신순",
     resetFilters: "초기화",
@@ -872,6 +871,33 @@ const filteredData = computed(() => {
   }
   return items;
 });
+const sortOptions = computed(() => [
+  { value: "smart", label: ui.value.smartSort },
+  { value: "latest", label: ui.value.newestSort },
+]);
+const pageSizeOptions = computed(() =>
+  PAGE_SIZE_VALUES.map((value) => ({ value, label: String(value) })),
+);
+const pageCount = computed(() =>
+  Math.max(1, Math.ceil(filteredData.value.length / pageSize.value)),
+);
+const pageStart = computed(() => (currentPage.value - 1) * pageSize.value);
+const pagedData = computed(() =>
+  filteredData.value.slice(pageStart.value, pageStart.value + pageSize.value),
+);
+const pageRangeText = computed(() => {
+  if (!filteredData.value.length) return "0 / 0";
+  const start = pageStart.value + 1;
+  const end = Math.min(pageStart.value + pageSize.value, filteredData.value.length);
+  return `${start}–${end} / ${filteredData.value.length}`;
+});
+const handlePageChange = () => {
+  nextTick(() => {
+    opportunityListRef.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+    void observeVisibleSuperDeals();
+  });
+};
+
 const confirmedAvailableCount = computed(
   () =>
     data.value.filter(
@@ -992,10 +1018,6 @@ const sourceOptions = computed(() => {
   });
   return options;
 });
-
-const selectedSourceOption = computed(() =>
-  sourceOptions.value.find((option) => option.value === activeSource.value),
-);
 
 const refreshLabels = {
   "zh-CN": "刷新",
@@ -1195,6 +1217,8 @@ const syncQuery = () => {
     setOrDelete("confirmed", activeConfirmed.value ? "1" : "");
     setOrDelete("time", activeTime.value, "all");
     setOrDelete("intent", activeIntent.value, "all");
+    setOrDelete("page", currentPage.value > 1 ? String(currentPage.value) : "");
+    setOrDelete("size", pageSize.value !== 30 ? String(pageSize.value) : "");
     const params = new URLSearchParams();
     Object.entries(query).forEach(([key, value]) => {
       if (Array.isArray(value))
@@ -1219,6 +1243,7 @@ const resetFilters = () => {
   activePlatform.value = "all";
   activeSort.value = "smart";
   activeConfirmed.value = false;
+  currentPage.value = 1;
 };
 
 const loadTopic = async (force = false) => {
@@ -1264,9 +1289,29 @@ watch(
     activeConfirmed,
     activeTime,
     activeIntent,
+    currentPage,
+    pageSize,
   ],
   syncQuery,
 );
+watch(
+  [
+    searchQuery,
+    activeSource,
+    activePlatform,
+    activeSort,
+    activeConfirmed,
+    activeTime,
+    activeIntent,
+    pageSize,
+  ],
+  () => {
+    currentPage.value = 1;
+  },
+);
+watch(pageCount, (count) => {
+  if (currentPage.value > count) currentPage.value = count;
+});
 watch(sourceOptions, (options) => {
   if (
     activeSource.value !== "all" &&
@@ -1304,7 +1349,7 @@ onDeactivated(() => {
     window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   }
 });
-watch(filteredData, () => void observeVisibleSuperDeals(), { flush: "post" });
+watch(pagedData, () => void observeVisibleSuperDeals(), { flush: "post" });
 onBeforeUnmount(() => {
   clearTimeout(querySyncTimer);
   if (typeof window !== "undefined") {
@@ -1857,24 +1902,38 @@ onBeforeUnmount(() => {
   font-size: 12px;
   white-space: nowrap;
 }
+.opportunity-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 2px 2px;
+  border-top: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
+  color: var(--n-text-color-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
 .topic-loading,
 .topic-empty {
   padding: 24px 0;
 }
 /* Unified opportunity controls: keep all operations in one compact panel. */
 .opportunity-toolbar {
-  display: grid;
-  gap: 8px;
   margin-bottom: 10px;
 }
 .toolbar-primary {
-  display: grid;
-  grid-template-columns: auto minmax(180px, 1fr) auto;
+  display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 .toolbar-heading {
-  min-width: 118px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 0;
+  white-space: nowrap;
 }
 .toolbar-heading h2 {
   margin: 0;
@@ -1882,17 +1941,19 @@ onBeforeUnmount(() => {
   line-height: 1.2;
 }
 .toolbar-heading span {
-  display: block;
-  margin-top: 3px;
+  display: inline;
+  margin-top: 0;
   color: var(--n-text-color-3, #777);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .opportunity-toolbar .topic-search {
-  width: 100%;
+  flex: 0 1 220px;
+  width: 220px;
   min-width: 150px;
-  max-width: none;
+  max-width: 220px;
+  height: 30px;
 }
 .toolbar-actions {
   display: flex;
@@ -1924,7 +1985,8 @@ onBeforeUnmount(() => {
 .toolbar-filter-strip {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  flex: 1 1 auto;
   min-width: 0;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
@@ -1993,12 +2055,20 @@ onBeforeUnmount(() => {
   );
   color: var(--n-text-color, #222);
 }
-@media (max-width: 900px) {
+@media (max-width: 1100px) and (min-width: 641px) {
   .toolbar-primary {
-    grid-template-columns: minmax(180px, 1fr) auto;
+    flex-wrap: wrap;
   }
   .toolbar-heading {
     display: none;
+  }
+  .opportunity-toolbar .topic-search {
+    flex: 1 1 220px;
+    max-width: 320px;
+  }
+  .toolbar-filter-strip {
+    order: 3;
+    flex: 1 0 100%;
   }
 }
 @media (max-width: 980px) {
@@ -2124,9 +2194,15 @@ onBeforeUnmount(() => {
   .opportunity-desc {
     -webkit-line-clamp: 2;
   }
+  .opportunity-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
 }
 @media (max-width: 640px) {
   .toolbar-primary {
+    display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 5px;
   }
@@ -2142,6 +2218,7 @@ onBeforeUnmount(() => {
   .opportunity-toolbar .topic-search {
     width: 100%;
     min-width: 0;
+    max-width: none;
     height: 30px;
   }
   .opportunity-toolbar .topic-status {
@@ -2163,6 +2240,9 @@ onBeforeUnmount(() => {
     white-space: nowrap;
   }
   .toolbar-filter-strip {
+    width: 100%;
+    margin-right: -13px;
+    padding-right: 13px;
     gap: 6px;
   }
   .toolbar-select {

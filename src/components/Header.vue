@@ -40,12 +40,16 @@
             <template v-for="cat in categoryNavOptions" :key="cat.value">
               <n-dropdown
                 v-if="cat.children?.length"
-                trigger="hover"
+                trigger="manual"
                 :options="cat.children"
+                :show="activeHeaderDropdown === `category:${cat.value}`"
+                :menu-props="() => headerMenuProps(`category:${cat.value}`)"
                 @select="selectCategory"
               >
                 <div
                   class="category-hit-area"
+                  @mouseenter="openHeaderDropdown(`category:${cat.value}`)"
+                  @mouseleave="scheduleHeaderDropdownClose(`category:${cat.value}`)"
                   @click="selectCategory(cat.value)"
                 >
                   <n-button
@@ -79,11 +83,17 @@
               </div>
             </template>
             <n-dropdown
-              trigger="hover"
+              trigger="manual"
               :options="topicMenuOptions"
+              :show="activeHeaderDropdown === 'header:topic'"
+              :menu-props="() => headerMenuProps('header:topic')"
               @select="selectTopic"
             >
-              <div class="category-hit-area topic-nav-trigger">
+              <div
+                class="category-hit-area topic-nav-trigger"
+                @mouseenter="openHeaderDropdown('header:topic')"
+                @mouseleave="scheduleHeaderDropdownClose('header:topic')"
+              >
                 <n-button
                   size="small"
                   text
@@ -109,11 +119,17 @@
       <div class="controls">
         <n-space justify="end">
           <n-dropdown
-            trigger="hover"
+            trigger="manual"
             :options="languageOptions"
+            :show="activeHeaderDropdown === 'header:locale'"
+            :menu-props="() => headerMenuProps('header:locale')"
             @select="switchLocale"
           >
-            <div class="control-hit-area">
+            <div
+              class="control-hit-area"
+              @mouseenter="openHeaderDropdown('header:locale')"
+              @mouseleave="scheduleHeaderDropdownClose('header:locale')"
+            >
               <n-button class="header-control-btn" secondary strong round>
                 <template #icon>
                   <img
@@ -327,6 +343,7 @@ import {
 import { getCurrentTime } from "@/utils/getTime.js";
 import { getPublicAssetUrl } from "@/utils/publicAssets";
 import { requestDataRefresh } from "@/utils/dataRefresh";
+import { HOVER_MENU_OPEN_EVENT, announceHoverMenuOpen } from "@/utils/hoverMenu";
 import { mainStore } from "@/store";
 import { getCategoryByRef, getSourceCategoryIds } from "@/utils/categoryTree";
 import {
@@ -361,6 +378,8 @@ const HotboardManager = defineAsyncComponent(
 );
 const store = mainStore();
 const hotboardManagerOpen = ref(false);
+const activeHeaderDropdown = ref("");
+let headerDropdownCloseTimer;
 const { t, locale } = useI18n({ useScope: "global" });
 const timeInterval = ref(null);
 const siteLogoUrl = getPublicAssetUrl("/ico/favicon.png");
@@ -464,7 +483,35 @@ const activeCategoryLocal = computed({
   },
 });
 const selectCategory = (value) => {
+  activeHeaderDropdown.value = "";
   activeCategoryLocal.value = value;
+};
+const cancelHeaderDropdownClose = () => {
+  clearTimeout(headerDropdownCloseTimer);
+  headerDropdownCloseTimer = undefined;
+};
+const closeHeaderDropdown = () => {
+  cancelHeaderDropdownClose();
+  activeHeaderDropdown.value = "";
+};
+const openHeaderDropdown = (id) => {
+  cancelHeaderDropdownClose();
+  if (activeHeaderDropdown.value === id) return;
+  activeHeaderDropdown.value = id;
+  announceHoverMenuOpen(id);
+};
+const scheduleHeaderDropdownClose = (id) => {
+  cancelHeaderDropdownClose();
+  headerDropdownCloseTimer = setTimeout(() => {
+    if (activeHeaderDropdown.value === id) activeHeaderDropdown.value = "";
+  }, 160);
+};
+const headerMenuProps = (id) => ({
+  onMouseenter: cancelHeaderDropdownClose,
+  onMouseleave: () => scheduleHeaderDropdownClose(id),
+});
+const handleForeignHoverMenuOpen = (event) => {
+  if (event?.detail?.id !== activeHeaderDropdown.value) closeHeaderDropdown();
 };
 const goHome = () => {
   router.push(buildHomePath(locale.value));
@@ -540,6 +587,7 @@ const topicMenuOptions = computed(() =>
   })),
 );
 const selectTopic = (key) => {
+  activeHeaderDropdown.value = "";
   const id = String(key || "").replace(/^topic:/, "");
   const topic = TOPIC_REGISTRY.find((item) => item.id === id);
   if (!topic) return;
@@ -587,6 +635,7 @@ const localeFlagStyle = {
 };
 
 const switchLocale = (nextLocale) => {
+  closeHeaderDropdown();
   locale.value = nextLocale;
   savePreferredLocale(nextLocale);
   const target = buildLocalePathFromRoute(route, nextLocale);
@@ -936,13 +985,16 @@ onMounted(() => {
   setupCountdown();
   updateScreen();
   window.addEventListener("resize", updateScreen);
+  window.addEventListener(HOVER_MENU_OPEN_EVENT, handleForeignHoverMenuOpen);
 });
 
 onBeforeUnmount(() => {
+  cancelHeaderDropdownClose();
   clearInterval(timeInterval.value);
   clearInterval(countdownTimer.value);
   if (typeof window !== "undefined") {
     window.removeEventListener("resize", updateScreen);
+    window.removeEventListener(HOVER_MENU_OPEN_EVENT, handleForeignHoverMenuOpen);
   }
 });
 </script>

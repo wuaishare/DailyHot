@@ -2,16 +2,28 @@
   <n-dropdown
     :trigger="triggerMode"
     :options="menuOptions"
+    :show="dropdownShow"
+    :menu-props="menuProps"
     placement="bottom-start"
+    @update:show="handleShowChange"
     @select="handleSelect"
   >
     <button
       type="button"
+      @mouseenter="handleTriggerEnter"
+      @mouseleave="handleTriggerLeave"
       class="compact-filter"
       :aria-label="ariaLabel || label"
       aria-haspopup="listbox"
     >
       <span class="compact-filter__label">{{ label }}</span>
+      <i
+        v-if="activeOption?.status"
+        class="compact-filter__status"
+        :class="`is-${activeOption.status}`"
+        :title="activeOption.detail || activeOption.status"
+        aria-hidden="true"
+      ></i>
       <strong class="compact-filter__value">{{ activeText }}</strong>
       <svg viewBox="0 0 12 12" aria-hidden="true">
         <path d="m2.5 4.5 3.5 3 3.5-3" />
@@ -21,7 +33,8 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
+import { HOVER_MENU_OPEN_EVENT, announceHoverMenuOpen } from "@/utils/hoverMenu";
 
 const props = defineProps({
   modelValue: { type: [String, Number], required: true },
@@ -32,21 +45,58 @@ const props = defineProps({
 });
 const emit = defineEmits(["update:modelValue"]);
 const hoverCapable = ref(false);
+const dropdownShow = ref(false);
+const menuId = `compact-filter:${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
 let hoverMediaQuery;
+let closeTimer;
 
 const updateHoverCapability = (event) => {
   hoverCapable.value = Boolean(event?.matches ?? hoverMediaQuery?.matches);
+};
+const cancelClose = () => {
+  clearTimeout(closeTimer);
+  closeTimer = undefined;
+};
+const closeDropdown = () => {
+  cancelClose();
+  dropdownShow.value = false;
+};
+const openDropdown = () => {
+  cancelClose();
+  if (dropdownShow.value) return;
+  dropdownShow.value = true;
+  announceHoverMenuOpen(menuId);
+};
+const scheduleClose = () => {
+  cancelClose();
+  closeTimer = setTimeout(closeDropdown, 140);
+};
+const handleTriggerEnter = () => {
+  if (hoverCapable.value) openDropdown();
+};
+const handleTriggerLeave = () => {
+  if (hoverCapable.value) scheduleClose();
+};
+const menuProps = () => ({
+  onMouseenter: cancelClose,
+  onMouseleave: scheduleClose,
+});
+const handleForeignMenuOpen = (event) => {
+  if (event?.detail?.id !== menuId) closeDropdown();
 };
 onMounted(() => {
   hoverMediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
   updateHoverCapability(hoverMediaQuery);
   hoverMediaQuery.addEventListener?.("change", updateHoverCapability);
+  window.addEventListener(HOVER_MENU_OPEN_EVENT, handleForeignMenuOpen);
 });
 onBeforeUnmount(() => {
+  cancelClose();
   hoverMediaQuery?.removeEventListener?.("change", updateHoverCapability);
+  window.removeEventListener(HOVER_MENU_OPEN_EVENT, handleForeignMenuOpen);
 });
 
-const triggerMode = computed(() => (hoverCapable.value ? "hover" : "click"));
+const triggerMode = computed(() => (hoverCapable.value ? "manual" : "click"));
 const activeOption = computed(
   () => props.options.find((item) => item.value === props.modelValue) || props.options[0],
 );
@@ -65,7 +115,15 @@ const menuOptions = computed(() =>
         : option.label,
   })),
 );
-const handleSelect = (value) => emit("update:modelValue", value);
+const handleShowChange = (show) => {
+  if (hoverCapable.value) return;
+  dropdownShow.value = show;
+  if (show) announceHoverMenuOpen(menuId);
+};
+const handleSelect = (value) => {
+  emit("update:modelValue", value);
+  closeDropdown();
+};
 </script>
 
 <style scoped>
@@ -93,6 +151,22 @@ const handleSelect = (value) => emit("update:modelValue", value);
   color: var(--n-text-color-3);
   font-size: 10px;
   line-height: 1;
+}
+.compact-filter__status {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--n-text-color-3);
+}
+.compact-filter__status.is-ok {
+  background: #18a058;
+}
+.compact-filter__status.is-partial {
+  background: #f0a020;
+}
+.compact-filter__status.is-failed {
+  background: #d03050;
 }
 .compact-filter__value {
   min-width: 0;
