@@ -72,6 +72,15 @@ const PUBLIC_API_FALLBACK_PATHS = new Set([
   "global-indexes",
   "asx",
 ]);
+const TOPIC_CDN_CACHE_PATHS = new Set([
+  "wool-topic",
+  "game-deals-topic",
+  "chigua-topic",
+  "ai-topic",
+]);
+const TOPIC_CDN_FRESH_SECONDS = 30;
+const TOPIC_CDN_STALE_SECONDS = 120;
+
 const PUBLIC_API_FIRST_PATHS = new Set([
   "super-deals",
   "wool-topic",
@@ -3146,6 +3155,25 @@ export default async function handler(req, res) {
   }
   res.status(response.status);
   res.setHeader("content-type", contentType);
+  if (
+    (req.method === "GET" || req.method === "HEAD") &&
+    response.ok &&
+    TOPIC_CDN_CACHE_PATHS.has(pathValue)
+  ) {
+    const bypassTopicCache = normalizeQueryValue(req.query.cache, "true") === "false";
+    if (bypassTopicCache) {
+      res.setHeader("cache-control", "no-store");
+      res.setHeader("vercel-cdn-cache-control", "no-store");
+      res.setHeader("x-dailyhot-topic-cache", "bypass");
+    } else {
+      res.setHeader("cache-control", "public, max-age=0, must-revalidate");
+      res.setHeader(
+        "vercel-cdn-cache-control",
+        `public, max-age=${TOPIC_CDN_FRESH_SECONDS}, stale-while-revalidate=${TOPIC_CDN_STALE_SECONDS}`,
+      );
+      res.setHeader("x-dailyhot-topic-cache", `edge-${TOPIC_CDN_FRESH_SECONDS}s`);
+    }
+  }
   if (pathValue === "clawhub") {
     try {
       const locale =

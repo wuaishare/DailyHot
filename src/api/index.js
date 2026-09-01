@@ -11,13 +11,13 @@ const SAME_ORIGIN_API_SOURCES = new Set([
   "clawhub",
   "openrouter-rankings",
   "weibo",
-]);
-const DIRECT_PUBLIC_API_SOURCES = new Set([
-  "super-deals",
   "wool-topic",
   "game-deals-topic",
   "chigua-topic",
   "ai-topic",
+]);
+const DIRECT_PUBLIC_API_SOURCES = new Set([
+  "super-deals",
   "0818tuan",
   "nodeloc-deals",
   "douban-wool",
