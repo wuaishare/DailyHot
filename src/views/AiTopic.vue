@@ -9,7 +9,7 @@
       {{ loadError }}
     </n-alert>
     <n-alert
-      v-else-if="dashboard?.failedSourceCount"
+      v-else-if="severeDegraded"
       type="warning"
       :show-icon="false"
       class="topic-alert"
@@ -24,20 +24,28 @@
             <h1>{{ copy.title }}</h1>
             <p>{{ copy.description }}</p>
           </div>
-          <div v-if="dashboard" class="hero-stats">
-            <strong>{{ dashboard.total || data.length }}</strong>
-            <span>{{ ui.events }}</span>
-            <em>{{ dashboard.sourceCount }} {{ ui.sources }}</em>
+          <div v-if="dashboard" class="topic-status-line">
+            <span
+              ><strong>{{ dashboard.total || data.length }}</strong>
+              {{ ui.events }}</span
+            >
+            <span
+              ><strong>{{ dashboard.sourceCount }}</strong>
+              {{ ui.sources }}</span
+            >
+            <span v-if="dashboard.multiSourceCount"
+              ><strong>{{ dashboard.multiSourceCount }}</strong>
+              {{ ui.resonance }}</span
+            >
+            <time
+              >{{ ui.updated }} {{ formatUpdated(result?.updateTime) }}</time
+            >
           </div>
         </div>
       </div>
 
       <div class="event-toolbar">
         <div class="toolbar-primary">
-          <div class="toolbar-title">
-            <h2>{{ copy.feedTitle }}</h2>
-            <span>{{ formatUpdated(result?.updateTime) }}</span>
-          </div>
           <label class="topic-search">
             <span class="sr-only">{{ ui.search }}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -144,7 +152,10 @@
                 <b v-if="signalIndependentSourceCount(item) > 1">
                   {{ signalIndependentSourceCount(item) }} {{ ui.sourcesShort }}
                 </b>
-                <em v-else-if="heatLabel(item)">{{ heatLabel(item) }}</em>
+                <em
+                  v-else-if="heatLabel(item) || formatSignalFreshness(item)"
+                  >{{ heatLabel(item) || formatSignalFreshness(item) }}</em
+                >
               </p>
             </div>
           </a>
@@ -204,18 +215,24 @@
               target="_blank"
               rel="noopener noreferrer"
             >
-              <h3>{{ item.title }}</h3>
+              <h3 :title="originalTitleHint(item)">{{ item.title }}</h3>
             </a>
             <p v-if="item.desc" class="event-desc">{{ item.desc }}</p>
             <div class="event-meta">
               <span class="category-pill">{{
                 kindLabel(signalKind(item))
               }}</span>
+              <span
+                v-for="badge in trendBadges(item)"
+                :key="`${item.id}-${badge}`"
+                class="signal-pill"
+                >{{ badge }}</span
+              >
               <strong v-if="heatLabel(item)">{{ heatLabel(item) }}</strong>
               <time
-                v-if="item.timestamp"
-                :title="formatFullTime(item.timestamp)"
-                >{{ formatFreshness(item.timestamp) }}</time
+                v-if="formatSignalFreshness(item)"
+                :title="item.timestamp ? formatFullTime(item.timestamp) : ''"
+                >{{ formatSignalFreshness(item) }}</time
               >
               <span
                 v-for="confirmation in visibleConfirmations(item)"
@@ -303,6 +320,11 @@ const copy = computed(
 );
 const data = computed(() => result.value?.data || []);
 const dashboard = computed(() => result.value?.dashboard || null);
+const severeDegraded = computed(() => {
+  const failed = Number(dashboard.value?.failedSourceCount || 0);
+  const healthy = Number(dashboard.value?.sourceCount || 0);
+  return failed >= 3 || (failed > 0 && healthy < 12);
+});
 
 const UI_COPY = {
   "zh-CN": {
@@ -328,10 +350,14 @@ const UI_COPY = {
     open: "查看来源",
     starsToday: "Star 今日",
     points: "热度",
+    updated: "更新",
+    currentTrend: "当前趋势",
+    officialRelease: "官方发布",
+    developerBreakout: "开发者爆火",
     featured: {
-      major: "重大事件",
-      model: "模型发布",
-      breakout: "开发者爆火",
+      focus: "今日焦点",
+      modelProduct: "模型与产品",
+      breakout: "开发者热度",
     },
     categories: {
       major: "重大事件",
@@ -367,10 +393,14 @@ const UI_COPY = {
     open: "Open source",
     starsToday: "stars today",
     points: "points",
+    updated: "Updated",
+    currentTrend: "Trending now",
+    officialRelease: "Official release",
+    developerBreakout: "Developer breakout",
     featured: {
-      major: "Major event",
-      model: "Model release",
-      breakout: "Developer breakout",
+      focus: "Today’s focus",
+      modelProduct: "Models & products",
+      breakout: "Developer heat",
     },
     categories: {
       major: "Major",
@@ -406,7 +436,15 @@ const UI_COPY = {
     open: "查看來源",
     starsToday: "Star 今日",
     points: "熱度",
-    featured: { major: "重大事件", model: "模型發布", breakout: "開發者爆紅" },
+    updated: "更新",
+    currentTrend: "目前趨勢",
+    officialRelease: "官方發布",
+    developerBreakout: "開發者爆紅",
+    featured: {
+      focus: "今日焦點",
+      modelProduct: "模型與產品",
+      breakout: "開發者熱度",
+    },
     categories: {
       major: "重大事件",
       model: "模型",
@@ -441,10 +479,14 @@ const UI_COPY = {
     open: "情報源を見る",
     starsToday: "Star 本日",
     points: "人気",
+    updated: "更新",
+    currentTrend: "現在のトレンド",
+    officialRelease: "公式リリース",
+    developerBreakout: "開発者急上昇",
     featured: {
-      major: "重大イベント",
-      model: "モデル公開",
-      breakout: "開発者急上昇",
+      focus: "今日の注目",
+      modelProduct: "モデル・プロダクト",
+      breakout: "開発者トレンド",
     },
     categories: {
       major: "重大",
@@ -480,10 +522,14 @@ const UI_COPY = {
     open: "출처 보기",
     starsToday: "오늘 Star",
     points: "인기",
+    updated: "업데이트",
+    currentTrend: "현재 트렌드",
+    officialRelease: "공식 출시",
+    developerBreakout: "개발자 급상승",
     featured: {
-      major: "주요 사건",
-      model: "모델 출시",
-      breakout: "개발자 급상승",
+      focus: "오늘의 포커스",
+      modelProduct: "모델 · 제품",
+      breakout: "개발자 트렌드",
     },
     categories: {
       major: "주요 사건",
@@ -498,14 +544,15 @@ const UI_COPY = {
   },
 };
 const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
-const viewAllLabel = computed(() =>
-  ({
-    "zh-CN": "查看全部",
-    en: "View all",
-    "zh-TW": "查看全部",
-    ja: "すべて見る",
-    ko: "전체 보기",
-  })[locale.value] || "查看全部",
+const viewAllLabel = computed(
+  () =>
+    ({
+      "zh-CN": "查看全部",
+      en: "View all",
+      "zh-TW": "查看全部",
+      ja: "すべて見る",
+      ko: "전체 보기",
+    })[locale.value] || "查看全部",
 );
 const CATEGORY_ORDER = [
   "major",
@@ -520,6 +567,11 @@ const CATEGORY_ORDER = [
 const signalMeta = (item) => item?.extra?.aiSignal || {};
 const signalKind = (item) => signalMeta(item).kind || "other";
 const signalScore = (item) => Number(signalMeta(item).score || 0);
+const signalFreshness = (item) => signalMeta(item).freshness || "";
+const signalTrendSignals = (item) =>
+  Array.isArray(signalMeta(item).trendSignals)
+    ? signalMeta(item).trendSignals
+    : [];
 const signalIndependentSourceCount = (item) =>
   Math.max(1, Number(signalMeta(item).independentSourceCount || 1));
 const signalSources = (item) =>
@@ -543,7 +595,10 @@ const sourceLabel = (item) =>
       primarySource(item),
   );
 const kindLabel = (kind) => ui.value.categories[kind] || kind;
-const visibleConfirmations = (item) => confirmations(item).slice(0, 3);
+const visibleConfirmations = (item) =>
+  confirmations(item)
+    .filter((entry) => entry.source !== primarySource(item))
+    .slice(0, 2);
 const confirmationTitle = (item) =>
   confirmations(item)
     .map((entry) =>
@@ -563,20 +618,51 @@ const BREAKOUT_SOURCES = new Set([
   "hackernews-ai",
   "producthunt-ai",
 ]);
+const OFFICIAL_SOURCES = new Set([
+  "openai-news",
+  "openai-research",
+  "anthropic-news",
+  "deepmind-blog",
+  "meta-ai-blog",
+  "huggingface-blog",
+]);
 const isBreakoutSignal = (item) =>
   primarySource(item) === "github-ai-trending" ||
   (BREAKOUT_SOURCES.has(primarySource(item)) && Number(item.hot || 0) > 0);
+const isFocusSignal = (item) =>
+  signalIndependentSourceCount(item) > 1 ||
+  (["breaking", "today"].includes(signalFreshness(item)) &&
+    signalKind(item) !== "other");
+const isModelProductSignal = (item) =>
+  ["model", "product"].includes(signalKind(item));
+const focusCount = computed(() => data.value.filter(isFocusSignal).length);
+const modelProductCount = computed(
+  () => data.value.filter(isModelProductSignal).length,
+);
 const breakoutCount = computed(
   () => data.value.filter((item) => isBreakoutSignal(item)).length,
 );
 
 const categoryOptions = computed(() => [
   { value: "all", label: ui.value.all, count: data.value.length },
-  ...CATEGORY_ORDER.map((kind) => ({
-    value: kind,
-    label: kindLabel(kind),
-    count: data.value.filter((item) => signalKind(item) === kind).length,
-  })).filter((item) => item.count > 0),
+  ...(focusCount.value
+    ? [
+        {
+          value: "focus",
+          label: ui.value.featured.focus,
+          count: focusCount.value,
+        },
+      ]
+    : []),
+  ...(modelProductCount.value
+    ? [
+        {
+          value: "model-product",
+          label: ui.value.featured.modelProduct,
+          count: modelProductCount.value,
+        },
+      ]
+    : []),
   ...(breakoutCount.value
     ? [
         {
@@ -586,6 +672,11 @@ const categoryOptions = computed(() => [
         },
       ]
     : []),
+  ...CATEGORY_ORDER.map((kind) => ({
+    value: kind,
+    label: kindLabel(kind),
+    count: data.value.filter((item) => signalKind(item) === kind).length,
+  })).filter((item) => item.count > 0),
 ]);
 const sourceOptions = computed(() => {
   const feeds = dashboard.value?.feeds || [];
@@ -620,11 +711,14 @@ const filteredData = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   const rows = data.value.filter((item) => {
     if (query && !textFor(item).includes(query)) return false;
+    if (activeCategory.value === "focus" && !isFocusSignal(item)) return false;
+    if (activeCategory.value === "model-product" && !isModelProductSignal(item))
+      return false;
     if (activeCategory.value === "breakout" && !isBreakoutSignal(item))
       return false;
     if (
       activeCategory.value !== "all" &&
-      activeCategory.value !== "breakout" &&
+      !["focus", "model-product", "breakout"].includes(activeCategory.value) &&
       signalKind(item) !== activeCategory.value
     )
       return false;
@@ -684,42 +778,47 @@ const FEATURED_LANE_LIMIT = 3;
 const featuredGroups = computed(() => {
   const byScore = (items) =>
     items.slice().sort((a, b) => signalScore(b) - signalScore(a));
-  const majorItems = byScore(
-    data.value.filter((item) => signalKind(item) === "major"),
+  const focusItems = byScore(data.value.filter(isFocusSignal));
+  const focusTop = focusItems.slice(0, FEATURED_LANE_LIMIT);
+  const usedIds = new Set(focusTop.map((item) => item.id));
+  const modelProductItems = byScore(
+    data.value.filter(
+      (item) => isModelProductSignal(item) && !usedIds.has(item.id),
+    ),
   );
-  const modelItems = byScore(
-    data.value.filter((item) => signalKind(item) === "model"),
-  );
+  const modelProductTop = modelProductItems.slice(0, FEATURED_LANE_LIMIT);
+  modelProductTop.forEach((item) => usedIds.add(item.id));
   const breakoutItems = data.value
-    .filter((item) => isBreakoutSignal(item))
+    .filter((item) => isBreakoutSignal(item) && !usedIds.has(item.id))
     .slice()
     .sort(
       (a, b) =>
         Number(b.hot || 0) - Number(a.hot || 0) ||
         signalScore(b) - signalScore(a),
     );
+  const breakoutTop = breakoutItems.slice(0, FEATURED_LANE_LIMIT);
   return [
     {
-      key: "major",
-      label: ui.value.featured.major,
-      count: majorItems.length,
-      items: majorItems.slice(0, FEATURED_LANE_LIMIT),
-      actionLabel: `${viewAllLabel.value} ${majorItems.length}`,
-      filter: { category: "major" },
+      key: "focus",
+      label: ui.value.featured.focus,
+      count: focusItems.length,
+      items: focusTop,
+      actionLabel: `${viewAllLabel.value} ${focusItems.length}`,
+      filter: { category: "focus" },
     },
     {
-      key: "model",
-      label: ui.value.featured.model,
-      count: modelItems.length,
-      items: modelItems.slice(0, FEATURED_LANE_LIMIT),
-      actionLabel: `${viewAllLabel.value} ${modelItems.length}`,
-      filter: { category: "model" },
+      key: "model-product",
+      label: ui.value.featured.modelProduct,
+      count: modelProductItems.length,
+      items: modelProductTop,
+      actionLabel: `${viewAllLabel.value} ${modelProductItems.length}`,
+      filter: { category: "model-product" },
     },
     {
       key: "breakout",
       label: ui.value.featured.breakout,
       count: breakoutItems.length,
-      items: breakoutItems.slice(0, FEATURED_LANE_LIMIT),
+      items: breakoutTop,
       actionLabel: `${viewAllLabel.value} ${breakoutItems.length}`,
       filter: { category: "breakout" },
     },
@@ -769,6 +868,19 @@ const heatLabel = (item) => {
     return `+${formatCompactNumber(num)} ${ui.value.starsToday}`;
   return `${formatCompactNumber(num)} ${ui.value.points}`;
 };
+const originalTitleHint = (item) =>
+  item?.originalTitle && item.originalTitle !== item.title
+    ? item.originalTitle
+    : item.title;
+const trendBadges = (item) => {
+  const signals = signalTrendSignals(item);
+  const badges = [];
+  if (signals.includes("release") && OFFICIAL_SOURCES.has(primarySource(item)))
+    badges.push(ui.value.officialRelease);
+  if (signals.includes("developer-breakout"))
+    badges.push(ui.value.developerBreakout);
+  return badges.slice(0, 2);
+};
 const formatUpdated = (value) =>
   value
     ? new Intl.DateTimeFormat(locale.value, {
@@ -785,15 +897,34 @@ const formatFreshness = (value) => {
   const diff = Date.now() - Number(value || 0);
   if (!Number.isFinite(diff) || diff < 0) return "";
   const minutes = Math.floor(diff / 60000);
+  const language = locale.value;
   if (minutes < 1) return ui.value.latest;
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) {
+    if (language === "zh-CN") return `${minutes} 分钟前`;
+    if (language === "zh-TW") return `${minutes} 分鐘前`;
+    if (language === "ja") return `${minutes}分前`;
+    if (language === "ko") return `${minutes}분 전`;
+    return `${minutes}m ago`;
+  }
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  return new Intl.DateTimeFormat(locale.value, {
+  if (hours < 24) {
+    if (language === "zh-CN") return `${hours} 小时前`;
+    if (language === "zh-TW") return `${hours} 小時前`;
+    if (language === "ja") return `${hours}時間前`;
+    if (language === "ko") return `${hours}시간 전`;
+    return `${hours}h ago`;
+  }
+  return new Intl.DateTimeFormat(language, {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date(Number(value)));
 };
+const formatSignalFreshness = (item) =>
+  item?.timestamp
+    ? formatFreshness(item.timestamp)
+    : signalFreshness(item) === "ranked"
+      ? ui.value.currentTrend
+      : "";
 const onLogoError = (event) => {
   if (event?.target) event.target.src = getSourceLogoFallback();
 };
@@ -949,20 +1080,25 @@ watch(locale, () => void loadTopic(false));
   font-size: 12px;
   line-height: 1.45;
 }
-.hero-stats {
-  display: grid;
-  min-width: 100px;
-  justify-items: end;
-}
-.hero-stats strong {
-  font-size: 28px;
-  line-height: 1;
-}
-.hero-stats span,
-.hero-stats em {
+.topic-status-line {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
   color: var(--n-text-color-3);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.topic-status-line span,
+.topic-status-line time {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.topic-status-line strong {
+  color: var(--n-text-color-2);
   font-size: 11px;
-  font-style: normal;
 }
 .event-toolbar {
   margin-bottom: 9px;
@@ -972,21 +1108,6 @@ watch(locale, () => void loadTopic(false));
   align-items: center;
   gap: 7px;
   min-width: 0;
-}
-.toolbar-title {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  flex: 0 0 auto;
-  white-space: nowrap;
-}
-.toolbar-title h2 {
-  margin: 0;
-  font-size: 15px;
-}
-.toolbar-title span {
-  color: var(--n-text-color-3);
-  font-size: 10px;
 }
 .topic-search {
   box-sizing: border-box;
@@ -1096,9 +1217,16 @@ watch(locale, () => void loadTopic(false));
   color: inherit;
   text-decoration: none;
 }
-.ai-lane-item:last-child { border-bottom: 0; }
-.ai-lane-item:hover strong, .ai-lane-item:focus-visible strong { text-decoration: underline; }
-.ai-lane-item:focus-visible { outline: none; }
+.ai-lane-item:last-child {
+  border-bottom: 0;
+}
+.ai-lane-item:hover strong,
+.ai-lane-item:focus-visible strong {
+  text-decoration: underline;
+}
+.ai-lane-item:focus-visible {
+  outline: none;
+}
 .ai-lane-item > img {
   width: 62px;
   height: 36px;
@@ -1106,7 +1234,9 @@ watch(locale, () => void loadTopic(false));
   object-fit: cover;
   background: var(--n-color);
 }
-.ai-lane-item > div { min-width: 0; }
+.ai-lane-item > div {
+  min-width: 0;
+}
 .ai-lane-item strong {
   display: block;
   overflow: hidden;
@@ -1125,13 +1255,19 @@ watch(locale, () => void loadTopic(false));
   font-size: 9px;
   white-space: nowrap;
 }
-.ai-lane-item p span { overflow: hidden; text-overflow: ellipsis; }
-.ai-lane-item p b, .ai-lane-item p em {
+.ai-lane-item p span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ai-lane-item p b,
+.ai-lane-item p em {
   flex: 0 0 auto;
   font-size: 9px;
   font-style: normal;
 }
-.ai-lane-item p b { color: var(--n-text-color); }
+.ai-lane-item p b {
+  color: var(--n-text-color);
+}
 .event-list {
   display: grid;
 }
@@ -1259,7 +1395,8 @@ watch(locale, () => void loadTopic(false));
   font-size: 11px;
 }
 .category-pill,
-.source-pill {
+.source-pill,
+.signal-pill {
   padding: 1px 5px;
   border-radius: 999px;
   background: var(--n-action-color);
@@ -1270,6 +1407,11 @@ watch(locale, () => void loadTopic(false));
 }
 .source-pill {
   color: var(--n-text-color-3);
+}
+.signal-pill {
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  color: var(--n-text-color-2);
+  font-weight: 600;
 }
 .event-open {
   min-width: 72px;
@@ -1336,6 +1478,17 @@ watch(locale, () => void loadTopic(false));
   }
   .topic-workspace-title h1 {
     font-size: 18px;
+  }
+  .topic-status-line {
+    justify-content: flex-start;
+    gap: 6px;
+    margin-top: 4px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  .topic-status-line::-webkit-scrollbar {
+    display: none;
   }
   .topic-workspace-title p {
     display: -webkit-box;

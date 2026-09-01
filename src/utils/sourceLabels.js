@@ -837,6 +837,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ja: "Sina AIトレンド",
     ko: "Sina AI 트렌드",
   },
+  "qbitai-ai": {
+    "zh-CN": "量子位",
+    "zh-TW": "量子位",
+    en: "QbitAI",
+    ja: "QbitAI",
+    ko: "QbitAI",
+  },
   "36kr-ai": {
     "zh-CN": "36氪 AI",
     "zh-TW": "36氪 AI",
