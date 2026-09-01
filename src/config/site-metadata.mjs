@@ -378,9 +378,9 @@ export const GAME_DEALS_TOPIC_METADATA = {
 
 export const AI_TOPIC_METADATA = {
   "zh-CN": {
-    title: "AI 圈重大事件与爆火趋势",
+    title: "AI 热点与趋势雷达",
     description:
-      "聚合 OpenAI、Anthropic、Google DeepMind、Meta AI、Hugging Face、Hacker News、Reddit LocalLLaMA、Product Hunt 与 GitHub Trending，优先展示重大模型发布、独立多源共振和开发者社区快速升温的 AI 事件。",
+      "聚合 OpenAI、Anthropic、Google DeepMind、Hugging Face、量子位等中外 AI 信号，并结合 GitHub Trending、Hacker News 与 LocalLLaMA，优先呈现今日焦点、模型与产品动态、开发者快速升温项目及独立多源确认。",
     feedTitle: "AI 实时雷达",
     empty: "当前筛选暂无 AI 事件",
     degraded: "部分 AI 来源暂时不可用，当前仍展示其余来源的最新事件。",
@@ -391,9 +391,9 @@ export const AI_TOPIC_METADATA = {
       "AI热点,AI重大事件,大模型发布,AI新闻,OpenAI,Anthropic,Claude,Gemini,DeepSeek,GitHub AI Trending,LocalLLaMA,Hugging Face,AI爆火项目,AI趋势",
   },
   en: {
-    title: "AI Major Events & Breakout Trends",
+    title: "AI Trends & Signal Radar",
     description:
-      "Track OpenAI, Anthropic, Google DeepMind, Meta AI, Hugging Face, Hacker News, Reddit LocalLLaMA, Product Hunt and GitHub Trending, prioritizing major model releases, independent cross-source confirmation and fast-rising developer signals.",
+      "Track official AI releases, specialist media, GitHub Trending, Hacker News, LocalLLaMA and other high-signal sources, prioritizing today’s focus, model and product moves, developer momentum and independently confirmed events.",
     feedTitle: "Live AI Radar",
     empty: "No AI events match this filter.",
     degraded:
@@ -406,9 +406,9 @@ export const AI_TOPIC_METADATA = {
       "AI trends,AI news,major AI events,model releases,OpenAI,Anthropic,Claude,Gemini,DeepSeek,GitHub AI Trending,LocalLLaMA,Hugging Face,AI projects,DailyHot",
   },
   "zh-TW": {
-    title: "AI 圈重大事件與爆紅趨勢",
+    title: "AI 熱點與趨勢雷達",
     description:
-      "彙整 OpenAI、Anthropic、Google DeepMind、Meta AI、Hugging Face、Hacker News、Reddit LocalLLaMA、Product Hunt 與 GitHub Trending，優先顯示重大模型發布、獨立多源共振與開發者社群快速升溫的 AI 事件。",
+      "彙整官方 AI 發布、專業媒體、GitHub Trending、Hacker News、LocalLLaMA 等高訊號來源，優先呈現今日焦點、模型與產品動態、開發者熱度與獨立多源確認。",
     feedTitle: "AI 即時雷達",
     empty: "目前篩選沒有 AI 事件",
     degraded: "部分 AI 來源暫時無法使用，目前仍顯示其他來源的最新事件。",
@@ -419,9 +419,9 @@ export const AI_TOPIC_METADATA = {
       "AI熱點,AI重大事件,大模型發布,AI新聞,OpenAI,Anthropic,Claude,Gemini,DeepSeek,GitHub AI Trending,LocalLLaMA,Hugging Face,吾愛熱榜",
   },
   ja: {
-    title: "AI重大イベント・急上昇トレンド",
+    title: "AIトレンド・シグナルレーダー",
     description:
-      "OpenAI、Anthropic、Google DeepMind、Meta AI、Hugging Face、Hacker News、Reddit LocalLLaMA、Product Hunt、GitHub Trending を横断し、重要なモデル公開、独立した複数ソース確認、開発者コミュニティで急上昇するAIトピックを優先します。",
+      "AI公式発表、専門メディア、GitHub Trending、Hacker News、LocalLLaMA などの高シグナル情報源を横断し、今日の注目、モデル・製品動向、開発者の熱量、独立した複数ソース確認を優先します。",
     feedTitle: "AIリアルタイムレーダー",
     empty: "条件に一致するAIイベントはありません",
     degraded:
@@ -434,9 +434,9 @@ export const AI_TOPIC_METADATA = {
       "AIトレンド,AIニュース,モデル公開,OpenAI,Anthropic,Claude,Gemini,DeepSeek,GitHub AI Trending,LocalLLaMA,Hugging Face,DailyHot",
   },
   ko: {
-    title: "AI 주요 사건·급상승 트렌드",
+    title: "AI 트렌드·시그널 레이더",
     description:
-      "OpenAI, Anthropic, Google DeepMind, Meta AI, Hugging Face, Hacker News, Reddit LocalLLaMA, Product Hunt, GitHub Trending을 모아 주요 모델 출시, 독립 다중 출처 확인, 개발자 커뮤니티에서 빠르게 상승하는 AI 이슈를 우선합니다.",
+      "AI 공식 발표, 전문 미디어, GitHub Trending, Hacker News, LocalLLaMA 등 신호가 강한 출처를 모아 오늘의 핵심 이슈, 모델·제품 동향, 개발자 열기와 독립 다중 출처 확인을 우선합니다.",
     feedTitle: "AI 실시간 레이더",
     empty: "현재 조건에 맞는 AI 이벤트가 없습니다",
     degraded:

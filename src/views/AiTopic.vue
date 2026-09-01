@@ -142,6 +142,7 @@
             <img
               :src="item.cover || getSourceLogo(primarySource(item))"
               :alt="item.title"
+              :class="{ 'is-source-logo': !item.cover }"
               loading="lazy"
               @error="onImageError($event, item)"
             />
@@ -189,6 +190,7 @@
             <img
               :src="item.cover || getSourceLogo(primarySource(item))"
               :alt="item.title"
+              :class="{ 'is-source-logo': !item.cover }"
               loading="lazy"
               @error="onImageError($event, item)"
             />
@@ -1234,6 +1236,13 @@ watch(locale, () => void loadTopic(false));
   object-fit: cover;
   background: var(--n-color);
 }
+.ai-lane-item > img.is-source-logo,
+.event-cover img.is-source-logo {
+  box-sizing: border-box;
+  padding: 6px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.94);
+}
 .ai-lane-item > div {
   min-width: 0;
 }
@@ -1474,7 +1483,9 @@ watch(locale, () => void loadTopic(false));
     margin-bottom: 8px;
   }
   .topic-workspace-summary {
-    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
   }
   .topic-workspace-title h1 {
     font-size: 18px;
@@ -1532,17 +1543,21 @@ watch(locale, () => void loadTopic(false));
     display: none;
   }
   .toolbar-filters {
-    margin-right: -13px;
-    padding-right: 13px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .toolbar-filters::-webkit-scrollbar {
-    display: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
   }
   .toolbar-filters :deep(.compact-filter) {
-    max-width: 165px;
-    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+  .toolbar-filters .reset-filter {
+    grid-column: 1 / -1;
   }
   .event-item {
     grid-template-columns: 24px 62px minmax(0, 1fr);
