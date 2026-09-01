@@ -124,6 +124,7 @@
           v-for="(item, index) in pagedData"
           :key="item.id"
           class="deal-item"
+          :class="dealRankClass(index)"
         >
           <span class="deal-rank">{{
             String(pageStart + index + 1).padStart(2, "0")
@@ -289,6 +290,7 @@ const UI_COPY = {
     upcoming: "即将免费",
     newLowest: "新史低",
     lowest: "史低",
+    valuePick: "史低 / 高折扣",
     discount90: "90%+",
     discount75: "75%+",
     under10: "10元内",
@@ -332,6 +334,7 @@ const UI_COPY = {
     upcoming: "Free soon",
     newLowest: "New low",
     lowest: "Historical low",
+    valuePick: "Lows / deep discounts",
     discount90: "90%+ off",
     discount75: "75%+ off",
     under10: "Under ¥10",
@@ -375,6 +378,7 @@ const UI_COPY = {
     upcoming: "即將免費",
     newLowest: "新史低",
     lowest: "史低",
+    valuePick: "史低 / 高折扣",
     discount90: "90%+",
     discount75: "75%+",
     under10: "10元內",
@@ -418,6 +422,7 @@ const UI_COPY = {
     upcoming: "近日無料",
     newLowest: "新史上最安",
     lowest: "史上最安",
+    valuePick: "史上最安 / 高割引",
     discount90: "90%以上",
     discount75: "75%以上",
     under10: "10元以下",
@@ -461,6 +466,7 @@ const UI_COPY = {
     upcoming: "곧 무료",
     newLowest: "신규 역대 최저",
     lowest: "역대 최저",
+    valuePick: "역대 최저 / 대폭 할인",
     discount90: "90%+ 할인",
     discount75: "75%+ 할인",
     under10: "¥10 이하",
@@ -604,8 +610,10 @@ const featuredGroups = computed(() => {
     .filter(isEndingSoon)
     .slice()
     .sort((a, b) => deadlineSortValue(a) - deadlineSortValue(b));
-  const lowestItems = data.value.filter((item) =>
-    tags(item).some((tag) => ["new-lowest", "lowest"].includes(tag)),
+  const valueItems = data.value.filter((item) =>
+    tags(item).some((tag) =>
+      ["new-lowest", "lowest", "discount90", "discount75"].includes(tag),
+    ),
   );
   return [
     {
@@ -615,16 +623,16 @@ const featuredGroups = computed(() => {
       item: pickBest(freeItems),
     },
     {
+      key: "value",
+      label: ui.value.valuePick,
+      count: valueItems.length,
+      item: pickBest(valueItems),
+    },
+    {
       key: "ending",
       label: ui.value.endingSoon,
       count: endingItems.length,
       item: endingItems[0],
-    },
-    {
-      key: "lowest",
-      label: ui.value.lowest,
-      count: lowestItems.length,
-      item: pickBest(lowestItems),
     },
   ].filter((group) => group.item);
 });
@@ -667,6 +675,10 @@ const pageCount = computed(() =>
   Math.max(1, Math.ceil(filteredData.value.length / pageSize.value)),
 );
 const pageStart = computed(() => (currentPage.value - 1) * pageSize.value);
+const dealRankClass = (index) => {
+  const rank = pageStart.value + index + 1;
+  return rank <= 3 ? ["is-top-deal", `is-top-${rank}`] : [];
+};
 const pagedData = computed(() =>
   filteredData.value.slice(pageStart.value, pageStart.value + pageSize.value),
 );
@@ -1201,6 +1213,36 @@ watch(locale, () => void loadTopic(false));
   color: var(--n-text-color-3);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
+}
+.deal-item.is-top-deal {
+  margin-inline: -6px;
+  padding-inline: 8px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--n-action-color) 78%, transparent);
+}
+.deal-item.is-top-deal + .deal-item {
+  border-top-color: transparent;
+}
+.deal-item.is-top-deal .deal-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--n-border-color);
+  border-radius: 7px;
+  color: var(--n-text-color);
+  background: var(--n-color);
+  font-size: 11px;
+  font-weight: 800;
+}
+.deal-item.is-top-deal .deal-title h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+.deal-item.is-top-1 {
+  background: color-mix(in srgb, var(--n-action-color) 58%, rgba(255, 188, 66, 0.11));
 }
 .deal-cover {
   width: 112px;
