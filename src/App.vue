@@ -21,7 +21,10 @@
         <router-view v-slot="{ Component }">
           <keep-alive>
             <transition name="scale" mode="out-in">
-              <component :is="Component" :key="router.currentRoute.value.fullPath" />
+              <component
+                :is="Component"
+                :key="router.currentRoute.value.fullPath"
+              />
             </transition>
           </keep-alive>
         </router-view>
@@ -73,29 +76,27 @@ const autoRefreshRouteNames = new Set([
   "wool-topic-locale",
   "game-deals-topic",
   "game-deals-topic-locale",
+  "chigua-topic",
+  "chigua-topic-locale",
 ]);
-const isSettingRoute = computed(
-  () => {
-    const currentRoute = router.currentRoute.value;
-    const path = currentRoute?.path || "";
-    return (
-      settingRouteNames.has(currentRoute?.name) ||
-      path === "/setting" ||
-      /\/setting$/.test(path)
-    );
-  }
-);
-const isAutoRefreshRoute = computed(
-  () => {
-    const currentRoute = router.currentRoute.value;
-    const path = currentRoute?.path || "/";
-    return (
-      autoRefreshRouteNames.has(currentRoute?.name) ||
-      path === "/" ||
-      /\/(category|rank|topic)(\/|$)/.test(path)
-    );
-  }
-);
+const isSettingRoute = computed(() => {
+  const currentRoute = router.currentRoute.value;
+  const path = currentRoute?.path || "";
+  return (
+    settingRouteNames.has(currentRoute?.name) ||
+    path === "/setting" ||
+    /\/setting$/.test(path)
+  );
+});
+const isAutoRefreshRoute = computed(() => {
+  const currentRoute = router.currentRoute.value;
+  const path = currentRoute?.path || "/";
+  return (
+    autoRefreshRouteNames.has(currentRoute?.name) ||
+    path === "/" ||
+    /\/(category|rank|topic)(\/|$)/.test(path)
+  );
+});
 
 // 回顶按钮显隐
 const backTopChange = (val) => {
@@ -129,14 +130,14 @@ const handleOutsideClick = (e) => {
   if (!store.headerCollapsed) return;
   const path = e.composedPath ? e.composedPath() : [];
   const clickInsideHeader = path.some(
-    (el) => el?.classList && el.classList.contains("app-header")
+    (el) => el?.classList && el.classList.contains("app-header"),
   );
   const clickOverlay = path.some(
     (el) =>
       el?.classList &&
       (el.classList.contains("n-popover") ||
         el.classList.contains("n-dropdown") ||
-        el.classList.contains("n-popconfirm"))
+        el.classList.contains("n-popconfirm")),
   );
   if (!clickInsideHeader && !clickOverlay) {
     headerExpanded.value = false;
@@ -209,7 +210,7 @@ const writePersistedPauseRemainingMs = (remainingMs) => {
     JSON.stringify({
       remainingMs: normalizedRemainingMs,
       savedAt: Date.now(),
-    })
+    }),
   );
 };
 
@@ -219,7 +220,9 @@ const writeAutoRefreshRemaining = (remainingMs) => {
   if (typeof window !== "undefined") {
     window.$autoRefreshRemainingMs = normalizedRemainingMs;
     window.$nextAutoRefreshAt =
-      normalizedRemainingMs === null ? null : Date.now() + normalizedRemainingMs;
+      normalizedRemainingMs === null
+        ? null
+        : Date.now() + normalizedRemainingMs;
   }
 };
 
@@ -359,7 +362,7 @@ const reconcileAutoRefresh = () => {
     store.autoRefreshRoutePaused ||
     pausedRemainingMs !== null;
   const resumedDelayMs = hasRoutePause
-    ? pausedRemainingMs ?? intervalMs
+    ? (pausedRemainingMs ?? intervalMs)
     : null;
   clearRoutePauseState();
   setupAutoRefresh(intervalChanged ? intervalMs : resumedDelayMs);
@@ -368,7 +371,11 @@ const reconcileAutoRefresh = () => {
 
 const reconcileAutoRefreshAfterVisibilityChange = () => {
   if (isDocumentHidden()) {
-    if (store.autoRefreshEnabled && !store.autoRefreshPaused && isAutoRefreshRoute.value) {
+    if (
+      store.autoRefreshEnabled &&
+      !store.autoRefreshPaused &&
+      isAutoRefreshRoute.value
+    ) {
       freezeAutoRefreshForRoute();
     }
     return;
@@ -387,7 +394,7 @@ watch(
   () => store.headerCollapsed,
   (val) => {
     headerExpanded.value = !val;
-  }
+  },
 );
 
 const handleDataRefreshRequest = (event) => {
@@ -413,7 +420,7 @@ watch(
     router.currentRoute.value?.fullPath,
   ],
   reconcileAutoRefresh,
-  { immediate: true }
+  { immediate: true },
 );
 
 onMounted(() => {
@@ -426,16 +433,22 @@ onMounted(() => {
     document.addEventListener("click", handleOutsideClick);
     document.addEventListener(
       "visibilitychange",
-      reconcileAutoRefreshAfterVisibilityChange
+      reconcileAutoRefreshAfterVisibilityChange,
     );
   }
   if (typeof window !== "undefined") {
-    window.addEventListener("pageshow", reconcileAutoRefreshAfterVisibilityChange);
-    window.addEventListener("popstate", reconcileAutoRefreshAfterVisibilityChange);
+    window.addEventListener(
+      "pageshow",
+      reconcileAutoRefreshAfterVisibilityChange,
+    );
+    window.addEventListener(
+      "popstate",
+      reconcileAutoRefreshAfterVisibilityChange,
+    );
     window.addEventListener(DATA_REFRESH_EVENT, handleDataRefreshRequest);
     window.addEventListener(
       "dailyhot:freeze-auto-refresh-route",
-      handleFreezeAutoRefreshRoute
+      handleFreezeAutoRefreshRoute,
     );
   }
   nextTick(() => {
@@ -458,16 +471,22 @@ onBeforeUnmount(() => {
     document.removeEventListener("click", handleOutsideClick);
     document.removeEventListener(
       "visibilitychange",
-      reconcileAutoRefreshAfterVisibilityChange
+      reconcileAutoRefreshAfterVisibilityChange,
     );
   }
   if (typeof window !== "undefined") {
-    window.removeEventListener("pageshow", reconcileAutoRefreshAfterVisibilityChange);
-    window.removeEventListener("popstate", reconcileAutoRefreshAfterVisibilityChange);
+    window.removeEventListener(
+      "pageshow",
+      reconcileAutoRefreshAfterVisibilityChange,
+    );
+    window.removeEventListener(
+      "popstate",
+      reconcileAutoRefreshAfterVisibilityChange,
+    );
     window.removeEventListener(DATA_REFRESH_EVENT, handleDataRefreshRequest);
     window.removeEventListener(
       "dailyhot:freeze-auto-refresh-route",
-      handleFreezeAutoRefreshRoute
+      handleFreezeAutoRefreshRoute,
     );
   }
   clearAutoRefresh();

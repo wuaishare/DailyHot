@@ -37,27 +37,49 @@
         </div>
         <div v-else-if="!isSmallScreen" class="category-nav">
           <n-space align="center" justify="center">
-            <div
-              v-for="cat in categoryNavOptions"
-              :key="cat.value"
-              class="category-hit-area"
-              @click="selectCategory(cat.value)"
-            >
-              <n-button
-                size="small"
-                text
-                strong
-                :type="
-                  cat.value === activeCategoryLocal ? 'primary' : 'default'
-                "
-                class="cat-btn"
-                @click.stop="selectCategory(cat.value)"
+            <template v-for="cat in categoryNavOptions" :key="cat.value">
+              <n-dropdown
+                v-if="cat.children?.length"
+                trigger="hover"
+                :options="cat.children"
+                @select="selectCategory"
               >
-                {{ cat.label }}
-              </n-button>
-            </div>
+                <div
+                  class="category-hit-area"
+                  @click="selectCategory(cat.value)"
+                >
+                  <n-button
+                    size="small"
+                    text
+                    strong
+                    :type="isCategoryNavActive(cat) ? 'primary' : 'default'"
+                    class="cat-btn"
+                    @click.stop="selectCategory(cat.value)"
+                  >
+                    {{ cat.label }}
+                    <span class="nav-caret" aria-hidden="true">⌄</span>
+                  </n-button>
+                </div>
+              </n-dropdown>
+              <div
+                v-else
+                class="category-hit-area"
+                @click="selectCategory(cat.value)"
+              >
+                <n-button
+                  size="small"
+                  text
+                  strong
+                  :type="isCategoryNavActive(cat) ? 'primary' : 'default'"
+                  class="cat-btn"
+                  @click.stop="selectCategory(cat.value)"
+                >
+                  {{ cat.label }}
+                </n-button>
+              </div>
+            </template>
             <n-dropdown
-              trigger="click"
+              trigger="hover"
               :options="topicMenuOptions"
               @select="selectTopic"
             >
@@ -70,6 +92,7 @@
                   class="cat-btn"
                 >
                   {{ topicNavLabel }}
+                  <span class="nav-caret" aria-hidden="true">⌄</span>
                 </n-button>
               </div>
             </n-dropdown>
@@ -86,7 +109,7 @@
       <div class="controls">
         <n-space justify="end">
           <n-dropdown
-            trigger="click"
+            trigger="hover"
             :options="languageOptions"
             @select="switchLocale"
           >
@@ -369,6 +392,8 @@ const isRefreshEnabledRoute = (routeName) =>
     "wool-topic-locale",
     "game-deals-topic",
     "game-deals-topic-locale",
+    "chigua-topic",
+    "chigua-topic-locale",
     "setting",
     "setting-locale",
   ].includes(routeName);
@@ -445,14 +470,23 @@ const goHome = () => {
   router.push(buildHomePath(locale.value));
 };
 const availableCategorySet = computed(() => {
-  const availableNews = store.newsArr.filter((item) => item.show);
-  return new Set(
-    availableNews.flatMap((item) =>
-      getSourceCategoryIds(item, store.categories)
-        .map((id) => getCategoryByRef(store.categories, id)?.name)
-        .filter(Boolean),
-    ),
-  );
+  const available = new Set();
+  store.newsArr
+    .filter((item) => item.show)
+    .forEach((item) => {
+      getSourceCategoryIds(item, store.categories).forEach((id) => {
+        let category = getCategoryByRef(store.categories, id);
+        const seen = new Set();
+        while (category && !seen.has(category.id)) {
+          seen.add(category.id);
+          available.add(category.name);
+          category = category.parentId
+            ? getCategoryByRef(store.categories, category.parentId)
+            : null;
+        }
+      });
+    });
+  return available;
 });
 const categoryOptions = computed(() => {
   const base = store.categories
@@ -465,7 +499,38 @@ const categoryOptions = computed(() => {
     }));
   return [{ label: t("categories.all"), value: "全部" }, ...base];
 });
-const categoryNavOptions = computed(() => categoryOptions.value);
+const buildCategoryMenuChildren = (parentId) => {
+  const children = store.categories
+    .filter(
+      (item) => item.parentId === parentId && availableCategorySet.value.has(item.name),
+    )
+    .slice()
+    .sort((a, b) => a.order - b.order);
+  return children.map((item) => {
+    const nested = buildCategoryMenuChildren(item.id);
+    return {
+      label: getCategoryLabel(item.name, locale.value),
+      key: item.name,
+      ...(nested.length ? { children: nested } : {}),
+    };
+  });
+};
+const categoryNavOptions = computed(() =>
+  categoryOptions.value.map((option) => {
+    if (option.value === "全部") return option;
+    const category = getCategoryByRef(store.categories, option.value);
+    const children = category ? buildCategoryMenuChildren(category.id) : [];
+    return { ...option, children };
+  }),
+);
+const isCategoryNavActive = (option) => {
+  if (option.value === activeCategoryLocal.value) return true;
+  let current = getCategoryByRef(store.categories, activeCategoryLocal.value);
+  while (current?.parentId) {
+    current = getCategoryByRef(store.categories, current.parentId);
+  }
+  return current?.name === option.value;
+};
 const activeTopic = computed(() => getTopicByRouteName(route.name)?.id || "");
 const topicNavLabel = computed(() => getTopicNavLabel(locale.value));
 const topicMenuOptions = computed(() =>
@@ -1067,6 +1132,13 @@ onBeforeUnmount(() => {
         padding: 0 2px;
         font-weight: 700;
         font-size: 18px;
+      }
+      .nav-caret {
+        margin-left: 2px;
+        color: var(--n-text-color-3);
+        font-size: 10px;
+        font-weight: 500;
+        transform: translateY(-1px);
       }
     }
     .category-hit-area {

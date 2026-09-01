@@ -33,9 +33,7 @@
           <label class="topic-search">
             <span class="sr-only">{{ ui.search }}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
-              />
+              <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
             </svg>
             <input
               v-model.trim="searchQuery"
@@ -44,11 +42,15 @@
               @keydown.esc="searchQuery = ''"
             />
           </label>
+          <div class="toolbar-filters" role="group" :aria-label="ui.filters">
+            <CompactFilter v-model="activeTag" :label="ui.type" :aria-label="ui.type" :options="tagOptions" />
+            <CompactFilter v-model="activeSource" :label="ui.source" :aria-label="ui.source" :options="sourceOptions" />
+            <CompactFilter v-model="activeSort" :label="ui.sort" :aria-label="ui.sort" :options="sortOptions" :show-count="false" />
+            <CompactFilter v-model="pageSize" :label="ui.perPage" :aria-label="ui.perPage" :options="pageSizeOptions" :show-count="false" />
+            <button v-if="hasFilters" type="button" class="reset-filter" @click="resetFilters">{{ ui.reset }}</button>
+          </div>
           <div class="toolbar-actions">
-            <div class="result-count">
-              <strong>{{ filteredData.length }}</strong
-              ><span>{{ ui.matches }}</span>
-            </div>
+            <div class="result-count"><strong>{{ filteredData.length }}</strong><span>{{ ui.matches }}</span></div>
             <button
               v-if="dashboard?.multiSourceCount"
               type="button"
@@ -56,9 +58,7 @@
               :class="{ active: activeConfirmed }"
               :aria-pressed="activeConfirmed"
               @click="activeConfirmed = !activeConfirmed"
-            >
-              {{ ui.confirmed }} <span>{{ dashboard.multiSourceCount }}</span>
-            </button>
+            >{{ ui.confirmed }} <span>{{ dashboard.multiSourceCount }}</span></button>
             <button
               v-if="endingSoonCount"
               type="button"
@@ -66,61 +66,9 @@
               :class="{ active: activeEnding }"
               :aria-pressed="activeEnding"
               @click="activeEnding = !activeEnding"
-            >
-              {{ ui.endingSoon }} <span>{{ endingSoonCount }}</span>
-            </button>
-            <n-button
-              size="small"
-              tertiary
-              :loading="loading"
-              @click="loadTopic(true)"
-              >{{ ui.refresh }}</n-button
-            >
+            >{{ ui.endingSoon }} <span>{{ endingSoonCount }}</span></button>
+            <n-button size="small" tertiary :loading="loading" @click="loadTopic(true)">{{ ui.refresh }}</n-button>
           </div>
-        </div>
-
-        <div class="toolbar-filters" role="group" :aria-label="ui.filters">
-          <label class="toolbar-select">
-            <span>{{ ui.type }}</span>
-            <select v-model="activeTag" :aria-label="ui.type">
-              <option
-                v-for="option in tagOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }} · {{ option.count }}
-              </option>
-            </select>
-          </label>
-          <label class="toolbar-select">
-            <span>{{ ui.source }}</span>
-            <select v-model="activeSource" :aria-label="ui.source">
-              <option
-                v-for="option in sourceOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }} · {{ option.count }}
-              </option>
-            </select>
-          </label>
-          <label class="toolbar-select">
-            <span>{{ ui.sort }}</span>
-            <select v-model="activeSort" :aria-label="ui.sort">
-              <option value="smart">{{ ui.smart }}</option>
-              <option value="price">{{ ui.priceLow }}</option>
-              <option value="discount">{{ ui.discountHigh }}</option>
-              <option value="deadline">{{ ui.deadlineSoon }}</option>
-            </select>
-          </label>
-          <button
-            v-if="hasFilters"
-            type="button"
-            class="reset-filter"
-            @click="resetFilters"
-          >
-            {{ ui.reset }}
-          </button>
         </div>
       </div>
 
@@ -171,14 +119,14 @@
       <div v-if="loading && !result" class="topic-loading">
         <n-skeleton text :repeat="9" />
       </div>
-      <div v-else-if="filteredData.length" class="deal-list">
+      <div v-else-if="filteredData.length" ref="dealListRef" class="deal-list">
         <article
-          v-for="(item, index) in filteredData"
+          v-for="(item, index) in pagedData"
           :key="item.id"
           class="deal-item"
         >
           <span class="deal-rank">{{
-            String(index + 1).padStart(2, "0")
+            String(pageStart + index + 1).padStart(2, "0")
           }}</span>
           <a
             class="deal-cover"
@@ -243,6 +191,17 @@
             >{{ actionLabel(item) }}</a
           >
         </article>
+        <div class="deal-pagination">
+          <span>{{ pageRangeText }}</span>
+          <n-pagination
+            v-if="pageCount > 1"
+            v-model:page="currentPage"
+            :page-count="pageCount"
+            :page-slot="7"
+            size="small"
+            @update:page="handlePageChange"
+          />
+        </div>
       </div>
       <n-empty v-else :description="copy.empty" class="topic-empty" />
     </section>
@@ -250,6 +209,7 @@
 </template>
 
 <script setup>
+import CompactFilter from "@/components/CompactFilter.vue";
 import TopicSwitcher from "@/components/TopicSwitcher.vue";
 import { getHotListsWithFallback } from "@/api";
 import { GAME_DEALS_TOPIC_METADATA } from "@/config/site-metadata.mjs";
@@ -280,6 +240,12 @@ const activeSort = ref(
 );
 const activeConfirmed = ref(route.query.confirmed === "1");
 const activeEnding = ref(route.query.ending === "1");
+const PAGE_SIZE_VALUES = [20, 30, 50, 100];
+const routePage = Number.parseInt(String(route.query.page || "1"), 10);
+const routePageSize = Number.parseInt(String(route.query.size || "30"), 10);
+const currentPage = ref(Number.isFinite(routePage) && routePage > 0 ? routePage : 1);
+const pageSize = ref(PAGE_SIZE_VALUES.includes(routePageSize) ? routePageSize : 30);
+const dealListRef = ref(null);
 const nowTick = ref(Date.now());
 const ENDING_SOON_MS = 72 * 60 * 60 * 1000;
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
@@ -303,6 +269,7 @@ const UI_COPY = {
     endingSoon: "即将结束",
     refresh: "刷新",
     filters: "游戏优惠筛选",
+    perPage: "每页",
     type: "类型",
     source: "来源",
     sort: "排序",
@@ -345,6 +312,7 @@ const UI_COPY = {
     endingSoon: "Ending soon",
     refresh: "Refresh",
     filters: "Game deal filters",
+    perPage: "Per page",
     type: "Type",
     source: "Source",
     sort: "Sort",
@@ -387,6 +355,7 @@ const UI_COPY = {
     endingSoon: "即將結束",
     refresh: "重新整理",
     filters: "遊戲優惠篩選",
+    perPage: "每頁",
     type: "類型",
     source: "來源",
     sort: "排序",
@@ -429,6 +398,7 @@ const UI_COPY = {
     endingSoon: "まもなく終了",
     refresh: "更新",
     filters: "ゲームセール絞り込み",
+    perPage: "件数",
     type: "種類",
     source: "情報源",
     sort: "並び順",
@@ -471,6 +441,7 @@ const UI_COPY = {
     endingSoon: "곧 종료",
     refresh: "새로고침",
     filters: "게임 할인 필터",
+    perPage: "페이지당",
     type: "유형",
     source: "출처",
     sort: "정렬",
@@ -571,6 +542,15 @@ const sourceOptions = computed(() => [
     count: item.count,
   })),
 ]);
+const sortOptions = computed(() => [
+  { value: "smart", label: ui.value.smart },
+  { value: "price", label: ui.value.priceLow },
+  { value: "discount", label: ui.value.discountHigh },
+  { value: "deadline", label: ui.value.deadlineSoon },
+]);
+const pageSizeOptions = computed(() =>
+  PAGE_SIZE_VALUES.map((value) => ({ value, label: String(value) })),
+);
 
 const numberValue = (value) => {
   const n = Number(value);
@@ -683,6 +663,25 @@ const filteredData = computed(() => {
     return score(b) - score(a) || Number(b.hot || 0) - Number(a.hot || 0);
   });
 });
+const pageCount = computed(() =>
+  Math.max(1, Math.ceil(filteredData.value.length / pageSize.value)),
+);
+const pageStart = computed(() => (currentPage.value - 1) * pageSize.value);
+const pagedData = computed(() =>
+  filteredData.value.slice(pageStart.value, pageStart.value + pageSize.value),
+);
+const pageRangeText = computed(() => {
+  if (!filteredData.value.length) return "0 / 0";
+  const start = pageStart.value + 1;
+  const end = Math.min(pageStart.value + pageSize.value, filteredData.value.length);
+  return `${start}–${end} / ${filteredData.value.length}`;
+});
+const handlePageChange = () => {
+  nextTick(() => {
+    dealListRef.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+};
+
 const hasFilters = computed(() =>
   Boolean(
     searchQuery.value ||
@@ -700,6 +699,7 @@ const resetFilters = () => {
   activeSort.value = "smart";
   activeConfirmed.value = false;
   activeEnding.value = false;
+  currentPage.value = 1;
 };
 
 const formatUpdated = (value) =>
@@ -801,6 +801,8 @@ const syncQuery = () => {
     if (activeSort.value !== "smart") query.sort = activeSort.value;
     if (activeConfirmed.value) query.confirmed = "1";
     if (activeEnding.value) query.ending = "1";
+    if (currentPage.value > 1) query.page = String(currentPage.value);
+    if (pageSize.value !== 30) query.size = String(pageSize.value);
     const params = new URLSearchParams(query);
     const search = params.toString();
     window.history.replaceState(
@@ -818,9 +820,20 @@ watch(
     activeSort,
     activeConfirmed,
     activeEnding,
+    currentPage,
+    pageSize,
   ],
   syncQuery,
 );
+watch(
+  [searchQuery, activeTag, activeSource, activeSort, activeConfirmed, activeEnding, pageSize],
+  () => {
+    currentPage.value = 1;
+  },
+);
+watch(pageCount, (count) => {
+  if (currentPage.value > count) currentPage.value = count;
+});
 watch(sourceOptions, (options) => {
   if (
     activeSource.value !== "all" &&
@@ -960,57 +973,50 @@ watch(locale, () => void loadTopic(false));
   padding: 16px;
 }
 .deal-toolbar {
-  display: grid;
-  gap: 9px;
   margin-bottom: 8px;
 }
 .toolbar-primary {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 7px;
   min-width: 0;
 }
 .toolbar-title {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  margin-right: 3px;
+  gap: 7px;
+  flex: 0 0 auto;
   white-space: nowrap;
 }
 .toolbar-title h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
 }
 .toolbar-title span {
   color: var(--n-text-color-3);
-  font-size: 11px;
-}
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 7px;
-  flex: 0 0 auto;
-  min-width: max-content;
-  white-space: nowrap;
+  font-size: 10px;
 }
 .topic-search {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  flex: 1 1 280px;
-  max-width: none;
-  min-width: 160px;
-  height: 32px;
-  padding: 0 10px;
+  flex: 0 1 220px;
+  width: clamp(170px, 18vw, 230px);
+  min-width: 150px;
+  height: 30px;
+  padding: 0 9px;
   border: 1px solid var(--n-border-color);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--n-color);
 }
+.topic-search:focus-within {
+  border-color: var(--n-text-color-3);
+}
 .topic-search svg {
-  width: 15px;
-  height: 15px;
-  margin-right: 7px;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  flex: 0 0 auto;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -1018,25 +1024,48 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-search input {
   width: 100%;
+  min-width: 0;
   border: 0;
   outline: 0;
   background: transparent;
   color: var(--n-text-color);
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
+}
+.toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.toolbar-filters :deep(.compact-filter) {
+  max-width: 150px;
+}
+.toolbar-filters :deep(.compact-filter:nth-child(2)) {
+  max-width: 180px;
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: max-content;
+  white-space: nowrap;
 }
 .result-count {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 3px;
   white-space: nowrap;
 }
 .result-count strong {
-  font-size: 17px;
+  font-size: 16px;
 }
 .result-count span {
   color: var(--n-text-color-3);
-  font-size: 11px;
+  font-size: 10px;
 }
 .confirmed-toggle,
 .reset-filter {
@@ -1050,54 +1079,30 @@ watch(locale, () => void loadTopic(false));
   white-space: nowrap;
 }
 .confirmed-toggle {
-  padding: 0 9px;
+  padding: 0 8px;
 }
 .confirmed-toggle span {
   font-variant-numeric: tabular-nums;
 }
+.confirmed-toggle:hover,
+.reset-filter:hover,
 .confirmed-toggle.active {
   border-color: currentColor;
   color: var(--n-text-color);
   background: var(--n-action-color);
 }
-.toolbar-filters {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.toolbar-filters::-webkit-scrollbar {
-  display: none;
-}
-.toolbar-select {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  flex: 0 0 auto;
-  min-height: 30px;
-  padding: 0 8px;
-  border: 1px solid var(--n-border-color);
-  border-radius: 7px;
-}
-.toolbar-select > span {
-  color: var(--n-text-color-3);
-  font-size: 10px;
-  white-space: nowrap;
-}
-.toolbar-select select {
-  max-width: 170px;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--n-text-color);
-  font-size: 11px;
-  cursor: pointer;
-}
 .reset-filter {
   flex: 0 0 auto;
-  padding: 0 9px;
+  padding: 0 8px;
+}
+@media (max-width: 1100px) and (min-width: 721px) {
+  .toolbar-primary {
+    flex-wrap: wrap;
+  }
+  .toolbar-filters {
+    order: 3;
+    flex-basis: 100%;
+  }
 }
 .deal-feature-grid {
   display: grid;
@@ -1307,6 +1312,20 @@ watch(locale, () => void loadTopic(false));
 .deal-open:hover {
   text-decoration: underline;
 }
+.deal-list {
+  scroll-margin-top: 74px;
+}
+.deal-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 2px 2px;
+  border-top: 1px solid var(--n-border-color);
+  color: var(--n-text-color-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
 .topic-loading {
   padding: 10px 2px;
 }
@@ -1396,6 +1415,15 @@ watch(locale, () => void loadTopic(false));
   .toolbar-filters {
     margin-right: -13px;
     padding-right: 13px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .toolbar-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .toolbar-filters :deep(.compact-filter) {
+    max-width: 165px;
+    flex: 0 0 auto;
   }
   .deal-feature-grid {
     display: flex;
@@ -1450,6 +1478,12 @@ watch(locale, () => void loadTopic(false));
   }
   .deal-meta .tag:nth-of-type(n + 3) {
     display: none;
+  }
+  .deal-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    overflow-x: auto;
   }
 }
 </style>

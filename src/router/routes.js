@@ -1,4 +1,8 @@
-import { GAME_DEALS_TOPIC_METADATA, WOOL_TOPIC_METADATA } from "@/config/site-metadata.mjs";
+import {
+  CHIGUA_TOPIC_METADATA,
+  GAME_DEALS_TOPIC_METADATA,
+  WOOL_TOPIC_METADATA,
+} from "@/config/site-metadata.mjs";
 
 const localePattern = ":lang(en|zh-tw|ja|ko)";
 
@@ -69,13 +73,66 @@ const routes = [
     component: () => import("@/views/Home.vue"),
   },
   {
+    path: "/topic/chigua",
+    name: "chigua-topic",
+    meta: {
+      title: "全网热议事件雷达",
+      seoTitle: ({ locale }) =>
+        (CHIGUA_TOPIC_METADATA[locale] || CHIGUA_TOPIC_METADATA["zh-CN"])
+          .seoTitle,
+      description: ({ locale }) =>
+        (CHIGUA_TOPIC_METADATA[locale] || CHIGUA_TOPIC_METADATA["zh-CN"])
+          .seoDescription,
+      keywords: ({ locale }) =>
+        (CHIGUA_TOPIC_METADATA[locale] || CHIGUA_TOPIC_METADATA["zh-CN"])
+          .seoKeywords,
+      jsonLd: ({ canonical, title, description }) => ({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        url: canonical,
+      }),
+    },
+    component: () => import("@/views/ChiguaTopic.vue"),
+  },
+  {
+    path: `/${localePattern}/topic/chigua`,
+    name: "chigua-topic-locale",
+    meta: {
+      title: "全网热议事件雷达",
+      seoTitle: ({ locale }) =>
+        (CHIGUA_TOPIC_METADATA[locale] || CHIGUA_TOPIC_METADATA["zh-CN"])
+          .seoTitle,
+      description: ({ locale }) =>
+        (CHIGUA_TOPIC_METADATA[locale] || CHIGUA_TOPIC_METADATA["zh-CN"])
+          .seoDescription,
+      keywords: ({ locale }) =>
+        (CHIGUA_TOPIC_METADATA[locale] || CHIGUA_TOPIC_METADATA["zh-CN"])
+          .seoKeywords,
+      jsonLd: ({ canonical, title, description }) => ({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        url: canonical,
+      }),
+    },
+    component: () => import("@/views/ChiguaTopic.vue"),
+  },
+  {
     path: "/topic/wool",
     name: "wool-topic",
     meta: {
       title: "实时羊毛专题",
-      seoTitle: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoTitle,
-      description: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoDescription,
-      keywords: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoKeywords,
+      seoTitle: ({ locale }) =>
+        (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoTitle,
+      description: ({ locale }) =>
+        (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"])
+          .seoDescription,
+      keywords: ({ locale }) =>
+        (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"])
+          .seoKeywords,
       jsonLd: ({ canonical, title, description }) => ({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
@@ -91,9 +148,14 @@ const routes = [
     name: "wool-topic-locale",
     meta: {
       title: "实时羊毛专题",
-      seoTitle: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoTitle,
-      description: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoDescription,
-      keywords: ({ locale }) => (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoKeywords,
+      seoTitle: ({ locale }) =>
+        (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"]).seoTitle,
+      description: ({ locale }) =>
+        (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"])
+          .seoDescription,
+      keywords: ({ locale }) =>
+        (WOOL_TOPIC_METADATA[locale] || WOOL_TOPIC_METADATA["zh-CN"])
+          .seoKeywords,
       jsonLd: ({ canonical, title, description }) => ({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
@@ -173,8 +235,7 @@ const routes = [
       seoTitle: "热榜列表 - 今日热榜",
       description:
         "按平台查看实时热榜排行，覆盖微博、知乎、抖音、B站等热门站点，支持分页与快速跳转。",
-      keywords:
-        "热榜列表,热门榜单,实时排行,微博热搜,知乎热榜,抖音热榜,B站热榜",
+      keywords: "热榜列表,热门榜单,实时排行,微博热搜,知乎热榜,抖音热榜,B站热榜",
     },
     component: () => import("@/views/List.vue"),
   },
@@ -186,8 +247,7 @@ const routes = [
       seoTitle: "热榜列表 - 今日热榜",
       description:
         "按平台查看实时热榜排行，覆盖微博、知乎、抖音、B站等热门站点，支持分页与快速跳转。",
-      keywords:
-        "热榜列表,热门榜单,实时排行,微博热搜,知乎热榜,抖音热榜,B站热榜",
+      keywords: "热榜列表,热门榜单,实时排行,微博热搜,知乎热榜,抖音热榜,B站热榜",
     },
     component: () => import("@/views/List.vue"),
   },
@@ -199,8 +259,7 @@ const routes = [
       seoTitle: "热榜列表 - 今日热榜",
       description:
         "按平台查看实时热榜排行，覆盖微博、知乎、抖音、B站等热门站点，支持分页与快速跳转。",
-      keywords:
-        "热榜列表,热门榜单,实时排行,微博热搜,知乎热榜,抖音热榜,B站热榜",
+      keywords: "热榜列表,热门榜单,实时排行,微博热搜,知乎热榜,抖音热榜,B站热榜",
     },
     component: () => import("@/views/List.vue"),
   },

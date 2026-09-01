@@ -11,6 +11,18 @@ export const GAME_DEAL_SOURCE_IDS = [
 
 export const TOPIC_REGISTRY = [
   {
+    id: "chigua",
+    path: "/topic/chigua",
+    routeNames: ["chigua-topic", "chigua-topic-locale"],
+    labels: {
+      "zh-CN": "吃瓜",
+      en: "Hot Events",
+      "zh-TW": "熱議",
+      ja: "話題",
+      ko: "화제",
+    },
+  },
+  {
     id: "wool",
     path: "/topic/wool",
     routeNames: ["wool-topic", "wool-topic-locale"],
