@@ -57,6 +57,9 @@ const SOURCE_LOGO_ALIAS_MAP = {
   "producthunt-ai": "producthunt",
   "hackernews-ai": "hackernews",
   "sina-ai": "sina",
+  "36kr-ai": "36kr",
+  "geekpark-ai": "geekpark",
+  "ithome-ai": "ithome",
 };
 
 export const getSourceLogo = (name) => {

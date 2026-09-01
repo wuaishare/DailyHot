@@ -802,6 +802,27 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ja: "Sina AIトレンド",
     ko: "Sina AI 트렌드",
   },
+  "36kr-ai": {
+    "zh-CN": "36氪 AI",
+    "zh-TW": "36氪 AI",
+    en: "36Kr AI",
+    ja: "36Kr AI",
+    ko: "36Kr AI",
+  },
+  "geekpark-ai": {
+    "zh-CN": "极客公园 AI",
+    "zh-TW": "極客公園 AI",
+    en: "GeekPark AI",
+    ja: "GeekPark AI",
+    ko: "GeekPark AI",
+  },
+  "ithome-ai": {
+    "zh-CN": "IT之家 AI",
+    "zh-TW": "IT之家 AI",
+    en: "ITHome AI",
+    ja: "ITHome AI",
+    ko: "ITHome AI",
+  },
 };
 
 const SOURCE_DISPLAY_LABEL_OVERRIDES = {

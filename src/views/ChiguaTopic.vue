@@ -19,7 +19,6 @@
 
     <section class="topic-section">
       <div class="topic-workspace-header">
-        <TopicSwitcher active-topic="chigua" :locale="locale" />
         <div class="topic-workspace-summary">
           <div class="topic-workspace-title">
             <h1>{{ copy.title }}</h1>
@@ -207,7 +206,6 @@
 <script setup>
 import CompactFilter from "@/components/CompactFilter.vue";
 import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
-import TopicSwitcher from "@/components/TopicSwitcher.vue";
 import { getHotListsWithFallback } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";

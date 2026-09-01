@@ -19,7 +19,6 @@
 
     <section class="topic-section feed-section">
       <div class="topic-workspace-header">
-        <TopicSwitcher active-topic="wool" :locale="locale" />
         <div class="topic-workspace-title">
           <h1>{{ copy.title }}</h1>
           <p class="topic-description">{{ copy.description }}</p>
@@ -234,7 +233,6 @@
 </template>
 
 <script setup>
-import TopicSwitcher from "@/components/TopicSwitcher.vue";
 import CompactFilter from "@/components/CompactFilter.vue";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { getHotListsWithFallback } from "@/api";
