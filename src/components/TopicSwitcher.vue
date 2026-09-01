@@ -36,12 +36,20 @@ const navLabel = computed(() => getTopicNavLabel(props.locale));
   align-items: center;
   gap: 10px;
   min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
+  border-radius: 10px;
+  background: var(--n-action-color, rgba(127, 127, 127, 0.06));
 }
 .topic-switcher__label {
   flex: 0 0 auto;
-  color: var(--n-text-color-3);
+  padding: 4px 7px;
+  border-radius: 6px;
+  color: var(--n-text-color);
+  background: var(--n-color, #fff);
+  box-shadow: inset 0 0 0 1px var(--n-border-color, rgba(127, 127, 127, 0.18));
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .topic-switcher__rail {
   display: flex;
@@ -56,13 +64,17 @@ const navLabel = computed(() => getTopicNavLabel(props.locale));
 }
 .topic-switcher__item {
   flex: 0 0 auto;
-  padding: 5px 9px;
+  padding: 6px 11px;
   border-radius: 7px;
-  color: var(--n-text-color-3);
+  color: var(--n-text-color-2);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 650;
   line-height: 1.2;
   text-decoration: none;
+  transition:
+    color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
 }
 .topic-switcher__item:hover,
 .topic-switcher__item:focus-visible {
@@ -71,9 +83,9 @@ const navLabel = computed(() => getTopicNavLabel(props.locale));
   outline: none;
 }
 .topic-switcher__item.is-active {
-  color: var(--n-text-color);
-  background: var(--n-action-color);
-  box-shadow: inset 0 0 0 1px var(--n-border-color);
+  color: var(--n-primary-color, #d03050);
+  background: var(--n-color, #fff);
+  box-shadow: inset 0 0 0 1px currentColor;
 }
 @media (max-width: 720px) {
   .topic-switcher {

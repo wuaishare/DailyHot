@@ -1,6 +1,5 @@
 <template>
   <section class="wool-topic">
-
     <n-alert
       v-if="loadError"
       type="error"
@@ -812,9 +811,15 @@ const woolType = (item) => {
   const text = textForItem(item);
   if (hasBenefitType(item, "red_packet") || /红包|洪包|紅包/.test(text))
     return "red_packet";
-  if (/外卖|外賣|闪购|閃購|饿了么|餓了麼|美团买菜|美團買菜|即时零售|即時零售/.test(text))
+  if (
+    /外卖|外賣|闪购|閃購|饿了么|餓了麼|美团买菜|美團買菜|即时零售|即時零售/.test(
+      text,
+    )
+  )
     return "delivery";
-  if (/打车|打車|滴滴|花小猪|花小豬|高德打车|高德打車|曹操出行|t3出行/.test(text))
+  if (
+    /打车|打車|滴滴|花小猪|花小豬|高德打车|高德打車|曹操出行|t3出行/.test(text)
+  )
     return "ride";
   if (item?.intent === "coupon" || hasBenefitType(item, "coupon"))
     return "coupon";
@@ -1316,6 +1321,8 @@ onBeforeUnmount(() => {
   --wool-list-padding-y: 11px;
   display: grid;
   gap: var(--wool-section-gap);
+  width: min(100%, 1240px);
+  margin: 0 auto;
 }
 .topic-section {
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
@@ -1324,9 +1331,9 @@ onBeforeUnmount(() => {
 }
 .topic-workspace-header {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: end;
-  gap: 16px;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+  gap: 10px;
   padding-bottom: 10px;
   margin-bottom: 10px;
   border-bottom: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
@@ -2120,11 +2127,17 @@ onBeforeUnmount(() => {
 }
 @media (max-width: 640px) {
   .toolbar-primary {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     gap: 5px;
   }
   .toolbar-actions {
     gap: 4px;
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+    overflow: visible;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
   .opportunity-toolbar .topic-search {
     width: 100%;

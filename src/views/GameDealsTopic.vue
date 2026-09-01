@@ -1,6 +1,5 @@
 <template>
   <section class="game-topic">
-
     <n-alert
       v-if="loadError"
       type="error"
@@ -123,6 +122,50 @@
             {{ ui.reset }}
           </button>
         </div>
+      </div>
+
+      <div
+        v-if="featuredGroups.length"
+        class="deal-feature-grid"
+        :aria-label="copy.feedTitle"
+      >
+        <a
+          v-for="group in featuredGroups"
+          :key="group.key"
+          class="deal-feature"
+          :href="group.item.url"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <div class="deal-feature__head">
+            <span>{{ group.label }}</span>
+            <em>{{ group.count }}</em>
+          </div>
+          <div class="deal-feature__body">
+            <img
+              :src="
+                group.item.cover || getSourceLogo(primarySource(group.item))
+              "
+              :alt="group.item.title"
+              loading="lazy"
+              @error="onCoverError($event, group.item)"
+            />
+            <div>
+              <strong>{{ group.item.title }}</strong>
+              <p>
+                <b v-if="priceLabel(group.item)">{{
+                  priceLabel(group.item)
+                }}</b>
+                <span v-if="discountLabel(group.item)">{{
+                  discountLabel(group.item)
+                }}</span>
+                <time v-if="deadlineLabel(group.item)">{{
+                  deadlineLabel(group.item)
+                }}</time>
+              </p>
+            </div>
+          </div>
+        </a>
       </div>
 
       <div v-if="loading && !result" class="topic-loading">
@@ -564,13 +607,47 @@ const remainingMs = (item) => {
 };
 const isEndingSoon = (item) => {
   const remaining = remainingMs(item);
-  return remaining !== undefined && remaining > 0 && remaining <= ENDING_SOON_MS;
+  return (
+    remaining !== undefined && remaining > 0 && remaining <= ENDING_SOON_MS
+  );
 };
 const endingSoonCount = computed(() => data.value.filter(isEndingSoon).length);
 const deadlineSortValue = (item) => {
   const value = expiresAt(item);
   return value && value > nowTick.value ? value : Number.MAX_SAFE_INTEGER;
 };
+const featuredGroups = computed(() => {
+  const pickBest = (items) =>
+    items.slice().sort((a, b) => score(b) - score(a))[0];
+  const freeItems = data.value.filter((item) => tags(item).includes("free"));
+  const endingItems = data.value
+    .filter(isEndingSoon)
+    .slice()
+    .sort((a, b) => deadlineSortValue(a) - deadlineSortValue(b));
+  const lowestItems = data.value.filter((item) =>
+    tags(item).some((tag) => ["new-lowest", "lowest"].includes(tag)),
+  );
+  return [
+    {
+      key: "free",
+      label: ui.value.free,
+      count: freeItems.length,
+      item: pickBest(freeItems),
+    },
+    {
+      key: "ending",
+      label: ui.value.endingSoon,
+      count: endingItems.length,
+      item: endingItems[0],
+    },
+    {
+      key: "lowest",
+      label: ui.value.lowest,
+      count: lowestItems.length,
+      item: pickBest(lowestItems),
+    },
+  ].filter((group) => group.item);
+});
 
 const filteredData = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
@@ -645,8 +722,16 @@ const interpolate = (template, values) =>
     template,
   );
 const sameLocalDay = (a, b) =>
-  new Intl.DateTimeFormat(locale.value, { year: "numeric", month: "2-digit", day: "2-digit" }).format(a) ===
-  new Intl.DateTimeFormat(locale.value, { year: "numeric", month: "2-digit", day: "2-digit" }).format(b);
+  new Intl.DateTimeFormat(locale.value, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(a) ===
+  new Intl.DateTimeFormat(locale.value, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(b);
 const deadlineLabel = (item) => {
   const value = eventTime(item);
   if (!value) return "";
@@ -659,7 +744,10 @@ const deadlineLabel = (item) => {
   const hours = Math.max(1, Math.floor(remaining / (60 * 60 * 1000)));
   if (remaining <= 6 * 60 * 60 * 1000)
     return `${ui.value.endingUrgent} · ${interpolate(ui.value.hoursLeft, { hours })}`;
-  if (remaining < 24 * 60 * 60 * 1000 && sameLocalDay(new Date(nowTick.value), d))
+  if (
+    remaining < 24 * 60 * 60 * 1000 &&
+    sameLocalDay(new Date(nowTick.value), d)
+  )
     return `${ui.value.todayEnds} · ${interpolate(ui.value.hoursLeft, { hours })}`;
   if (remaining <= ENDING_SOON_MS) {
     const days = Math.floor(hours / 24);
@@ -668,7 +756,10 @@ const deadlineLabel = (item) => {
       ? interpolate(ui.value.daysHoursLeft, { days, hours: restHours })
       : interpolate(ui.value.hoursLeft, { hours });
   }
-  return new Intl.DateTimeFormat(locale.value, { month: "2-digit", day: "2-digit" }).format(d);
+  return new Intl.DateTimeFormat(locale.value, {
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
 };
 const deadlineTitle = (item) => {
   const value = eventTime(item);
@@ -720,7 +811,14 @@ const syncQuery = () => {
   }, 180);
 };
 watch(
-  [searchQuery, activeTag, activeSource, activeSort, activeConfirmed, activeEnding],
+  [
+    searchQuery,
+    activeTag,
+    activeSource,
+    activeSort,
+    activeConfirmed,
+    activeEnding,
+  ],
   syncQuery,
 );
 watch(sourceOptions, (options) => {
@@ -801,6 +899,8 @@ watch(locale, () => void loadTopic(false));
 .game-topic {
   display: grid;
   gap: 14px;
+  width: min(100%, 1240px);
+  margin: 0 auto;
 }
 .topic-section {
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
@@ -809,9 +909,9 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-workspace-header {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: end;
-  gap: 16px;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+  gap: 10px;
   padding-bottom: 10px;
   margin-bottom: 10px;
   border-bottom: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
@@ -999,16 +1099,95 @@ watch(locale, () => void loadTopic(false));
   flex: 0 0 auto;
   padding: 0 9px;
 }
+.deal-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 2px 0 10px;
+}
+.deal-feature {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--n-action-color, rgba(127, 127, 127, 0.04));
+}
+.deal-feature:hover,
+.deal-feature:focus-visible {
+  border-color: var(--n-text-color-3);
+  outline: none;
+}
+.deal-feature__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+  color: var(--n-text-color-2);
+  font-size: 11px;
+  font-weight: 700;
+}
+.deal-feature__head em {
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+.deal-feature__body {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+.deal-feature__body > img {
+  width: 92px;
+  height: 52px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--n-color);
+}
+.deal-feature__body > div {
+  min-width: 0;
+}
+.deal-feature__body strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.deal-feature__body p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.deal-feature__body b {
+  color: var(--n-text-color);
+  font-size: 12px;
+}
+.deal-feature__body span {
+  color: #d03050;
+  font-weight: 600;
+}
 .deal-list {
   display: grid;
 }
 .deal-item {
   display: grid;
-  grid-template-columns: 30px 72px minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: 30px 112px minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: center;
   min-width: 0;
-  padding: 10px 2px;
+  padding: 11px 2px;
   border-top: 1px solid var(--n-border-color);
 }
 .deal-rank {
@@ -1019,9 +1198,9 @@ watch(locale, () => void loadTopic(false));
   font-variant-numeric: tabular-nums;
 }
 .deal-cover {
-  width: 72px;
-  height: 40px;
-  border-radius: 5px;
+  width: 112px;
+  height: 63px;
+  border-radius: 6px;
   overflow: hidden;
   background: var(--n-action-color);
 }
@@ -1188,7 +1367,7 @@ watch(locale, () => void loadTopic(false));
   }
   .toolbar-primary {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
   .toolbar-title {
@@ -1196,6 +1375,12 @@ watch(locale, () => void loadTopic(false));
   }
   .toolbar-actions {
     gap: 4px;
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+    overflow: visible;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
   .topic-search {
     min-width: 0;
@@ -1212,14 +1397,36 @@ watch(locale, () => void loadTopic(false));
     margin-right: -13px;
     padding-right: 13px;
   }
-  .deal-item {
-    grid-template-columns: 24px 54px minmax(0, 1fr);
+  .deal-feature-grid {
+    display: flex;
     gap: 7px;
+    margin-right: -13px;
+    padding-right: 13px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .deal-feature-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .deal-feature {
+    flex: 0 0 250px;
+    padding: 8px;
+  }
+  .deal-feature__body {
+    grid-template-columns: 78px minmax(0, 1fr);
+  }
+  .deal-feature__body > img {
+    width: 78px;
+    height: 44px;
+  }
+  .deal-item {
+    grid-template-columns: 24px 64px minmax(0, 1fr);
+    gap: 8px;
     padding: 10px 0;
   }
   .deal-cover {
-    width: 54px;
-    height: 32px;
+    width: 64px;
+    height: 36px;
   }
   .deal-open {
     display: none;
