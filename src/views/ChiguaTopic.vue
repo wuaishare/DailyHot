@@ -73,40 +73,36 @@
         </div>
       </div>
 
-      <div v-if="featuredGroups.length" class="event-feature-grid">
-        <a
-          v-for="group in featuredGroups"
-          :key="group.key"
-          class="event-feature"
-          :href="group.item.url"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <div class="event-feature__head">
-            <span>{{ group.label }}</span>
-            <em v-if="eventSourceCount(group.item) > 1"
-              >{{ eventSourceCount(group.item) }} {{ ui.platforms }}</em
-            >
-          </div>
-          <div class="event-feature__body">
+      <TopicLaneGrid
+        v-if="featuredGroups.length"
+        :lanes="featuredGroups"
+        :aria-label="copy.feedTitle"
+        @select="selectFeaturedLane"
+      >
+        <template #item="{ item }">
+          <a
+            class="event-lane-item"
+            :href="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <img
-              :src="
-                group.item.cover || getSourceLogo(primarySource(group.item))
-              "
-              :alt="group.item.title"
+              :src="item.cover || getSourceLogo(primarySource(item))"
+              :alt="item.title"
               loading="lazy"
-              @error="onImageError($event, group.item)"
+              @error="onImageError($event, item)"
             />
             <div>
-              <strong>{{ group.item.title }}</strong>
+              <strong>{{ item.title }}</strong>
               <p>
-                <span>{{ sourceLabel(group.item) }}</span>
-                <b v-if="group.item.hot">{{ formatHot(group.item.hot) }}</b>
+                <span>{{ sourceLabel(item) }}</span>
+                <b v-if="eventSourceCount(item) > 1">{{ eventSourceCount(item) }} {{ ui.platforms }}</b>
+                <em v-else-if="item.hot">{{ formatHot(item.hot) }}</em>
               </p>
             </div>
-          </div>
-        </a>
-      </div>
+          </a>
+        </template>
+      </TopicLaneGrid>
 
       <div v-if="loading && !result" class="topic-loading">
         <n-skeleton text :repeat="9" />
@@ -210,6 +206,7 @@
 
 <script setup>
 import CompactFilter from "@/components/CompactFilter.vue";
+import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
 import TopicSwitcher from "@/components/TopicSwitcher.vue";
 import { getHotListsWithFallback } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
@@ -444,6 +441,15 @@ const UI_COPY = {
   },
 };
 const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
+const viewAllLabel = computed(() =>
+  ({
+    "zh-CN": "查看全部",
+    en: "View all",
+    "zh-TW": "查看全部",
+    ja: "すべて見る",
+    ko: "전체 보기",
+  })[locale.value] || "查看全部",
+);
 const CATEGORY_ORDER = [
   "entertainment",
   "society",
@@ -583,26 +589,62 @@ const handlePageChange = () => {
   });
 };
 
+const FEATURED_LANE_LIMIT = 5;
 const featuredGroups = computed(() => {
-  const used = new Set();
-  const pick = (predicate) =>
-    data.value.find((item) => predicate(item) && !used.has(item.id));
-  const definitions = [
-    ["resonance", (item) => eventSourceCount(item) > 1],
-    ["entertainment", (item) => eventCategory(item) === "entertainment"],
-    ["society", (item) => eventCategory(item) === "society"],
-  ];
-  return definitions
-    .map(([key, predicate]) => {
-      const item =
-        pick(predicate) ||
-        data.value.find((candidate) => !used.has(candidate.id));
-      if (!item) return null;
-      used.add(item.id);
-      return { key, label: ui.value.featured[key], item };
-    })
-    .filter(Boolean);
+  const byScore = (items) =>
+    items
+      .slice()
+      .sort(
+        (a, b) =>
+          eventSourceCount(b) - eventSourceCount(a) ||
+          eventScore(b) - eventScore(a),
+      );
+  const resonanceItems = byScore(
+    data.value.filter((item) => eventSourceCount(item) > 1),
+  );
+  const entertainmentItems = byScore(
+    data.value.filter((item) => eventCategory(item) === "entertainment"),
+  );
+  const societyItems = byScore(
+    data.value.filter((item) => eventCategory(item) === "society"),
+  );
+  return [
+    {
+      key: "resonance",
+      label: ui.value.featured.resonance,
+      count: resonanceItems.length,
+      items: resonanceItems.slice(0, FEATURED_LANE_LIMIT),
+      actionLabel: `${viewAllLabel.value} ${resonanceItems.length}`,
+      filter: { confirmed: true },
+    },
+    {
+      key: "entertainment",
+      label: ui.value.featured.entertainment,
+      count: entertainmentItems.length,
+      items: entertainmentItems.slice(0, FEATURED_LANE_LIMIT),
+      actionLabel: `${viewAllLabel.value} ${entertainmentItems.length}`,
+      filter: { category: "entertainment" },
+    },
+    {
+      key: "society",
+      label: ui.value.featured.society,
+      count: societyItems.length,
+      items: societyItems.slice(0, FEATURED_LANE_LIMIT),
+      actionLabel: `${viewAllLabel.value} ${societyItems.length}`,
+      filter: { category: "society" },
+    },
+  ].filter((group) => group.items.length);
 });
+const selectFeaturedLane = (lane) => {
+  activeSource.value = "all";
+  activeSort.value = "smart";
+  activeCategory.value = lane?.filter?.category || "all";
+  activeConfirmed.value = Boolean(lane?.filter?.confirmed);
+  currentPage.value = 1;
+  nextTick(() =>
+    eventListRef.value?.scrollIntoView({ behavior: "smooth", block: "start" }),
+  );
+};
 
 const hasFilters = computed(() =>
   Boolean(
@@ -940,72 +982,67 @@ watch(locale, () => void loadTopic(false));
     flex-basis: 100%;
   }
 }
-.event-feature-grid {
+.event-lane-item {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 56px minmax(0, 1fr);
   gap: 8px;
-  margin: 2px 0 10px;
-}
-.event-feature {
+  align-items: center;
   min-width: 0;
-  padding: 9px;
-  border: 1px solid var(--n-border-color);
-  border-radius: 10px;
+  padding: 7px 1px;
+  border-bottom: 1px solid var(--n-border-color);
   color: inherit;
   text-decoration: none;
-  background: var(--n-action-color, rgba(127, 127, 127, 0.04));
 }
-.event-feature:hover {
-  border-color: var(--n-text-color-3);
+.event-lane-item:last-child {
+  border-bottom: 0;
 }
-.event-feature__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 7px;
-  color: var(--n-text-color-2);
-  font-size: 11px;
-  font-weight: 700;
+.event-lane-item:hover strong,
+.event-lane-item:focus-visible strong {
+  text-decoration: underline;
 }
-.event-feature__head em {
-  color: var(--n-text-color-3);
-  font-size: 10px;
-  font-style: normal;
+.event-lane-item:focus-visible {
+  outline: none;
 }
-.event-feature__body {
-  display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 9px;
-  align-items: center;
-}
-.event-feature__body > img {
-  width: 92px;
-  height: 52px;
-  border-radius: 6px;
+.event-lane-item > img {
+  width: 56px;
+  height: 34px;
+  border-radius: 5px;
   object-fit: cover;
   background: var(--n-color);
 }
-.event-feature__body > div {
+.event-lane-item > div {
   min-width: 0;
 }
-.event-feature__body strong {
+.event-lane-item strong {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
-}
-.event-feature__body p {
-  display: flex;
-  gap: 6px;
-  margin: 5px 0 0;
-  color: var(--n-text-color-3);
-  font-size: 10px;
-}
-.event-feature__body b {
-  color: var(--n-text-color);
   font-size: 11px;
+  line-height: 1.35;
+}
+.event-lane-item p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  margin: 3px 0 0;
+  color: var(--n-text-color-3);
+  font-size: 9px;
+  white-space: nowrap;
+}
+.event-lane-item p span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.event-lane-item p b {
+  flex: 0 0 auto;
+  color: var(--n-text-color);
+  font-size: 9px;
+}
+.event-lane-item p em {
+  flex: 0 0 auto;
+  font-style: normal;
 }
 .event-list {
   display: grid;
@@ -1231,28 +1268,6 @@ watch(locale, () => void loadTopic(false));
   .toolbar-filters :deep(.compact-filter) {
     max-width: 165px;
     flex: 0 0 auto;
-  }
-  .event-feature-grid {
-    display: flex;
-    gap: 7px;
-    margin-right: -13px;
-    padding-right: 13px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .event-feature-grid::-webkit-scrollbar {
-    display: none;
-  }
-  .event-feature {
-    flex: 0 0 250px;
-    padding: 8px;
-  }
-  .event-feature__body {
-    grid-template-columns: 78px minmax(0, 1fr);
-  }
-  .event-feature__body > img {
-    width: 78px;
-    height: 44px;
   }
   .event-item {
     grid-template-columns: 24px 62px minmax(0, 1fr);

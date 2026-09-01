@@ -72,49 +72,36 @@
         </div>
       </div>
 
-      <div
+      <TopicLaneGrid
         v-if="featuredGroups.length"
-        class="deal-feature-grid"
+        :lanes="featuredGroups"
         :aria-label="copy.feedTitle"
+        @select="selectFeaturedLane"
       >
-        <a
-          v-for="group in featuredGroups"
-          :key="group.key"
-          class="deal-feature"
-          :href="group.item.url"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <div class="deal-feature__head">
-            <span>{{ group.label }}</span>
-            <em>{{ group.count }}</em>
-          </div>
-          <div class="deal-feature__body">
+        <template #item="{ item }">
+          <a
+            class="deal-lane-item"
+            :href="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <img
-              :src="
-                group.item.cover || getSourceLogo(primarySource(group.item))
-              "
-              :alt="group.item.title"
+              :src="item.cover || getSourceLogo(primarySource(item))"
+              :alt="item.title"
               loading="lazy"
-              @error="onCoverError($event, group.item)"
+              @error="onCoverError($event, item)"
             />
             <div>
-              <strong>{{ group.item.title }}</strong>
+              <strong>{{ item.title }}</strong>
               <p>
-                <b v-if="priceLabel(group.item)">{{
-                  priceLabel(group.item)
-                }}</b>
-                <span v-if="discountLabel(group.item)">{{
-                  discountLabel(group.item)
-                }}</span>
-                <time v-if="deadlineLabel(group.item)">{{
-                  deadlineLabel(group.item)
-                }}</time>
+                <b v-if="priceLabel(item)">{{ priceLabel(item) }}</b>
+                <span v-if="discountLabel(item)">{{ discountLabel(item) }}</span>
+                <time v-if="deadlineLabel(item)">{{ deadlineLabel(item) }}</time>
               </p>
             </div>
-          </div>
-        </a>
-      </div>
+          </a>
+        </template>
+      </TopicLaneGrid>
 
       <div v-if="loading && !result" class="topic-loading">
         <n-skeleton text :repeat="9" />
@@ -211,6 +198,7 @@
 
 <script setup>
 import CompactFilter from "@/components/CompactFilter.vue";
+import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
 import TopicSwitcher from "@/components/TopicSwitcher.vue";
 import { getHotListsWithFallback } from "@/api";
 import { GAME_DEALS_TOPIC_METADATA } from "@/config/site-metadata.mjs";
@@ -241,6 +229,7 @@ const activeSort = ref(
 );
 const activeConfirmed = ref(route.query.confirmed === "1");
 const activeEnding = ref(route.query.ending === "1");
+const activeValueLane = ref(route.query.value === "1");
 const PAGE_SIZE_VALUES = [20, 30, 50, 100];
 const routePage = Number.parseInt(String(route.query.page || "1"), 10);
 const routePageSize = Number.parseInt(String(route.query.size || "30"), 10);
@@ -481,6 +470,15 @@ const UI_COPY = {
   },
 };
 const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
+const viewAllLabel = computed(() =>
+  ({
+    "zh-CN": "查看全部",
+    en: "View all",
+    "zh-TW": "查看全部",
+    ja: "すべて見る",
+    ko: "전체 보기",
+  })[locale.value] || "查看全部",
+);
 const TAG_ORDER = [
   "free",
   "upcoming-free",
@@ -602,17 +600,21 @@ const deadlineSortValue = (item) => {
   const value = expiresAt(item);
   return value && value > nowTick.value ? value : Number.MAX_SAFE_INTEGER;
 };
+const FEATURED_LANE_LIMIT = 5;
 const featuredGroups = computed(() => {
-  const pickBest = (items) =>
-    items.slice().sort((a, b) => score(b) - score(a))[0];
-  const freeItems = data.value.filter((item) => tags(item).includes("free"));
+  const byScore = (items) => items.slice().sort((a, b) => score(b) - score(a));
+  const freeItems = byScore(
+    data.value.filter((item) => tags(item).includes("free")),
+  );
   const endingItems = data.value
     .filter(isEndingSoon)
     .slice()
     .sort((a, b) => deadlineSortValue(a) - deadlineSortValue(b));
-  const valueItems = data.value.filter((item) =>
-    tags(item).some((tag) =>
-      ["new-lowest", "lowest", "discount90", "discount75"].includes(tag),
+  const valueItems = byScore(
+    data.value.filter((item) =>
+      tags(item).some((tag) =>
+        ["new-lowest", "lowest", "discount90", "discount75"].includes(tag),
+      ),
     ),
   );
   return [
@@ -620,22 +622,44 @@ const featuredGroups = computed(() => {
       key: "free",
       label: ui.value.free,
       count: freeItems.length,
-      item: pickBest(freeItems),
+      items: freeItems.slice(0, FEATURED_LANE_LIMIT),
+      actionLabel: `${viewAllLabel.value} ${freeItems.length}`,
+      filter: { tag: "free" },
     },
     {
       key: "value",
       label: ui.value.valuePick,
       count: valueItems.length,
-      item: pickBest(valueItems),
+      items: valueItems.slice(0, FEATURED_LANE_LIMIT),
+      actionLabel: `${viewAllLabel.value} ${valueItems.length}`,
+      filter: { tag: "value" },
     },
     {
       key: "ending",
       label: ui.value.endingSoon,
       count: endingItems.length,
-      item: endingItems[0],
+      items: endingItems.slice(0, FEATURED_LANE_LIMIT),
+      actionLabel: `${viewAllLabel.value} ${endingItems.length}`,
+      filter: { ending: true },
     },
-  ].filter((group) => group.item);
+  ].filter((group) => group.items.length);
 });
+const selectFeaturedLane = (lane) => {
+  activeSource.value = "all";
+  activeConfirmed.value = false;
+  activeSort.value = "smart";
+  activeEnding.value = Boolean(lane?.filter?.ending);
+  activeValueLane.value = lane?.filter?.tag === "value";
+  if (lane?.filter?.tag === "free") {
+    activeTag.value = "free";
+  } else {
+    activeTag.value = "all";
+  }
+  currentPage.value = 1;
+  nextTick(() =>
+    dealListRef.value?.scrollIntoView({ behavior: "smooth", block: "start" }),
+  );
+};
 
 const filteredData = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
@@ -650,6 +674,13 @@ const filteredData = computed(() => {
       return false;
     if (activeConfirmed.value && sourceCount(item) < 2) return false;
     if (activeEnding.value && !isEndingSoon(item)) return false;
+    if (
+      activeValueLane.value &&
+      !tags(item).some((tag) =>
+        ["new-lowest", "lowest", "discount90", "discount75"].includes(tag),
+      )
+    )
+      return false;
     return true;
   });
   return [...rows].sort((a, b) => {
@@ -701,7 +732,8 @@ const hasFilters = computed(() =>
     activeSource.value !== "all" ||
     activeSort.value !== "smart" ||
     activeConfirmed.value ||
-    activeEnding.value,
+    activeEnding.value ||
+    activeValueLane.value,
   ),
 );
 const resetFilters = () => {
@@ -711,6 +743,7 @@ const resetFilters = () => {
   activeSort.value = "smart";
   activeConfirmed.value = false;
   activeEnding.value = false;
+  activeValueLane.value = false;
   currentPage.value = 1;
 };
 
@@ -813,6 +846,7 @@ const syncQuery = () => {
     if (activeSort.value !== "smart") query.sort = activeSort.value;
     if (activeConfirmed.value) query.confirmed = "1";
     if (activeEnding.value) query.ending = "1";
+    if (activeValueLane.value) query.value = "1";
     if (currentPage.value > 1) query.page = String(currentPage.value);
     if (pageSize.value !== 30) query.size = String(pageSize.value);
     const params = new URLSearchParams(query);
@@ -832,13 +866,23 @@ watch(
     activeSort,
     activeConfirmed,
     activeEnding,
+    activeValueLane,
     currentPage,
     pageSize,
   ],
   syncQuery,
 );
 watch(
-  [searchQuery, activeTag, activeSource, activeSort, activeConfirmed, activeEnding, pageSize],
+  [
+    searchQuery,
+    activeTag,
+    activeSource,
+    activeSort,
+    activeConfirmed,
+    activeEnding,
+    activeValueLane,
+    pageSize,
+  ],
   () => {
     currentPage.value = 1;
   },
@@ -859,6 +903,9 @@ watch(tagOptions, (options) => {
     !options.some((item) => item.value === activeTag.value)
   )
     activeTag.value = "all";
+});
+watch(activeTag, (tag) => {
+  if (tag !== "all" && activeValueLane.value) activeValueLane.value = false;
 });
 
 const loadTopic = async (force = false) => {
@@ -1116,82 +1163,60 @@ watch(locale, () => void loadTopic(false));
     flex-basis: 100%;
   }
 }
-.deal-feature-grid {
+.deal-lane-item {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 64px minmax(0, 1fr);
   gap: 8px;
-  margin: 2px 0 10px;
-}
-.deal-feature {
+  align-items: center;
   min-width: 0;
-  padding: 9px;
-  border: 1px solid var(--n-border-color);
-  border-radius: 10px;
+  padding: 7px 1px;
+  border-bottom: 1px solid var(--n-border-color);
   color: inherit;
   text-decoration: none;
-  background: var(--n-action-color, rgba(127, 127, 127, 0.04));
 }
-.deal-feature:hover,
-.deal-feature:focus-visible {
-  border-color: var(--n-text-color-3);
+.deal-lane-item:last-child {
+  border-bottom: 0;
+}
+.deal-lane-item:hover strong,
+.deal-lane-item:focus-visible strong {
+  text-decoration: underline;
+}
+.deal-lane-item:focus-visible {
   outline: none;
 }
-.deal-feature__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 7px;
-  color: var(--n-text-color-2);
-  font-size: 11px;
-  font-weight: 700;
-}
-.deal-feature__head em {
-  color: var(--n-text-color-3);
-  font-size: 10px;
-  font-style: normal;
-  font-variant-numeric: tabular-nums;
-}
-.deal-feature__body {
-  display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 9px;
-  align-items: center;
-}
-.deal-feature__body > img {
-  width: 92px;
-  height: 52px;
-  border-radius: 6px;
+.deal-lane-item > img {
+  width: 64px;
+  height: 36px;
+  border-radius: 5px;
   object-fit: cover;
   background: var(--n-color);
 }
-.deal-feature__body > div {
+.deal-lane-item > div {
   min-width: 0;
 }
-.deal-feature__body strong {
+.deal-lane-item strong {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.35;
 }
-.deal-feature__body p {
+.deal-lane-item p {
   display: flex;
   align-items: center;
   gap: 5px;
   min-width: 0;
-  margin: 5px 0 0;
-  overflow: hidden;
+  margin: 3px 0 0;
   color: var(--n-text-color-3);
-  font-size: 10px;
+  font-size: 9px;
   white-space: nowrap;
 }
-.deal-feature__body b {
+.deal-lane-item b {
   color: var(--n-text-color);
-  font-size: 12px;
+  font-size: 10px;
 }
-.deal-feature__body span {
+.deal-lane-item span {
   color: #d03050;
   font-weight: 600;
 }
@@ -1466,28 +1491,6 @@ watch(locale, () => void loadTopic(false));
   .toolbar-filters :deep(.compact-filter) {
     max-width: 165px;
     flex: 0 0 auto;
-  }
-  .deal-feature-grid {
-    display: flex;
-    gap: 7px;
-    margin-right: -13px;
-    padding-right: 13px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .deal-feature-grid::-webkit-scrollbar {
-    display: none;
-  }
-  .deal-feature {
-    flex: 0 0 250px;
-    padding: 8px;
-  }
-  .deal-feature__body {
-    grid-template-columns: 78px minmax(0, 1fr);
-  }
-  .deal-feature__body > img {
-    width: 78px;
-    height: 44px;
   }
   .deal-item {
     grid-template-columns: 24px 64px minmax(0, 1fr);
