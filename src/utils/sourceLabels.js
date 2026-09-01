@@ -80,6 +80,7 @@ const SOURCE_LABEL_OVERRIDES = {
   paperswithcode: { en: "Papers with Code" },
   "producthunt-ai": { en: "Product Hunt" },
   "hackernews-ai": { en: "Hacker News" },
+  "github-ai-trending": { en: "GitHub AI Trending" },
   "clawhub-skills": { en: "ClawHub Skills" },
   clawhub: { en: "ClawHub" },
   "clawhub-plugins": { en: "ClawHub Plugins" },
@@ -765,6 +766,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "Hacker News",
     ja: "Hacker News",
     ko: "Hacker News",
+  },
+  "github-ai-trending": {
+    "zh-CN": "GitHub AI Trending",
+    "zh-TW": "GitHub AI Trending",
+    en: "GitHub AI Trending",
+    ja: "GitHub AI Trending",
+    ko: "GitHub AI Trending",
   },
   "reddit-localllama": {
     "zh-CN": "Reddit /r/LocalLLaMA",

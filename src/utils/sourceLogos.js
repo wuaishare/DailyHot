@@ -45,6 +45,7 @@ const SOURCE_LOGO_MAP = {
   "perplexity-blog": "/logo/ai/perplexity-blog.svg",
   "xai-news": "/logo/ai/xai-news.svg",
   "reddit-localllama": "/logo/ai/reddit.png",
+  "github-ai-trending": "/logo/github.png",
   "reddit-machinelearning": "/logo/ai/reddit.png",
   "reddit-artificial": "/logo/ai/reddit.png",
   clawhub: "/logo/ai/clawhub-icon.png",

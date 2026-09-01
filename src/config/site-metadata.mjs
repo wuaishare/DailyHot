@@ -376,6 +376,79 @@ export const GAME_DEALS_TOPIC_METADATA = {
   },
 };
 
+export const AI_TOPIC_METADATA = {
+  "zh-CN": {
+    title: "AI 圈重大事件与爆火趋势",
+    description:
+      "聚合 OpenAI、Anthropic、Google DeepMind、Meta AI、Hugging Face、Hacker News、Reddit LocalLLaMA、Product Hunt 与 GitHub Trending，优先展示重大模型发布、独立多源共振和开发者社区快速升温的 AI 事件。",
+    feedTitle: "AI 实时雷达",
+    empty: "当前筛选暂无 AI 事件",
+    degraded: "部分 AI 来源暂时不可用，当前仍展示其余来源的最新事件。",
+    seoTitle: "AI 热点专题 - 大模型发布、AI重大事件与爆火项目 | 吾爱热榜",
+    seoDescription:
+      "实时聚合 OpenAI、Anthropic、Google DeepMind、Meta AI、Hugging Face、Hacker News、Reddit、Product Hunt 与 GitHub Trending，追踪 AI 重大事件、大模型发布、开发者爆火项目和多源共振趋势。",
+    seoKeywords:
+      "AI热点,AI重大事件,大模型发布,AI新闻,OpenAI,Anthropic,Claude,Gemini,DeepSeek,GitHub AI Trending,LocalLLaMA,Hugging Face,AI爆火项目,AI趋势",
+  },
+  en: {
+    title: "AI Major Events & Breakout Trends",
+    description:
+      "Track OpenAI, Anthropic, Google DeepMind, Meta AI, Hugging Face, Hacker News, Reddit LocalLLaMA, Product Hunt and GitHub Trending, prioritizing major model releases, independent cross-source confirmation and fast-rising developer signals.",
+    feedTitle: "Live AI Radar",
+    empty: "No AI events match this filter.",
+    degraded:
+      "Some AI sources are temporarily unavailable. Events from the remaining sources are still shown.",
+    seoTitle:
+      "AI Trends - Major Model Releases, AI Events & Breakout Projects | DailyHot",
+    seoDescription:
+      "Track major AI events, model releases, developer breakouts and cross-source signals across OpenAI, Anthropic, DeepMind, Meta AI, Hugging Face, Hacker News, Reddit, Product Hunt and GitHub Trending.",
+    seoKeywords:
+      "AI trends,AI news,major AI events,model releases,OpenAI,Anthropic,Claude,Gemini,DeepSeek,GitHub AI Trending,LocalLLaMA,Hugging Face,AI projects,DailyHot",
+  },
+  "zh-TW": {
+    title: "AI 圈重大事件與爆紅趨勢",
+    description:
+      "彙整 OpenAI、Anthropic、Google DeepMind、Meta AI、Hugging Face、Hacker News、Reddit LocalLLaMA、Product Hunt 與 GitHub Trending，優先顯示重大模型發布、獨立多源共振與開發者社群快速升溫的 AI 事件。",
+    feedTitle: "AI 即時雷達",
+    empty: "目前篩選沒有 AI 事件",
+    degraded: "部分 AI 來源暫時無法使用，目前仍顯示其他來源的最新事件。",
+    seoTitle: "AI 熱點專題 - 大模型發布、重大事件與爆紅專案 | 吾愛熱榜",
+    seoDescription:
+      "即時追蹤 AI 重大事件、大模型發布、開發者爆紅專案與多源共振趨勢。",
+    seoKeywords:
+      "AI熱點,AI重大事件,大模型發布,AI新聞,OpenAI,Anthropic,Claude,Gemini,DeepSeek,GitHub AI Trending,LocalLLaMA,Hugging Face,吾愛熱榜",
+  },
+  ja: {
+    title: "AI重大イベント・急上昇トレンド",
+    description:
+      "OpenAI、Anthropic、Google DeepMind、Meta AI、Hugging Face、Hacker News、Reddit LocalLLaMA、Product Hunt、GitHub Trending を横断し、重要なモデル公開、独立した複数ソース確認、開発者コミュニティで急上昇するAIトピックを優先します。",
+    feedTitle: "AIリアルタイムレーダー",
+    empty: "条件に一致するAIイベントはありません",
+    degraded:
+      "一部のAI情報源が一時利用できません。利用可能な情報源の最新イベントを表示しています。",
+    seoTitle:
+      "AIトレンド - 主要モデル公開・重大イベント・急上昇プロジェクト | DailyHot",
+    seoDescription:
+      "主要AIイベント、モデル公開、開発者コミュニティで急上昇するプロジェクト、複数ソースの共振を追跡します。",
+    seoKeywords:
+      "AIトレンド,AIニュース,モデル公開,OpenAI,Anthropic,Claude,Gemini,DeepSeek,GitHub AI Trending,LocalLLaMA,Hugging Face,DailyHot",
+  },
+  ko: {
+    title: "AI 주요 사건·급상승 트렌드",
+    description:
+      "OpenAI, Anthropic, Google DeepMind, Meta AI, Hugging Face, Hacker News, Reddit LocalLLaMA, Product Hunt, GitHub Trending을 모아 주요 모델 출시, 독립 다중 출처 확인, 개발자 커뮤니티에서 빠르게 상승하는 AI 이슈를 우선합니다.",
+    feedTitle: "AI 실시간 레이더",
+    empty: "현재 조건에 맞는 AI 이벤트가 없습니다",
+    degraded:
+      "일부 AI 출처를 일시적으로 사용할 수 없습니다. 나머지 출처의 최신 이벤트를 표시합니다.",
+    seoTitle: "AI 트렌드 - 주요 모델 출시·AI 사건·급상승 프로젝트 | DailyHot",
+    seoDescription:
+      "주요 AI 사건, 모델 출시, 개발자 급상승 프로젝트, 독립 다중 출처 신호를 실시간으로 추적합니다.",
+    seoKeywords:
+      "AI 트렌드,AI 뉴스,모델 출시,OpenAI,Anthropic,Claude,Gemini,DeepSeek,GitHub AI Trending,LocalLLaMA,Hugging Face,DailyHot",
+  },
+};
+
 export const CHIGUA_TOPIC_METADATA = {
   "zh-CN": {
     title: "全网热议事件雷达",

@@ -1,4 +1,5 @@
 import {
+  AI_TOPIC_METADATA,
   CHIGUA_TOPIC_METADATA,
   GAME_DEALS_TOPIC_METADATA,
   WOOL_TOPIC_METADATA,
@@ -119,6 +120,50 @@ const routes = [
       }),
     },
     component: () => import("@/views/ChiguaTopic.vue"),
+  },
+  {
+    path: "/topic/ai",
+    name: "ai-topic",
+    meta: {
+      title: "AI 圈重大事件与爆火趋势",
+      seoTitle: ({ locale }) =>
+        (AI_TOPIC_METADATA[locale] || AI_TOPIC_METADATA["zh-CN"]).seoTitle,
+      description: ({ locale }) =>
+        (AI_TOPIC_METADATA[locale] || AI_TOPIC_METADATA["zh-CN"])
+          .seoDescription,
+      keywords: ({ locale }) =>
+        (AI_TOPIC_METADATA[locale] || AI_TOPIC_METADATA["zh-CN"]).seoKeywords,
+      jsonLd: ({ canonical, title, description }) => ({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        url: canonical,
+      }),
+    },
+    component: () => import("@/views/AiTopic.vue"),
+  },
+  {
+    path: `/${localePattern}/topic/ai`,
+    name: "ai-topic-locale",
+    meta: {
+      title: "AI 圈重大事件与爆火趋势",
+      seoTitle: ({ locale }) =>
+        (AI_TOPIC_METADATA[locale] || AI_TOPIC_METADATA["zh-CN"]).seoTitle,
+      description: ({ locale }) =>
+        (AI_TOPIC_METADATA[locale] || AI_TOPIC_METADATA["zh-CN"])
+          .seoDescription,
+      keywords: ({ locale }) =>
+        (AI_TOPIC_METADATA[locale] || AI_TOPIC_METADATA["zh-CN"]).seoKeywords,
+      jsonLd: ({ canonical, title, description }) => ({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: title,
+        description,
+        url: canonical,
+      }),
+    },
+    component: () => import("@/views/AiTopic.vue"),
   },
   {
     path: "/topic/wool",

@@ -684,6 +684,7 @@ function main() {
   const supportedLocales = parseConstant(siteMetadataSource, "SUPPORTED_LOCALES");
   const builtinCategories = parseConstant(siteMetadataSource, "BUILTIN_CATEGORIES");
   const woolTopicMetadata = parseConstant(siteMetadataSource, "WOOL_TOPIC_METADATA");
+  const aiTopicMetadata = parseConstant(siteMetadataSource, "AI_TOPIC_METADATA");
   const gameDealsTopicMetadata = parseConstant(siteMetadataSource, "GAME_DEALS_TOPIC_METADATA");
   const chiguaTopicMetadata = parseConstant(siteMetadataSource, "CHIGUA_TOPIC_METADATA");
   const sourceNames = getSourceNames(storeSource);
@@ -801,6 +802,26 @@ function main() {
         htmlLang,
         listName: categoryLabel,
       }),
+    };
+  };
+
+  const buildAiTopicMeta = (localeMeta, pathname) => {
+    const locale = localeMeta.code;
+    const htmlLang = localeMeta.htmlLang;
+    const meta = aiTopicMetadata[locale] || aiTopicMetadata["zh-CN"] || {};
+    const canonical = buildAbsoluteUrl(pathname);
+    const title = meta.seoTitle || meta.title || "AI Trends";
+    const description =
+      meta.seoDescription || meta.description || "Major AI events and breakout trends.";
+    return {
+      title,
+      description,
+      keywords: meta.seoKeywords || mergeKeywords(title, brandNameZh),
+      canonical,
+      htmlLang,
+      robots: "index,follow",
+      alternateLinks: buildAlternateLinks("/topic/ai", supportedLocales),
+      jsonLd: buildWebPageJsonLd({ title, description, canonical, htmlLang }),
     };
   };
 
@@ -1048,6 +1069,12 @@ function main() {
       const meta = buildCategoryMeta(category, localeMeta, pathname);
       if (meta) writeRouteShell(pathname, meta);
     });
+
+    const aiTopicPathname = withLocalePrefix(localeMeta, "/topic/ai");
+    writeRouteShell(
+      aiTopicPathname,
+      buildAiTopicMeta(localeMeta, aiTopicPathname)
+    );
 
     const chiguaTopicPathname = withLocalePrefix(localeMeta, "/topic/chigua");
     writeRouteShell(

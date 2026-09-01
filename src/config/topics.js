@@ -35,6 +35,18 @@ export const TOPIC_REGISTRY = [
     },
   },
   {
+    id: "ai",
+    path: "/topic/ai",
+    routeNames: ["ai-topic", "ai-topic-locale"],
+    labels: {
+      "zh-CN": "AI 热点",
+      en: "AI Trends",
+      "zh-TW": "AI 熱點",
+      ja: "AIトレンド",
+      ko: "AI 트렌드",
+    },
+  },
+  {
     id: "game-deals",
     path: "/topic/game-deals",
     routeNames: ["game-deals-topic", "game-deals-topic-locale"],

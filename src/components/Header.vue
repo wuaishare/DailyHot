@@ -413,6 +413,8 @@ const isRefreshEnabledRoute = (routeName) =>
     "game-deals-topic-locale",
     "chigua-topic",
     "chigua-topic-locale",
+    "ai-topic",
+    "ai-topic-locale",
     "setting",
     "setting-locale",
   ].includes(routeName);
