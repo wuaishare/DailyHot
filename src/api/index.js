@@ -95,6 +95,129 @@ const analyticsApiBases = import.meta.env.PROD
       Boolean,
     );
 
+const TRENDS_PUBLIC_API = String(import.meta.env.VITE_TRENDS_PUBLIC_API || "").replace(/\/$/, "");
+const TRENDS_SHADOW_SOURCES = new Set(
+  String(import.meta.env.VITE_TRENDS_SHADOW_SOURCES || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
+);
+const TRENDS_SHADOW_DEFAULT_VARIANTS = {
+  ithome: ["day", "day"],
+  baidu: ["realtime", "realtime"],
+  github: ["daily", "day"],
+  bilibili: ["all", "popular"],
+  "36kr": ["hot", "hot"],
+};
+const trendsShadowSeen = new Set();
+
+const normalizeShadowText = (value) => String(value || "").replace(/\s+/g, " ").trim();
+
+const getTrendsShadowVariant = (source, params = {}) => {
+  const mapping = TRENDS_SHADOW_DEFAULT_VARIANTS[source];
+  if (!mapping) return params?.type ? null : undefined;
+  const [legacyDefault, trendsVariant] = mapping;
+  const legacyVariant = String(params?.type || legacyDefault);
+  return legacyVariant === legacyDefault ? trendsVariant : null;
+};
+
+const compareTrendsShadow = (legacyResult, trendsPayload) => {
+  const legacyItems = Array.isArray(legacyResult?.data) ? legacyResult.data : [];
+  const trendsItems = Array.isArray(trendsPayload?.data?.items) ? trendsPayload.data.items : [];
+  const topN = Math.min(10, legacyItems.length, trendsItems.length);
+  const legacyTop = legacyItems.slice(0, topN);
+  const trendsTop = trendsItems.slice(0, topN);
+  let positionalTitleMatches = 0;
+  let positionalUrlMatches = 0;
+  for (let index = 0; index < topN; index += 1) {
+    if (normalizeShadowText(legacyTop[index]?.title) === normalizeShadowText(trendsTop[index]?.title)) {
+      positionalTitleMatches += 1;
+    }
+    if (String(legacyTop[index]?.url || "") === String(trendsTop[index]?.url || "")) {
+      positionalUrlMatches += 1;
+    }
+  }
+  const legacyTitles = new Set(legacyTop.map((item) => normalizeShadowText(item?.title)).filter(Boolean));
+  const trendsTitles = new Set(trendsTop.map((item) => normalizeShadowText(item?.title)).filter(Boolean));
+  const titleSetOverlap = [...legacyTitles].filter((title) => trendsTitles.has(title)).length;
+  const legacyUpdatedAt = Date.parse(legacyResult?.updateTime || "");
+  const trendsObservedAt = Date.parse(trendsPayload?.observation?.observedAt || "");
+  return {
+    legacyCount: legacyItems.length,
+    trendsCount: trendsItems.length,
+    topN,
+    positionalTitleMatches,
+    positionalUrlMatches,
+    titleSetOverlap,
+    observationId: trendsPayload?.observation?.id || null,
+    freshnessDeltaMs:
+      Number.isFinite(legacyUpdatedAt) && Number.isFinite(trendsObservedAt)
+        ? trendsObservedAt - legacyUpdatedAt
+        : null,
+  };
+};
+
+const runTrendsShadowRead = async (source, params, legacyResult) => {
+  if (!TRENDS_PUBLIC_API || !TRENDS_SHADOW_SOURCES.has(source)) return;
+  const variant = getTrendsShadowVariant(source, params);
+  if (variant === null) return;
+  const dedupeKey = `${source}:${variant || "default"}:${legacyResult?.updateTime || ""}`;
+  if (trendsShadowSeen.has(dedupeKey)) return;
+  trendsShadowSeen.add(dedupeKey);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  const startedAt = performance.now();
+  try {
+    const url = new URL(`${TRENDS_PUBLIC_API}/rankings/${encodeURIComponent(source)}`);
+    url.searchParams.set("limit", "50");
+    if (variant) url.searchParams.set("variant", variant);
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "omit",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`trends_http_${response.status}`);
+    const payload = await response.json();
+    const comparison = compareTrendsShadow(legacyResult, payload);
+    void requestAnalytics({
+      method: "POST",
+      url: "/analytics",
+      data: {
+        event: "trends_shadow_compare",
+        source,
+        meta: {
+          ...comparison,
+          variant: variant || "",
+          latencyMs: Math.round(performance.now() - startedAt),
+        },
+      },
+    }).catch(() => {});
+  } catch (error) {
+    await requestAnalytics({
+      method: "POST",
+      url: "/analytics",
+      data: {
+        event: "trends_shadow_error",
+        source,
+        meta: {
+          variant: variant || "",
+          kind: error?.name === "AbortError" ? "timeout" : "request_failed",
+        },
+      },
+    }).catch(() => {});
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const withTrendsShadow = (source, params, payload) => {
+  if (payload?.result?.code === 200) {
+    void runTrendsShadowRead(source, params, payload.result);
+  }
+  return payload;
+};
+
 const requestAnalytics = async (config) => {
   let lastError;
   for (const baseURL of analyticsApiBases) {
@@ -221,12 +344,12 @@ export const getHotListsWithFallback = async (
         forceNoCache: Boolean(options?.forceNoCache),
         silent: true,
       });
-      return {
+      return withTrendsShadow(type, params, {
         result,
         usedApi2: true,
         usedFallback: false,
         fallbackSuccess: false,
-      };
+      });
     } catch (primaryError) {
       try {
         const result = await getHotLists(type, isNew, params, {
@@ -235,12 +358,12 @@ export const getHotListsWithFallback = async (
           forceSameOrigin: true,
           silent: true,
         });
-        return {
+        return withTrendsShadow(type, params, {
           result,
           usedApi2: false,
           usedFallback: true,
           fallbackSuccess: true,
-        };
+        });
       } catch {
         throw primaryError;
       }
@@ -267,7 +390,7 @@ export const getHotListsWithFallback = async (
   if (preferApi2 || !hasApi2 || disableFallback) {
     const useApi2 = preferApi2 && !disableFallback;
     const result = await run(useApi2);
-    return { result, usedApi2: useApi2, usedFallback: false };
+    return withTrendsShadow(type, params, { result, usedApi2: useApi2, usedFallback: false });
   }
 
   const createAttempt = (useApi2) =>
@@ -289,7 +412,7 @@ export const getHotListsWithFallback = async (
     const finish = (payload) => {
       if (finished) return;
       finished = true;
-      resolve(payload);
+      resolve(withTrendsShadow(type, params, payload));
     };
 
     const buildFailure = (primaryError, fallbackError) => {
