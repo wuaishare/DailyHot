@@ -113,6 +113,13 @@ const TRENDS_SHADOW_SOURCES = new Set(
     .map((value) => value.trim())
     .filter(Boolean),
 );
+const DEFAULT_TRENDS_READ_SOURCES = import.meta.env.PROD ? "github,36kr" : "";
+const TRENDS_READ_SOURCES = new Set(
+  String(import.meta.env.VITE_TRENDS_READ_SOURCES || DEFAULT_TRENDS_READ_SOURCES)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
+);
 const TRENDS_SHADOW_DEFAULT_VARIANTS = {
   ithome: ["day", "day"],
   baidu: ["realtime", "realtime"],
@@ -130,6 +137,58 @@ const getTrendsShadowVariant = (source, params = {}) => {
   const [legacyDefault, trendsVariant] = mapping;
   const legacyVariant = String(params?.type || legacyDefault);
   return legacyVariant === legacyDefault ? trendsVariant : null;
+};
+
+const normalizeTrendsRankingResult = (payload) => {
+  const feed = payload?.data || {};
+  const source = feed?.source || {};
+  const items = Array.isArray(feed?.items) ? feed.items : [];
+  const updateTime = feed?.updatedAt || payload?.observation?.observedAt || new Date().toISOString();
+  return {
+    code: 200,
+    name: source?.key || "",
+    title: source?.name || source?.key || "",
+    type: feed?.rankingLabel || source?.rankingLabel || "",
+    subtitle: feed?.rankingLabel || source?.rankingLabel || "",
+    total: items.length,
+    fromCache: true,
+    updateTime,
+    centralized: true,
+    observationId: payload?.observation?.id || null,
+    data: items.map((item, index) => ({
+      ...item,
+      id: item?.id || item?.url || `${source?.key || "item"}-${index + 1}`,
+      desc: item?.desc || item?.summary || "",
+      timestamp: item?.timestamp || Date.parse(updateTime) || Date.now(),
+    })),
+  };
+};
+
+const requestTrendsRanking = async (source, params = {}) => {
+  if (!TRENDS_PUBLIC_API) throw new Error("trends_public_api_unavailable");
+  const variant = getTrendsShadowVariant(source, params);
+  if (variant === null) throw new Error("trends_variant_not_enabled");
+  const url = new URL(`${TRENDS_PUBLIC_API}/rankings/${encodeURIComponent(source)}`);
+  url.searchParams.set("limit", "100");
+  if (variant) url.searchParams.set("variant", variant);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "omit",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`trends_http_${response.status}`);
+    const payload = await response.json();
+    if (!payload?.data?.source || !Array.isArray(payload?.data?.items)) {
+      throw new Error("trends_invalid_payload");
+    }
+    return normalizeTrendsRankingResult(payload);
+  } finally {
+    clearTimeout(timer);
+  }
 };
 
 const compareTrendsShadow = (legacyResult, trendsPayload) => {
@@ -346,6 +405,45 @@ export const getHotListsWithFallback = async (
   params,
   options = {},
 ) => {
+  if (TRENDS_READ_SOURCES.has(type)) {
+    const startedAt = performance.now();
+    try {
+      const result = await requestTrendsRanking(type, params);
+      void requestAnalytics({
+        method: "POST",
+        url: "/analytics",
+        data: {
+          event: "trends_read_success",
+          source: type,
+          meta: {
+            observationId: result.observationId,
+            itemCount: result.total,
+            latencyMs: Math.round(performance.now() - startedAt),
+          },
+        },
+      }).catch(() => {});
+      return {
+        result,
+        usedApi2: false,
+        usedFallback: false,
+        fallbackSuccess: false,
+        usedTrends: true,
+      };
+    } catch (error) {
+      void requestAnalytics({
+        method: "POST",
+        url: "/analytics",
+        data: {
+          event: "trends_read_fallback",
+          source: type,
+          meta: {
+            kind: error?.message || "request_failed",
+            latencyMs: Math.round(performance.now() - startedAt),
+          },
+        },
+      }).catch(() => {});
+    }
+  }
   const useDirectPublicApi = DIRECT_PUBLIC_API_SOURCES.has(type);
   const useSameOriginApi = SAME_ORIGIN_API_SOURCES.has(type);
 
