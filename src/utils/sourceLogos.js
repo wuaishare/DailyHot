@@ -79,6 +79,22 @@ const SOURCE_LOGO_MAP = {
   "nature-news": "/logo/global/nature-news.png",
   "arxiv-ai": "/logo/global/arxiv-ai.png",
   "timesofindia": "/logo/global/timesofindia.png",
+  "marketwatch": "/logo/global/marketwatch.png",
+  "krebsonsecurity": "/logo/global/krebsonsecurity.png",
+  "thehackernews": "/logo/global/thehackernews.png",
+  "google-security": "/logo/global/google-security.png",
+  "who-news": "/logo/global/who-news.png",
+  "sciencenews": "/logo/global/sciencenews.png",
+  "smashing": "/logo/global/smashing.png",
+  "dezeen": "/logo/global/dezeen.png",
+  "github-blog": "/logo/global/github-blog.png",
+  "stackoverflow-blog": "/logo/global/stackoverflow-blog.png",
+  "infoq": "/logo/global/infoq.png",
+  "eurogamer": "/logo/global/eurogamer.png",
+  "cbc-news": "/logo/global/cbc-news.png",
+  "abc-au-news": "/logo/global/abc-au-news.png",
+  "rnz-news": "/logo/global/rnz-news.png",
+  "wired": "/logo/global/wired.png",
 };
 
 const SOURCE_LOGO_ALIAS_MAP = {

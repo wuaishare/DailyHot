@@ -68,6 +68,22 @@ const DIRECT_PUBLIC_API_SOURCES = new Set([
   "nature-news",
   "arxiv-ai",
   "timesofindia",
+  "marketwatch",
+  "krebsonsecurity",
+  "thehackernews",
+  "google-security",
+  "who-news",
+  "sciencenews",
+  "smashing",
+  "dezeen",
+  "github-blog",
+  "stackoverflow-blog",
+  "infoq",
+  "eurogamer",
+  "cbc-news",
+  "abc-au-news",
+  "rnz-news",
+  "wired",
 ]);
 const PUBLIC_API2_BASE =
   import.meta.env.VITE_GLOBAL_API2 ||
