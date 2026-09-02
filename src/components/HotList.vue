@@ -431,8 +431,11 @@ const hotListData = ref(null);
 const scrollbarRef = ref(null);
 const componentActive = ref(true);
 const isNearViewport = ref(Boolean(props.eagerLoad));
+const isInViewport = ref(Boolean(props.eagerLoad));
 let listVisibilityObserver = null;
+let translationVisibilityObserver = null;
 let pendingDataRefresh = null;
+let pendingReadableTranslation = null;
 let appliedRefreshGeneration = 0;
 const listLoading = ref(false);
 const loadingError = ref(false);
@@ -771,29 +774,67 @@ const applyHotListResult = (result) => {
   }
 };
 
-const enhanceAndApplyHotListResult = async (result, requestId, shouldTranslate) => {
+const enhanceAndApplyHotListResult = async (
+  result,
+  requestId,
+  shouldTranslate,
+  targetLocale = locale.value
+) => {
   if (!shouldTranslate) {
     applyHotListResult(result);
     return;
   }
   let fallbackApplied = false;
   const fallbackTimer = window.setTimeout(() => {
-    if (requestId !== hotListRequestId) return;
+    if (requestId !== hotListRequestId || locale.value !== targetLocale) return;
     fallbackApplied = true;
     applyHotListResult(result);
   }, READABLE_TRANSLATION_FALLBACK_MS);
   try {
-    const nextResult = await enhanceHotListResult(result);
-    if (requestId !== hotListRequestId) return;
+    const nextResult = await enhanceHotListResult(result, targetLocale);
+    if (requestId !== hotListRequestId || locale.value !== targetLocale) return;
     applyHotListResult(nextResult);
   } catch {
-    if (requestId !== hotListRequestId) return;
+    if (requestId !== hotListRequestId || locale.value !== targetLocale) return;
     if (!fallbackApplied) {
       applyHotListResult(result);
     }
   } finally {
     window.clearTimeout(fallbackTimer);
   }
+};
+
+const applyHotListResultWithReadableTranslation = async (
+  result,
+  requestId,
+  shouldTranslate,
+  targetLocale = locale.value
+) => {
+  if (!shouldTranslate) {
+    pendingReadableTranslation = null;
+    applyHotListResult(result);
+    return;
+  }
+  if (!isInViewport.value) {
+    applyHotListResult(result);
+    pendingReadableTranslation = { result, requestId, targetLocale };
+    return;
+  }
+  pendingReadableTranslation = null;
+  await enhanceAndApplyHotListResult(result, requestId, true, targetLocale);
+};
+
+const consumePendingReadableTranslation = () => {
+  if (!componentActive.value || !isInViewport.value || !pendingReadableTranslation) return;
+  const pending = pendingReadableTranslation;
+  pendingReadableTranslation = null;
+  if (pending.requestId !== hotListRequestId || pending.targetLocale !== locale.value) return;
+  void enhanceAndApplyHotListResult(
+    pending.result,
+    pending.requestId,
+    true,
+    pending.targetLocale
+  );
 };
 
 // 获取热榜数据
@@ -819,7 +860,11 @@ const getHotListsData = async (name, isNew = false) => {
     }
     if (requestId !== hotListRequestId) return;
     if (result.code === 200) {
-      await enhanceAndApplyHotListResult(result, requestId, shouldTranslate);
+      await applyHotListResultWithReadableTranslation(
+        result,
+        requestId,
+        shouldTranslate
+      );
       store.markAvailable(item.name);
     } else {
       store.markUnavailable(item.name);
@@ -832,7 +877,7 @@ const getHotListsData = async (name, isNew = false) => {
         const retryResponse = await requestHotListResult(item, true, shouldTranslate, useApi2);
         if (requestId !== hotListRequestId) return;
         if (retryResponse?.result?.code === 200) {
-          await enhanceAndApplyHotListResult(
+          await applyHotListResultWithReadableTranslation(
             retryResponse.result,
             requestId,
             shouldTranslate
@@ -1206,6 +1251,41 @@ const checkListShow = () => {
   listVisibilityObserver.observe(listDom);
 };
 
+const checkTranslationVisibility = () => {
+  if (
+    !componentActive.value ||
+    isPrerender ||
+    !isClient ||
+    typeof document === "undefined"
+  )
+    return;
+  if (props.eagerLoad) {
+    isInViewport.value = true;
+    consumePendingReadableTranslation();
+    return;
+  }
+  const listDom = document.getElementById(`hot-list-${props.hotData.name}`);
+  if (!listDom || typeof IntersectionObserver === "undefined") {
+    isInViewport.value = true;
+    consumePendingReadableTranslation();
+    return;
+  }
+  translationVisibilityObserver?.disconnect();
+  const scrollRoot =
+    listDom.closest(".n-scrollbar-container") ||
+    document.querySelector(".n-scrollbar-container");
+  translationVisibilityObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        isInViewport.value = entry.isIntersecting;
+        if (entry.isIntersecting) consumePendingReadableTranslation();
+      });
+    },
+    { root: scrollRoot || null, rootMargin: "0px" }
+  );
+  translationVisibilityObserver.observe(listDom);
+};
+
 // 实时改变更新时间
 watch(
   () => store.timeData,
@@ -1237,6 +1317,11 @@ watch(
     }
     const requestId = hotListRequestId;
     const sourceResult = hotListData.value;
+    if (!isInViewport.value) {
+      pendingReadableTranslation = { result: sourceResult, requestId, targetLocale };
+      listLoading.value = false;
+      return;
+    }
     listLoading.value = true;
     try {
       const enhancedResult = await enhanceHotListResult(sourceResult, targetLocale);
@@ -1259,12 +1344,14 @@ onMounted(() => {
     window.addEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
   }
   checkListShow();
+  checkTranslationVisibility();
 });
 
 onActivated(() => {
   componentActive.value = true;
   nextTick(() => {
     checkListShow();
+    checkTranslationVisibility();
     consumePendingDataRefresh();
   });
 });
@@ -1272,8 +1359,11 @@ onActivated(() => {
 onDeactivated(() => {
   componentActive.value = false;
   isNearViewport.value = false;
+  isInViewport.value = false;
   listVisibilityObserver?.disconnect();
   listVisibilityObserver = null;
+  translationVisibilityObserver?.disconnect();
+  translationVisibilityObserver = null;
 });
 
 onBeforeUnmount(() => {
@@ -1284,6 +1374,8 @@ onBeforeUnmount(() => {
   }
   listVisibilityObserver?.disconnect();
   listVisibilityObserver = null;
+  translationVisibilityObserver?.disconnect();
+  translationVisibilityObserver = null;
   hidePreview();
 });
 </script>
