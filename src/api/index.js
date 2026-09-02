@@ -38,6 +38,13 @@ const DIRECT_PUBLIC_API_SOURCES = new Set([
   "nse",
   "asx",
   "global-indexes",
+  "cls",
+  "eastmoney-flash",
+  "jin10",
+  "tonghuashun",
+  "wallstreetcn",
+  "sina-finance-flash",
+  "yicai-flash",
 ]);
 const PUBLIC_API2_BASE =
   import.meta.env.VITE_GLOBAL_API2 ||
