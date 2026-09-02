@@ -52,19 +52,38 @@ const CATEGORY_SEO_MAP = {
   },
   "科技": {
     title: "科技热榜",
-    titleTail: "科技新闻、数码资讯与开发者趋势聚合",
+    titleTail: "科技资讯、数码生活与开发产品趋势聚合",
     description:
-      "科技热榜聚合 36氪、IT之家、少数派、CSDN、掘金、GitHub 趋势、酷安等平台内容，覆盖科技新闻、数码资讯、开源项目、编程实践与开发者社区热点。",
+      "科技热榜聚合 36氪、IT之家、虎嗅、少数派、酷安、CSDN、掘金、GitHub、Hacker News 与 Product Hunt 等来源，覆盖科技资讯、数码生活、开发者社区、开源项目与产品发现。",
     keywords: [
       "科技热榜",
-      "科技新闻",
-      "数码资讯",
+      "科技资讯",
+      "数码生活",
       "开发者社区",
       "GitHub 趋势",
+      "Product Hunt",
       "开源项目",
       "CSDN 热榜",
       "掘金热榜",
     ],
+  },
+  "科技资讯": {
+    title: "科技资讯",
+    titleTail: "36氪、IT之家、虎嗅等科技媒体热点聚合",
+    description: "科技资讯聚合 36氪、IT之家、虎嗅、爱范儿、极客公园与果壳，追踪科技公司、互联网、人工智能、产业创新、科学与商业科技热点。",
+    keywords: ["科技资讯", "科技新闻", "36氪", "IT之家", "虎嗅", "爱范儿", "极客公园", "果壳"],
+  },
+  "数码生活": {
+    title: "数码生活",
+    titleTail: "酷安、少数派与数字尾巴热门内容聚合",
+    description: "数码生活聚合酷安、少数派与数字尾巴，覆盖手机、电脑、软件、智能硬件、消费电子、效率工具与数字生活方式。",
+    keywords: ["数码生活", "酷安", "少数派", "数字尾巴", "手机数码", "消费电子", "智能硬件", "效率工具"],
+  },
+  "开发与产品": {
+    title: "开发与产品",
+    titleTail: "开发者社区、开源项目与产品发现趋势聚合",
+    description: "开发与产品聚合 CSDN、稀土掘金、GitHub Trending、Hacker News、HelloGitHub、51CTO 与 Product Hunt，追踪编程实践、开源项目、开发者讨论和新产品趋势。",
+    keywords: ["开发者", "CSDN", "掘金", "GitHub Trending", "Hacker News", "HelloGitHub", "51CTO", "Product Hunt", "开源项目"],
   },
   游戏: {
     en: {
@@ -344,6 +363,30 @@ const CATEGORY_LOCALE_SEO_MAP = {
         "Super Deals, 0818, NodeLoc, ITHome에서 제공하는 무료 배포, 쿠폰, 무료 크레딧, 경품, 할인 등 시의성 높은 혜택 정보를 한곳에서 확인합니다.",
       keywords: "혜택,무료 배포,쿠폰,할인,경품,무료 크레딧,0818,NodeLoc,ITHome,DailyHot",
     },
+  },
+  "科技": {
+    en: { title: "Tech Rankings - News, digital life, developer and product trends | DailyHot", description: "Tech Rankings aggregate 36Kr, ITHome, Huxiu, Coolapk, SSPAI, CSDN, Juejin, GitHub, Hacker News and Product Hunt across tech news, digital life, developer communities and product discovery.", keywords: "tech rankings,tech news,digital life,developer trends,GitHub,Hacker News,Product Hunt,CSDN,Juejin,DailyHot" },
+    "zh-TW": { title: "科技熱榜 - 科技資訊、數碼生活與開發產品趨勢 | 吾愛熱榜", description: "科技熱榜彙整36氪、IT之家、虎嗅、酷安、少數派、CSDN、掘金、GitHub、Hacker News與Product Hunt，涵蓋科技資訊、數碼生活、開發者社群與產品發現。", keywords: "科技熱榜,科技資訊,數碼生活,開發者,GitHub,Hacker News,Product Hunt,CSDN,掘金,吾愛熱榜" },
+    ja: { title: "テックランキング - ニュース、デジタル生活、開発・製品動向 | DailyHot", description: "36Kr、ITHome、Huxiu、Coolapk、SSPAI、CSDN、Juejin、GitHub、Hacker News、Product Hunt を集約し、テックニュース、デジタル生活、開発者、製品発見を追跡します。", keywords: "テックランキング,テックニュース,デジタル生活,開発者,GitHub,Hacker News,Product Hunt,CSDN,Juejin,DailyHot" },
+    ko: { title: "테크 랭킹 - 뉴스, 디지털 라이프, 개발·제품 트렌드 | DailyHot", description: "36Kr, ITHome, Huxiu, Coolapk, SSPAI, CSDN, Juejin, GitHub, Hacker News, Product Hunt를 모아 기술 뉴스, 디지털 생활, 개발자와 제품 트렌드를 추적합니다.", keywords: "테크 랭킹,기술 뉴스,디지털 라이프,개발자,GitHub,Hacker News,Product Hunt,CSDN,Juejin,DailyHot" },
+  },
+  "科技资讯": {
+    en: { title: "Tech News - Major Chinese technology media trends | DailyHot", description: "Track technology, internet, AI, science and industry coverage from 36Kr, ITHome, Huxiu, ifanr, GeekPark and Guokr.", keywords: "tech news,36Kr,ITHome,Huxiu,ifanr,GeekPark,Guokr,technology media,DailyHot" },
+    "zh-TW": { title: "科技資訊 - 36氪、IT之家、虎嗅等科技媒體熱點 | 吾愛熱榜", description: "彙整36氪、IT之家、虎嗅、愛范兒、極客公園與果殼，追蹤科技公司、網路、AI、產業創新與科學熱門內容。", keywords: "科技資訊,36氪,IT之家,虎嗅,愛范兒,極客公園,果殼,吾愛熱榜" },
+    ja: { title: "テックニュース - 中国主要テクノロジーメディアの話題 | DailyHot", description: "36Kr、ITHome、Huxiu、ifanr、GeekPark、Guokr からテクノロジー、インターネット、AI、科学、産業の話題を集約します。", keywords: "テックニュース,36Kr,ITHome,Huxiu,ifanr,GeekPark,Guokr,DailyHot" },
+    ko: { title: "기술 뉴스 - 중국 주요 테크 미디어 트렌드 | DailyHot", description: "36Kr, ITHome, Huxiu, ifanr, GeekPark, Guokr에서 기술, 인터넷, AI, 과학, 산업 이슈를 모아 제공합니다.", keywords: "기술 뉴스,36Kr,ITHome,Huxiu,ifanr,GeekPark,Guokr,DailyHot" },
+  },
+  "数码生活": {
+    en: { title: "Digital Life - Devices, software and consumer technology | DailyHot", description: "Digital Life aggregates Coolapk, SSPAI and Dgtle for smartphones, computers, software, smart hardware, productivity tools and consumer electronics.", keywords: "digital life,Coolapk,SSPAI,Dgtle,smartphones,consumer electronics,software,smart hardware,DailyHot" },
+    "zh-TW": { title: "數碼生活 - 酷安、少數派與數字尾巴熱門內容 | 吾愛熱榜", description: "彙整酷安、少數派與數字尾巴，涵蓋手機、電腦、軟體、智慧硬體、消費電子、效率工具與數位生活方式。", keywords: "數碼生活,酷安,少數派,數字尾巴,手機數碼,消費電子,智慧硬體,吾愛熱榜" },
+    ja: { title: "デジタルライフ - デバイス、ソフトウェア、消費者テック | DailyHot", description: "Coolapk、SSPAI、Dgtle からスマートフォン、PC、ソフトウェア、スマートハードウェア、生産性ツールを集約します。", keywords: "デジタルライフ,Coolapk,SSPAI,Dgtle,スマートフォン,家電,ソフトウェア,DailyHot" },
+    ko: { title: "디지털 라이프 - 기기, 소프트웨어, 소비자 기술 | DailyHot", description: "Coolapk, SSPAI, Dgtle에서 스마트폰, PC, 소프트웨어, 스마트 하드웨어, 생산성 도구와 소비자 전자제품 트렌드를 모읍니다.", keywords: "디지털 라이프,Coolapk,SSPAI,Dgtle,스마트폰,소비자 전자제품,소프트웨어,DailyHot" },
+  },
+  "开发与产品": {
+    en: { title: "Developers & Products - Open source, engineering and product discovery | DailyHot", description: "Track CSDN, Juejin, GitHub Trending, Hacker News, HelloGitHub, 51CTO and Product Hunt for engineering practice, open source projects, developer discussions and new products.", keywords: "developer trends,CSDN,Juejin,GitHub Trending,Hacker News,HelloGitHub,51CTO,Product Hunt,open source,DailyHot" },
+    "zh-TW": { title: "開發與產品 - 開發者社群、開源專案與產品發現 | 吾愛熱榜", description: "彙整CSDN、掘金、GitHub Trending、Hacker News、HelloGitHub、51CTO與Product Hunt，追蹤程式開發、開源專案、技術討論與新品趨勢。", keywords: "開發者,CSDN,掘金,GitHub Trending,Hacker News,HelloGitHub,51CTO,Product Hunt,開源專案,吾愛熱榜" },
+    ja: { title: "開発・プロダクト - OSS、エンジニアリング、製品発見 | DailyHot", description: "CSDN、Juejin、GitHub Trending、Hacker News、HelloGitHub、51CTO、Product Hunt から開発実践、OSS、技術議論、新製品を追跡します。", keywords: "開発者,CSDN,Juejin,GitHub Trending,Hacker News,HelloGitHub,51CTO,Product Hunt,OSS,DailyHot" },
+    ko: { title: "개발·제품 - 오픈소스, 엔지니어링, 제품 발견 | DailyHot", description: "CSDN, Juejin, GitHub Trending, Hacker News, HelloGitHub, 51CTO, Product Hunt를 통해 개발 실무, 오픈소스, 기술 토론과 신규 제품을 추적합니다.", keywords: "개발자,CSDN,Juejin,GitHub Trending,Hacker News,HelloGitHub,51CTO,Product Hunt,오픈소스,DailyHot" },
   },
   "财经": {
     en: {

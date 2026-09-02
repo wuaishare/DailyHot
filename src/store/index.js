@@ -42,6 +42,25 @@ const FINANCE_TAXONOMY_SOURCE_IDS = [
   "global-indexes",
 ];
 
+const TECH_TAXONOMY_SOURCE_IDS = [
+  "csdn",
+  "36kr",
+  "ithome",
+  "coolapk",
+  "juejin",
+  "github",
+  "huxiu",
+  "sspai",
+  "dgtle",
+  "ifanr",
+  "geekpark",
+  "guokr",
+  "producthunt",
+  "hackernews",
+  "hellogithub",
+  "51cto",
+];
+
 const AI_TAXONOMY_SOURCE_IDS = [
   "openrouter-rankings",
   "artificialanalysis",
@@ -73,6 +92,7 @@ const AI_TAXONOMY_SOURCE_IDS = [
 const BUILTIN_CATEGORY_ID_RESETS = new Set([
   ...GAME_DEAL_SOURCE_IDS,
   ...FINANCE_TAXONOMY_SOURCE_IDS,
+  ...TECH_TAXONOMY_SOURCE_IDS,
   ...AI_TAXONOMY_SOURCE_IDS,
 ]);
 
@@ -363,6 +383,7 @@ export const mainStore = defineStore("mainData", {
           order: 18,
           show: true,
           category: "科技",
+          categoryIds: ["tech-dev-product"],
         },
         {
           label: "36氪",
@@ -370,6 +391,7 @@ export const mainStore = defineStore("mainData", {
           order: 19,
           show: true,
           category: "科技",
+          categoryIds: ["tech-news"],
         },
         {
           label: "IT之家",
@@ -377,6 +399,7 @@ export const mainStore = defineStore("mainData", {
           order: 20,
           show: true,
           category: "科技",
+          categoryIds: ["tech-news"],
         },
         {
           label: "虎扑",
@@ -391,6 +414,7 @@ export const mainStore = defineStore("mainData", {
           order: 22,
           show: true,
           category: "科技",
+          categoryIds: ["tech-digital"],
         },
         {
           label: "稀土掘金",
@@ -398,6 +422,7 @@ export const mainStore = defineStore("mainData", {
           order: 23,
           show: true,
           category: "科技",
+          categoryIds: ["tech-dev-product"],
         },
         {
           label: "V2EX",
@@ -412,6 +437,7 @@ export const mainStore = defineStore("mainData", {
           order: 25,
           show: true,
           category: "科技",
+          categoryIds: ["tech-dev-product"],
         },
         {
           label: "游戏葡萄",
@@ -468,6 +494,7 @@ export const mainStore = defineStore("mainData", {
           order: 33,
           show: true,
           category: "科技",
+          categoryIds: ["tech-news"],
           useApi2: true,
         },
         {
@@ -476,6 +503,7 @@ export const mainStore = defineStore("mainData", {
           order: 34,
           show: true,
           category: "科技",
+          categoryIds: ["tech-digital"],
         },
         {
           label: "数字尾巴",
@@ -483,6 +511,7 @@ export const mainStore = defineStore("mainData", {
           order: 35,
           show: true,
           category: "科技",
+          categoryIds: ["tech-digital"],
         },
         {
           label: "爱范儿",
@@ -490,6 +519,7 @@ export const mainStore = defineStore("mainData", {
           order: 36,
           show: true,
           category: "科技",
+          categoryIds: ["tech-news"],
         },
         {
           label: "极客公园",
@@ -497,6 +527,7 @@ export const mainStore = defineStore("mainData", {
           order: 37,
           show: true,
           category: "科技",
+          categoryIds: ["tech-news"],
         },
         {
           label: "果壳",
@@ -504,6 +535,7 @@ export const mainStore = defineStore("mainData", {
           order: 38,
           show: true,
           category: "科技",
+          categoryIds: ["tech-news"],
         },
         {
           label: "知乎日报",
@@ -577,6 +609,7 @@ export const mainStore = defineStore("mainData", {
           order: 48,
           show: true,
           category: "科技",
+          categoryIds: ["tech-dev-product"],
         },
         {
           label: "Hacker News",
@@ -584,6 +617,7 @@ export const mainStore = defineStore("mainData", {
           order: 49,
           show: true,
           category: "科技",
+          categoryIds: ["tech-dev-product"],
         },
         {
           label: "HelloGitHub",
@@ -591,6 +625,7 @@ export const mainStore = defineStore("mainData", {
           order: 50,
           show: true,
           category: "科技",
+          categoryIds: ["tech-dev-product"],
         },
         {
           label: "51CTO",
@@ -598,6 +633,7 @@ export const mainStore = defineStore("mainData", {
           order: 51,
           show: true,
           category: "科技",
+          categoryIds: ["tech-dev-product"],
         },
         {
           label: "超级线报",
