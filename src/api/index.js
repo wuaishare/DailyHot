@@ -180,7 +180,8 @@ const runTrendsShadowRead = async (source, params, legacyResult) => {
   const startedAt = performance.now();
   try {
     const url = new URL(`${TRENDS_PUBLIC_API}/rankings/${encodeURIComponent(source)}`);
-    url.searchParams.set("limit", "50");
+    const legacyCount = Array.isArray(legacyResult?.data) ? legacyResult.data.length : 0;
+    url.searchParams.set("limit", String(Math.min(100, Math.max(50, legacyCount))));
     if (variant) url.searchParams.set("variant", variant);
     const response = await fetch(url, {
       method: "GET",
