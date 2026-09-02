@@ -1515,10 +1515,10 @@ const fetchIthomeOfficialRanking = async (type) => {
   });
 };
 
-const fetchIthomeXcvtsRanking = async (type) => {
+const fetchIthomeXcvtsRanking = async (type, forceNoCache = false) => {
   const cache = getIthomeCacheStore();
   const cached = cache.get(type);
-  if (cached && Date.now() - cached.cachedAt < ITHOME_CACHE_TTL_MS) {
+  if (!forceNoCache && cached && Date.now() - cached.cachedAt < ITHOME_CACHE_TTL_MS) {
     return { ...cached.value, fromCache: true };
   }
 
@@ -1541,10 +1541,10 @@ const fetchIthomeXcvtsRanking = async (type) => {
   return result;
 };
 
-const fetchIthomeRanking = async (type) => {
+const fetchIthomeRanking = async (type, forceNoCache = false) => {
   const cache = getIthomeCacheStore();
   const cached = cache.get(type);
-  if (cached && Date.now() - cached.cachedAt < ITHOME_CACHE_TTL_MS) {
+  if (!forceNoCache && cached && Date.now() - cached.cachedAt < ITHOME_CACHE_TTL_MS) {
     return { ...cached.value, fromCache: true };
   }
 
@@ -1558,15 +1558,17 @@ const fetchIthomeRanking = async (type) => {
       console.warn("ITHome official fetch failed", error);
     }
   }
-  return fetchIthomeXcvtsRanking(type);
+  return fetchIthomeXcvtsRanking(type, forceNoCache);
 };
 
 const handleIthome = async (req, res) => {
   if (req.method !== "GET") return false;
   const type = getIthomeType(normalizeQueryValue(req.query.type, "day"));
+  const forceNoCache =
+    String(normalizeQueryValue(req.query.cache, "true")).toLowerCase() === "false";
 
   try {
-    const result = await fetchIthomeRanking(type);
+    const result = await fetchIthomeRanking(type, forceNoCache);
     res.status(200).json(result);
     return true;
   } catch (error) {
