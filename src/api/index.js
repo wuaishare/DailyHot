@@ -47,6 +47,16 @@ const DIRECT_PUBLIC_API_SOURCES = new Set([
   "yicai-flash",
   "qbitai-ai",
   "paperswithcode",
+  "bbc-world",
+  "guardian-world",
+  "techcrunch",
+  "theverge",
+  "arstechnica",
+  "lobsters",
+  "nhk-news",
+  "hatena-hot",
+  "google-trends",
+  "devto",
 ]);
 const PUBLIC_API2_BASE =
   import.meta.env.VITE_GLOBAL_API2 ||

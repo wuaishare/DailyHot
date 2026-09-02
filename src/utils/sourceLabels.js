@@ -900,6 +900,76 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ja: "QbitAI",
     ko: "QbitAI",
   },
+  "bbc-world": {
+    "zh-CN": "BBC 世界新闻",
+    "zh-TW": "BBC 世界新聞",
+    en: "BBC World",
+    ja: "BBCワールドニュース",
+    ko: "BBC 월드 뉴스",
+  },
+  "guardian-world": {
+    "zh-CN": "卫报全球新闻",
+    "zh-TW": "衛報全球新聞",
+    en: "The Guardian World",
+    ja: "ガーディアン・世界",
+    ko: "가디언 월드",
+  },
+  techcrunch: {
+    "zh-CN": "TechCrunch",
+    "zh-TW": "TechCrunch",
+    en: "TechCrunch",
+    ja: "TechCrunch",
+    ko: "TechCrunch",
+  },
+  theverge: {
+    "zh-CN": "The Verge",
+    "zh-TW": "The Verge",
+    en: "The Verge",
+    ja: "The Verge",
+    ko: "The Verge",
+  },
+  arstechnica: {
+    "zh-CN": "Ars Technica",
+    "zh-TW": "Ars Technica",
+    en: "Ars Technica",
+    ja: "Ars Technica",
+    ko: "Ars Technica",
+  },
+  lobsters: {
+    "zh-CN": "Lobsters",
+    "zh-TW": "Lobsters",
+    en: "Lobsters",
+    ja: "Lobsters",
+    ko: "Lobsters",
+  },
+  "nhk-news": {
+    "zh-CN": "NHK 新闻",
+    "zh-TW": "NHK 新聞",
+    en: "NHK News",
+    ja: "NHKニュース",
+    ko: "NHK 뉴스",
+  },
+  "hatena-hot": {
+    "zh-CN": "Hatena 热门",
+    "zh-TW": "Hatena 熱門",
+    en: "Hatena Bookmark",
+    ja: "はてなブックマーク",
+    ko: "Hatena 북마크",
+  },
+  "google-trends": {
+    "zh-CN": "Google 趋势",
+    "zh-TW": "Google 趨勢",
+    en: "Google Trends",
+    ja: "Google トレンド",
+    ko: "Google 트렌드",
+  },
+  devto: {
+    "zh-CN": "DEV Community",
+    "zh-TW": "DEV Community",
+    en: "DEV Community",
+    ja: "DEV Community",
+    ko: "DEV Community",
+  },
   "36kr-ai": {
     "zh-CN": "36氪 AI",
     "zh-TW": "36氪 AI",
@@ -924,6 +994,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
 };
 
 const SOURCE_DISPLAY_LABEL_OVERRIDES = {
+  "google-trends": {
+    "zh-CN": "Google 趋势",
+    "zh-TW": "Google 趨勢",
+    en: "Google Trends",
+    ja: "Google トレンド",
+    ko: "Google 트렌드",
+  },
   "clawhub-skills": {
     "zh-CN": "ClawHub",
     "zh-TW": "ClawHub",

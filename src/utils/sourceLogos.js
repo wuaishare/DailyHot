@@ -58,6 +58,16 @@ const SOURCE_LOGO_MAP = {
   clawhub: "/logo/ai/clawhub-icon.png",
   "clawhub-skills": "/logo/ai/clawhub-icon.png",
   "clawhub-plugins": "/logo/ai/clawhub-icon.png",
+  "bbc-world": "/logo/global/bbc-world.ico",
+  "guardian-world": "/logo/global/guardian-world.ico",
+  techcrunch: "/logo/global/techcrunch.ico",
+  theverge: "/logo/global/theverge.png",
+  arstechnica: "/logo/global/arstechnica.ico",
+  lobsters: "/logo/global/lobsters.png",
+  "nhk-news": "/logo/global/nhk-news.ico",
+  "hatena-hot": "/logo/global/hatena-hot.ico",
+  "google-trends": "/logo/global/google-trends.ico",
+  devto: "/logo/global/devto.ico",
 };
 
 const SOURCE_LOGO_ALIAS_MAP = {
