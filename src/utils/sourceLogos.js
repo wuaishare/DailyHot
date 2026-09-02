@@ -68,6 +68,17 @@ const SOURCE_LOGO_MAP = {
   "hatena-hot": "/logo/global/hatena-hot.ico",
   "google-trends": "/logo/global/google-trends.ico",
   devto: "/logo/global/devto.ico",
+  "aljazeera": "/logo/global/aljazeera.png",
+  "npr-news": "/logo/global/npr-news.png",
+  "dw-news": "/logo/global/dw-news.png",
+  "france24-fr": "/logo/global/france24-fr.png",
+  "lemonde": "/logo/global/lemonde.png",
+  "elpais": "/logo/global/elpais.png",
+  "yonhap": "/logo/global/yonhap.png",
+  "nasa-news": "/logo/global/nasa-news.png",
+  "nature-news": "/logo/global/nature-news.png",
+  "arxiv-ai": "/logo/global/arxiv-ai.png",
+  "timesofindia": "/logo/global/timesofindia.png",
 };
 
 const SOURCE_LOGO_ALIAS_MAP = {

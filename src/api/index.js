@@ -57,6 +57,17 @@ const DIRECT_PUBLIC_API_SOURCES = new Set([
   "hatena-hot",
   "google-trends",
   "devto",
+  "aljazeera",
+  "npr-news",
+  "dw-news",
+  "france24-fr",
+  "lemonde",
+  "elpais",
+  "yonhap",
+  "nasa-news",
+  "nature-news",
+  "arxiv-ai",
+  "timesofindia",
 ]);
 const PUBLIC_API2_BASE =
   import.meta.env.VITE_GLOBAL_API2 ||
