@@ -235,7 +235,7 @@ const looksTranslatableSentence = (text = "", locale = "zh-CN") => {
   const hasHangul = /[\uac00-\ud7af]/.test(value);
 
   if (normalizedLocale === "zh-CN") {
-    return !hasHan && (hasKana || hasHangul || hasLatinSentence(value));
+    return hasKana || hasHangul || (!hasHan && hasLatinSentence(value));
   }
   if (normalizedLocale === "zh-TW") {
     return hasHan || hasLatinSentence(value);
