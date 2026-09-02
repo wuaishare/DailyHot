@@ -736,6 +736,21 @@ const requestHotListResult = (item, isNew, shouldTranslate, useApi2) =>
     }
   );
 
+const getReadableTranslationPriority = () => {
+  if (!isClient || typeof document === "undefined") return 0;
+  const listDom = document.getElementById(`hot-list-${props.hotData.name}`);
+  const scrollRoot = listDom?.closest(".n-scrollbar-container");
+  if (!listDom || !scrollRoot) return 0;
+  const cardRect = listDom.getBoundingClientRect();
+  const rootRect = scrollRoot.getBoundingClientRect();
+  if (cardRect.bottom >= rootRect.top && cardRect.top <= rootRect.bottom) return 1000;
+  const distance =
+    cardRect.top > rootRect.bottom
+      ? cardRect.top - rootRect.bottom
+      : rootRect.top - cardRect.bottom;
+  return Math.max(0, 700 - Math.max(0, distance));
+};
+
 const enhanceHotListResult = (result, targetLocale = locale.value) =>
   shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)
     ? enhanceReadableResultTitles(result, targetLocale, {
@@ -743,6 +758,7 @@ const enhanceHotListResult = (result, targetLocale = locale.value) =>
         limit: HOT_LIST_VISIBLE_LIMIT,
         offset: 0,
         sourceName: props.hotData.name,
+        priority: getReadableTranslationPriority(),
       })
     : Promise.resolve(result);
 

@@ -183,7 +183,7 @@ const getBackendTranslatedMap = async (texts = [], locale) => {
   return backendMap;
 };
 
-const enqueueLocaleRequest = (locale, request) =>
+const enqueueLocaleRequest = (locale, request, priority = 0) =>
   new Promise((resolve, reject) => {
     const pool =
       localeRequestPool.get(locale) || { active: 0, limit: 4, queue: [] };
@@ -198,7 +198,7 @@ const enqueueLocaleRequest = (locale, request) =>
           pool.active -= 1;
           const nextJob = pool.queue.shift();
           if (nextJob) {
-            nextJob();
+            nextJob.run();
             return;
           }
           if (pool.active === 0) {
@@ -212,7 +212,8 @@ const enqueueLocaleRequest = (locale, request) =>
       return;
     }
 
-    pool.queue.push(run);
+    pool.queue.push({ run, priority: Number(priority) || 0 });
+    pool.queue.sort((left, right) => right.priority - left.priority);
   });
 
 const hasLatinSentence = (text = "") => {
@@ -266,7 +267,7 @@ export const shouldUseReadableTitleTranslation = (sourceName, locale, subtype) =
 export const shouldProtectEntityTitleTranslation = (sourceName, subtype) =>
   isEntityTitleSource(sourceName, subtype);
 
-export const translateReadableTitles = async (titles = [], locale) => {
+export const translateReadableTitles = async (titles = [], locale, { priority = 0 } = {}) => {
   const normalizedLocale = normalizeLocale(locale);
   const filtered = Array.from(
     new Set(
@@ -335,7 +336,7 @@ export const translateReadableTitles = async (titles = [], locale) => {
             success: translatedMap.size > 0,
             map: translatedMap,
           };
-        });
+        }, priority);
       })().finally(() => {
         pendingCache.delete(batchKey);
       })
@@ -359,7 +360,7 @@ export const translateReadableTitles = async (titles = [], locale) => {
 export const enhanceReadableResultTitles = async (
   result,
   locale,
-  { includeDescriptions = true, offset = 0, limit = 20, sourceName = "" } = {}
+  { includeDescriptions = true, offset = 0, limit = 20, sourceName = "", priority = 0 } = {}
 ) => {
   const normalizedLocale = normalizeLocale(locale);
   if (!shouldUseReadableTitleTranslation(sourceName, normalizedLocale)) return result;
@@ -384,7 +385,7 @@ export const enhanceReadableResultTitles = async (
 
   if (!sourceTexts.length) return normalizedResult;
 
-  const translatedMap = await translateReadableTitles(sourceTexts, normalizedLocale);
+  const translatedMap = await translateReadableTitles(sourceTexts, normalizedLocale, { priority });
   if (!Object.keys(translatedMap).length) return normalizedResult;
 
   let changed = false;

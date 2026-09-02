@@ -170,20 +170,32 @@ export const getAnalyticsDashboard = (days = 30) =>
       : {},
   });
 
-export const getReadableTranslations = (texts = [], locale = "zh-CN") =>
-  axios({
-    method: "POST",
-    url: "/readable-translate",
-    baseURL: import.meta.env.PROD ? "/api" : undefined,
-    params: {
-      cache: false,
-    },
-    data: {
-      texts,
-      locale,
-    },
-    silent: true,
-  });
+export const getReadableTranslations = async (texts = [], locale = "zh-CN") => {
+  const apiBases = import.meta.env.PROD
+    ? [PUBLIC_API2_BASE, "/api"]
+    : [undefined];
+  let lastError;
+  for (const baseURL of apiBases) {
+    try {
+      return await axios({
+        method: "POST",
+        url: "/readable-translate",
+        ...(baseURL ? { baseURL } : {}),
+        params: {
+          cache: false,
+        },
+        data: {
+          texts,
+          locale,
+        },
+        silent: true,
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+};
 
 /**
  * 获取热榜数据（主 API 失败时自动尝试备用 API）
