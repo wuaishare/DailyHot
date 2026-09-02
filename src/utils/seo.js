@@ -264,11 +264,46 @@ const CATEGORY_SEO_MAP = {
       "社区讨论",
     ],
   },
+  "模型评测": {
+    title: "AI模型评测",
+    titleTail: "大模型排行榜、基准测试与性能价格对比",
+    description:
+      "AI模型评测聚合 OpenRouter、Artificial Analysis、Arena AI、DesignArena 与 LLM Stats，集中查看主流大模型的综合能力、编程、视觉、Agent、价格与使用热度排名。",
+    keywords: ["AI模型评测", "大模型排行榜", "OpenRouter", "Artificial Analysis", "Arena AI", "DesignArena", "LLM Stats"],
+  },
+  "产品生态": {
+    title: "AI产品生态",
+    titleTail: "AI产品、Agent Skills、插件与新品趋势",
+    description:
+      "AI产品生态聚合 AICPB 全球 AI 产品热度、Skills Rank、ClawHub 与 Product Hunt AI 新品，观察 AI 应用、Agent Skills、插件和工具生态的真实热度变化。",
+    keywords: ["AI产品", "AI工具", "Agent Skills", "ClawHub", "Product Hunt AI", "AICPB", "AI应用榜"],
+  },
+  "官方动态": {
+    title: "AI官方动态",
+    titleTail: "OpenAI、Anthropic、DeepMind等官方更新聚合",
+    description:
+      "AI官方动态聚合 OpenAI、Anthropic、DeepMind、Meta AI、Mistral、Cohere、Perplexity、xAI 与 Hugging Face 官方新闻和博客，优先追踪模型发布、产品更新与公司研究进展。",
+    keywords: ["AI官方动态", "OpenAI", "Anthropic", "DeepMind", "Meta AI", "Mistral", "Hugging Face", "AI新闻"],
+  },
+  "研究社区": {
+    title: "AI研究社区",
+    titleTail: "论文代码、Hacker News与Reddit技术讨论聚合",
+    description:
+      "AI研究社区聚合 Papers with Code、Hacker News AI 讨论以及 LocalLLaMA、MachineLearning、artificial 等 Reddit 社区，跟踪论文代码、开源模型与开发者技术讨论。",
+    keywords: ["AI研究", "Papers with Code", "Hacker News AI", "LocalLLaMA", "MachineLearning", "开源模型", "AI社区"],
+  },
+  "中文AI资讯": {
+    title: "中文AI资讯",
+    titleTail: "量子位与新浪AI热点实时聚合",
+    description:
+      "中文AI资讯聚合量子位与新浪 AI 热榜，补充国内大模型、AI产品、创业公司、产业事件和爆火话题，降低只依赖海外英文源造成的信息偏差。",
+    keywords: ["中文AI资讯", "量子位", "新浪AI", "国内AI新闻", "大模型新闻", "AI产业", "AI热点"],
+  },
   AI: {
     title: "AI 热榜",
-    titleTail: "AI 模型排行榜、AI 资讯与热门工具榜单聚合",
+    titleTail: "模型评测、官方动态、产品生态与中文AI资讯聚合",
     description:
-      "AI 热榜聚合 OpenRouter、Artificial Analysis、Arena AI、LLM Stats、OpenAI、Anthropic、Hugging Face、Product Hunt 等平台，覆盖模型排行、官方动态、论文趋势与 AI 产品发现。",
+      "AI 热榜聚合 OpenRouter、Artificial Analysis、Arena AI、OpenAI、Anthropic、Hugging Face、Product Hunt、Hacker News、量子位与新浪 AI，覆盖模型评测、产品生态、官方动态、研究社区与中文 AI 资讯。",
     keywords: [
       "AI热榜",
       "AI排行榜",
@@ -435,32 +470,62 @@ const CATEGORY_LOCALE_SEO_MAP = {
       keywords: "거래소,SSE,SZSE,HKEX,Nasdaq,NYSE,TWSE,NSE India,ASX,거래대금,DailyHot",
     },
   },
+  "模型评测": {
+    en: { title: "AI Model Benchmarks - Leaderboards, capability and price comparisons | DailyHot", description: "Compare leading AI models across OpenRouter, Artificial Analysis, Arena AI, DesignArena and LLM Stats, including capability, coding, vision, agent and pricing signals.", keywords: "AI model benchmarks,AI leaderboard,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,DailyHot" },
+    "zh-TW": { title: "AI模型評測 - 大模型排行榜、能力與價格比較 | 吾愛熱榜", description: "彙整 OpenRouter、Artificial Analysis、Arena AI、DesignArena 與 LLM Stats，追蹤主流大模型能力、編程、視覺、Agent、價格與熱度排名。", keywords: "AI模型評測,大模型排行榜,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,吾愛熱榜" },
+    ja: { title: "AIモデル評価 - ランキング、性能、価格比較 | DailyHot", description: "OpenRouter、Artificial Analysis、Arena AI、DesignArena、LLM Stats を集約し、主要モデルの性能、コーディング、画像、Agent、価格を比較します。", keywords: "AIモデル評価,AIランキング,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,DailyHot" },
+    ko: { title: "AI 모델 평가 - 순위, 성능, 가격 비교 | DailyHot", description: "OpenRouter, Artificial Analysis, Arena AI, DesignArena, LLM Stats를 모아 주요 모델의 성능, 코딩, 비전, Agent, 가격 신호를 비교합니다.", keywords: "AI 모델 평가,AI 순위,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,DailyHot" },
+  },
+  "产品生态": {
+    en: { title: "AI Products & Ecosystem - Apps, Agent Skills and tool trends | DailyHot", description: "Track AI product popularity, Agent Skills, plugins and new tools through AICPB, Skills Rank, ClawHub and Product Hunt AI.", keywords: "AI products,AI tools,Agent Skills,ClawHub,Product Hunt AI,AICPB,AI apps,DailyHot" },
+    "zh-TW": { title: "AI產品生態 - AI應用、Agent Skills與工具趨勢 | 吾愛熱榜", description: "彙整 AICPB、Skills Rank、ClawHub 與 Product Hunt AI，追蹤AI應用、Agent Skills、插件與新品熱度。", keywords: "AI產品,AI工具,Agent Skills,ClawHub,Product Hunt AI,AICPB,吾愛熱榜" },
+    ja: { title: "AI製品・エコシステム - アプリ、Agent Skills、ツール動向 | DailyHot", description: "AICPB、Skills Rank、ClawHub、Product Hunt AI からAIアプリ、Agent Skills、プラグイン、新製品の人気を追跡します。", keywords: "AI製品,AIツール,Agent Skills,ClawHub,Product Hunt AI,AICPB,DailyHot" },
+    ko: { title: "AI 제품·생태계 - 앱, Agent Skills, 도구 트렌드 | DailyHot", description: "AICPB, Skills Rank, ClawHub, Product Hunt AI를 통해 AI 앱, Agent Skills, 플러그인과 신규 도구의 인기를 추적합니다.", keywords: "AI 제품,AI 도구,Agent Skills,ClawHub,Product Hunt AI,AICPB,DailyHot" },
+  },
+  "官方动态": {
+    en: { title: "Official AI Updates - OpenAI, Anthropic, DeepMind and more | DailyHot", description: "Follow official news and blogs from OpenAI, Anthropic, DeepMind, Meta AI, Mistral, Cohere, Perplexity, xAI and Hugging Face for model launches, product updates and research progress.", keywords: "official AI updates,OpenAI,Anthropic,DeepMind,Meta AI,Mistral,Hugging Face,AI news,DailyHot" },
+    "zh-TW": { title: "AI官方動態 - OpenAI、Anthropic、DeepMind等官方更新 | 吾愛熱榜", description: "彙整 OpenAI、Anthropic、DeepMind、Meta AI、Mistral、Cohere、Perplexity、xAI 與 Hugging Face 官方新聞與博客。", keywords: "AI官方動態,OpenAI,Anthropic,DeepMind,Meta AI,Mistral,Hugging Face,AI新聞,吾愛熱榜" },
+    ja: { title: "AI公式アップデート - OpenAI、Anthropic、DeepMindなど | DailyHot", description: "OpenAI、Anthropic、DeepMind、Meta AI、Mistral、Cohere、Perplexity、xAI、Hugging Face の公式ニュースとブログをまとめます。", keywords: "AI公式アップデート,OpenAI,Anthropic,DeepMind,Meta AI,Mistral,Hugging Face,DailyHot" },
+    ko: { title: "AI 공식 업데이트 - OpenAI, Anthropic, DeepMind 등 | DailyHot", description: "OpenAI, Anthropic, DeepMind, Meta AI, Mistral, Cohere, Perplexity, xAI, Hugging Face의 공식 뉴스와 블로그를 모아 제공합니다.", keywords: "AI 공식 업데이트,OpenAI,Anthropic,DeepMind,Meta AI,Mistral,Hugging Face,DailyHot" },
+  },
+  "研究社区": {
+    en: { title: "AI Research & Community - Papers, open source and developer discussions | DailyHot", description: "Track Papers with Code, Hacker News AI discussions and Reddit communities including LocalLLaMA, MachineLearning and artificial for research, open models and developer debate.", keywords: "AI research,Papers with Code,Hacker News AI,LocalLLaMA,MachineLearning,open models,AI community,DailyHot" },
+    "zh-TW": { title: "AI研究社群 - 論文代碼、開源模型與技術討論 | 吾愛熱榜", description: "彙整 Papers with Code、Hacker News AI 與 LocalLLaMA、MachineLearning、artificial 等 Reddit 社群，追蹤論文代碼、開源模型與技術討論。", keywords: "AI研究,Papers with Code,Hacker News AI,LocalLLaMA,MachineLearning,開源模型,AI社群,吾愛熱榜" },
+    ja: { title: "AI研究・コミュニティ - 論文、オープンモデル、技術議論 | DailyHot", description: "Papers with Code、Hacker News AI、LocalLLaMA、MachineLearning、artificial などを集約し、論文コード、オープンモデル、開発者議論を追跡します。", keywords: "AI研究,Papers with Code,Hacker News AI,LocalLLaMA,MachineLearning,オープンモデル,DailyHot" },
+    ko: { title: "AI 연구·커뮤니티 - 논문, 오픈 모델, 개발자 토론 | DailyHot", description: "Papers with Code, Hacker News AI, LocalLLaMA, MachineLearning, artificial 등을 모아 논문 코드, 오픈 모델, 개발자 토론을 추적합니다.", keywords: "AI 연구,Papers with Code,Hacker News AI,LocalLLaMA,MachineLearning,오픈 모델,DailyHot" },
+  },
+  "中文AI资讯": {
+    en: { title: "Chinese AI News - QbitAI and Sina AI trends | DailyHot", description: "Follow Chinese-language AI developments through QbitAI and Sina AI, covering domestic models, products, startups, industry events and fast-rising topics.", keywords: "Chinese AI news,QbitAI,Sina AI,China AI,AI models,AI startups,AI industry,DailyHot" },
+    "zh-TW": { title: "中文AI資訊 - 量子位與新浪AI熱點聚合 | 吾愛熱榜", description: "彙整量子位與新浪 AI 熱榜，追蹤國內大模型、AI產品、創業公司、產業事件與熱門話題。", keywords: "中文AI資訊,量子位,新浪AI,國內AI新聞,大模型新聞,AI產業,吾愛熱榜" },
+    ja: { title: "中国語AIニュース - QbitAI・Sina AIトレンド | DailyHot", description: "QbitAI と Sina AI から中国語圏のAIモデル、製品、スタートアップ、業界イベント、注目トピックを追跡します。", keywords: "中国語AIニュース,QbitAI,Sina AI,中国AI,AIモデル,AIスタートアップ,DailyHot" },
+    ko: { title: "중국어 AI 뉴스 - QbitAI·Sina AI 트렌드 | DailyHot", description: "QbitAI와 Sina AI를 통해 중국어권 AI 모델, 제품, 스타트업, 산업 이벤트와 급상승 이슈를 추적합니다.", keywords: "중국어 AI 뉴스,QbitAI,Sina AI,중국 AI,AI 모델,AI 스타트업,DailyHot" },
+  },
   AI: {
     en: {
       title: "AI Hot Rankings - AI model leaderboards, AI news, and tool trends | DailyHot",
       description:
-        "AI Hot Rankings aggregate OpenRouter, Artificial Analysis, Arena AI, DesignArena, LLM Stats, OpenAI, Anthropic, Hugging Face, Product Hunt, and Hacker News to track model rankings, official AI updates, research trends, and AI product discovery.",
+        "AI Hot Rankings aggregate model benchmarks, official updates, product ecosystems, research communities, and Chinese AI news from sources including OpenRouter, OpenAI, Anthropic, Hugging Face, Product Hunt, Hacker News, QbitAI, and Sina AI.",
       keywords:
         "AI rankings,AI model leaderboard,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI news,AI tools,DailyHot",
     },
     "zh-TW": {
       title: "AI熱榜 - AI模型排行榜、AI資訊與熱門工具榜單聚合 | 吾愛熱榜",
       description:
-        "AI熱榜彙整 OpenRouter、Artificial Analysis、Arena AI、DesignArena、LLM Stats、OpenAI、Anthropic、Hugging Face、Product Hunt 與 Hacker News，追蹤模型排行、官方AI動態、研究趨勢與AI產品發現。",
+        "AI熱榜彙整模型評測、官方動態、產品生態、研究社群與中文AI資訊，來源涵蓋 OpenRouter、OpenAI、Anthropic、Hugging Face、Product Hunt、Hacker News、量子位與新浪AI。",
       keywords:
         "AI熱榜,AI模型排行榜,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI資訊,AI工具,吾愛熱榜",
     },
     ja: {
       title: "AIランキング - AIモデル評価、AIニュース、人気ツール動向の集約 | DailyHot",
       description:
-        "AIランキングは OpenRouter、Artificial Analysis、Arena AI、DesignArena、LLM Stats、OpenAI、Anthropic、Hugging Face、Product Hunt、Hacker News を集約し、モデル順位、公式AIニュース、研究動向、AIプロダクト発見を追跡します。",
+        "AIランキングはモデル評価、公式アップデート、製品エコシステム、研究コミュニティ、中国語AIニュースをまとめ、OpenRouter、OpenAI、Anthropic、Hugging Face、QbitAI などを追跡します。",
       keywords:
         "AIランキング,AIモデルランキング,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AIニュース,AIツール,DailyHot",
     },
     ko: {
       title: "AI 랭킹 - AI 모델 순위, AI 뉴스, 인기 도구 트렌드 | DailyHot",
       description:
-        "AI 랭킹은 OpenRouter, Artificial Analysis, Arena AI, DesignArena, LLM Stats, OpenAI, Anthropic, Hugging Face, Product Hunt, Hacker News를 모아 모델 순위, 공식 AI 소식, 연구 동향, AI 제품 발견을 추적합니다.",
+        "AI 랭킹은 모델 평가, 공식 업데이트, 제품 생태계, 연구 커뮤니티, 중국어 AI 뉴스를 함께 모아 OpenRouter, OpenAI, Anthropic, Hugging Face, QbitAI 등의 흐름을 추적합니다.",
       keywords:
         "AI 랭킹,AI 모델 순위,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI 뉴스,AI 도구,DailyHot",
     },

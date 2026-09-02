@@ -202,6 +202,71 @@ export const BUILTIN_CATEGORIES = [
       ko: "AI",
     },
   },
+  {
+    id: "ai-models",
+    name: "模型评测",
+    slug: "ai-models",
+    parentId: "ai",
+    labels: {
+      "zh-CN": "模型评测",
+      en: "Model Benchmarks",
+      "zh-TW": "模型評測",
+      ja: "モデル評価",
+      ko: "모델 평가",
+    },
+  },
+  {
+    id: "ai-products",
+    name: "产品生态",
+    slug: "ai-products",
+    parentId: "ai",
+    labels: {
+      "zh-CN": "产品生态",
+      en: "Products & Ecosystem",
+      "zh-TW": "產品生態",
+      ja: "製品・エコシステム",
+      ko: "제품·생태계",
+    },
+  },
+  {
+    id: "ai-official",
+    name: "官方动态",
+    slug: "ai-official",
+    parentId: "ai",
+    labels: {
+      "zh-CN": "官方动态",
+      en: "Official Updates",
+      "zh-TW": "官方動態",
+      ja: "公式アップデート",
+      ko: "공식 업데이트",
+    },
+  },
+  {
+    id: "ai-research-community",
+    name: "研究社区",
+    slug: "ai-research-community",
+    parentId: "ai",
+    labels: {
+      "zh-CN": "研究社区",
+      en: "Research & Community",
+      "zh-TW": "研究社群",
+      ja: "研究・コミュニティ",
+      ko: "연구·커뮤니티",
+    },
+  },
+  {
+    id: "ai-chinese-news",
+    name: "中文AI资讯",
+    slug: "chinese-ai-news",
+    parentId: "ai",
+    labels: {
+      "zh-CN": "中文AI资讯",
+      en: "Chinese AI News",
+      "zh-TW": "中文AI資訊",
+      ja: "中国語AIニュース",
+      ko: "중국어 AI 뉴스",
+    },
+  },
 ];
 
 export const LOCALE_STORAGE_KEY = "dailyhot:locale";

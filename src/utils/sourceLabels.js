@@ -2487,6 +2487,13 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "中国語AIニュースランキング",
     ko: "중국어 AI 뉴스 랭킹",
   },
+  "AI 垂直媒体": {
+    "zh-CN": "AI 垂直媒体",
+    "zh-TW": "AI 垂直媒體",
+    en: "AI Vertical Media",
+    ja: "AI専門メディア",
+    ko: "AI 전문 미디어",
+  },
   日榜: {
     "zh-CN": "日榜",
     "zh-TW": "日榜",

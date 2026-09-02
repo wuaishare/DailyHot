@@ -42,9 +42,38 @@ const FINANCE_TAXONOMY_SOURCE_IDS = [
   "global-indexes",
 ];
 
+const AI_TAXONOMY_SOURCE_IDS = [
+  "openrouter-rankings",
+  "artificialanalysis",
+  "arena-ai",
+  "designarena",
+  "llm-stats",
+  "aicpb-rankings",
+  "skills-rank",
+  "clawhub",
+  "producthunt-ai",
+  "openai",
+  "anthropic-news",
+  "deepmind-blog",
+  "meta-ai-blog",
+  "mistral-news",
+  "cohere-blog",
+  "perplexity-blog",
+  "xai-news",
+  "huggingface",
+  "paperswithcode",
+  "hackernews-ai",
+  "reddit-localllama",
+  "reddit-machinelearning",
+  "reddit-artificial",
+  "sina-ai",
+  "qbitai-ai",
+];
+
 const BUILTIN_CATEGORY_ID_RESETS = new Set([
   ...GAME_DEAL_SOURCE_IDS,
   ...FINANCE_TAXONOMY_SOURCE_IDS,
+  ...AI_TAXONOMY_SOURCE_IDS,
 ]);
 
 const BUILTIN_ORDER_MIGRATIONS = {
@@ -701,6 +730,7 @@ export const mainStore = defineStore("mainData", {
           order: 57,
           show: true,
           category: "AI",
+          categoryIds: ["ai-models"],
           subtype: "模型周度热度榜",
         },
         {
@@ -709,6 +739,7 @@ export const mainStore = defineStore("mainData", {
           order: 58,
           show: true,
           category: "AI",
+          categoryIds: ["ai-models"],
           subtype: "模型综合评测榜",
         },
         {
@@ -717,6 +748,7 @@ export const mainStore = defineStore("mainData", {
           order: 59,
           show: true,
           category: "AI",
+          categoryIds: ["ai-models"],
           subtype: "综合对话榜",
         },
         {
@@ -725,6 +757,7 @@ export const mainStore = defineStore("mainData", {
           order: 60,
           show: true,
           category: "AI",
+          categoryIds: ["ai-models"],
           subtype: "Agentic 全栈应用模型榜",
         },
         {
@@ -733,6 +766,7 @@ export const mainStore = defineStore("mainData", {
           order: 61,
           show: true,
           category: "AI",
+          categoryIds: ["ai-products"],
           subtype: "全球 AI 产品热度榜",
         },
         {
@@ -741,6 +775,7 @@ export const mainStore = defineStore("mainData", {
           order: 62,
           show: true,
           category: "AI",
+          categoryIds: ["ai-models"],
           subtype: "模型性能 / 价格榜",
         },
         {
@@ -749,6 +784,7 @@ export const mainStore = defineStore("mainData", {
           order: 63,
           show: true,
           category: "AI",
+          categoryIds: ["ai-products"],
           subtype: "Agent Skills 安装榜",
         },
         {
@@ -757,6 +793,7 @@ export const mainStore = defineStore("mainData", {
           order: 64,
           show: true,
           category: "AI",
+          categoryIds: ["ai-products"],
           subtype: "技能 / 插件",
         },
         {
@@ -765,6 +802,7 @@ export const mainStore = defineStore("mainData", {
           order: 65,
           show: true,
           category: "AI",
+          categoryIds: ["ai-official"],
           subtype: "官方新闻",
         },
         {
@@ -773,6 +811,7 @@ export const mainStore = defineStore("mainData", {
           order: 66,
           show: true,
           category: "AI",
+          categoryIds: ["ai-official"],
           subtype: "官方新闻",
         },
         {
@@ -781,6 +820,7 @@ export const mainStore = defineStore("mainData", {
           order: 67,
           show: true,
           category: "AI",
+          categoryIds: ["ai-official"],
           subtype: "官方博客",
         },
         {
@@ -789,6 +829,7 @@ export const mainStore = defineStore("mainData", {
           order: 68,
           show: true,
           category: "AI",
+          categoryIds: ["ai-official"],
           subtype: "官方 AI 动态",
         },
         {
@@ -797,6 +838,7 @@ export const mainStore = defineStore("mainData", {
           order: 69,
           show: true,
           category: "AI",
+          categoryIds: ["ai-official"],
           subtype: "官方新闻",
         },
         {
@@ -805,6 +847,7 @@ export const mainStore = defineStore("mainData", {
           order: 70,
           show: true,
           category: "AI",
+          categoryIds: ["ai-official"],
           subtype: "官方博客",
         },
         {
@@ -813,6 +856,7 @@ export const mainStore = defineStore("mainData", {
           order: 73,
           show: false,
           category: "AI",
+          categoryIds: ["ai-official"],
           subtype: "官方资讯",
         },
         {
@@ -821,6 +865,7 @@ export const mainStore = defineStore("mainData", {
           order: 74,
           show: false,
           category: "AI",
+          categoryIds: ["ai-official"],
           subtype: "官方资讯",
         },
         {
@@ -829,14 +874,16 @@ export const mainStore = defineStore("mainData", {
           order: 74,
           show: true,
           category: "AI",
+          categoryIds: ["ai-official"],
           subtype: "官方博客",
         },
         {
           label: "Papers with Code",
           name: "paperswithcode",
           order: 75,
-          show: false,
+          show: true,
           category: "AI",
+          categoryIds: ["ai-research-community"],
           subtype: "论文代码镜像榜",
         },
         {
@@ -845,6 +892,7 @@ export const mainStore = defineStore("mainData", {
           order: 76,
           show: true,
           category: "AI",
+          categoryIds: ["ai-products"],
           subtype: "AI 新品发现",
         },
         {
@@ -853,6 +901,7 @@ export const mainStore = defineStore("mainData", {
           order: 77,
           show: true,
           category: "AI",
+          categoryIds: ["ai-research-community"],
           subtype: "AI 热门讨论",
         },
         {
@@ -861,6 +910,7 @@ export const mainStore = defineStore("mainData", {
           order: 80,
           show: false,
           category: "AI",
+          categoryIds: ["ai-research-community"],
           subtype: "社区热议",
         },
         {
@@ -869,6 +919,7 @@ export const mainStore = defineStore("mainData", {
           order: 81,
           show: false,
           category: "AI",
+          categoryIds: ["ai-research-community"],
           subtype: "社区热议",
         },
         {
@@ -877,6 +928,7 @@ export const mainStore = defineStore("mainData", {
           order: 82,
           show: false,
           category: "AI",
+          categoryIds: ["ai-research-community"],
           subtype: "社区热议",
         },
         {
@@ -885,7 +937,17 @@ export const mainStore = defineStore("mainData", {
           order: 82,
           show: true,
           category: "AI",
+          categoryIds: ["ai-chinese-news"],
           subtype: "",
+        },
+        {
+          label: "量子位",
+          name: "qbitai-ai",
+          order: 83,
+          show: true,
+          category: "AI",
+          categoryIds: ["ai-chinese-news"],
+          subtype: "AI 垂直媒体",
         },
       ],
       newsArr: [],
@@ -1038,9 +1100,6 @@ export const mainStore = defineStore("mainData", {
           Number(defaults.order) === orderMigration.to
         ) {
           merged.order = orderMigration.to;
-        }
-        if (item.name === "paperswithcode") {
-          merged.show = false;
         }
         return merged;
       });

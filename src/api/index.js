@@ -45,6 +45,8 @@ const DIRECT_PUBLIC_API_SOURCES = new Set([
   "wallstreetcn",
   "sina-finance-flash",
   "yicai-flash",
+  "qbitai-ai",
+  "paperswithcode",
 ]);
 const PUBLIC_API2_BASE =
   import.meta.env.VITE_GLOBAL_API2 ||
