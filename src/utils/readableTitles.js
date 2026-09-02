@@ -7,6 +7,7 @@ import {
 
 const READABLE_TRANSLATION_LOCALES = new Set(["zh-CN", "en", "zh-TW", "ja", "ko"]);
 const CLIENT_FIRST_TRANSLATION_LOCALES = new Set(["zh-CN"]);
+const ALLOW_CLIENT_READABLE_TRANSLATION = !import.meta.env.PROD;
 const ENTITY_TITLE_SOURCE_NAMES = new Set([
   "openrouter-rankings",
   "artificialanalysis",
@@ -305,7 +306,9 @@ export const translateReadableTitles = async (titles = [], locale) => {
 
         return await enqueueLocaleRequest(normalizedLocale, async () => {
           const translatedMap = new Map();
-          const preferClient = CLIENT_FIRST_TRANSLATION_LOCALES.has(normalizedLocale);
+          const preferClient =
+            ALLOW_CLIENT_READABLE_TRANSLATION &&
+            CLIENT_FIRST_TRANSLATION_LOCALES.has(normalizedLocale);
 
           if (preferClient) {
             const clientMap = await getClientTranslatedMap(missing, normalizedLocale);
@@ -319,7 +322,11 @@ export const translateReadableTitles = async (titles = [], locale) => {
           }
 
           unresolved = missing.filter((title) => !translatedMap.has(title));
-          if (!preferClient && unresolved.length) {
+          if (
+            ALLOW_CLIENT_READABLE_TRANSLATION &&
+            !preferClient &&
+            unresolved.length
+          ) {
             const clientMap = await getClientTranslatedMap(unresolved, normalizedLocale);
             mergeTranslatedMap(translatedMap, clientMap);
           }
