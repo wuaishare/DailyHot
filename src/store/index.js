@@ -14,7 +14,7 @@ import {
 const BUILTIN_CATEGORIES = SITE_BUILTIN_CATEGORIES.map((item, order) => ({
   ...item,
   order,
-  parentId: null,
+  parentId: item.parentId || null,
   builtin: true,
 }));
 
@@ -22,7 +22,30 @@ const BUILTIN_CATEGORY_MIGRATIONS = {
   xueqiu: { from: "综合", to: "财经" },
 };
 
-const BUILTIN_CATEGORY_ID_RESETS = new Set(GAME_DEAL_SOURCE_IDS);
+const FINANCE_TAXONOMY_SOURCE_IDS = [
+  "cls",
+  "eastmoney-flash",
+  "jin10",
+  "tonghuashun",
+  "wallstreetcn",
+  "sina-finance-flash",
+  "yicai-flash",
+  "xueqiu",
+  "sse",
+  "szse",
+  "hkex",
+  "nasdaq",
+  "nyse",
+  "twse",
+  "nse",
+  "asx",
+  "global-indexes",
+];
+
+const BUILTIN_CATEGORY_ID_RESETS = new Set([
+  ...GAME_DEAL_SOURCE_IDS,
+  ...FINANCE_TAXONOMY_SOURCE_IDS,
+]);
 
 const BUILTIN_ORDER_MIGRATIONS = {
   "global-indexes": { from: 7.95, to: 7.45 },
@@ -101,6 +124,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.21,
           show: true,
           category: "财经",
+          categoryIds: ["finance-flash"],
         },
         {
           label: "东方财富快讯",
@@ -108,6 +132,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.22,
           show: true,
           category: "财经",
+          categoryIds: ["finance-flash"],
         },
         {
           label: "金十快讯",
@@ -115,6 +140,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.23,
           show: true,
           category: "财经",
+          categoryIds: ["finance-flash"],
         },
         {
           label: "同花顺快讯",
@@ -122,6 +148,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.24,
           show: true,
           category: "财经",
+          categoryIds: ["finance-flash"],
         },
         {
           label: "华尔街见闻快讯",
@@ -129,6 +156,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.25,
           show: true,
           category: "财经",
+          categoryIds: ["finance-flash"],
         },
         {
           label: "新浪财经7×24",
@@ -136,6 +164,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.26,
           show: true,
           category: "财经",
+          categoryIds: ["finance-flash"],
         },
         {
           label: "第一财经快讯",
@@ -143,6 +172,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.27,
           show: true,
           category: "财经",
+          categoryIds: ["finance-flash"],
         },
         {
           label: "雪球",
@@ -150,6 +180,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.5,
           show: true,
           category: "财经",
+          categoryIds: ["finance-market"],
           subtype: "topics",
         },
         {
@@ -158,6 +189,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.6,
           show: true,
           category: "财经",
+          categoryIds: ["finance-exchanges"],
           subtype: "stock",
         },
         {
@@ -166,6 +198,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.7,
           show: true,
           category: "财经",
+          categoryIds: ["finance-exchanges"],
           subtype: "stock",
         },
         {
@@ -174,6 +207,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.8,
           show: true,
           category: "财经",
+          categoryIds: ["finance-exchanges"],
         },
         {
           label: "Nasdaq",
@@ -181,6 +215,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.9,
           show: true,
           category: "财经",
+          categoryIds: ["finance-exchanges"],
         },
         {
           label: "NYSE",
@@ -188,6 +223,7 @@ export const mainStore = defineStore("mainData", {
           order: 19.5,
           show: true,
           category: "财经",
+          categoryIds: ["finance-exchanges"],
         },
         {
           label: "台交所",
@@ -195,6 +231,7 @@ export const mainStore = defineStore("mainData", {
           order: 34.5,
           show: true,
           category: "财经",
+          categoryIds: ["finance-exchanges"],
         },
         {
           label: "NSE",
@@ -202,6 +239,7 @@ export const mainStore = defineStore("mainData", {
           order: 49.5,
           show: true,
           category: "财经",
+          categoryIds: ["finance-exchanges"],
         },
         {
           label: "澳交所",
@@ -209,6 +247,7 @@ export const mainStore = defineStore("mainData", {
           order: 56.5,
           show: true,
           category: "财经",
+          categoryIds: ["finance-exchanges"],
         },
         {
           label: "全球股指",
@@ -216,6 +255,7 @@ export const mainStore = defineStore("mainData", {
           order: 7.45,
           show: true,
           category: "财经",
+          categoryIds: ["finance-indexes"],
         },
         {
           label: "哔哩哔哩",
@@ -896,7 +936,7 @@ export const mainStore = defineStore("mainData", {
           id: builtin.id,
           name: builtin.name,
           slug: builtin.slug,
-          parentId: null,
+          parentId: builtin.parentId || null,
           order: Number.isFinite(Number(existing?.order))
             ? Number(existing.order)
             : builtin.order,

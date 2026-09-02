@@ -111,7 +111,7 @@
         <n-select
           v-else
           v-model:value="activeCategoryLocal"
-          :options="categoryOptions"
+          :options="mobileCategoryOptions"
           size="large"
           :placeholder="t('common.selectCategory')"
         />
@@ -548,6 +548,29 @@ const categoryOptions = computed(() => {
     }));
   return [{ label: t("categories.all"), value: "全部" }, ...base];
 });
+const buildMobileCategoryOptions = (parentId = null, parentLabels = []) =>
+  store.categories
+    .filter(
+      (item) =>
+        (item.parentId || null) === parentId &&
+        availableCategorySet.value.has(item.name),
+    )
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .flatMap((item) => {
+      const labels = [
+        ...parentLabels,
+        getCategoryLabel(item.name, locale.value),
+      ];
+      return [
+        { label: labels.join(" · "), value: item.name },
+        ...buildMobileCategoryOptions(item.id, labels),
+      ];
+    });
+const mobileCategoryOptions = computed(() => [
+  { label: t("categories.all"), value: "全部" },
+  ...buildMobileCategoryOptions(),
+]);
 const buildCategoryMenuChildren = (parentId) => {
   const children = store.categories
     .filter(
@@ -671,7 +694,7 @@ const switchLocale = (nextLocale) => {
 
 watchEffect(() => {
   if (!store.categoryEnabled) return;
-  const values = categoryOptions.value.map((opt) => opt.value);
+  const values = mobileCategoryOptions.value.map((opt) => opt.value);
   if (!values.length) return;
   if (!values.includes(store.activeCategory)) {
     const next = values[0] || "全部";

@@ -532,7 +532,7 @@ const restoreDefaults = () => {
   store.categories = BUILTIN_CATEGORIES.map((item, order) => ({
     ...item,
     order,
-    parentId: null,
+    parentId: item.parentId || null,
     builtin: true,
   }));
   store.newsArr = store.defaultNewsArr.map((item) => ({

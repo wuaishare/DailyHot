@@ -98,9 +98,9 @@ const CATEGORY_SEO_MAP = {
   },
   "财经": {
     title: "财经热榜",
-    titleTail: "股票、ETF、证券市场与投资话题趋势聚合",
+    titleTail: "7×24快讯、股票、ETF、全球股指与投资趋势聚合",
     description:
-      "财经热榜聚合雪球投资话题、热股与热门基金，并汇总沪深港、台湾、印度、纽约证券交易所、Nasdaq 市场榜单及全球股指，覆盖A股、港股、美股、中国台湾、日本、韩国、印度、加拿大、澳大利亚、巴西、瑞士、西班牙、意大利、英国、法国、德国与欧元区市场、ETF及证券市场趋势。",
+      "财经热榜聚合财联社、东方财富、金十、同花顺、华尔街见闻、新浪财经与第一财经7×24快讯，结合雪球投资热度、沪深港及全球主要交易所榜单和全球股指，覆盖A股、港股、美股、ETF、宏观政策、公司动态与跨市场趋势。",
     keywords: [
       "财经热榜",
       "股票成交额榜",
@@ -127,6 +127,67 @@ const CATEGORY_SEO_MAP = {
       "A股热榜",
       "证券市场",
       "投资热点",
+    ],
+  },
+  "实时快讯": {
+    title: "财经实时快讯",
+    titleTail: "财联社、东方财富、金十、同花顺等7×24市场消息聚合",
+    description:
+      "财经实时快讯聚合财联社电报、东方财富快讯、金十数据、同花顺、华尔街见闻、新浪财经7×24与第一财经，集中追踪A股、港股、美股、宏观政策、公司公告与全球市场突发消息。",
+    keywords: [
+      "财经快讯",
+      "7×24快讯",
+      "财联社电报",
+      "东方财富快讯",
+      "金十数据",
+      "同花顺快讯",
+      "华尔街见闻",
+      "新浪财经7×24",
+      "第一财经",
+      "股票快讯",
+      "市场快讯",
+    ],
+  },
+  "市场热度": {
+    title: "市场热度",
+    titleTail: "雪球投资话题、热股与热门基金趋势",
+    description:
+      "市场热度聚合雪球热门投资话题、热股与热门基金榜单，用于观察投资者关注方向、市场讨论度与短期资金情绪变化。",
+    keywords: ["市场热度", "雪球热榜", "热门股票", "热门基金", "投资话题", "市场情绪"],
+  },
+  "全球股指": {
+    title: "全球股指",
+    titleTail: "亚欧美主要股票指数行情与涨跌排行",
+    description:
+      "全球股指汇总中国、香港、日本、韩国、印度、美国、加拿大、澳大利亚、巴西及欧洲主要股票指数，集中查看最新点位、涨跌幅与区域市场表现。",
+    keywords: [
+      "全球股指",
+      "上证指数",
+      "恒生指数",
+      "日经225",
+      "纳斯达克指数",
+      "标普500",
+      "NIFTY 50",
+      "欧洲股指",
+    ],
+  },
+  "交易所": {
+    title: "交易所市场榜",
+    titleTail: "沪深港、美股、台湾、印度与澳洲市场活跃榜",
+    description:
+      "交易所市场榜聚合上海证券交易所、深圳证券交易所、香港交易所、Nasdaq、NYSE、台湾证券交易所、印度国家证券交易所与澳大利亚证券交易所的官方市场榜单与活跃证券数据。",
+    keywords: [
+      "交易所",
+      "上交所",
+      "深交所",
+      "港交所",
+      "Nasdaq",
+      "NYSE",
+      "TWSE",
+      "NSE India",
+      "ASX",
+      "股票成交额榜",
+      "ETF成交额榜",
     ],
   },
   "羊毛": {
@@ -251,32 +312,127 @@ const CATEGORY_LOCALE_SEO_MAP = {
   },
   "财经": {
     en: {
-      title: "Finance Rankings - Stocks, ETFs, market activity, and investor topics | DailyHot",
+      title: "Finance Rankings - Live market news, stocks, ETFs and global indexes | DailyHot",
       description:
-        "Finance Rankings combine Xueqiu investor topics, hot stocks and popular funds with official Shanghai, Shenzhen, Hong Kong and Nasdaq market activity rankings plus major global market indexes across Asia, India, the U.S. and Europe.",
+        "Finance Rankings combine 24/7 market flashes from major Chinese financial outlets with Xueqiu investor trends, official exchange activity rankings and major global stock indexes across Asia, the U.S. and Europe.",
       keywords:
         "finance rankings,global market indexes,Shanghai Composite,CSI 300,Hang Seng Index,Hang Seng TECH,Nasdaq Composite,Nasdaq-100,NIFTY 50,SENSEX,stock turnover,ETF turnover,HKEX,Nasdaq,Xueqiu,DailyHot",
     },
     "zh-TW": {
-      title: "財經熱榜 - 股票、ETF、證券市場與投資話題趨勢聚合 | 吾愛熱榜",
+      title: "財經熱榜 - 7×24快訊、股票、ETF與全球股指聚合 | 吾愛熱榜",
       description:
-        "財經熱榜彙整雪球投資話題、熱門股票與熱門基金，以及上海、深圳、香港交易所、Nasdaq 官方市場活躍榜與全球主要指數，涵蓋A股、港股、美股、印度、歐洲、ETF與證券市場趨勢。",
+        "財經熱榜彙整主要財經媒體7×24快訊、雪球投資熱度、上海、深圳、香港及海外交易所官方市場榜單與全球主要股指，追蹤A股、港股、美股、ETF與宏觀市場趨勢。",
       keywords:
         "財經熱榜,股票成交額榜,ETF成交額榜,上海證券交易所,深圳證券交易所,香港交易所,Nasdaq,NIFTY 50,SENSEX,美股,港股,雪球熱門股票,熱門基金,A股熱榜,證券市場,吾愛熱榜",
     },
     ja: {
-      title: "金融ランキング - 株式、ETF、市場活況、投資トピックの集約 | DailyHot",
+      title: "金融ランキング - 24時間速報、株式、ETF、世界株価指数 | DailyHot",
       description:
-        "金融ランキングは Xueqiu の投資トピック、人気株、人気ファンドと、上海・深圳・香港取引所、Nasdaq の公式市場アクティビティ、インドを含む世界主要株価指数を集約します。",
+        "主要金融メディアの24時間速報、Xueqiu の投資トレンド、上海・深圳・香港など主要取引所の公式市場データ、世界主要株価指数を一体で追跡します。",
       keywords:
         "金融ランキング,株式売買代金,ETF売買代金,上海証券取引所,深圳証券取引所,香港取引所,Nasdaq,NIFTY 50,SENSEX,米国株,香港株,Xueqiu,人気ファンド,A株,DailyHot",
     },
     ko: {
-      title: "금융 랭킹 - 주식, ETF, 시장 거래대금, 투자 이슈 | DailyHot",
+      title: "금융 랭킹 - 24시간 속보, 주식, ETF, 글로벌 지수 | DailyHot",
       description:
-        "금융 랭킹은 Xueqiu 투자 이슈·인기 종목·인기 펀드와 상하이·선전·홍콩거래소, Nasdaq 공식 시장 활동 및 인도를 포함한 글로벌 주요 지수를 함께 제공합니다.",
+        "주요 금융 매체의 24시간 속보, Xueqiu 투자 동향, 상하이·선전·홍콩 등 주요 거래소 공식 시장 데이터와 글로벌 주요 주가지수를 함께 추적합니다.",
       keywords:
         "금융 랭킹,주식 거래대금,ETF 거래대금,상하이증권거래소,선전증권거래소,홍콩거래소,Nasdaq,NIFTY 50,SENSEX,미국 주식,홍콩 주식,Xueqiu,인기 펀드,A주,DailyHot",
+    },
+  },
+  "实时快讯": {
+    en: {
+      title: "Live Finance News - 24/7 market flashes and breaking updates | DailyHot",
+      description:
+        "Live Finance News aggregates CLS Telegraph, Eastmoney, Jin10, Tonghuashun, WallstreetCN, Sina Finance and Yicai for fast-moving stock, macro, company and global market updates.",
+      keywords: "live finance news,market flash,breaking finance news,CLS,Eastmoney,Jin10,Tonghuashun,WallstreetCN,Sina Finance,Yicai,DailyHot",
+    },
+    "zh-TW": {
+      title: "財經即時快訊 - 7×24市場消息與重大事件聚合 | 吾愛熱榜",
+      description:
+        "財經即時快訊彙整財聯社、東方財富、金十、同花順、華爾街見聞、新浪財經與第一財經，追蹤股票、宏觀、公司及全球市場突發消息。",
+      keywords: "財經快訊,7×24快訊,財聯社,東方財富,金十,同花順,華爾街見聞,新浪財經,第一財經,吾愛熱榜",
+    },
+    ja: {
+      title: "金融速報 - 24時間マーケットニュース・重要イベント | DailyHot",
+      description:
+        "CLS、Eastmoney、Jin10、Tonghuashun、WallstreetCN、Sina Finance、Yicai の速報を集約し、株式・マクロ・企業・世界市場の動きを追跡します。",
+      keywords: "金融速報,市場ニュース,CLS,Eastmoney,Jin10,Tonghuashun,WallstreetCN,Sina Finance,Yicai,DailyHot",
+    },
+    ko: {
+      title: "금융 실시간 속보 - 24시간 시장 뉴스와 주요 이벤트 | DailyHot",
+      description:
+        "CLS, Eastmoney, Jin10, Tonghuashun, WallstreetCN, Sina Finance, Yicai의 속보를 모아 주식·거시경제·기업·글로벌 시장 변화를 추적합니다.",
+      keywords: "금융 속보,시장 뉴스,CLS,Eastmoney,Jin10,Tonghuashun,WallstreetCN,Sina Finance,Yicai,DailyHot",
+    },
+  },
+  "市场热度": {
+    en: {
+      title: "Market Trends - Popular stocks, funds, and investor topics | DailyHot",
+      description:
+        "Market Trends tracks Xueqiu investor discussions, popular stocks and popular funds to surface changes in attention and short-term market sentiment.",
+      keywords: "market trends,Xueqiu,popular stocks,popular funds,investor topics,market sentiment,DailyHot",
+    },
+    "zh-TW": {
+      title: "市場熱度 - 熱門股票、基金與投資話題趨勢 | 吾愛熱榜",
+      description: "市場熱度彙整雪球熱門投資話題、熱門股票與基金榜單，用於觀察投資者關注方向與短期市場情緒。",
+      keywords: "市場熱度,雪球,熱門股票,熱門基金,投資話題,市場情緒,吾愛熱榜",
+    },
+    ja: {
+      title: "市場トレンド - 人気株・ファンド・投資テーマ | DailyHot",
+      description: "Xueqiu の人気投資テーマ、注目株、人気ファンドを集約し、投資家の関心と短期的な市場センチメントを可視化します。",
+      keywords: "市場トレンド,Xueqiu,人気株,人気ファンド,投資テーマ,市場センチメント,DailyHot",
+    },
+    ko: {
+      title: "시장 동향 - 인기 종목·펀드·투자 이슈 | DailyHot",
+      description: "Xueqiu의 인기 투자 이슈, 종목, 펀드를 모아 투자자 관심과 단기 시장 심리 변화를 보여줍니다.",
+      keywords: "시장 동향,Xueqiu,인기 종목,인기 펀드,투자 이슈,시장 심리,DailyHot",
+    },
+  },
+  "全球股指": {
+    en: {
+      title: "Global Stock Indexes - Major market performance across regions | DailyHot",
+      description:
+        "Global Stock Indexes tracks major benchmarks across China, Hong Kong, Japan, Korea, India, the U.S., Canada, Australia, Brazil and Europe with current levels and percentage moves.",
+      keywords: "global stock indexes,Shanghai Composite,Hang Seng,Nikkei 225,Nasdaq,S&P 500,NIFTY 50,European indexes,DailyHot",
+    },
+    "zh-TW": {
+      title: "全球股指 - 亞洲、美國與歐洲主要股票指數行情 | 吾愛熱榜",
+      description: "全球股指彙整中國、香港、日本、韓國、印度、美國、加拿大、澳洲、巴西及歐洲主要股票指數的最新點位與漲跌幅。",
+      keywords: "全球股指,上證指數,恆生指數,日經225,納斯達克,標普500,NIFTY 50,歐洲股指,吾愛熱榜",
+    },
+    ja: {
+      title: "世界株価指数 - アジア・米国・欧州の主要指数 | DailyHot",
+      description: "中国、香港、日本、韓国、インド、米国、カナダ、豪州、ブラジル、欧州の主要株価指数を現在値と騰落率で一覧できます。",
+      keywords: "世界株価指数,上海総合,ハンセン,日経225,Nasdaq,S&P 500,NIFTY 50,欧州株,DailyHot",
+    },
+    ko: {
+      title: "글로벌 주가지수 - 아시아·미국·유럽 주요 지수 | DailyHot",
+      description: "중국, 홍콩, 일본, 한국, 인도, 미국, 캐나다, 호주, 브라질, 유럽 주요 주가지수의 현재 수준과 등락률을 한곳에서 확인합니다.",
+      keywords: "글로벌 주가지수,상하이종합,항셍,닛케이225,Nasdaq,S&P 500,NIFTY 50,유럽 지수,DailyHot",
+    },
+  },
+  "交易所": {
+    en: {
+      title: "Exchange Market Rankings - Official activity from major exchanges | DailyHot",
+      description:
+        "Exchange Market Rankings aggregate official market activity from SSE, SZSE, HKEX, Nasdaq, NYSE, TWSE, NSE India and ASX, including active stocks and ETF turnover lists.",
+      keywords: "stock exchanges,SSE,SZSE,HKEX,Nasdaq,NYSE,TWSE,NSE India,ASX,stock turnover,ETF turnover,DailyHot",
+    },
+    "zh-TW": {
+      title: "交易所市場榜 - 滬深港、美股、臺灣、印度與澳洲官方榜單 | 吾愛熱榜",
+      description: "交易所市場榜彙整上交所、深交所、港交所、Nasdaq、NYSE、臺灣證券交易所、印度 NSE 與澳洲 ASX 的官方市場活躍榜。",
+      keywords: "交易所,上交所,深交所,港交所,Nasdaq,NYSE,TWSE,NSE India,ASX,成交額榜,吾愛熱榜",
+    },
+    ja: {
+      title: "取引所ランキング - 世界主要取引所の公式市場データ | DailyHot",
+      description: "SSE、SZSE、HKEX、Nasdaq、NYSE、TWSE、NSE India、ASX の公式市場アクティビティや株式・ETF売買代金ランキングを集約します。",
+      keywords: "取引所,SSE,SZSE,HKEX,Nasdaq,NYSE,TWSE,NSE India,ASX,売買代金,DailyHot",
+    },
+    ko: {
+      title: "거래소 시장 랭킹 - 주요 거래소 공식 활동 데이터 | DailyHot",
+      description: "SSE, SZSE, HKEX, Nasdaq, NYSE, TWSE, NSE India, ASX의 공식 시장 활동과 주식·ETF 거래대금 랭킹을 모아 제공합니다.",
+      keywords: "거래소,SSE,SZSE,HKEX,Nasdaq,NYSE,TWSE,NSE India,ASX,거래대금,DailyHot",
     },
   },
   AI: {
