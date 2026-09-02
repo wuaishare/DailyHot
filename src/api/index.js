@@ -95,9 +95,20 @@ const analyticsApiBases = import.meta.env.PROD
       Boolean,
     );
 
-const TRENDS_PUBLIC_API = String(import.meta.env.VITE_TRENDS_PUBLIC_API || "").replace(/\/$/, "");
+const DEFAULT_TRENDS_PUBLIC_API = import.meta.env.PROD
+  ? "https://api.wpbetter.cn/trends/public/v1"
+  : "";
+const DEFAULT_TRENDS_SHADOW_SOURCES = import.meta.env.PROD
+  ? "ithome,weibo,baidu,github,zhihu,bilibili,36kr"
+  : "";
+const TRENDS_PUBLIC_API = String(
+  import.meta.env.VITE_TRENDS_PUBLIC_API || DEFAULT_TRENDS_PUBLIC_API,
+).replace(/\/$/, "");
 const TRENDS_SHADOW_SOURCES = new Set(
-  String(import.meta.env.VITE_TRENDS_SHADOW_SOURCES || "")
+  String(
+    import.meta.env.VITE_TRENDS_SHADOW_SOURCES ||
+      DEFAULT_TRENDS_SHADOW_SOURCES,
+  )
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean),
