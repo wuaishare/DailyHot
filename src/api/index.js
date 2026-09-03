@@ -138,6 +138,20 @@ const trendsShadowSeen = new Set();
 
 const normalizeShadowText = (value) => String(value || "").replace(/\s+/g, " ").trim();
 
+const countOrderedShadowOverlap = (leftItems, rightItems) => {
+  const left = leftItems.map((item) => normalizeShadowText(item?.title)).filter(Boolean);
+  const right = rightItems.map((item) => normalizeShadowText(item?.title)).filter(Boolean);
+  const dp = Array.from({ length: left.length + 1 }, () => Array(right.length + 1).fill(0));
+  for (let i = 1; i <= left.length; i += 1) {
+    for (let j = 1; j <= right.length; j += 1) {
+      dp[i][j] = left[i - 1] === right[j - 1]
+        ? dp[i - 1][j - 1] + 1
+        : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return dp[left.length][right.length];
+};
+
 const getTrendsShadowVariant = (source, params = {}) => {
   const mapping = TRENDS_SHADOW_DEFAULT_VARIANTS[source];
   if (!mapping) return params?.type ? null : undefined;
@@ -226,6 +240,7 @@ const compareTrendsShadow = (legacyResult, trendsPayload) => {
     positionalTitleMatches,
     positionalUrlMatches,
     titleSetOverlap,
+    orderedTitleOverlap: countOrderedShadowOverlap(legacyTop, trendsTop),
     observationId: trendsPayload?.observation?.id || null,
     freshnessDeltaMs:
       Number.isFinite(legacyUpdatedAt) && Number.isFinite(trendsObservedAt)
