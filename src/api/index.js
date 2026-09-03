@@ -139,9 +139,9 @@ const trendsShadowSeen = new Set();
 
 const normalizeShadowText = (value) => String(value || "").replace(/\s+/g, " ").trim();
 
-const countOrderedShadowOverlap = (leftItems, rightItems) => {
-  const left = leftItems.map((item) => normalizeShadowText(item?.title)).filter(Boolean);
-  const right = rightItems.map((item) => normalizeShadowText(item?.title)).filter(Boolean);
+const countOrderedShadowOverlap = (leftItems, rightItems, selector) => {
+  const left = leftItems.map(selector).filter(Boolean);
+  const right = rightItems.map(selector).filter(Boolean);
   const dp = Array.from({ length: left.length + 1 }, () => Array(right.length + 1).fill(0));
   for (let i = 1; i <= left.length; i += 1) {
     for (let j = 1; j <= right.length; j += 1) {
@@ -237,6 +237,9 @@ const compareTrendsShadow = (legacyResult, trendsPayload) => {
   const legacyTitles = new Set(legacyTop.map((item) => normalizeShadowText(item?.title)).filter(Boolean));
   const trendsTitles = new Set(trendsTop.map((item) => normalizeShadowText(item?.title)).filter(Boolean));
   const titleSetOverlap = [...legacyTitles].filter((title) => trendsTitles.has(title)).length;
+  const legacyUrls = new Set(legacyTop.map((item) => String(item?.url || "")).filter(Boolean));
+  const trendsUrls = new Set(trendsTop.map((item) => String(item?.url || "")).filter(Boolean));
+  const urlSetOverlap = [...legacyUrls].filter((url) => trendsUrls.has(url)).length;
   const legacyUpdatedAt = Date.parse(legacyResult?.updateTime || "");
   const trendsObservedAt = Date.parse(trendsPayload?.observation?.observedAt || "");
   return {
@@ -246,7 +249,17 @@ const compareTrendsShadow = (legacyResult, trendsPayload) => {
     positionalTitleMatches,
     positionalUrlMatches,
     titleSetOverlap,
-    orderedTitleOverlap: countOrderedShadowOverlap(legacyTop, trendsTop),
+    urlSetOverlap,
+    orderedTitleOverlap: countOrderedShadowOverlap(
+      legacyTop,
+      trendsTop,
+      (item) => normalizeShadowText(item?.title),
+    ),
+    orderedUrlOverlap: countOrderedShadowOverlap(
+      legacyTop,
+      trendsTop,
+      (item) => String(item?.url || ""),
+    ),
     observationId: trendsPayload?.observation?.id || null,
     freshnessDeltaMs:
       Number.isFinite(legacyUpdatedAt) && Number.isFinite(trendsObservedAt)
