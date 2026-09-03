@@ -133,6 +133,7 @@ const TRENDS_SHADOW_DEFAULT_VARIANTS = {
   smzdm: ["1", "day"],
   juejin: ["1", ""],
   hellogithub: { param: "sort", legacyDefault: "featured", trendsVariant: "featured" },
+  acfun: { legacyParams: { type: "-1", range: "DAY" }, trendsVariant: "all-day" },
   "36kr": ["hot", "hot"],
 };
 const trendsShadowSeen = new Set();
@@ -161,8 +162,14 @@ const getTrendsShadowVariant = (source, params = {}) => {
     const legacyVariant = String(params?.type || legacyDefault);
     return legacyVariant === legacyDefault ? trendsVariant : null;
   }
+  if (mapping.legacyParams) {
+    const matchesDefaultParams = Object.entries(mapping.legacyParams).every(
+      ([param, legacyDefault]) => String(params?.[param] ?? legacyDefault) === String(legacyDefault),
+    );
+    return matchesDefaultParams ? mapping.trendsVariant : null;
+  }
   const { param = "type", legacyDefault, trendsVariant } = mapping;
-  const legacyVariant = String(params?.[param] || legacyDefault);
+  const legacyVariant = String(params?.[param] ?? legacyDefault);
   return legacyVariant === legacyDefault ? trendsVariant : null;
 };
 
