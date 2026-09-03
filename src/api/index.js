@@ -99,7 +99,7 @@ const DEFAULT_TRENDS_PUBLIC_API = import.meta.env.PROD
   ? "https://api.wpbetter.cn/trends/public/v1"
   : "";
 const DEFAULT_TRENDS_SHADOW_SOURCES = import.meta.env.PROD
-  ? "ithome,weibo,baidu,github,zhihu,bilibili,36kr,douyin,kuaishou,qq-news,sina-news,netease-news,thepaper"
+  ? "ithome,weibo,baidu,github,zhihu,bilibili,36kr,douyin,kuaishou,qq-news,sina-news,netease-news,thepaper,tieba,hupu,smzdm,juejin"
   : "";
 const TRENDS_PUBLIC_API = String(
   import.meta.env.VITE_TRENDS_PUBLIC_API || DEFAULT_TRENDS_PUBLIC_API,
@@ -126,6 +126,9 @@ const TRENDS_SHADOW_DEFAULT_VARIANTS = {
   github: ["daily", "day"],
   bilibili: ["all", "popular"],
   "sina-news": ["1", "all"],
+  hupu: ["1", "main"],
+  smzdm: ["1", "day"],
+  juejin: ["1", ""],
   "36kr": ["hot", "hot"],
 };
 const trendsShadowSeen = new Set();
