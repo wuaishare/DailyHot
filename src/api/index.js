@@ -99,7 +99,7 @@ const DEFAULT_TRENDS_PUBLIC_API = import.meta.env.PROD
   ? "https://api.wpbetter.cn/trends/public/v1"
   : "";
 const DEFAULT_TRENDS_SHADOW_SOURCES = import.meta.env.PROD
-  ? "ithome,weibo,baidu,github,zhihu,bilibili,36kr,douyin,kuaishou,qq-news,sina-news,netease-news,thepaper,tieba,hupu,smzdm,juejin,huxiu,sspai,geekpark,52pojie,51cto,csdn,dgtle,hostloc,nodeseek,v2ex"
+  ? "ithome,weibo,baidu,github,zhihu,bilibili,36kr,douyin,kuaishou,qq-news,sina-news,netease-news,thepaper,tieba,hupu,smzdm,juejin,huxiu,sspai,geekpark,52pojie,51cto,csdn,dgtle,hostloc,nodeseek,v2ex,hackernews,guokr,hellogithub"
   : "";
 const TRENDS_PUBLIC_API = String(
   import.meta.env.VITE_TRENDS_PUBLIC_API || DEFAULT_TRENDS_PUBLIC_API,
@@ -132,6 +132,7 @@ const TRENDS_SHADOW_DEFAULT_VARIANTS = {
   v2ex: ["hot", "hot"],
   smzdm: ["1", "day"],
   juejin: ["1", ""],
+  hellogithub: { param: "sort", legacyDefault: "featured", trendsVariant: "featured" },
   "36kr": ["hot", "hot"],
 };
 const trendsShadowSeen = new Set();
@@ -155,8 +156,13 @@ const countOrderedShadowOverlap = (leftItems, rightItems) => {
 const getTrendsShadowVariant = (source, params = {}) => {
   const mapping = TRENDS_SHADOW_DEFAULT_VARIANTS[source];
   if (!mapping) return params?.type ? null : undefined;
-  const [legacyDefault, trendsVariant] = mapping;
-  const legacyVariant = String(params?.type || legacyDefault);
+  if (Array.isArray(mapping)) {
+    const [legacyDefault, trendsVariant] = mapping;
+    const legacyVariant = String(params?.type || legacyDefault);
+    return legacyVariant === legacyDefault ? trendsVariant : null;
+  }
+  const { param = "type", legacyDefault, trendsVariant } = mapping;
+  const legacyVariant = String(params?.[param] || legacyDefault);
   return legacyVariant === legacyDefault ? trendsVariant : null;
 };
 
