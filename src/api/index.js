@@ -125,6 +125,7 @@ const TRENDS_SHADOW_DEFAULT_VARIANTS = {
   baidu: ["realtime", "realtime"],
   github: ["daily", "day"],
   bilibili: ["all", "popular"],
+  "sina-news": ["1", "all"],
   "36kr": ["hot", "hot"],
 };
 const trendsShadowSeen = new Set();
