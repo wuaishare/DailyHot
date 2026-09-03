@@ -99,7 +99,7 @@ const DEFAULT_TRENDS_PUBLIC_API = import.meta.env.PROD
   ? "https://api.wpbetter.cn/trends/public/v1"
   : "";
 const DEFAULT_TRENDS_SHADOW_SOURCES = import.meta.env.PROD
-  ? "ithome,weibo,baidu,github,zhihu,bilibili,36kr,douyin,kuaishou,qq-news,sina-news,netease-news,thepaper,tieba,hupu,smzdm,juejin,huxiu,sspai,geekpark,52pojie,51cto,csdn,dgtle,hostloc,nodeseek,v2ex,hackernews,guokr,hellogithub,producthunt,newsmth,ngabbs,zhihu-daily"
+  ? "ithome,weibo,baidu,github,zhihu,bilibili,36kr,douyin,kuaishou,qq-news,sina-news,netease-news,thepaper,tieba,hupu,smzdm,juejin,huxiu,sspai,geekpark,52pojie,51cto,csdn,dgtle,hostloc,nodeseek,v2ex,hackernews,guokr,hellogithub,producthunt,newsmth,ngabbs,zhihu-daily,acfun"
   : "";
 const TRENDS_PUBLIC_API = String(
   import.meta.env.VITE_TRENDS_PUBLIC_API || DEFAULT_TRENDS_PUBLIC_API,
