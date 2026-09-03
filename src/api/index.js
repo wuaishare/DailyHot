@@ -99,7 +99,7 @@ const DEFAULT_TRENDS_PUBLIC_API = import.meta.env.PROD
   ? "https://api.wpbetter.cn/trends/public/v1"
   : "";
 const DEFAULT_TRENDS_SHADOW_SOURCES = import.meta.env.PROD
-  ? "ithome,weibo,baidu,github,zhihu,bilibili,36kr,douyin,kuaishou,qq-news,sina-news,netease-news,thepaper,tieba,hupu,smzdm,juejin,huxiu,sspai,geekpark,52pojie,51cto,csdn,dgtle,hostloc,nodeseek,v2ex,hackernews,guokr,hellogithub,producthunt,newsmth,ngabbs,zhihu-daily,acfun,history,earthquake,weatheralarm,yystv,sina,douban-group,gameres,ithome-xijiayi,nytimes"
+  ? "ithome,weibo,baidu,github,zhihu,bilibili,36kr,douyin,kuaishou,qq-news,sina-news,netease-news,thepaper,tieba,hupu,smzdm,juejin,huxiu,sspai,geekpark,52pojie,51cto,csdn,dgtle,nodeseek,v2ex,hackernews,guokr,hellogithub,producthunt,newsmth,ngabbs,zhihu-daily,acfun,history,earthquake,weatheralarm,yystv,sina,douban-group,gameres,ithome-xijiayi,nytimes"
   : "";
 const TRENDS_PUBLIC_API = String(
   import.meta.env.VITE_TRENDS_PUBLIC_API || DEFAULT_TRENDS_PUBLIC_API,
@@ -113,7 +113,7 @@ const TRENDS_SHADOW_SOURCES = new Set(
     .map((value) => value.trim())
     .filter(Boolean),
 );
-const DEFAULT_TRENDS_READ_SOURCES = import.meta.env.PROD ? "github,36kr,baidu,zhihu,bilibili,weibo,ithome,douyin,kuaishou,qq-news,sina-news,thepaper,netease-news,tieba,smzdm,juejin,huxiu,sspai,geekpark,ifanr,52pojie,51cto,csdn,dgtle,hostloc,v2ex,nodeseek,hackernews,guokr,hellogithub,newsmth,ngabbs,zhihu-daily,producthunt,history,earthquake,weatheralarm,yystv,sina,douban-group,gameres,ithome-xijiayi,nytimes,acfun" : "";
+const DEFAULT_TRENDS_READ_SOURCES = import.meta.env.PROD ? "github,36kr,baidu,zhihu,bilibili,weibo,ithome,douyin,kuaishou,qq-news,sina-news,thepaper,netease-news,tieba,smzdm,juejin,huxiu,sspai,geekpark,ifanr,52pojie,51cto,csdn,dgtle,v2ex,nodeseek,hackernews,guokr,hellogithub,newsmth,ngabbs,zhihu-daily,producthunt,history,earthquake,weatheralarm,yystv,sina,douban-group,gameres,ithome-xijiayi,nytimes,acfun" : "";
 const TRENDS_READ_SOURCES = new Set(
   String(import.meta.env.VITE_TRENDS_READ_SOURCES || DEFAULT_TRENDS_READ_SOURCES)
     .split(",")
