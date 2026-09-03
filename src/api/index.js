@@ -113,7 +113,7 @@ const TRENDS_SHADOW_SOURCES = new Set(
     .map((value) => value.trim())
     .filter(Boolean),
 );
-const DEFAULT_TRENDS_READ_SOURCES = import.meta.env.PROD ? "github,36kr,baidu,zhihu,bilibili,weibo,ithome,douyin,kuaishou,qq-news,sina-news,thepaper,netease-news,tieba,smzdm,juejin,huxiu,sspai,geekpark,ifanr,52pojie,51cto,csdn,dgtle,hostloc,v2ex,nodeseek,hackernews,guokr,hellogithub,newsmth,ngabbs,zhihu-daily" : "";
+const DEFAULT_TRENDS_READ_SOURCES = import.meta.env.PROD ? "github,36kr,baidu,zhihu,bilibili,weibo,ithome,douyin,kuaishou,qq-news,sina-news,thepaper,netease-news,tieba,smzdm,juejin,huxiu,sspai,geekpark,ifanr,52pojie,51cto,csdn,dgtle,hostloc,v2ex,nodeseek,hackernews,guokr,hellogithub,newsmth,ngabbs,zhihu-daily,producthunt" : "";
 const TRENDS_READ_SOURCES = new Set(
   String(import.meta.env.VITE_TRENDS_READ_SOURCES || DEFAULT_TRENDS_READ_SOURCES)
     .split(",")
