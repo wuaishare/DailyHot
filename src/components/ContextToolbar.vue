@@ -151,53 +151,44 @@
           </div>
         </n-dropdown>
       </div>
+
+      <div
+        v-if="routeKind === 'category' && viewMode === 'stream'"
+        class="context-toolbar__filters"
+        :aria-label="copy.filters"
+      >
+        <span class="context-toolbar__filter-label">{{ copy.filters }}</span>
+        <n-select
+          class="context-toolbar__source-filter"
+          size="small"
+          multiple
+          clearable
+          filterable
+          :max-tag-count="1"
+          :value="selectedSourceNames"
+          :options="categorySourceOptions"
+          :placeholder="copy.allSources"
+          @update:value="updateSources"
+        />
+        <n-select
+          class="context-toolbar__rank-filter"
+          size="small"
+          :value="rankTo"
+          :options="rankOptions"
+          @update:value="updateRankTo"
+        />
+        <button
+          v-if="hasStreamFilters"
+          type="button"
+          class="context-toolbar__filter-reset"
+          @click="resetStreamFilters"
+        >
+          {{ copy.resetFilters }}
+        </button>
+      </div>
     </div>
 
     <div class="context-toolbar__right">
-      <div
-        v-if="routeKind === 'category'"
-        class="context-view-switch"
-        role="group"
-        :aria-label="copy.viewMode"
-      >
-        <button
-          type="button"
-          :class="{ active: viewMode === 'card' }"
-          :aria-label="copy.cardView"
-          :title="copy.cardView"
-          @click="setViewMode('card')"
-        >
-          <svg viewBox="0 0 18 18" aria-hidden="true">
-            <rect x="2.5" y="2.5" width="5" height="5" rx="1" />
-            <rect x="10.5" y="2.5" width="5" height="5" rx="1" />
-            <rect x="2.5" y="10.5" width="5" height="5" rx="1" />
-            <rect x="10.5" y="10.5" width="5" height="5" rx="1" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          :class="{ active: viewMode === 'list' }"
-          :aria-label="copy.listView"
-          :title="copy.listView"
-          @click="setViewMode('list')"
-        >
-          <svg viewBox="0 0 18 18" aria-hidden="true">
-            <path d="M3 4h2M7.5 4H15M3 9h2M7.5 9H15M3 14h2M7.5 14H15" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          :class="{ active: viewMode === 'compact' }"
-          :aria-label="copy.compactView"
-          :title="copy.compactView"
-          @click="setViewMode('compact')"
-        >
-          <svg viewBox="0 0 18 18" aria-hidden="true">
-            <path d="M3 5h12M3 9h12M3 13h12" />
-          </svg>
-        </button>
-      </div>
-
       <label
         class="context-search"
         :class="{ 'has-value': Boolean(searchInput), 'is-focused': searchFocused }"
@@ -235,7 +226,41 @@
         </button>
       </label>
 
+      <div
+        v-if="routeKind === 'category'"
+        class="context-view-switch"
+        role="group"
+        :aria-label="copy.viewMode"
+      >
+        <button
+          type="button"
+          :class="{ active: viewMode === 'card' }"
+          :aria-label="copy.cardView"
+          :title="copy.cardView"
+          @click="setViewMode('card')"
+        >
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <rect x="2.5" y="2.5" width="5" height="5" rx="1" />
+            <rect x="10.5" y="2.5" width="5" height="5" rx="1" />
+            <rect x="2.5" y="10.5" width="5" height="5" rx="1" />
+            <rect x="10.5" y="10.5" width="5" height="5" rx="1" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          :class="{ active: viewMode === 'stream' }"
+          :aria-label="copy.listView"
+          :title="copy.listView"
+          @click="setViewMode('stream')"
+        >
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path d="M3 4h2M7.5 4H15M3 9h2M7.5 9H15M3 14h2M7.5 14H15" />
+          </svg>
+        </button>
+      </div>
+
       <button
+        v-if="routeKind === 'category'"
         type="button"
         class="context-toolbar__manager"
         :aria-label="managerButtonLabel"
@@ -251,54 +276,7 @@
         <span>{{ copy.manage }}</span>
       </button>
 
-      <n-popover trigger="click" placement="bottom-end" :show-arrow="false">
-        <template #trigger>
-          <button
-            type="button"
-            class="context-toolbar__display"
-            :aria-label="copy.displayPreferences"
-            :title="copy.displayPreferences"
-          >
-            <svg viewBox="0 0 18 18" aria-hidden="true">
-              <path d="M3 4.5h12M3 9h12M3 13.5h12" />
-              <circle cx="6.5" cy="4.5" r="1.35" />
-              <circle cx="11.5" cy="9" r="1.35" />
-              <circle cx="8" cy="13.5" r="1.35" />
-            </svg>
-          </button>
-        </template>
 
-        <div class="context-toolbar__preferences">
-          <strong>{{ copy.displayPreferences }}</strong>
-          <label class="context-toolbar__preference-row">
-            <span>
-              <b>{{ copy.compact }}</b>
-              <small>{{ copy.compactTip }}</small>
-            </span>
-            <n-switch v-model:value="store.compactMode" size="small" />
-          </label>
-          <label class="context-toolbar__preference-row">
-            <span>
-              <b>{{ copy.images }}</b>
-              <small>{{ copy.imagesTip }}</small>
-            </span>
-            <n-switch v-model:value="store.showImages" size="small" />
-          </label>
-          <div class="context-toolbar__font-size">
-            <div>
-              <b>{{ copy.fontSize }}</b>
-              <span>{{ store.listFontSize }}px</span>
-            </div>
-            <n-slider
-              v-model:value="store.listFontSize"
-              :tooltip="false"
-              :min="14"
-              :max="20"
-              :step="1"
-            />
-          </div>
-        </div>
-      </n-popover>
     </div>
   </nav>
 </template>
@@ -317,6 +295,7 @@ import { mainStore } from "@/store";
 import {
   getCategoryByRef,
   getSourceCategoryIds,
+  sourceBelongsToCategory,
 } from "@/utils/categoryTree";
 import {
   buildCategoryPath,
@@ -356,8 +335,12 @@ const COPY = {
     breadcrumb: "当前位置",
     viewMode: "视图",
     cardView: "卡片视图",
-    listView: "列表视图",
+    listView: "信息流视图",
     compactView: "紧凑列表",
+    filters: "筛选",
+    allSources: "全部来源",
+    topItems: "Top {count}",
+    resetFilters: "重置",
     search: "搜索当前上下文",
     searchCategory: "搜索当前分类中的榜单",
     searchStream: "搜索当前分类聚合内容",
@@ -381,8 +364,12 @@ const COPY = {
     breadcrumb: "Current location",
     viewMode: "View",
     cardView: "Card view",
-    listView: "List view",
+    listView: "Stream view",
     compactView: "Compact list",
+    filters: "Filter",
+    allSources: "All sources",
+    topItems: "Top {count}",
+    resetFilters: "Reset",
     search: "Search current context",
     searchCategory: "Search rankings in this category",
     searchStream: "Search the aggregated category stream",
@@ -406,8 +393,12 @@ const COPY = {
     breadcrumb: "目前位置",
     viewMode: "檢視",
     cardView: "卡片檢視",
-    listView: "列表檢視",
+    listView: "資訊流檢視",
     compactView: "緊湊列表",
+    filters: "篩選",
+    allSources: "全部來源",
+    topItems: "Top {count}",
+    resetFilters: "重設",
     search: "搜尋目前內容",
     searchCategory: "搜尋目前分類中的榜單",
     searchStream: "搜尋目前分類彙整內容",
@@ -431,8 +422,12 @@ const COPY = {
     breadcrumb: "現在地",
     viewMode: "表示",
     cardView: "カード表示",
-    listView: "リスト表示",
+    listView: "ストリーム表示",
     compactView: "コンパクトリスト",
+    filters: "絞り込み",
+    allSources: "すべてのソース",
+    topItems: "Top {count}",
+    resetFilters: "リセット",
     search: "現在の内容を検索",
     searchCategory: "このカテゴリのランキングを検索",
     searchStream: "カテゴリの統合結果を検索",
@@ -456,8 +451,12 @@ const COPY = {
     breadcrumb: "현재 위치",
     viewMode: "보기",
     cardView: "카드 보기",
-    listView: "목록 보기",
+    listView: "스트림 보기",
     compactView: "컴팩트 목록",
+    filters: "필터",
+    allSources: "전체 출처",
+    topItems: "Top {count}",
+    resetFilters: "초기화",
     search: "현재 컨텍스트 검색",
     searchCategory: "현재 분류의 랭킹 검색",
     searchStream: "현재 분류 통합 결과 검색",
@@ -495,21 +494,6 @@ const currentTopic = computed(() => getTopicByRouteName(route.name));
 const currentTopicLabel = computed(() =>
   currentTopic.value ? getTopicLabel(currentTopic.value, locale.value) : "",
 );
-
-const viewMode = computed(() => {
-  if (routeKind.value !== "category") return "card";
-  const value = String(route.query.view || "");
-  return ["list", "compact"].includes(value) ? value : "card";
-});
-const setViewMode = (mode) => {
-  if (routeKind.value !== "category") return;
-  const nextMode = ["list", "compact"].includes(mode) ? mode : "card";
-  const query = { ...route.query };
-  if (nextMode === "card") delete query.view;
-  else query.view = nextMode;
-  delete query.page;
-  router.replace({ path: route.path, query, hash: route.hash });
-};
 
 const availableCategoryIds = computed(() => {
   const available = new Set();
@@ -563,6 +547,21 @@ const currentCategory = computed(() =>
       ? currentSourceCategory.value
       : null,
 );
+
+const viewMode = computed(() => {
+  if (routeKind.value !== "category") return "card";
+  return store.resolveCategoryViewMode(currentCategory.value?.id || null);
+});
+const setViewMode = (mode) => {
+  if (routeKind.value !== "category") return;
+  store.setCategoryViewMode(currentCategory.value?.id || null, mode);
+  if (route.query.view) {
+    const query = { ...route.query };
+    delete query.view;
+    delete query.page;
+    router.replace({ path: route.path, query, hash: route.hash });
+  }
+};
 
 const categoryTrail = computed(() => {
   const result = [];
@@ -657,8 +656,111 @@ const topicMenuOptions = computed(() =>
   })),
 );
 
+watch(
+  () => [
+    routeKind.value,
+    currentCategory.value?.id || "",
+    queryValue(route.query.view),
+  ],
+  ([kind, categoryId, legacyView]) => {
+    if (kind !== "category" || !categoryId || !legacyView) return;
+    const mode = ["list", "compact", "stream"].includes(legacyView)
+      ? "stream"
+      : "card";
+    store.setCategoryViewMode(categoryId, mode);
+    const query = { ...route.query };
+    delete query.view;
+    delete query.page;
+    router.replace({ path: route.path, query, hash: route.hash });
+  },
+  { immediate: true },
+);
+
 const queryValue = (value) =>
   String(Array.isArray(value) ? value[0] || "" : value || "");
+const categorySources = computed(() => {
+  if (routeKind.value !== "category") return [];
+  const category = currentCategory.value;
+  return store.newsArr
+    .filter((item) => item.show)
+    .filter((item) =>
+      category
+        ? sourceBelongsToCategory(item, category.id, store.categories)
+        : true,
+    )
+    .slice()
+    .sort((left, right) => left.order - right.order);
+});
+const categorySourceOptions = computed(() =>
+  categorySources.value.map((item) => ({
+    value: item.name,
+    label: getSourceDisplayLabel(
+      item.name,
+      locale.value,
+      item.label || item.name,
+    ),
+  })),
+);
+const selectedSourceNames = computed(() => {
+  const raw = queryValue(route.query.sources).trim();
+  if (!raw) return [];
+  const allowed = new Set(categorySources.value.map((item) => item.name));
+  return [...new Set(raw.split(",").map((item) => item.trim()).filter(Boolean))]
+    .filter((name) => allowed.has(name));
+});
+const rankTo = computed(() => {
+  const value = Number(queryValue(route.query.to));
+  return [5, 10, 20, 50].includes(value) ? value : 10;
+});
+const rankOptions = computed(() =>
+  [5, 10, 20, 50].map((count) => ({
+    value: count,
+    label: copy.value.topItems.replace("{count}", String(count)),
+  })),
+);
+const replaceFilterQuery = (patch = {}) => {
+  const query = { ...route.query };
+  Object.entries(patch).forEach(([key, value]) => {
+    if (value === null || typeof value === "undefined" || value === "") {
+      delete query[key];
+    } else {
+      query[key] = String(value);
+    }
+  });
+  delete query.page;
+  router.replace({ path: route.path, query, hash: route.hash });
+};
+const updateSources = (value = []) => {
+  const allowed = new Set(categorySources.value.map((item) => item.name));
+  const normalized = [...new Set(value.map(String))].filter((name) =>
+    allowed.has(name),
+  );
+  replaceFilterQuery({
+    sources:
+      normalized.length && normalized.length < categorySources.value.length
+        ? normalized.join(",")
+        : null,
+  });
+};
+const updateRankTo = (value) => {
+  const next = [5, 10, 20, 50].includes(Number(value)) ? Number(value) : 10;
+  replaceFilterQuery({
+    from: null,
+    to: next === 10 ? null : next,
+    order: null,
+  });
+};
+const hasStreamFilters = computed(
+  () => selectedSourceNames.value.length > 0 || rankTo.value !== 10,
+);
+const resetStreamFilters = () =>
+  replaceFilterQuery({
+    sources: null,
+    from: null,
+    to: null,
+    order: null,
+  });
+
 const searchInput = ref(queryValue(route.query.q));
 const searchInputEl = ref(null);
 const searchFocused = ref(false);
@@ -702,7 +804,7 @@ const searchPlaceholder = computed(() => {
   if (routeKind.value === "topic") return copy.value.searchTopic;
   if (
     routeKind.value === "category" &&
-    ["list", "compact"].includes(viewMode.value)
+    viewMode.value === "stream"
   ) {
     return copy.value.searchStream;
   }
@@ -833,20 +935,18 @@ watchEffect(() => {
   min-height: 58px;
   margin: 0 auto 16px;
   padding: 9px 10px 9px 12px;
-  border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 82%, transparent);
+  border: 1px solid var(--n-border-color);
   border-radius: 14px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--n-color, #fff) 98%, white 2%),
-      color-mix(in srgb, var(--n-color, #fff) 94%, transparent)
-    );
+  background: var(--n-color);
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.025),
-    0 8px 28px rgba(0, 0, 0, 0.025);
+    0 1px 2px color-mix(in srgb, var(--n-text-color) 4%, transparent),
+    0 8px 28px color-mix(in srgb, var(--n-text-color) 4%, transparent);
 }
 
 .context-toolbar__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -857,8 +957,7 @@ watchEffect(() => {
 .context-breadcrumb__item,
 .context-breadcrumb__trigger,
 .context-search,
-.context-toolbar__manager,
-.context-toolbar__display {
+ .context-toolbar__manager {
   display: flex;
   align-items: center;
 }
@@ -870,14 +969,54 @@ watchEffect(() => {
   white-space: nowrap;
 }
 
+.context-toolbar__filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.context-toolbar__filter-label {
+  flex: 0 0 auto;
+  color: var(--n-text-color-3);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.context-toolbar__source-filter {
+  width: clamp(150px, 13vw, 220px);
+}
+
+.context-toolbar__rank-filter {
+  width: 94px;
+}
+
+.context-toolbar__filter-reset {
+  height: 30px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--n-primary-color);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.context-toolbar__filter-reset:hover {
+  background: var(--n-action-color);
+}
+
 .context-view-switch {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   height: 38px;
   padding: 3px;
   border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
   border-radius: 10px;
-  background: color-mix(in srgb, var(--n-action-color, #f5f5f5) 52%, transparent);
+  background: var(--n-action-color);
 }
 
 .context-view-switch button {
@@ -900,12 +1039,12 @@ watchEffect(() => {
 
 .context-view-switch button:hover {
   color: var(--n-text-color);
-  background: color-mix(in srgb, var(--n-color, #fff) 74%, transparent);
+  background: color-mix(in srgb, var(--n-color) 82%, var(--n-action-color));
 }
 
 .context-view-switch button.active {
   color: var(--n-text-color);
-  background: var(--n-color, #fff);
+  background: var(--n-color);
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.07),
     0 0 0 1px color-mix(in srgb, var(--n-border-color, #ddd) 74%, transparent);
@@ -1020,7 +1159,7 @@ watchEffect(() => {
   padding: 0 8px 0 11px;
   border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
   border-radius: 10px;
-  background: color-mix(in srgb, var(--n-action-color, #f5f5f5) 65%, transparent);
+  background: var(--n-action-color);
   transition:
     border-color 0.16s ease,
     background 0.16s ease,
@@ -1029,12 +1168,12 @@ watchEffect(() => {
 
 .context-search:hover {
   border-color: color-mix(in srgb, var(--n-text-color-3) 55%, var(--n-border-color));
-  background: color-mix(in srgb, var(--n-action-color, #f5f5f5) 88%, transparent);
+  background: color-mix(in srgb, var(--n-action-color) 88%, var(--n-color));
 }
 
 .context-search.is-focused {
   border-color: color-mix(in srgb, var(--n-primary-color, #d03050) 72%, var(--n-border-color));
-  background: var(--n-color, #fff);
+  background: var(--n-color);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--n-primary-color, #d03050) 10%, transparent);
 }
 
@@ -1115,43 +1254,13 @@ watchEffect(() => {
 }
 
 .context-toolbar__manager,
-.context-toolbar__display {
-  box-sizing: border-box;
-  justify-content: center;
-  height: 38px;
-  border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--n-text-color-2);
-  cursor: pointer;
-  transition:
-    color 0.15s ease,
-    background 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.context-toolbar__manager {
-  gap: 6px;
-  padding: 0 11px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.context-toolbar__display {
-  width: 38px;
-  min-width: 38px;
-  padding: 0;
-}
-
-.context-toolbar__manager:hover,
-.context-toolbar__display:hover {
+.context-toolbar__manager:hover {
   border-color: color-mix(in srgb, var(--n-text-color-3) 58%, var(--n-border-color));
   background: var(--n-action-color);
   color: var(--n-text-color);
 }
 
-.context-toolbar__manager svg,
-.context-toolbar__display svg {
+.context-toolbar__manager svg {
   width: 17px;
   height: 17px;
   fill: none;
@@ -1159,60 +1268,6 @@ watchEffect(() => {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.35;
-}
-
-.context-toolbar__preferences {
-  display: grid;
-  gap: 12px;
-  width: 270px;
-  padding: 5px 3px 3px;
-}
-
-.context-toolbar__preferences > strong {
-  font-size: 14px;
-}
-
-.context-toolbar__preference-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.context-toolbar__preference-row > span {
-  display: grid;
-  gap: 2px;
-}
-
-.context-toolbar__preference-row b,
-.context-toolbar__font-size b {
-  color: var(--n-text-color);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.context-toolbar__preference-row small {
-  color: var(--n-text-color-3);
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-.context-toolbar__font-size {
-  display: grid;
-  gap: 8px;
-  padding-top: 2px;
-}
-
-.context-toolbar__font-size > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.context-toolbar__font-size span {
-  color: var(--n-text-color-3);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
 }
 
 .sr-only {
@@ -1236,6 +1291,19 @@ watchEffect(() => {
   .context-toolbar__left,
   .context-toolbar__right {
     width: 100%;
+  }
+
+  .context-toolbar__left {
+    flex-wrap: wrap;
+  }
+
+  .context-toolbar__filters {
+    flex: 1 1 100%;
+  }
+
+  .context-toolbar__source-filter {
+    flex: 1 1 auto;
+    width: auto;
   }
 
   .context-toolbar__right {
