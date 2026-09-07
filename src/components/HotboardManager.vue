@@ -42,12 +42,13 @@
             }}</n-button>
           </div>
           <button
-            class="category-row"
+            class="category-row category-row--all"
             :class="{ active: selectedCategoryId === 'all' }"
             @click="selectedCategoryId = 'all'"
           >
-            <span>{{ copy.allBoards }}</span
-            ><b>{{ visibleSourceCount }}</b>
+            <span class="category-row__spacer" aria-hidden="true"></span>
+            <span class="category-name">{{ copy.allBoards }}</span>
+            <b>{{ visibleSourceCount }}</b>
           </button>
           <draggable
             v-model="sortableCategories"
@@ -644,8 +645,9 @@ const restoreDefaults = () => {
   text-align: left;
   cursor: pointer;
 }
-.category-row:first-of-type {
-  grid-template-columns: minmax(0, 1fr) auto;
+.category-row__spacer {
+  width: 18px;
+  height: 1px;
 }
 .category-row:hover,
 .category-row.active {

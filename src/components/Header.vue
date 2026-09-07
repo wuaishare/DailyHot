@@ -1079,7 +1079,7 @@ onBeforeUnmount(() => {
     max-width: 1800px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: minmax(150px, 0.68fr) minmax(280px, 1.65fr) minmax(210px, 0.78fr);
+    grid-template-columns: minmax(150px, 0.68fr) minmax(0, 1.65fr) max-content;
     align-items: center;
     justify-content: space-between;
     column-gap: 12px;
@@ -1128,14 +1128,20 @@ onBeforeUnmount(() => {
 
   .controls {
     display: flex;
+    flex: 0 0 auto;
+    min-width: max-content;
     justify-content: flex-end;
     align-self: stretch;
+    white-space: nowrap;
     :deep(.n-space) {
       min-height: 56px;
+      flex-wrap: nowrap !important;
       align-items: stretch !important;
     }
-    :deep(.n-space > div) {
+    :deep(.n-space > div),
+    :deep(.n-space-item) {
       display: flex;
+      flex: 0 0 auto;
       align-items: stretch;
     }
     .control-hit-area {

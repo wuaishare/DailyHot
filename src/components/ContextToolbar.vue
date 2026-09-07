@@ -116,35 +116,6 @@
         </button>
       </label>
 
-      <n-popover trigger="click" placement="bottom-end" :show-arrow="false">
-        <template #trigger>
-          <button
-            type="button"
-            class="context-toolbar__display"
-            :aria-label="copy.display"
-            :title="copy.display"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M3 4h10M3 8h10M3 12h10" />
-              <circle cx="6" cy="4" r="1.2" />
-              <circle cx="10" cy="8" r="1.2" />
-              <circle cx="7" cy="12" r="1.2" />
-            </svg>
-            <span>{{ copy.display }}</span>
-          </button>
-        </template>
-        <div class="context-toolbar__preferences">
-          <strong>{{ copy.displayPreferences }}</strong>
-          <label>
-            <span>{{ copy.compact }}</span>
-            <n-switch v-model:value="store.compactMode" size="small" />
-          </label>
-          <label>
-            <span>{{ copy.images }}</span>
-            <n-switch v-model:value="store.showImages" size="small" />
-          </label>
-        </div>
-      </n-popover>
     </div>
   </nav>
 </template>
@@ -193,10 +164,6 @@ const COPY = {
     searchList: "搜索当前榜单",
     searchTopic: "搜索当前专题",
     clear: "清除搜索",
-    display: "显示",
-    displayPreferences: "显示偏好",
-    compact: "紧凑模式",
-    images: "显示图片",
     context: "上下文工具栏",
   },
   en: {
@@ -208,10 +175,6 @@ const COPY = {
     searchList: "Search this ranking",
     searchTopic: "Search this topic",
     clear: "Clear search",
-    display: "Display",
-    displayPreferences: "Display preferences",
-    compact: "Compact mode",
-    images: "Show images",
     context: "Context toolbar",
   },
   "zh-TW": {
@@ -223,10 +186,6 @@ const COPY = {
     searchList: "搜尋目前榜單",
     searchTopic: "搜尋目前專題",
     clear: "清除搜尋",
-    display: "顯示",
-    displayPreferences: "顯示偏好",
-    compact: "緊湊模式",
-    images: "顯示圖片",
     context: "內容工具列",
   },
   ja: {
@@ -238,10 +197,6 @@ const COPY = {
     searchList: "このランキングを検索",
     searchTopic: "この特集を検索",
     clear: "検索をクリア",
-    display: "表示",
-    displayPreferences: "表示設定",
-    compact: "コンパクト",
-    images: "画像を表示",
     context: "コンテキストツールバー",
   },
   ko: {
@@ -253,10 +208,6 @@ const COPY = {
     searchList: "현재 랭킹 검색",
     searchTopic: "현재 주제 검색",
     clear: "검색 지우기",
-    display: "표시",
-    displayPreferences: "표시 설정",
-    compact: "컴팩트 모드",
-    images: "이미지 표시",
     context: "컨텍스트 도구 모음",
   },
 };
@@ -618,22 +569,19 @@ onBeforeUnmount(() => {
   gap: 5px;
   min-width: 0;
 }
-.context-toolbar__select,
-.context-toolbar__display {
+.context-toolbar__select {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   min-height: 30px;
+  max-width: 220px;
   padding: 0 8px;
   border: 1px solid var(--n-border-color);
   border-radius: 7px;
   background: transparent;
   color: var(--n-text-color);
   cursor: pointer;
-}
-.context-toolbar__select {
-  max-width: 220px;
 }
 .context-toolbar__select-label {
   color: var(--n-text-color-3);
@@ -646,8 +594,7 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.context-toolbar__select svg,
-.context-toolbar__display svg {
+.context-toolbar__select svg {
   width: 12px;
   height: 12px;
   flex: 0 0 auto;
@@ -705,27 +652,6 @@ onBeforeUnmount(() => {
   font-size: 16px;
   line-height: 16px;
 }
-.context-toolbar__display span {
-  font-size: 11px;
-  font-weight: 600;
-}
-.context-toolbar__preferences {
-  display: grid;
-  gap: 10px;
-  min-width: 190px;
-  padding: 4px;
-}
-.context-toolbar__preferences > strong {
-  font-size: 12px;
-}
-.context-toolbar__preferences label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  color: var(--n-text-color-2);
-  font-size: 12px;
-}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -773,9 +699,6 @@ onBeforeUnmount(() => {
   }
   .context-toolbar__select {
     max-width: 150px;
-  }
-  .context-toolbar__display span {
-    display: none;
   }
 }
 </style>
