@@ -27,9 +27,8 @@
       站点未完工
     </n-alert> -->
     <CategoryStream
-      v-if="isCategoryRoute && categoryView !== 'card'"
+      v-if="isCategoryRoute && categoryView === 'stream'"
       :sources="scopedNews"
-      :compact="categoryView === 'compact'"
     />
     <draggable
       v-else-if="sortableNews[0]"
@@ -122,10 +121,11 @@ const forcedCategoryName = computed(() =>
 const isCategoryRoute = computed(() =>
   ["category", "category-locale"].includes(String(route.name || "")),
 );
-const categoryView = computed(() => {
-  const value = String(route.query.view || "");
-  return ["list", "compact"].includes(value) ? value : "card";
-});
+const categoryView = computed(() =>
+  isCategoryRoute.value
+    ? store.resolveCategoryViewMode(forcedCategoryName.value || null)
+    : "card",
+);
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
 const queryValue = (value) =>
   String(Array.isArray(value) ? value[0] || "" : value || "").trim();
