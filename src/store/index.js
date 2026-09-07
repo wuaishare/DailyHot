@@ -1263,6 +1263,10 @@ export const mainStore = defineStore("mainData", {
       autoRefreshInterval: 1800,
       // 是否显示封面图片
       showImages: true,
+      // 分类页视图偏好：内容组织方式与显示偏好分离
+      categoryViewMode: "card",
+      categoryViewPerCategory: true,
+      categoryViewModes: {},
       // 分类
       categoryEnabled: true,
       activeCategory: "全部",
@@ -1604,6 +1608,40 @@ export const mainStore = defineStore("mainData", {
         }))
         .sort((a, b) => a.order - b.order);
     },
+    normalizeCategoryViewMode(mode) {
+      return mode === "stream" ? "stream" : "card";
+    },
+    resolveCategoryViewMode(categoryRef = null) {
+      const fallback = this.normalizeCategoryViewMode(this.categoryViewMode);
+      if (!this.categoryViewPerCategory) return fallback;
+      const category = getCategoryByRef(this.categories, categoryRef);
+      const key = String(category?.id || categoryRef || "");
+      if (!key) return fallback;
+      return this.normalizeCategoryViewMode(this.categoryViewModes?.[key] ?? fallback);
+    },
+    setCategoryViewMode(categoryRef, mode) {
+      const nextMode = this.normalizeCategoryViewMode(mode);
+      if (!this.categoryViewPerCategory) {
+        this.categoryViewMode = nextMode;
+        return;
+      }
+      const category = getCategoryByRef(this.categories, categoryRef);
+      const key = String(category?.id || categoryRef || "");
+      if (!key) {
+        this.categoryViewMode = nextMode;
+        return;
+      }
+      this.categoryViewModes = {
+        ...(this.categoryViewModes || {}),
+        [key]: nextMode,
+      };
+    },
+    setCategoryViewPerCategory(enabled) {
+      this.categoryViewPerCategory = Boolean(enabled);
+      if (!this.categoryViewPerCategory) {
+        this.categoryViewModes = {};
+      }
+    },
     setActiveCategory(name) {
       this.activeCategory = name;
     },
@@ -1722,6 +1760,9 @@ export const mainStore = defineStore("mainData", {
         "autoRefreshPaused",
         "autoRefreshInterval",
         "showImages",
+        "categoryViewMode",
+        "categoryViewPerCategory",
+        "categoryViewModes",
         "categoryEnabled",
         "activeCategory",
         "categories",
