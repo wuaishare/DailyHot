@@ -346,7 +346,7 @@
 
 <script setup>
 import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
-import { getHotListsWithFallback } from "@/api";
+import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { mainStore } from "@/store";
@@ -729,7 +729,7 @@ const buildHotListRequestParams = (item, shouldTranslate) => {
 };
 
 const requestHotListResult = (item, isNew, shouldTranslate, useApi2) =>
-  getHotListsWithFallback(
+  getSharedRanking(
     item.name,
     isNew,
     buildHotListRequestParams(item, shouldTranslate),

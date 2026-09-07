@@ -328,7 +328,6 @@
         </n-dropdown>
       </div>
     </section>
-    <HotboardManager v-model:show="hotboardManagerOpen" />
   </n-card>
 </template>
 
@@ -356,7 +355,7 @@ import {
 import { NText, NIcon } from "naive-ui";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { defineAsyncComponent, h } from "vue";
+import { h } from "vue";
 import {
   buildCategoryPath,
   buildHomePath,
@@ -369,15 +368,16 @@ import {
   savePreferredLocale,
 } from "@/utils/locale";
 
-const emit = defineEmits(["mouseenter", "mouseleave", "click"]);
+const emit = defineEmits([
+  "mouseenter",
+  "mouseleave",
+  "click",
+  "open-hotboard-manager",
+]);
 
 const router = useRouter();
 const route = useRoute();
-const HotboardManager = defineAsyncComponent(
-  () => import("@/components/HotboardManager.vue"),
-);
 const store = mainStore();
-const hotboardManagerOpen = ref(false);
 const activeHeaderDropdown = ref("");
 let headerDropdownCloseTimer;
 const { t, locale } = useI18n({ useScope: "global" });
@@ -828,7 +828,7 @@ const menuOptionsSelect = (val) => {
 };
 
 const goSetting = () => {
-  hotboardManagerOpen.value = true;
+  emit("open-hotboard-manager");
   mobileMenuOpen.value = false;
 };
 

@@ -16,9 +16,10 @@
         @mouseenter="handleHeaderEnter"
         @mouseleave="handleHeaderLeave"
         @click="handleHeaderClick"
+        @open-hotboard-manager="openHotboardManager()"
       />
       <main>
-        <ContextToolbar />
+        <ContextToolbar @open-hotboard-manager="openHotboardManager" />
         <router-view v-slot="{ Component }">
           <keep-alive>
             <transition name="scale" mode="out-in">
@@ -32,6 +33,10 @@
       </main>
       <Footer />
       <AnalyticsConsent />
+      <HotboardManager
+        v-model:show="hotboardManagerOpen"
+        :initial-category-id="hotboardManagerCategoryId"
+      />
       <SpeedInsights v-if="showSpeedInsights" />
     </n-layout>
   </Provider>
@@ -45,12 +50,22 @@ import Footer from "@/components/Footer.vue";
 import FloatingActions from "@/components/FloatingActions.vue";
 import AnalyticsConsent from "@/components/AnalyticsConsent.vue";
 import ContextToolbar from "@/components/ContextToolbar.vue";
+import { defineAsyncComponent } from "vue";
 import { SpeedInsights } from "@vercel/speed-insights/vue";
 import { useRouter } from "vue-router";
 import { DATA_REFRESH_EVENT, requestDataRefresh } from "@/utils/dataRefresh";
 
 const store = mainStore();
 const router = useRouter();
+const HotboardManager = defineAsyncComponent(
+  () => import("@/components/HotboardManager.vue"),
+);
+const hotboardManagerOpen = ref(false);
+const hotboardManagerCategoryId = ref(null);
+const openHotboardManager = (categoryId = null) => {
+  hotboardManagerCategoryId.value = categoryId || null;
+  hotboardManagerOpen.value = true;
+};
 const softQueryRouteNames = new Set([
   "home",
   "home-locale",
@@ -66,7 +81,9 @@ const routeViewKey = computed(() => {
     return currentRoute?.fullPath || currentRoute?.path || "/";
   }
   const query = { ...(currentRoute?.query || {}) };
-  delete query.q;
+  ["q", "view", "sources", "from", "to", "order"].forEach(
+    (key) => delete query[key],
+  );
   return `${currentRoute?.path || "/"}:${JSON.stringify(
     Object.entries(query).sort(([left], [right]) => left.localeCompare(right)),
   )}`;
