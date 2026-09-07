@@ -19,11 +19,17 @@
 - Modify: `src/App.vue`
 
 - [x] **Step 1:** 新组件识别 home/category/list/topic 四类 route，设置 context label 与 capability。
-- [x] **Step 2:** 分类上下文显示 ancestor breadcrumb、同级/子级快速切换；home 显示顶级分类。
+- [x] **Step 2:** Header 独占一级分类；Home 不渲染 ContextToolbar；一级分类页只显示真实二级，进入二级后保留同级二级切换，并仅在存在真实子级时按需展开三级；禁止无子级时 fallback 到一级兄弟分类。
 - [x] **Step 3:** 单榜上下文显示所属分类、当前 source 与同分类 source 切换；有 subtype 时显示 variant 切换。
 - [x] **Step 4:** 专题上下文嵌入现有 `TopicSwitcher`，删除 App 中独立的 persistent switcher 外壳。
 - [x] **Step 5:** 右侧加入 scoped search，统一写入 `route.query.q`，保留其他 query；Esc 清空。
-- [x] **Step 6:** Display Preferences popover 只开放已存在且持久化的 `compactMode` / `showImages`，不制造空的 View/Sort/Filter 控件。
+- [x] **Step 6:** Display Preferences popover 只开放已有且持久化的 `compactMode` / `showImages` / `listFontSize`，并与 Header 右上角全局 Hotboard Manager 齿轮保持层级分离；不制造空的 View/Sort/Filter 控件。
+
+### Deferred capability contract
+
+- **Timeline / cross-source feed is still part of the product direction**, but it requires a shared cross-source aggregation layer before UI admission. Current Home cards each own a lazy local `hotListData`; V2 must not simulate Timeline by mounting hidden cards or issuing browser-side N+1 source requests.
+- View / Filter / Sort enter the shared toolbar only when the current route has a real implementation and state contract. Existing market-specific sort/direction controls remain where they already work until a shared capability model exists.
+- Additional display fields such as time / author / summary remain a follow-up after field-coverage and presentation review; do not add switches that only affect a subset unpredictably.
 
 ### Task 2: Category page consumes shared context
 
@@ -56,10 +62,15 @@
 - [x] **Step 3:** `npm run audit:feedback`
 - [x] **Step 4:** `npm run build`，必须生成完整 route shells。
 - [x] **Step 5:** 本地 Vite 浏览器 smoke：
-  - `/category/ai?q=openai` 只保留匹配榜单且 toolbar 显示分类 context；
-  - `/rank/github?q=skills` query 可刷新恢复，skills → ECC 软过滤不重复请求 provider，back 恢复 q；
-  - `/topic/wool?q=京东` 复用专题既有 q 语义；
-  - display preferences 切 compact/showImages 后本地持久化；
-  - back/forward 恢复 context。
+  - `/` 不渲染 ContextToolbar，一级分类只留在 Header；
+  - `/category/general` 不再泄漏综合/科技/财经等一级兄弟分类；
+  - `/category/finance` 只显示真实二级：全部 / 实时快讯 / 市场热度 / 全球股指 / 交易所；
+  - `/category/finance-flash` 保留同级二级切换且正确激活实时快讯；不存在真实三级时不生成伪三级；
+  - `/category/ai` 只显示 AI 的真实二级；
+  - `/rank/baidu/realtime` 提供返回所属分类 + source + variant 切换；
+  - `/topic/wool` 继续复用 TopicSwitcher；
+  - `?q=` 搜索可刷新恢复，Esc 清空且保留当前上下文；
+  - Display Preferences 的 compact/showImages/listFontSize 都是已有真实持久化能力；
+  - 1440px / 2048px 桌面宽度无横向溢出、控件错位或异常换行。
 - [x] **Step 6:** exact-head build + diff check + staged diff 自审；PR / Vercel Preview / Squash Merge 作为 Return-to-Trunk 操作执行。
 - [x] **Additional regression gate:** 抽出 `raceWithDelayedFallback`，增加 `npm run audit:fallback`；覆盖主源先成功、延迟备用接管、双失败，修复旧 `usedApi2` 未定义导致两个 HTTP 200 后外层 Promise 永久 pending 的缺陷。
