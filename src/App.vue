@@ -16,7 +16,6 @@
         @mouseenter="handleHeaderEnter"
         @mouseleave="handleHeaderLeave"
         @click="handleHeaderClick"
-        @open-hotboard-manager="openHotboardManager()"
       />
       <main>
         <ContextToolbar @open-hotboard-manager="openHotboardManager" />
