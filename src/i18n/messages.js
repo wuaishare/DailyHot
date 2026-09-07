@@ -265,6 +265,12 @@ export const messages = {
       showImages: "显示封面图片",
       showImagesTip:
         "开启后在首页卡片和列表中显示封面图片（有防盗链的将自动隐藏）",
+      categoryView: "默认分类视图",
+      categoryViewTip: "作为分类页的全局默认视图；关闭分类独立记忆后，所有分类共享这个视图",
+      categoryViewCard: "卡片视图",
+      categoryViewStream: "信息流视图",
+      categoryViewPerCategory: "分类独立记忆视图",
+      categoryViewPerCategoryTip: "开启后每个分类分别记住上次选择的视图；关闭后所有分类共享同一视图",
       clearCache: "清除缓存",
       clearCacheTip:
         "当前缓存机制版本：{version}。日常发布只更新发生变化的文件缓存；仅在排障时建议手动清除全部缓存并刷新。",
@@ -601,6 +607,12 @@ export const messages = {
       showImages: "Show cover images",
       showImagesTip:
         "Display cover images on home cards and list pages. Hotlink-protected images will be hidden automatically.",
+      categoryView: "Default category view",
+      categoryViewTip: "Global default for category pages. When per-category memory is off, every category shares this view.",
+      categoryViewCard: "Card view",
+      categoryViewStream: "Stream view",
+      categoryViewPerCategory: "Remember view per category",
+      categoryViewPerCategoryTip: "Remember the last view separately for each category; turn off to share one view across all categories.",
       clearCache: "Clear cache",
       clearCacheTip:
         "Cache schema version: {version}. Normal releases invalidate only changed files; clear all caches manually only when troubleshooting.",
@@ -940,6 +952,12 @@ export const messages = {
       showImages: "顯示封面圖片",
       showImagesTip:
         "開啟後於首頁卡片與列表顯示封面圖片（防盜鏈圖片將自動隱藏）",
+      categoryView: "預設分類檢視",
+      categoryViewTip: "作為分類頁的全域預設；關閉分類獨立記憶後，所有分類共用此檢視",
+      categoryViewCard: "卡片檢視",
+      categoryViewStream: "資訊流檢視",
+      categoryViewPerCategory: "分類獨立記憶檢視",
+      categoryViewPerCategoryTip: "開啟後每個分類分別記住上次檢視；關閉後所有分類共用同一檢視",
       clearCache: "清除快取",
       clearCacheTip:
         "目前快取機制版本：{version}。日常發佈只更新有變更的檔案快取；僅建議在排錯時手動清除全部快取並重新整理。",
@@ -1271,6 +1289,12 @@ export const messages = {
       showImages: "カバー画像を表示",
       showImagesTip:
         "ホームカードと一覧にカバー画像を表示します。直リンク制限のある画像は自動で非表示になります。",
+      categoryView: "カテゴリの既定表示",
+      categoryViewTip: "カテゴリページの全体既定値です。カテゴリ別の記憶をオフにすると、すべてのカテゴリで共有します。",
+      categoryViewCard: "カード表示",
+      categoryViewStream: "ストリーム表示",
+      categoryViewPerCategory: "カテゴリごとに表示を記憶",
+      categoryViewPerCategoryTip: "カテゴリごとに最後の表示を記憶します。オフにすると全カテゴリで同じ表示を共有します。",
       clearCache: "キャッシュを削除",
       clearCacheTip:
         "キャッシュスキーマ版: {version}。通常のリリースでは変更されたファイルだけを更新し、全キャッシュ削除はトラブルシューティング時のみ推奨します。",
@@ -1619,6 +1643,12 @@ export const messages = {
       showImages: "커버 이미지 표시",
       showImagesTip:
         "홈 카드와 목록에 커버 이미지를 표시합니다. 핫링크 방지 이미지는 자동으로 숨겨집니다.",
+      categoryView: "기본 분류 보기",
+      categoryViewTip: "분류 페이지의 전역 기본값입니다. 분류별 기억을 끄면 모든 분류가 이 보기를 공유합니다.",
+      categoryViewCard: "카드 보기",
+      categoryViewStream: "스트림 보기",
+      categoryViewPerCategory: "분류별 보기 기억",
+      categoryViewPerCategoryTip: "각 분류의 마지막 보기를 따로 기억합니다. 끄면 모든 분류가 하나의 보기를 공유합니다.",
       clearCache: "캐시 비우기",
       clearCacheTip:
         "캐시 스키마 버전: {version}. 일반 배포에서는 변경된 파일 캐시만 갱신하며, 전체 캐시 삭제는 문제 해결 시에만 권장합니다.",
