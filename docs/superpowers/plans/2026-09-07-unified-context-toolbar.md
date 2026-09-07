@@ -6,6 +6,8 @@
 
 **Architecture:** 新建 route-aware `ContextToolbar.vue` 作为 App 级共享 shell。它只组织上下文导航、`?q=` 搜索与低频显示偏好；现有专题页的领域筛选/排序继续留在页面内部，行情专用排序继续留在 List。分类树仍由现有 `categoryTree.js` 和 store 驱动，单榜 source/variant 导航直接使用现有 locale / subtype 工具，不增加第二套状态真源。
 
+> **2026-09-07 V2 correction (supersedes conflicting Task 1 wording below):** Header exclusively owns level-1 categories. The shared Context Toolbar starts at level 2, so it is hidden on Home and must never repeat the Header's top-level categories. On a level-1 category page it shows only that category's available level-2 children; entering level 2 keeps sibling level-2 switching and reveals level 3 only when real children exist. No-child categories must not fall back to top-level siblings. Low-frequency local display preferences (compact layout, covers, font size) belong in the Context Toolbar popover and are distinct from the global Hotboard Manager gear. Desktop toolbar text should remain normal UI size (roughly 13–14px), not micro-label 10–11px. View/Filter/Sort controls are added only when they have real behavior; no no-op placeholders.
+
 **Tech Stack:** Vue 3 / Vue Router / Pinia / Naive UI / existing categoryTree + sourceSubtypes + locale helpers
 
 ---
