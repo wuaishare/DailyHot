@@ -1,90 +1,9 @@
 <template>
   <section
     class="category-stream"
-    :class="{ 'is-compact': compact }"
+    :class="{ 'is-compact': store.compactMode, 'shows-images': showImages }"
     :style="streamStyle"
   >
-    <div class="category-stream__filters">
-      <div class="category-stream__filter category-stream__filter--sources">
-        <div class="category-stream__filter-heading">
-          <span class="category-stream__filter-label">{{ copy.sources }}</span>
-          <div class="category-stream__filter-meta">
-            <span class="category-stream__filter-count">{{ sourceSelectionText }}</span>
-            <button
-              v-if="selectedSourceNames.length"
-              type="button"
-              class="category-stream__source-reset"
-              @click="updateSources([])"
-            >
-              {{ copy.allSources }}
-            </button>
-          </div>
-        </div>
-        <n-select
-          :value="selectedSourceNames"
-          multiple
-          clearable
-          filterable
-          :max-tag-count="2"
-          :options="sourceOptions"
-          :placeholder="copy.allSources"
-          @update:value="updateSources"
-        />
-      </div>
-
-      <div class="category-stream__rank-filter">
-        <span class="category-stream__filter-label">{{ copy.rankRange }}</span>
-        <div class="category-stream__rank-presets">
-          <button
-            v-for="preset in rankPresets"
-            :key="preset.to"
-            type="button"
-            :class="{ active: rankFrom === 1 && rankTo === preset.to }"
-            @click="setRankRange(1, preset.to)"
-          >
-            Top {{ preset.to }}
-          </button>
-        </div>
-        <div class="category-stream__range-inputs">
-          <n-input-number
-            :value="rankFrom"
-            size="small"
-            :min="1"
-            :max="99"
-            :show-button="false"
-            @update:value="updateRankFrom"
-          />
-          <span>–</span>
-          <n-input-number
-            :value="rankTo"
-            size="small"
-            :min="1"
-            :max="100"
-            :show-button="false"
-            @update:value="updateRankTo"
-          />
-        </div>
-      </div>
-
-      <div class="category-stream__filter category-stream__filter--order">
-        <span class="category-stream__filter-label">{{ copy.mergeOrder }}</span>
-        <n-select
-          :value="mergeOrder"
-          :options="orderOptions"
-          @update:value="updateMergeOrder"
-        />
-      </div>
-
-      <button
-        v-if="hasExplicitFilters"
-        type="button"
-        class="category-stream__reset"
-        @click="resetFilters"
-      >
-        {{ copy.reset }}
-      </button>
-    </div>
-
     <div class="category-stream__status">
       <div>
         <span class="category-stream__status-dot" :class="{ loading: pendingCount }"></span>
@@ -126,7 +45,8 @@
       {{ queryText ? copy.noSearchResults : copy.noEntries }}
     </div>
 
-    <div v-else class="category-stream__list">
+    <div v-else class="category-stream__body">
+      <div class="category-stream__list">
       <article
         v-for="entry in visibleEntries"
         :key="entry.key"
@@ -156,16 +76,16 @@
           rel="noopener noreferrer nofollow"
         >
           <div class="category-stream__title">{{ entry.title }}</div>
-          <p v-if="!compact && entry.description" class="category-stream__desc">
+          <p v-if="entry.description" class="category-stream__desc">
             {{ entry.description }}
           </p>
-          <div v-if="!compact && entry.hot" class="category-stream__meta">
+          <div v-if="entry.hot" class="category-stream__meta">
             <span>{{ copy.heat }} {{ entry.hot }}</span>
           </div>
         </a>
 
         <a
-          v-if="!compact && showImages && entry.cover"
+          v-if="showImages && entry.cover"
           class="category-stream__cover"
           :href="entry.href"
           :target="linkTarget"
@@ -179,13 +99,41 @@
           />
         </a>
       </article>
+      </div>
+
+      <aside class="category-stream__rail" aria-label="Sources">
+        <div class="category-stream__rail-card">
+          <div class="category-stream__rail-title">
+            <strong>{{ copy.sources }}</strong>
+            <span>{{ activeSources.length }}</span>
+          </div>
+          <router-link
+            v-for="source in activeSources"
+            :key="source.name"
+            :to="sourcePathFor(source)"
+            class="category-stream__rail-source"
+          >
+            <img
+              :src="getSourceLogo(source.name)"
+              :alt="sourceLabelFor(source)"
+              @error="handleLogoError"
+            />
+            <span>{{ sourceLabelFor(source) }}</span>
+            <i
+              class="category-stream__rail-state"
+              :class="sourceStates[source.name] || 'idle'"
+              aria-hidden="true"
+            ></i>
+          </router-link>
+        </div>
+      </aside>
     </div>
   </section>
 </template>
 
 <script setup>
 import { computed, reactive, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { mainStore } from "@/store";
 import { getSharedRanking } from "@/utils/rankingCollection";
@@ -212,11 +160,9 @@ import { getCoverDisplaySrc } from "@/utils/imageProxy";
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },
-  compact: { type: Boolean, default: false },
 });
 
 const route = useRoute();
-const router = useRouter();
 const store = mainStore();
 const { locale: i18nLocale } = useI18n({ useScope: "global" });
 const locale = computed(() =>
@@ -356,11 +302,7 @@ const rankFrom = computed(() => normalizeRank(route.query.from, 1, 99));
 const rankTo = computed(() =>
   Math.max(rankFrom.value, normalizeRank(route.query.to, 10, 100)),
 );
-const mergeOrder = computed(() =>
-  route.query.order === "source" ? "source" : "rank",
-);
 const queryText = computed(() => queryString(route.query.q).toLowerCase());
-const rankPresets = [{ to: 5 }, { to: 10 }, { to: 20 }];
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self",
 );
@@ -370,127 +312,6 @@ const streamStyle = computed(() => ({
   "--category-stream-compact-font-size":
     String(Math.max(12, Number(store.listFontSize || 16) - 2)) + "px",
 }));
-const sourceSelectionText = computed(() =>
-  copy.value.selectedSources
-    .replace(
-      "{selected}",
-      String(selectedSourceNames.value.length || props.sources.length),
-    )
-    .replace("{total}", String(props.sources.length)),
-);
-
-const sourceOptions = computed(() =>
-  props.sources.map((item) => ({
-    value: item.name,
-    label: getSourceDisplayLabel(
-      item.name,
-      locale.value,
-      item.label || item.name,
-    ),
-  })),
-);
-const orderOptions = computed(() => [
-  { value: "rank", label: copy.value.byRank },
-  { value: "source", label: copy.value.bySource },
-]);
-
-const replaceQuery = (patch = {}) => {
-  const query = { ...route.query };
-  Object.entries(patch).forEach(([key, value]) => {
-    if (value === null || typeof value === "undefined" || value === "") {
-      delete query[key];
-    } else {
-      query[key] = String(value);
-    }
-  });
-  delete query.page;
-  router.replace({ path: route.path, query, hash: route.hash });
-};
-
-const updateSources = (value = []) => {
-  const normalized = [...new Set(value.map(String))].filter((name) =>
-    props.sources.some((item) => item.name === name),
-  );
-  replaceQuery({
-    sources:
-      normalized.length && normalized.length < props.sources.length
-        ? normalized.join(",")
-        : null,
-  });
-};
-const setRankRange = (from, to) => {
-  const nextFrom = Math.max(1, Math.min(99, Number(from) || 1));
-  const nextTo = Math.max(nextFrom, Math.min(100, Number(to) || 10));
-  replaceQuery({
-    from: nextFrom === 1 ? null : nextFrom,
-    to: nextTo === 10 ? null : nextTo,
-  });
-};
-const updateRankFrom = (value) => setRankRange(value, rankTo.value);
-const updateRankTo = (value) => setRankRange(rankFrom.value, value);
-const updateMergeOrder = (value) =>
-  replaceQuery({ order: value === "source" ? "source" : null });
-const resetFilters = () =>
-  replaceQuery({ sources: null, from: null, to: null, order: null });
-
-const canonicalizeFilterQuery = () => {
-  const patch = {};
-  const rawSources = queryString(route.query.sources);
-  if (rawSources && props.sources.length) {
-    const canonicalSources = selectedSourceNames.value.join(",");
-    if (
-      !canonicalSources ||
-      selectedSourceNames.value.length >= props.sources.length
-    ) {
-      patch.sources = null;
-    } else if (canonicalSources !== rawSources) {
-      patch.sources = canonicalSources;
-    }
-  }
-
-  const rawFrom = queryString(route.query.from);
-  const rawTo = queryString(route.query.to);
-  if (
-    rawFrom &&
-    (rankFrom.value === 1 || String(rankFrom.value) !== rawFrom)
-  ) {
-    patch.from = rankFrom.value === 1 ? null : rankFrom.value;
-  }
-  if (
-    rawTo &&
-    (rankTo.value === 10 || String(rankTo.value) !== rawTo)
-  ) {
-    patch.to = rankTo.value === 10 ? null : rankTo.value;
-  }
-  if (route.query.order && route.query.order !== "source") {
-    patch.order = null;
-  }
-
-  if (Object.keys(patch).length) {
-    replaceQuery(patch);
-  }
-};
-
-watch(
-  () => [
-    route.query.sources,
-    route.query.from,
-    route.query.to,
-    route.query.order,
-    props.sources.map((item) => item.name).join("|"),
-  ],
-  () => canonicalizeFilterQuery(),
-  { immediate: true },
-);
-
-const hasExplicitFilters = computed(
-  () =>
-    selectedSourceNames.value.length ||
-    rankFrom.value !== 1 ||
-    rankTo.value !== 10 ||
-    mergeOrder.value !== "rank",
-);
-
 const normalizeSearchText = (value = "") =>
   String(value || "")
     .replace(/<[^>]*>/g, " ")
@@ -520,6 +341,20 @@ const buildSourceParams = (source) => {
     params.locale = locale.value;
   }
   return params;
+};
+
+const sourceLabelFor = (source) =>
+  getSourceDisplayLabel(
+    source.name,
+    locale.value,
+    source.label || source.name,
+  );
+const sourcePathFor = (source) => {
+  const subtype = resolveSourceSubtype(
+    getSourceSubtypeOptions(source.name),
+    readSourceSubtype(source.name),
+  );
+  return buildRankPath(locale.value, source.name, subtype || "");
 };
 
 const loadSource = async (source, force = false) => {
@@ -614,10 +449,6 @@ const entries = computed(() => {
       locale.value,
       source.label || result?.title || source.name,
     );
-    const subtype = resolveSourceSubtype(
-      getSourceSubtypeOptions(source.name),
-      readSourceSubtype(source.name),
-    );
     data.forEach((item, index) => {
       const rank = index + 1;
       if (rank < rankFrom.value || rank > rankTo.value) return;
@@ -637,7 +468,7 @@ const entries = computed(() => {
         sourceLabel,
         sourceLogo: getSourceLogo(source.name),
         sourceOrder: sourceIndex.value.get(source.name) ?? 9999,
-        sourcePath: buildRankPath(locale.value, source.name, subtype || ""),
+        sourcePath: sourcePathFor(source),
         rank,
         title,
         description,
@@ -646,17 +477,10 @@ const entries = computed(() => {
       });
     });
   });
-  if (mergeOrder.value === "source") {
-    output.sort(
-      (left, right) =>
-        left.sourceOrder - right.sourceOrder || left.rank - right.rank,
-    );
-  } else {
-    output.sort(
-      (left, right) =>
-        left.rank - right.rank || left.sourceOrder - right.sourceOrder,
-    );
-  }
+  output.sort(
+    (left, right) =>
+      left.sourceOrder - right.sourceOrder || left.rank - right.rank,
+  );
   return output;
 });
 
@@ -734,141 +558,17 @@ const hideBrokenCover = (event) => {
   gap: 10px;
 }
 
-.category-stream__filters {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  min-height: 58px;
-  padding: 10px 12px;
-  border: 1px solid var(--n-border-color);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--n-color, #fff) 97%, transparent);
-}
-
-.category-stream__filter {
-  display: grid;
-  gap: 5px;
-}
-
-.category-stream__filter-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.category-stream__filter-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.category-stream__filter-count {
-  color: var(--n-text-color-3);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-}
-
-.category-stream__source-reset {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--n-primary-color, #d03050);
-  cursor: pointer;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.category-stream__filter--sources {
-  width: min(330px, 28vw);
-}
-
-.category-stream__filter--order {
-  width: 150px;
-}
-
-.category-stream__filter-label {
-  color: var(--n-text-color-3);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.category-stream__rank-filter {
-  display: grid;
-  gap: 5px;
-  min-width: 360px;
-}
-
-.category-stream__rank-presets,
-.category-stream__range-inputs {
-  display: flex;
-  align-items: center;
-}
-
-.category-stream__rank-presets {
-  gap: 4px;
-}
-
-.category-stream__rank-presets button {
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--n-border-color);
-  border-radius: 7px;
-  background: transparent;
-  color: var(--n-text-color-2);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.category-stream__rank-presets button:hover,
-.category-stream__rank-presets button.active {
-  border-color: color-mix(
-    in srgb,
-    var(--n-primary-color, #d03050) 52%,
-    var(--n-border-color)
-  );
-  color: var(--n-primary-color, #d03050);
-  background: color-mix(
-    in srgb,
-    var(--n-primary-color, #d03050) 7%,
-    transparent
-  );
-}
-
-.category-stream__rank-filter {
-  grid-template-columns: auto 1fr auto;
-  grid-template-rows: auto 34px;
-  column-gap: 8px;
-}
-
-.category-stream__rank-filter > .category-stream__filter-label {
-  grid-column: 1 / -1;
-}
-
-.category-stream__rank-presets {
-  grid-column: 1 / 2;
-}
-
-.category-stream__range-inputs {
-  grid-column: 2 / 3;
-  gap: 5px;
-}
-
-.category-stream__range-inputs :deep(.n-input-number) {
-  width: 66px;
-}
-
-.category-stream__reset,
 .category-stream__retry {
   border: 0;
   background: transparent;
-  color: var(--n-primary-color, #d03050);
+  color: var(--n-primary-color);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 650;
+}
+
+.category-stream__retry:hover {
+  text-decoration: underline;
 }
 
 .category-stream__failed-popover {
@@ -894,18 +594,14 @@ const hideBrokenCover = (event) => {
   white-space: nowrap;
 }
 
-.category-stream__reset {
-  height: 34px;
-  margin-left: auto;
-  padding: 0 4px;
-}
-
 .category-stream__status {
   min-height: 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: min(100%, 1178px);
+  margin-inline: auto;
   padding: 0 4px;
   color: var(--n-text-color-3);
   font-size: 12px;
@@ -929,22 +625,121 @@ const hideBrokenCover = (event) => {
   animation: category-stream-pulse 1s ease-in-out infinite alternate;
 }
 
+.category-stream__body {
+  display: grid;
+  grid-template-columns: minmax(0, 920px) 240px;
+  justify-content: center;
+  align-items: start;
+  gap: 18px;
+  width: 100%;
+}
+
 .category-stream__list {
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--n-border-color);
   border-radius: 12px;
-  background: var(--n-color, #fff);
+  background: var(--n-color);
 }
+
+.category-stream__rail {
+  position: sticky;
+  top: 82px;
+  min-width: 0;
+}
+
+.category-stream__rail-card {
+  display: grid;
+  gap: 3px;
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 12px;
+  background: var(--n-color);
+}
+
+.category-stream__rail-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 5px 8px;
+  color: var(--n-text-color);
+  font-size: 12px;
+}
+
+.category-stream__rail-title span {
+  color: var(--n-text-color-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.category-stream__rail-source {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 8px;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 7px;
+  border-radius: 8px;
+  color: var(--n-text-color-2);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.category-stream__rail-source:hover {
+  background: var(--n-action-color);
+  color: var(--n-text-color);
+}
+
+.category-stream__rail-source img {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  object-fit: contain;
+}
+
+.category-stream__rail-source span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-stream__rail-state {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--n-border-color);
+}
+
+.category-stream__rail-state.loaded {
+  background: #18a058;
+}
+
+.category-stream__rail-state.loading {
+  background: #f0a020;
+}
+
+.category-stream__rail-state.failed {
+  background: #d03050;
+}
+
 
 .category-stream__row {
   display: grid;
-  grid-template-columns: 44px 132px minmax(0, 1fr) 108px;
+  grid-template-columns: 44px 132px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   min-height: 84px;
   padding: 10px 14px;
   border-bottom: 1px solid
     color-mix(in srgb, var(--n-border-color) 75%, transparent);
+}
+
+.category-stream.shows-images .category-stream__row {
+  grid-template-columns: 44px 132px minmax(0, 1fr) 108px;
 }
 
 .category-stream__row:last-child {
@@ -1051,8 +846,17 @@ const hideBrokenCover = (event) => {
 
 .category-stream.is-compact .category-stream__row {
   grid-template-columns: 42px 124px minmax(0, 1fr);
-  min-height: 48px;
-  padding-block: 6px;
+  min-height: 64px;
+  padding-block: 7px;
+}
+
+.category-stream.is-compact.shows-images .category-stream__row {
+  grid-template-columns: 42px 124px minmax(0, 1fr) 82px;
+}
+
+.category-stream.is-compact .category-stream__cover {
+  width: 82px;
+  height: 50px;
 }
 
 .category-stream.is-compact .category-stream__title {
@@ -1108,20 +912,18 @@ const hideBrokenCover = (event) => {
   }
 }
 
+@media (max-width: 1199px) {
+  .category-stream__body {
+    grid-template-columns: minmax(0, 940px);
+  }
+
+  .category-stream__rail {
+    display: none;
+  }
+}
+
 @media (max-width: 1100px) {
-  .category-stream__filters {
-    flex-wrap: wrap;
-  }
-
-  .category-stream__filter--sources {
-    width: min(400px, 48%);
-  }
-
-  .category-stream__rank-filter {
-    flex: 1 1 420px;
-  }
-
-  .category-stream__row {
+  .category-stream.shows-images .category-stream__row {
     grid-template-columns: 42px 110px minmax(0, 1fr) 96px;
   }
 
@@ -1129,46 +931,22 @@ const hideBrokenCover = (event) => {
     width: 96px;
     height: 58px;
   }
+
+  .category-stream.is-compact.shows-images .category-stream__row {
+    grid-template-columns: 42px 110px minmax(0, 1fr) 82px;
+  }
+
+  .category-stream.is-compact .category-stream__cover {
+    width: 82px;
+    height: 50px;
+  }
 }
 
 @media (max-width: 680px) {
-  .category-stream__filters {
-    align-items: stretch;
-  }
-
-  .category-stream__filter--sources,
-  .category-stream__filter--order,
-  .category-stream__rank-filter {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .category-stream__rank-filter {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-  }
-
-  .category-stream__rank-filter > .category-stream__filter-label,
-  .category-stream__rank-presets,
-  .category-stream__range-inputs {
-    grid-column: 1;
-  }
-
-  .category-stream__rank-presets {
-    grid-row: 2;
-  }
-
-  .category-stream__range-inputs {
-    grid-row: 3;
-  }
-
-  .category-stream__reset {
-    margin-left: 0;
-    align-self: flex-start;
-  }
-
   .category-stream__row,
-  .category-stream.is-compact .category-stream__row {
+  .category-stream.shows-images .category-stream__row,
+  .category-stream.is-compact .category-stream__row,
+  .category-stream.is-compact.shows-images .category-stream__row {
     grid-template-columns: 38px minmax(0, 1fr);
     gap: 8px;
   }
