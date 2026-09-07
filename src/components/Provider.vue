@@ -48,14 +48,43 @@ const store = mainStore();
 const osThemeRef = useOsTheme();
 const { locale } = useI18n({ useScope: "global" });
 
-// 明暗切换
-let theme = ref(null);
+// 明暗切换：首 render 必须与 index.html 的 boot theme 完全一致，不能等 mounted。
+const getBootTheme = () => {
+  if (typeof document === "undefined") return "";
+  const value = document.documentElement.dataset.dailyhotTheme;
+  return value === "dark" || value === "light" ? value : "";
+};
+
+const resolveInitialTheme = () => {
+  const bootTheme = getBootTheme();
+  if (bootTheme) return bootTheme;
+  if (store.siteThemeAuto && osThemeRef.value) {
+    return osThemeRef.value === "dark" ? "dark" : "light";
+  }
+  return store.siteTheme === "dark" ? "dark" : "light";
+};
+
+const initialTheme = resolveInitialTheme();
+if (store.siteThemeAuto && store.siteTheme !== initialTheme) {
+  store.siteTheme = initialTheme;
+}
+const theme = ref(initialTheme === "dark" ? darkTheme : null);
+
 const applyDocumentTheme = (value) => {
   if (typeof document === "undefined") return;
   const normalized = value === "dark" ? "dark" : "light";
   document.documentElement.dataset.dailyhotTheme = normalized;
   document.documentElement.style.colorScheme = normalized;
+  const themeColor = document.querySelector(
+    'meta[name="theme-color"][data-dailyhot-theme-color]'
+  );
+  themeColor?.setAttribute(
+    "content",
+    normalized === "dark" ? "#101014" : "#ffffff"
+  );
 };
+
+applyDocumentTheme(initialTheme);
 
 const changeTheme = () => {
   if (store.siteTheme === "light") {
@@ -146,8 +175,5 @@ const NaiveProviderContent = defineComponent({
   },
 });
 
-onMounted(() => {
-  changeTheme();
-  osThemeChange(osThemeRef.value);
-});
+// 首次主题已在 setup 阶段同步；watch 只负责后续用户/系统变更。
 </script>
