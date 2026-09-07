@@ -1,5 +1,11 @@
 <template>
-  <div class="list">
+  <div v-if="useStreamSourcePage" class="list source-stream-page">
+    <CategoryStream
+      :sources="sourceStreamSources"
+      :source-page-source="listType"
+    />
+  </div>
+  <div v-else class="list">
     <div v-if="showNativeOrderControl" class="subtype-actions">
       <MarketRankDirectionControl
         :direction="marketRankDirection"
@@ -252,7 +258,10 @@
 <script setup>
 import { Fire } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
-import { sourceBelongsToCategory } from "@/utils/categoryTree";
+import {
+  getSourceCategoryIds,
+  sourceBelongsToCategory,
+} from "@/utils/categoryTree";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { formatTime } from "@/utils/getTime";
@@ -264,6 +273,7 @@ import GlobalIndexTable from "@/components/GlobalIndexTable.vue";
 import MarketQuoteTable from "@/components/MarketQuoteTable.vue";
 import MarketListSortControl from "@/components/MarketListSortControl.vue";
 import MarketRankDirectionControl from "@/components/MarketRankDirectionControl.vue";
+import CategoryStream from "@/components/CategoryStream.vue";
 import {
   buildSourceSubtypeParams,
   getSourceSubtypeGroups,
@@ -399,6 +409,31 @@ const marketRankDirection = computed(() =>
 const showMarketSortControl = computed(
   () => isSortableMarketSource.value && !showNativeOrderControl.value,
 );
+const useStreamSourcePage = computed(
+  () =>
+    !isIndexOverviewSource.value &&
+    !isProfessionalMarketSource.value &&
+    !isSortableMarketSource.value,
+);
+const sourceStreamSources = computed(() => {
+  const current = currentSourceMeta.value;
+  const [primaryCategoryId] = current
+    ? getSourceCategoryIds(current, store.categories)
+    : [];
+  return store.newsArr
+    .filter((item) => item.show)
+    .filter((item) =>
+      primaryCategoryId
+        ? sourceBelongsToCategory(
+            item,
+            primaryCategoryId,
+            store.categories,
+          )
+        : true,
+    )
+    .slice()
+    .sort((left, right) => left.order - right.order);
+});
 const listHeaderTitle = computed(() =>
   getSourceDisplayLabel(
     currentSourceMeta.value || {
@@ -628,7 +663,7 @@ const isCurrentListRequest = (requestId, name) =>
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
-  if (!name) return;
+  if (!name || useStreamSourcePage.value) return;
   if (isPrerender) {
     const label = getSourceDisplayLabel(
       store.newsArr.find((item) => item.name === name) ||

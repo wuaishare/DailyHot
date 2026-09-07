@@ -2,7 +2,7 @@
   <nav v-if="visible" class="context-toolbar" :aria-label="copy.context">
     <div class="context-toolbar__left">
       <div
-        v-if="routeKind === 'category' || routeKind === 'list'"
+        v-if="routeKind === 'home' || routeKind === 'category' || routeKind === 'list'"
         class="context-breadcrumb"
         :aria-label="copy.breadcrumb"
       >
@@ -17,6 +17,11 @@
           </svg>
           <span>{{ copy.home }}</span>
         </router-link>
+
+        <template v-if="routeKind === 'home'">
+          <span class="context-breadcrumb__separator" aria-hidden="true">›</span>
+          <span class="context-breadcrumb__section">{{ allCategoryLabel }}</span>
+        </template>
 
         <template v-for="category in categoryTrail" :key="category.id">
           <span class="context-breadcrumb__separator" aria-hidden="true">›</span>
@@ -54,32 +59,9 @@
 
         <template v-if="routeKind === 'list'">
           <span class="context-breadcrumb__separator" aria-hidden="true">›</span>
-          <n-dropdown
-            trigger="manual"
-            placement="bottom-start"
-            :options="sourceMenuOptions"
-            :show="activeBreadcrumbMenu === 'source'"
-            :menu-props="() => breadcrumbMenuProps('source')"
-            @select="switchSource"
-          >
-            <div
-              class="context-breadcrumb__trigger"
-              @mouseenter="openBreadcrumbMenu('source')"
-              @mouseleave="scheduleBreadcrumbMenuClose('source')"
-            >
-              <button type="button" class="context-breadcrumb__item is-current">
-                <span>{{ currentSourceLabel }}</span>
-                <svg
-                  v-if="sourceMenuOptions.length > 1"
-                  class="context-breadcrumb__caret"
-                  viewBox="0 0 12 12"
-                  aria-hidden="true"
-                >
-                  <path d="m2.5 4.5 3.5 3 3.5-3" />
-                </svg>
-              </button>
-            </div>
-          </n-dropdown>
+          <span class="context-breadcrumb__item is-current">
+            {{ currentSourceLabel }}
+          </span>
 
           <template v-if="variantMenuOptions.length > 1">
             <span class="context-breadcrumb__separator" aria-hidden="true">›</span>
@@ -152,40 +134,6 @@
         </n-dropdown>
       </div>
 
-      <div
-        v-if="routeKind === 'category' && viewMode === 'stream'"
-        class="context-toolbar__filters"
-        :aria-label="copy.filters"
-      >
-        <span class="context-toolbar__filter-label">{{ copy.filters }}</span>
-        <n-select
-          class="context-toolbar__source-filter"
-          size="small"
-          multiple
-          clearable
-          filterable
-          :max-tag-count="1"
-          :value="selectedSourceNames"
-          :options="categorySourceOptions"
-          :placeholder="copy.allSources"
-          @update:value="updateSources"
-        />
-        <n-select
-          class="context-toolbar__rank-filter"
-          size="small"
-          :value="rankTo"
-          :options="rankOptions"
-          @update:value="updateRankTo"
-        />
-        <button
-          v-if="hasStreamFilters"
-          type="button"
-          class="context-toolbar__filter-reset"
-          @click="resetStreamFilters"
-        >
-          {{ copy.resetFilters }}
-        </button>
-      </div>
     </div>
 
     <div class="context-toolbar__right">
@@ -227,7 +175,7 @@
       </label>
 
       <div
-        v-if="routeKind === 'category'"
+        v-if="routeKind === 'home' || routeKind === 'category'"
         class="context-view-switch"
         role="group"
         :aria-label="copy.viewMode"
@@ -260,7 +208,7 @@
       </div>
 
       <button
-        v-if="routeKind === 'category'"
+        v-if="routeKind === 'home' || routeKind === 'category'"
         type="button"
         class="context-toolbar__manager"
         :aria-label="managerButtonLabel"
@@ -295,7 +243,6 @@ import { mainStore } from "@/store";
 import {
   getCategoryByRef,
   getSourceCategoryIds,
-  sourceBelongsToCategory,
 } from "@/utils/categoryTree";
 import {
   buildCategoryPath,
@@ -488,7 +435,7 @@ const routeKind = computed(() => {
   return "";
 });
 const visible = computed(() =>
-  ["category", "list", "topic"].includes(routeKind.value),
+  ["home", "category", "list", "topic"].includes(routeKind.value),
 );
 const currentTopic = computed(() => getTopicByRouteName(route.name));
 const currentTopicLabel = computed(() =>
@@ -549,12 +496,17 @@ const currentCategory = computed(() =>
 );
 
 const viewMode = computed(() => {
-  if (routeKind.value !== "category") return "card";
-  return store.resolveCategoryViewMode(currentCategory.value?.id || null);
+  if (!["home", "category"].includes(routeKind.value)) return "card";
+  return store.resolveCategoryViewMode(
+    routeKind.value === "category" ? currentCategory.value?.id || null : null,
+  );
 });
 const setViewMode = (mode) => {
-  if (routeKind.value !== "category") return;
-  store.setCategoryViewMode(currentCategory.value?.id || null, mode);
+  if (!["home", "category"].includes(routeKind.value)) return;
+  store.setCategoryViewMode(
+    routeKind.value === "category" ? currentCategory.value?.id || null : null,
+    mode,
+  );
   if (route.query.view) {
     const query = { ...route.query };
     delete query.view;
@@ -580,6 +532,7 @@ const categoryLabel = (category) =>
   category?.builtin
     ? getCategoryLabel(category.name, locale.value)
     : category?.name || "";
+const allCategoryLabel = computed(() => getCategoryLabel("全部", locale.value));
 
 const siblingCategories = (category) =>
   store.categories
@@ -597,27 +550,6 @@ const categoryMenuOptions = (category) =>
     label: categoryLabel(item),
   }));
 
-const sourceMenuOptions = computed(() => {
-  const category = currentSourceCategory.value;
-  return store.newsArr
-    .filter((item) => item.show)
-    .filter((item) => {
-      if (!category) return true;
-      return getSourceCategoryIds(item, store.categories).includes(
-        String(category.id),
-      );
-    })
-    .slice()
-    .sort((a, b) => a.order - b.order)
-    .map((item) => ({
-      key: item.name,
-      label: getSourceDisplayLabel(
-        item.name,
-        locale.value,
-        item.label || item.name,
-      ),
-    }));
-});
 const currentSourceLabel = computed(() => {
   const item = currentSourceMeta.value;
   return getSourceDisplayLabel(
@@ -658,89 +590,6 @@ const topicMenuOptions = computed(() =>
 
 const queryValue = (value) =>
   String(Array.isArray(value) ? value[0] || "" : value || "");
-const categorySources = computed(() => {
-  if (routeKind.value !== "category") return [];
-  const category = currentCategory.value;
-  return store.newsArr
-    .filter((item) => item.show)
-    .filter((item) =>
-      category
-        ? sourceBelongsToCategory(item, category.id, store.categories)
-        : true,
-    )
-    .slice()
-    .sort((left, right) => left.order - right.order);
-});
-const categorySourceOptions = computed(() =>
-  categorySources.value.map((item) => ({
-    value: item.name,
-    label: getSourceDisplayLabel(
-      item.name,
-      locale.value,
-      item.label || item.name,
-    ),
-  })),
-);
-const selectedSourceNames = computed(() => {
-  const raw = queryValue(route.query.sources).trim();
-  if (!raw) return [];
-  const allowed = new Set(categorySources.value.map((item) => item.name));
-  return [...new Set(raw.split(",").map((item) => item.trim()).filter(Boolean))]
-    .filter((name) => allowed.has(name));
-});
-const rankTo = computed(() => {
-  const value = Number(queryValue(route.query.to));
-  return [5, 10, 20, 50].includes(value) ? value : 10;
-});
-const rankOptions = computed(() =>
-  [5, 10, 20, 50].map((count) => ({
-    value: count,
-    label: copy.value.topItems.replace("{count}", String(count)),
-  })),
-);
-const replaceFilterQuery = (patch = {}) => {
-  const query = { ...route.query };
-  Object.entries(patch).forEach(([key, value]) => {
-    if (value === null || typeof value === "undefined" || value === "") {
-      delete query[key];
-    } else {
-      query[key] = String(value);
-    }
-  });
-  delete query.page;
-  router.replace({ path: route.path, query, hash: route.hash });
-};
-const updateSources = (value = []) => {
-  const allowed = new Set(categorySources.value.map((item) => item.name));
-  const normalized = [...new Set(value.map(String))].filter((name) =>
-    allowed.has(name),
-  );
-  replaceFilterQuery({
-    sources:
-      normalized.length && normalized.length < categorySources.value.length
-        ? normalized.join(",")
-        : null,
-  });
-};
-const updateRankTo = (value) => {
-  const next = [5, 10, 20, 50].includes(Number(value)) ? Number(value) : 10;
-  replaceFilterQuery({
-    from: null,
-    to: next === 10 ? null : next,
-    order: null,
-  });
-};
-const hasStreamFilters = computed(
-  () => selectedSourceNames.value.length > 0 || rankTo.value !== 10,
-);
-const resetStreamFilters = () =>
-  replaceFilterQuery({
-    sources: null,
-    from: null,
-    to: null,
-    order: null,
-  });
-
 watch(
   () => [
     routeKind.value,
@@ -748,11 +597,12 @@ watch(
     queryValue(route.query.view),
   ],
   ([kind, categoryId, legacyView]) => {
-    if (kind !== "category" || !categoryId || !legacyView) return;
+    if (!["home", "category"].includes(kind) || !legacyView) return;
+    if (kind === "category" && !categoryId) return;
     const mode = ["list", "compact", "stream"].includes(legacyView)
       ? "stream"
       : "card";
-    store.setCategoryViewMode(categoryId, mode);
+    store.setCategoryViewMode(kind === "category" ? categoryId : null, mode);
     const query = { ...route.query };
     delete query.view;
     delete query.page;
@@ -841,17 +691,6 @@ const switchCategory = (categoryId) => {
   const category = getCategoryByRef(store.categories, categoryId);
   if (!category) return;
   router.push(withSearch(buildCategoryPath(locale.value, category.slug)));
-};
-const switchSource = (sourceName) => {
-  activeBreadcrumbMenu.value = "";
-  const subtype = resolveSourceSubtype(
-    getSourceSubtypeOptions(sourceName),
-    readSourceSubtype(sourceName),
-  );
-  router.push({
-    path: buildRankPath(locale.value, sourceName, subtype || ""),
-    query: currentSearchQuery(),
-  });
 };
 const switchVariant = (variant) => {
   activeBreadcrumbMenu.value = "";

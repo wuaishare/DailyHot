@@ -1,33 +1,26 @@
 <template>
   <div class="setting" :class="{ embedded }">
     <div v-if="!embedded" class="title">{{ t("settings.title") }}</div>
-    <n-h6 prefix="bar"> {{ t("settings.baseSection") }} </n-h6>
-    <n-card class="set-item">
+    <n-h6 id="settings-base" prefix="bar"> {{ t("settings.baseSection") }} </n-h6>
+    <n-card class="set-item full appearance-setting">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.theme") }}</n-text>
-        </div>
-        <n-select
-          class="set"
-          v-model:value="siteTheme"
-          :options="themeOptions"
-          @update:value="siteThemeAuto = false"
-        />
-      </div>
-    </n-card>
-    <n-card class="set-item">
-      <div class="top">
-        <div class="name">
-          <n-text class="text">{{ t("settings.themeAuto") }}</n-text>
           <n-text class="tip" :depth="3">
-            {{ t("settings.themeAutoTip") }}
+            {{ t("settings.themeModeTip") }}
           </n-text>
         </div>
-        <n-switch
-          v-model:value="siteThemeAuto"
-          :round="false"
-          @update:value="themeAutoOpen"
-        />
+        <div class="appearance-segmented" role="group" :aria-label="t('settings.theme')">
+          <button
+            v-for="option in themeOptions"
+            :key="option.value"
+            type="button"
+            :class="{ active: appearanceMode === option.value }"
+            @click="setAppearanceMode(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
       </div>
     </n-card>
     <n-card class="set-item">
@@ -78,35 +71,30 @@
         <n-switch v-model:value="compactMode" :round="false" />
       </div>
     </n-card>
-    <n-card class="set-item">
-      <div class="top">
+    <n-card class="set-item full view-memory-setting">
+      <div class="view-memory-head">
         <div class="name">
           <n-text class="text">{{ t("settings.categoryView") }}</n-text>
           <n-text class="tip" :depth="3">
-            {{ t("settings.categoryViewTip") }}
+            {{ t("settings.viewHierarchyTip") }}
           </n-text>
         </div>
-        <n-select
-          class="set"
-          v-model:value="categoryViewMode"
-          :options="categoryViewOptions"
-        />
+        <n-tag size="small" :bordered="false">
+          {{ t("settings.globalViewCurrent", { mode: globalViewLabel }) }}
+        </n-tag>
       </div>
-    </n-card>
-    <n-card class="set-item">
-      <div class="top">
-        <div class="name">
-          <n-text class="text">{{ t("settings.categoryViewPerCategory") }}</n-text>
-          <n-text class="tip" :depth="3">
-            {{ t("settings.categoryViewPerCategoryTip") }}
-          </n-text>
-        </div>
-        <n-switch
-          :value="categoryViewPerCategory"
-          :round="false"
-          @update:value="store.setCategoryViewPerCategory"
-        />
+      <div class="view-memory-flow" :aria-label="t('settings.viewHierarchyTip')">
+        <span>{{ t("settings.viewLevelGlobal") }}</span>
+        <i>→</i>
+        <span>{{ t("settings.viewLevelOne") }}</span>
+        <i>→</i>
+        <span>{{ t("settings.viewLevelTwo") }}</span>
+        <i>→</i>
+        <span>{{ t("settings.viewLevelThree") }}</span>
       </div>
+      <n-text class="view-memory-note" :depth="3">
+        {{ t("settings.viewHierarchyNote") }}
+      </n-text>
     </n-card>
     <n-card class="set-item">
       <div class="top" style="flex-direction: column; align-items: flex-start">
@@ -174,7 +162,7 @@
         </n-space>
       </div>
     </n-card>
-    <n-card v-if="!embedded" class="set-item full">
+    <n-card class="set-item full">
       <div class="top" style="align-items: flex-start">
         <div class="name">
           <n-text class="text">{{ t("settings.categoryManagement") }}</n-text>
@@ -226,7 +214,7 @@
         </div>
       </div>
     </n-card>
-    <n-card v-if="!embedded" class="set-item full">
+    <n-card class="set-item full">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.rankingOrder") }}</n-text>
@@ -316,7 +304,7 @@
         </template>
       </draggable>
     </n-card>
-    <n-h6 prefix="bar"> {{ t("settings.miscSection") }} </n-h6>
+    <n-h6 id="settings-misc" prefix="bar"> {{ t("settings.miscSection") }} </n-h6>
     <n-card class="set-item">
       <div class="top">
         <div class="name">
@@ -471,7 +459,6 @@ const {
   headerCollapsed,
   compactMode,
   categoryViewMode,
-  categoryViewPerCategory,
   listFontSize,
   autoRefreshEnabled,
   autoRefreshInterval,
@@ -528,7 +515,14 @@ const persistedKeys = [
 ];
 
 // 深浅模式
+const appearanceMode = computed(() =>
+  siteThemeAuto.value ? "auto" : siteTheme.value,
+);
 const themeOptions = computed(() => [
+  {
+    label: t("settings.themeAutoOption"),
+    value: "auto",
+  },
   {
     label: t("settings.themeLight"),
     value: "light",
@@ -538,17 +532,14 @@ const themeOptions = computed(() => [
     value: "dark",
   },
 ]);
-
-const categoryViewOptions = computed(() => [
-  {
-    label: t("settings.categoryViewCard"),
-    value: "card",
-  },
-  {
-    label: t("settings.categoryViewStream"),
-    value: "stream",
-  },
-]);
+const setAppearanceMode = (mode) => {
+  store.setAppearanceMode(mode, osThemeRef.value);
+};
+const globalViewLabel = computed(() =>
+  categoryViewMode.value === "stream"
+    ? t("settings.categoryViewStream")
+    : t("settings.categoryViewCard"),
+);
 
 // 榜单跳转
 const linkOptions = computed(() => [
@@ -567,13 +558,6 @@ const listFontMarks = computed(() => ({
   16: t("settings.listFontDefault"),
   20: t("settings.listFontLarge"),
 }));
-
-// 开启明暗自动跟随
-const themeAutoOpen = (val) => {
-  if (val) {
-    siteTheme.value = osThemeRef.value;
-  }
-};
 
 // 归一化顺序，保证 order 与当前展示一致
 const normalizeOrder = () => {
@@ -871,6 +855,49 @@ watch(
         max-width: 200px;
       }
 
+      .appearance-segmented {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(72px, 1fr));
+        min-width: min(100%, 300px);
+        overflow: hidden;
+        border: 1px solid var(--n-border-color);
+        border-radius: 10px;
+        background: var(--n-action-color);
+
+        button {
+          appearance: none;
+          min-height: 36px;
+          padding: 0 14px;
+          border: 0;
+          border-right: 1px solid var(--n-border-color);
+          background: transparent;
+          color: var(--n-text-color-2);
+          font: inherit;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+
+          &:last-child {
+            border-right: 0;
+          }
+
+          &:hover,
+          &.active {
+            color: var(--n-text-color);
+            background: color-mix(
+              in srgb,
+              var(--n-primary-color) 12%,
+              transparent
+            );
+          }
+
+          &.active {
+            box-shadow: inset 0 0 0 1px
+              color-mix(in srgb, var(--n-primary-color) 68%, transparent);
+          }
+        }
+      }
+
       .category-select {
         min-width: 140px;
       }
@@ -927,6 +954,48 @@ watch(
             max-width: 320px;
           }
         }
+      }
+    }
+
+    &.view-memory-setting {
+      .view-memory-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .view-memory-flow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 14px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+
+        span {
+          flex: 0 0 auto;
+          padding: 7px 10px;
+          border: 1px solid var(--n-border-color);
+          border-radius: 8px;
+          background: var(--n-action-color);
+          color: var(--n-text-color-2);
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        i {
+          color: var(--n-text-color-3);
+          font-size: 11px;
+          font-style: normal;
+        }
+      }
+
+      .view-memory-note {
+        display: block;
+        margin-top: 10px;
+        font-size: 12px;
+        line-height: 1.6;
       }
     }
 

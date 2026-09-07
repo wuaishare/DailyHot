@@ -1613,20 +1613,29 @@ export const mainStore = defineStore("mainData", {
     },
     resolveCategoryViewMode(categoryRef = null) {
       const fallback = this.normalizeCategoryViewMode(this.categoryViewMode);
-      if (!this.categoryViewPerCategory) return fallback;
-      const category = getCategoryByRef(this.categories, categoryRef);
-      const key = String(category?.id || categoryRef || "");
-      if (!key) return fallback;
-      return this.normalizeCategoryViewMode(this.categoryViewModes?.[key] ?? fallback);
+      let category = getCategoryByRef(this.categories, categoryRef);
+      if (!category) return fallback;
+
+      const seen = new Set();
+      while (category && !seen.has(String(category.id))) {
+        seen.add(String(category.id));
+        const key = String(category.id);
+        if (
+          this.categoryViewModes &&
+          Object.prototype.hasOwnProperty.call(this.categoryViewModes, key)
+        ) {
+          return this.normalizeCategoryViewMode(this.categoryViewModes[key]);
+        }
+        category = category.parentId
+          ? getCategoryByRef(this.categories, category.parentId)
+          : null;
+      }
+      return fallback;
     },
     setCategoryViewMode(categoryRef, mode) {
       const nextMode = this.normalizeCategoryViewMode(mode);
-      if (!this.categoryViewPerCategory) {
-        this.categoryViewMode = nextMode;
-        return;
-      }
       const category = getCategoryByRef(this.categories, categoryRef);
-      const key = String(category?.id || categoryRef || "");
+      const key = String(category?.id || "");
       if (!key) {
         this.categoryViewMode = nextMode;
         return;
@@ -1635,12 +1644,18 @@ export const mainStore = defineStore("mainData", {
         ...(this.categoryViewModes || {}),
         [key]: nextMode,
       };
+      this.categoryViewPerCategory = true;
+    },
+    clearCategoryViewMode(categoryRef) {
+      const category = getCategoryByRef(this.categories, categoryRef);
+      const key = String(category?.id || "");
+      if (!key || !this.categoryViewModes?.[key]) return;
+      const next = { ...(this.categoryViewModes || {}) };
+      delete next[key];
+      this.categoryViewModes = next;
     },
     setCategoryViewPerCategory(enabled) {
       this.categoryViewPerCategory = Boolean(enabled);
-      if (!this.categoryViewPerCategory) {
-        this.categoryViewModes = {};
-      }
     },
     setActiveCategory(name) {
       this.activeCategory = name;
@@ -1678,8 +1693,19 @@ export const mainStore = defineStore("mainData", {
       $message.info(`已切换至${val === "dark" ? "深色模式" : "浅色模式"}`, {
         showIcon: false,
       });
-      this.siteTheme = val;
+      this.siteTheme = val === "dark" ? "dark" : "light";
       this.siteThemeAuto = false;
+    },
+    setAppearanceMode(mode, resolvedSystemTheme = null) {
+      if (mode === "auto") {
+        this.siteThemeAuto = true;
+        if (resolvedSystemTheme === "dark" || resolvedSystemTheme === "light") {
+          this.siteTheme = resolvedSystemTheme;
+        }
+        return;
+      }
+      this.siteThemeAuto = false;
+      this.siteTheme = mode === "dark" ? "dark" : "light";
     },
     // 标记榜单状态
     markUnavailable(name) {

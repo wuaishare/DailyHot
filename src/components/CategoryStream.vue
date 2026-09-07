@@ -33,86 +33,130 @@
       </n-popover>
     </div>
 
-    <div v-if="!activeSources.length" class="category-stream__empty">
+    <div v-if="!props.sources.length" class="category-stream__empty">
       {{ copy.noSources }}
     </div>
 
-    <div v-else-if="!visibleEntries.length && pendingCount" class="category-stream__skeleton">
-      <div v-for="index in 8" :key="index"></div>
-    </div>
-
-    <div v-else-if="!visibleEntries.length" class="category-stream__empty">
-      {{ queryText ? copy.noSearchResults : copy.noEntries }}
-    </div>
-
     <div v-else class="category-stream__body">
-      <div class="category-stream__list">
-      <article
-        v-for="entry in visibleEntries"
-        :key="entry.key"
-        class="category-stream__row"
-      >
-        <div class="category-stream__rank" :class="rankTone(entry.rank)">
-          <span>#</span>{{ entry.rank }}
+      <div class="category-stream__main">
+        <div
+          v-if="!visibleEntries.length && pendingCount"
+          class="category-stream__skeleton"
+        >
+          <div v-for="index in 8" :key="index"></div>
         </div>
 
-        <router-link
-          class="category-stream__source"
-          :to="entry.sourcePath"
-          :title="entry.sourceLabel"
-        >
-          <img
-            :src="entry.sourceLogo"
-            :alt="entry.sourceLabel"
-            @error="handleLogoError"
-          />
-          <span>{{ entry.sourceLabel }}</span>
-        </router-link>
+        <div v-else-if="!visibleEntries.length" class="category-stream__empty">
+          {{ queryText ? copy.noSearchResults : copy.noEntries }}
+        </div>
 
-        <a
-          class="category-stream__content"
-          :href="entry.href"
-          :target="linkTarget"
-          rel="noopener noreferrer nofollow"
-        >
-          <div class="category-stream__title">{{ entry.title }}</div>
-          <p v-if="entry.description" class="category-stream__desc">
-            {{ entry.description }}
-          </p>
-          <div v-if="entry.hot" class="category-stream__meta">
-            <span>{{ copy.heat }} {{ entry.hot }}</span>
-          </div>
-        </a>
+        <div v-else class="category-stream__list">
+          <article
+            v-for="entry in visibleEntries"
+            :key="entry.key"
+            class="category-stream__row"
+          >
+            <div class="category-stream__rank" :class="rankTone(entry.rank)">
+              <span>#</span>{{ entry.rank }}
+            </div>
 
-        <a
-          v-if="showImages && entry.cover"
-          class="category-stream__cover"
-          :href="entry.href"
-          :target="linkTarget"
-          rel="noopener noreferrer nofollow"
-        >
-          <img
-            :src="coverSrc(entry.cover)"
-            alt=""
-            loading="lazy"
-            @error="hideBrokenCover"
-          />
-        </a>
-      </article>
+            <router-link
+              class="category-stream__source"
+              :to="entry.sourcePath"
+              :title="entry.sourceLabel"
+            >
+              <img
+                :src="entry.sourceLogo"
+                :alt="entry.sourceLabel"
+                @error="handleLogoError"
+              />
+              <span>{{ entry.sourceLabel }}</span>
+            </router-link>
+
+            <a
+              class="category-stream__content"
+              :href="entry.href"
+              :target="linkTarget"
+              rel="noopener noreferrer nofollow"
+            >
+              <div class="category-stream__title">{{ entry.title }}</div>
+              <p v-if="entry.description" class="category-stream__desc">
+                {{ entry.description }}
+              </p>
+              <div v-if="entry.hot" class="category-stream__meta">
+                <span>{{ copy.heat }} {{ entry.hot }}</span>
+              </div>
+            </a>
+
+            <a
+              v-if="showImages && entry.cover"
+              class="category-stream__cover"
+              :href="entry.href"
+              :target="linkTarget"
+              rel="noopener noreferrer nofollow"
+            >
+              <img
+                :src="coverSrc(entry.cover)"
+                alt=""
+                loading="lazy"
+                @error="hideBrokenCover"
+              />
+            </a>
+          </article>
+        </div>
       </div>
 
-      <aside class="category-stream__rail" aria-label="Sources">
+      <aside class="category-stream__rail" :aria-label="copy.sources">
         <div class="category-stream__rail-card">
           <div class="category-stream__rail-title">
-            <strong>{{ copy.sources }}</strong>
-            <span>{{ activeSources.length }}</span>
+            <div>
+              <strong>{{ copy.sources }}</strong>
+              <span>{{ activeSources.length }}/{{ props.sources.length }}</span>
+            </div>
+            <button
+              v-if="hasRailFilters"
+              type="button"
+              class="category-stream__rail-reset"
+              @click="resetRailFilters"
+            >
+              {{ copy.reset }}
+            </button>
           </div>
-          <router-link
-            v-for="source in activeSources"
-            :key="source.name"
-            :to="sourcePathFor(source)"
-            class="category-stream__rail-source"
+
+          <div class="category-stream__rail-rank">
+            <span>{{ copy.rankRange }}</span>
+            <n-select
+              size="tiny"
+              :value="rankTo"
+              :options="rankOptions"
+              @update:value="updateRankTo"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="category-stream__rail-source is-all"
+            :class="{ active: showingAllSources }"
+            @click="showAllSources"
           >
+            <span class="category-stream__rail-check" aria-hidden="true">
+              {{ showingAllSources ? "✓" : "" }}
+            </span>
+            <span>{{ copy.allSources }}</span>
+            <i class="category-stream__rail-count">{{ props.sources.length }}</i>
+          </button>
+
+          <button
+            v-for="source in props.sources"
+            :key="source.name"
+            type="button"
+            class="category-stream__rail-source"
+            :class="{ active: isSourceSelected(source.name) }"
+            @click="selectRailSource(source)"
+          >
+            <span class="category-stream__rail-check" aria-hidden="true">
+              {{ isSourceSelected(source.name) ? "✓" : "" }}
+            </span>
             <img
               :src="getSourceLogo(source.name)"
               :alt="sourceLabelFor(source)"
@@ -124,7 +168,7 @@
               :class="sourceStates[source.name] || 'idle'"
               aria-hidden="true"
             ></i>
-          </router-link>
+          </button>
         </div>
       </aside>
     </div>
@@ -132,8 +176,14 @@
 </template>
 
 <script setup>
-import { computed, reactive, watch } from "vue";
-import { useRoute } from "vue-router";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  watch,
+} from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { mainStore } from "@/store";
 import { getSharedRanking } from "@/utils/rankingCollection";
@@ -157,12 +207,15 @@ import {
 } from "@/utils/readableTitles";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
+import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },
+  sourcePageSource: { type: String, default: "" },
 });
 
 const route = useRoute();
+const router = useRouter();
 const store = mainStore();
 const { locale: i18nLocale } = useI18n({ useScope: "global" });
 const locale = computed(() =>
@@ -262,15 +315,36 @@ const API_LOCALIZED_SOURCE_NAMES = new Set([
 const queryString = (value) =>
   String(Array.isArray(value) ? value[0] || "" : value || "").trim();
 
+const sourceQuery = computed(() => queryString(route.query.sources));
+const sourcePageMode = computed(() => Boolean(props.sourcePageSource));
+const allowedSourceNames = computed(
+  () => new Set(props.sources.map((item) => item.name)),
+);
 const selectedSourceNames = computed(() => {
-  const raw = queryString(route.query.sources);
-  if (!raw) return [];
-  const allowed = new Set(props.sources.map((item) => item.name));
-  return [...new Set(raw.split(",").map((item) => item.trim()).filter(Boolean))]
-    .filter((name) => allowed.has(name));
+  const raw = sourceQuery.value;
+  if (raw && raw !== "all") {
+    return [
+      ...new Set(raw.split(",").map((item) => item.trim()).filter(Boolean)),
+    ].filter((name) => allowedSourceNames.value.has(name));
+  }
+  if (
+    !raw &&
+    sourcePageMode.value &&
+    allowedSourceNames.value.has(props.sourcePageSource)
+  ) {
+    return [props.sourcePageSource];
+  }
+  return [];
 });
 
+const showingAllSources = computed(
+  () =>
+    sourceQuery.value === "all" ||
+    (!sourcePageMode.value && selectedSourceNames.value.length === 0),
+);
+
 const activeSources = computed(() => {
+  if (showingAllSources.value) return props.sources;
   if (!selectedSourceNames.value.length) return props.sources;
   const allowed = new Set(selectedSourceNames.value);
   return props.sources.filter((item) => allowed.has(item.name));
@@ -287,6 +361,79 @@ const rankFrom = computed(() => normalizeRank(route.query.from, 1, 99));
 const rankTo = computed(() =>
   Math.max(rankFrom.value, normalizeRank(route.query.to, 10, 100)),
 );
+const rankOptions = computed(() =>
+  [5, 10, 20, 50].map((count) => ({
+    value: count,
+    label: `TOP ${count}`,
+  })),
+);
+const replaceFilterQuery = (patch = {}) => {
+  const query = { ...route.query };
+  Object.entries(patch).forEach(([key, value]) => {
+    if (value === null || typeof value === "undefined" || value === "") {
+      delete query[key];
+    } else {
+      query[key] = String(value);
+    }
+  });
+  delete query.page;
+  router.replace({ path: route.path, query, hash: route.hash });
+};
+const updateRankTo = (value) => {
+  const next = [5, 10, 20, 50].includes(Number(value)) ? Number(value) : 10;
+  replaceFilterQuery({
+    from: null,
+    to: next === 10 ? null : next,
+    order: null,
+  });
+};
+const isSourceSelected = (name) =>
+  showingAllSources.value || selectedSourceNames.value.includes(name);
+const showAllSources = () => {
+  replaceFilterQuery({ sources: sourcePageMode.value ? "all" : null });
+};
+const selectRailSource = (source) => {
+  if (sourcePageMode.value) {
+    const query = { ...route.query };
+    delete query.sources;
+    delete query.page;
+    router.push({
+      path: sourcePathFor(source),
+      query,
+      hash: route.hash,
+    });
+    return;
+  }
+
+  if (showingAllSources.value) {
+    replaceFilterQuery({ sources: source.name });
+    return;
+  }
+  const next = new Set(selectedSourceNames.value);
+  if (next.has(source.name)) next.delete(source.name);
+  else next.add(source.name);
+  replaceFilterQuery({
+    sources:
+      next.size > 0 && next.size < props.sources.length
+        ? [...next].join(",")
+        : null,
+  });
+};
+const hasRailFilters = computed(
+  () =>
+    (sourcePageMode.value
+      ? Boolean(sourceQuery.value)
+      : !showingAllSources.value) ||
+    rankFrom.value !== 1 ||
+    rankTo.value !== 10,
+);
+const resetRailFilters = () =>
+  replaceFilterQuery({
+    sources: sourcePageMode.value ? null : null,
+    from: null,
+    to: null,
+    order: null,
+  });
 const queryText = computed(() => queryString(route.query.q).toLowerCase());
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self",
@@ -316,11 +463,19 @@ const stripText = (value = "") =>
     .replace(/\s+/g, " ")
     .trim();
 
-const buildSourceParams = (source) => {
-  const subtype = resolveSourceSubtype(
-    getSourceSubtypeOptions(source.name),
-    readSourceSubtype(source.name),
+const sourceSubtypeFor = (sourceName) => {
+  const routeSubtype =
+    sourcePageMode.value && sourceName === props.sourcePageSource
+      ? route.params?.subtypeSlug || route.query?.subtype
+      : "";
+  return resolveSourceSubtype(
+    getSourceSubtypeOptions(sourceName),
+    routeSubtype || readSourceSubtype(sourceName),
   );
+};
+
+const buildSourceParams = (source) => {
+  const subtype = sourceSubtypeFor(source.name);
   const params = buildSourceSubtypeParams(source.name, subtype);
   if (API_LOCALIZED_SOURCE_NAMES.has(source.name)) {
     params.locale = locale.value;
@@ -334,13 +489,8 @@ const sourceLabelFor = (source) =>
     locale.value,
     source.label || source.name,
   );
-const sourcePathFor = (source) => {
-  const subtype = resolveSourceSubtype(
-    getSourceSubtypeOptions(source.name),
-    readSourceSubtype(source.name),
-  );
-  return buildRankPath(locale.value, source.name, subtype || "");
-};
+const sourcePathFor = (source) =>
+  buildRankPath(locale.value, source.name, sourceSubtypeFor(source.name) || "");
 
 const loadSource = async (source, force = false) => {
   if (!force && sourceResults[source.name]) return;
@@ -419,6 +569,36 @@ watch(
   },
   { immediate: true },
 );
+
+watch(
+  () => [
+    props.sourcePageSource,
+    route.params?.subtypeSlug || "",
+    route.query?.subtype || "",
+  ],
+  () => {
+    if (!sourcePageMode.value || !props.sourcePageSource) return;
+    delete sourceResults[props.sourcePageSource];
+    sourceStates[props.sourcePageSource] = "idle";
+    void loadActiveSources();
+  },
+);
+
+const handleDataRefresh = async () => {
+  await Promise.all(activeSources.value.map((source) => loadSource(source, true)));
+};
+
+onMounted(() => {
+  if (typeof window !== "undefined") {
+    window.addEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (typeof window !== "undefined") {
+    window.removeEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
+  }
+});
 
 const sourceIndex = computed(
   () => new Map(props.sources.map((source, index) => [source.name, index])),
@@ -619,6 +799,10 @@ const hideBrokenCover = (event) => {
   width: 100%;
 }
 
+.category-stream__main {
+  min-width: 0;
+}
+
 .category-stream__list {
   min-width: 0;
   overflow: hidden;
@@ -654,28 +838,100 @@ const hideBrokenCover = (event) => {
   font-size: 12px;
 }
 
+.category-stream__rail-title > div {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
 .category-stream__rail-title span {
   color: var(--n-text-color-3);
   font-variant-numeric: tabular-nums;
 }
 
-.category-stream__rail-source {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 8px;
-  align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 0 7px;
-  border-radius: 8px;
-  color: var(--n-text-color-2);
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 600;
+.category-stream__rail-reset {
+  border: 0;
+  background: transparent;
+  color: var(--n-text-color-3);
+  font: inherit;
+  cursor: pointer;
 }
 
-.category-stream__rail-source:hover {
+.category-stream__rail-reset:hover {
+  color: var(--n-primary-color);
+}
+
+.category-stream__rail-rank {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 2px 6px;
+  padding: 7px 5px;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--n-border-color) 72%, transparent);
+  color: var(--n-text-color-3);
+  font-size: 11px;
+}
+
+.category-stream__rail-source {
+  appearance: none;
+  display: grid;
+  grid-template-columns: 18px 20px minmax(0, 1fr) 8px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--n-text-color-2);
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.category-stream__rail-source.is-all {
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  margin-bottom: 3px;
+}
+
+.category-stream__rail-source:hover,
+.category-stream__rail-source.active {
   background: var(--n-action-color);
   color: var(--n-text-color);
+}
+
+.category-stream__rail-source.active {
+  box-shadow: inset 2px 0 0 var(--n-primary-color);
+}
+
+.category-stream__rail-check {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.category-stream__rail-source.active .category-stream__rail-check {
+  border-color: var(--n-primary-color);
+  background: var(--n-primary-color);
+}
+
+.category-stream__rail-count {
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .category-stream__rail-source img {
@@ -903,7 +1159,12 @@ const hideBrokenCover = (event) => {
   }
 
   .category-stream__rail {
-    display: none;
+    position: static;
+    order: -1;
+  }
+
+  .category-stream__rail-card {
+    max-height: 240px;
   }
 }
 

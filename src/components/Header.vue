@@ -256,9 +256,9 @@
               </div>
             </div>
           </n-popover>
-          <n-popover>
+          <n-popover trigger="click" placement="bottom-end" :show-arrow="false">
             <template #trigger>
-              <div class="control-hit-area" @click="toggleTheme">
+              <div class="control-hit-area">
                 <n-button
                   class="header-control-btn"
                   secondary
@@ -266,21 +266,27 @@
                   round
                   :aria-label="themeToggleLabel"
                   :title="themeToggleLabel"
-                  @click.stop="toggleTheme"
                 >
                   <template #icon>
                     <n-icon
-                      :component="store.siteTheme === 'light' ? Moon : SunOne"
+                      :component="store.siteTheme === 'dark' ? Moon : SunOne"
                     />
                   </template>
                 </n-button>
               </div>
             </template>
-            {{
-              store.siteTheme === "light"
-                ? t("common.darkMode")
-                : t("common.lightMode")
-            }}
+            <div class="theme-mode-menu" :aria-label="t('settings.theme')">
+              <button
+                v-for="mode in appearanceModeOptions"
+                :key="mode.value"
+                type="button"
+                :class="{ active: appearanceMode === mode.value }"
+                @click="selectAppearanceMode(mode.value)"
+              >
+                <span>{{ mode.label }}</span>
+                <i v-if="appearanceMode === mode.value">✓</i>
+              </button>
+            </div>
           </n-popover>
           <n-popover>
             <template #trigger>
@@ -352,13 +358,12 @@ import {
   getTopicLabel,
   getTopicNavLabel,
 } from "@/config/topics";
-import { NText, NIcon } from "naive-ui";
+import { NText, NIcon, useOsTheme } from "naive-ui";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { h } from "vue";
 import {
   buildCategoryPath,
-  buildFixedLocalePath,
   buildHomePath,
   buildLocalePathFromRoute,
   getCategoryLabel,
@@ -369,11 +374,17 @@ import {
   savePreferredLocale,
 } from "@/utils/locale";
 
-const emit = defineEmits(["mouseenter", "mouseleave", "click"]);
+const emit = defineEmits([
+  "mouseenter",
+  "mouseleave",
+  "click",
+  "open-settings",
+]);
 
 const router = useRouter();
 const route = useRoute();
 const store = mainStore();
+const osThemeRef = useOsTheme();
 const activeHeaderDropdown = ref("");
 let headerDropdownCloseTimer;
 const { t, locale } = useI18n({ useScope: "global" });
@@ -427,11 +438,22 @@ const refreshButtonLabel = computed(() =>
 const canManualRefresh = computed(
   () => showRefresh.value && !isSettingPage.value,
 );
-const themeToggleLabel = computed(() =>
-  store.siteTheme === "light" ? t("common.darkMode") : t("common.lightMode"),
+const appearanceMode = computed(() =>
+  store.siteThemeAuto ? "auto" : store.siteTheme,
 );
-const toggleTheme = () => {
-  store.setSiteTheme(store.siteTheme === "light" ? "dark" : "light");
+const appearanceModeOptions = computed(() => [
+  { value: "auto", label: t("settings.themeAutoOption") },
+  { value: "light", label: t("settings.themeLight") },
+  { value: "dark", label: t("settings.themeDark") },
+]);
+const themeToggleLabel = computed(
+  () =>
+    appearanceModeOptions.value.find(
+      (item) => item.value === appearanceMode.value,
+    )?.label || t("settings.theme"),
+);
+const selectAppearanceMode = (mode) => {
+  store.setAppearanceMode(mode, osThemeRef.value);
 };
 const buildCalendarDate = (timeData) => {
   if (!timeData?.time) return null;
@@ -773,19 +795,16 @@ const menuOptions = computed(() => [
     key: `locale:${item.code}`,
   })),
   {
-    label: () =>
-      h(NText, null, {
-        default: () =>
-          store.siteTheme === "light"
-            ? t("common.darkMode")
-            : t("common.lightMode"),
+    label: t("settings.theme"),
+    key: "appearance",
+    icon: () =>
+      h(NIcon, null, {
+        default: () => (store.siteTheme === "dark" ? h(Moon) : h(SunOne)),
       }),
-    key: "changeTheme",
-    icon: () => {
-      return h(NIcon, null, {
-        default: () => (store.siteTheme === "light" ? h(Moon) : h(SunOne)),
-      });
-    },
+    children: appearanceModeOptions.value.map((item) => ({
+      label: item.label,
+      key: `appearance:${item.value}`,
+    })),
   },
   {
     label: hotboardManagerLabel.value,
@@ -806,8 +825,8 @@ const menuOptionsSelect = (val) => {
     selectTopic(val);
   } else if (String(val).startsWith("locale:")) {
     switchLocale(String(val).replace("locale:", ""));
-  } else if (val === "changeTheme") {
-    store.setSiteTheme(store.siteTheme === "light" ? "dark" : "light");
+  } else if (String(val).startsWith("appearance:")) {
+    selectAppearanceMode(String(val).replace("appearance:", ""));
   } else if (val === "setting") {
     goSetting();
   }
@@ -815,7 +834,7 @@ const menuOptionsSelect = (val) => {
 };
 
 const goSetting = () => {
-  router.push(buildFixedLocalePath(locale.value, "/setting"));
+  emit("open-settings");
   mobileMenuOpen.value = false;
 };
 
@@ -1415,6 +1434,45 @@ onBeforeUnmount(() => {
       flex: 0 0 auto;
     }
   }
+}
+
+.theme-mode-menu {
+  display: grid;
+  gap: 4px;
+  min-width: 150px;
+}
+
+.theme-mode-menu button {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--n-text-color-2);
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.theme-mode-menu button:hover,
+.theme-mode-menu button.active {
+  color: var(--n-text-color);
+  background: var(--n-action-color);
+}
+
+.theme-mode-menu button.active {
+  box-shadow: inset 2px 0 0 var(--n-primary-color);
+}
+
+.theme-mode-menu i {
+  color: var(--n-primary-color);
+  font-style: normal;
 }
 
 .locale-option {
