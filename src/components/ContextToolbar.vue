@@ -1,5 +1,10 @@
 <template>
-  <nav v-if="visible" class="context-toolbar" :aria-label="copy.context">
+  <nav
+    v-if="visible"
+    class="context-toolbar"
+    :class="`is-${store.siteTheme}`"
+    :aria-label="copy.context"
+  >
     <div class="context-toolbar__left">
       <div
         v-if="routeKind === 'home' || routeKind === 'category' || routeKind === 'list'"
@@ -289,9 +294,9 @@ const COPY = {
     topItems: "Top {count}",
     resetFilters: "重置",
     search: "搜索当前上下文",
-    searchCategory: "搜索当前分类中的榜单",
-    searchStream: "搜索当前分类聚合内容",
-    searchList: "搜索当前榜单内容",
+    searchCard: "搜索当前范围内的榜单",
+    searchStream: "搜索信息流中的新闻条目",
+    searchList: "搜索当前榜单中的新闻条目",
     searchTopic: "搜索当前专题内容",
     clear: "清除搜索",
     manage: "榜单管理",
@@ -318,9 +323,9 @@ const COPY = {
     topItems: "Top {count}",
     resetFilters: "Reset",
     search: "Search current context",
-    searchCategory: "Search rankings in this category",
-    searchStream: "Search the aggregated category stream",
-    searchList: "Search within this ranking",
+    searchCard: "Search rankings in the current scope",
+    searchStream: "Search news items in the stream",
+    searchList: "Search news items in this ranking",
     searchTopic: "Search within this topic",
     clear: "Clear search",
     manage: "Manage",
@@ -347,9 +352,9 @@ const COPY = {
     topItems: "Top {count}",
     resetFilters: "重設",
     search: "搜尋目前內容",
-    searchCategory: "搜尋目前分類中的榜單",
-    searchStream: "搜尋目前分類彙整內容",
-    searchList: "搜尋目前榜單內容",
+    searchCard: "搜尋目前範圍內的榜單",
+    searchStream: "搜尋資訊流中的新聞項目",
+    searchList: "搜尋目前榜單中的新聞項目",
     searchTopic: "搜尋目前專題內容",
     clear: "清除搜尋",
     manage: "榜單管理",
@@ -376,9 +381,9 @@ const COPY = {
     topItems: "Top {count}",
     resetFilters: "リセット",
     search: "現在の内容を検索",
-    searchCategory: "このカテゴリのランキングを検索",
-    searchStream: "カテゴリの統合結果を検索",
-    searchList: "このランキング内を検索",
+    searchCard: "現在の範囲のランキングを検索",
+    searchStream: "ストリーム内のニュース項目を検索",
+    searchList: "このランキングのニュース項目を検索",
     searchTopic: "この特集内を検索",
     clear: "検索をクリア",
     manage: "管理",
@@ -405,9 +410,9 @@ const COPY = {
     topItems: "Top {count}",
     resetFilters: "초기화",
     search: "현재 컨텍스트 검색",
-    searchCategory: "현재 분류의 랭킹 검색",
-    searchStream: "현재 분류 통합 결과 검색",
-    searchList: "현재 랭킹 내용 검색",
+    searchCard: "현재 범위의 랭킹 검색",
+    searchStream: "스트림의 뉴스 항목 검색",
+    searchList: "현재 랭킹의 뉴스 항목 검색",
     searchTopic: "현재 주제 내용 검색",
     clear: "검색 지우기",
     manage: "관리",
@@ -653,12 +658,12 @@ const searchPlaceholder = computed(() => {
   if (routeKind.value === "list") return copy.value.searchList;
   if (routeKind.value === "topic") return copy.value.searchTopic;
   if (
-    routeKind.value === "category" &&
+    ["home", "category"].includes(routeKind.value) &&
     viewMode.value === "stream"
   ) {
     return copy.value.searchStream;
   }
-  return copy.value.searchCategory;
+  return copy.value.searchCard;
 });
 const currentSearchQuery = () => {
   const q = queryValue(route.query.q).trim();
@@ -765,6 +770,14 @@ watchEffect(() => {
 
 <style scoped>
 .context-toolbar {
+  --context-surface: oklch(0.985 0.004 285);
+  --context-control: oklch(0.955 0.005 285);
+  --context-control-hover: oklch(0.935 0.006 285);
+  --context-fg: oklch(0.27 0.008 285);
+  --context-muted: oklch(0.51 0.008 285);
+  --context-icon: oklch(0.44 0.008 285);
+  --context-stroke: oklch(0.36 0.008 285 / 16%);
+  --context-stroke-hover: oklch(0.34 0.008 285 / 28%);
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -774,12 +787,24 @@ watchEffect(() => {
   min-height: 58px;
   margin: 0 auto 16px;
   padding: 9px 10px 9px 12px;
-  border: 1px solid var(--n-border-color);
+  border: 1px solid var(--context-stroke);
   border-radius: 14px;
-  background: var(--n-color);
+  background: var(--context-surface);
+  color: var(--context-fg);
   box-shadow:
-    0 1px 2px color-mix(in srgb, var(--n-text-color) 4%, transparent),
-    0 8px 28px color-mix(in srgb, var(--n-text-color) 4%, transparent);
+    0 1px 2px oklch(0.18 0.008 285 / 5%),
+    0 8px 28px oklch(0.18 0.008 285 / 6%);
+}
+
+.context-toolbar.is-dark {
+  --context-surface: oklch(0.185 0.008 285);
+  --context-control: oklch(0.225 0.008 285);
+  --context-control-hover: oklch(0.255 0.009 285);
+  --context-fg: oklch(0.9 0.006 285);
+  --context-muted: oklch(0.67 0.008 285);
+  --context-icon: oklch(0.76 0.008 285);
+  --context-stroke: oklch(0.86 0.006 285 / 14%);
+  --context-stroke-hover: oklch(0.9 0.006 285 / 24%);
 }
 
 .context-toolbar__left {
@@ -853,9 +878,9 @@ watchEffect(() => {
   align-items: center;
   height: 38px;
   padding: 3px;
-  border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
+  border: 1px solid var(--context-stroke);
   border-radius: 10px;
-  background: var(--n-action-color);
+  background: var(--context-control);
 }
 
 .context-view-switch button {
@@ -868,7 +893,7 @@ watchEffect(() => {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: var(--n-text-color-3);
+  color: var(--context-muted);
   cursor: pointer;
   transition:
     color 0.15s ease,
@@ -877,16 +902,16 @@ watchEffect(() => {
 }
 
 .context-view-switch button:hover {
-  color: var(--n-text-color);
-  background: color-mix(in srgb, var(--n-color) 82%, var(--n-action-color));
+  color: var(--context-fg);
+  background: var(--context-control-hover);
 }
 
 .context-view-switch button.active {
-  color: var(--n-text-color);
-  background: var(--n-color);
+  color: var(--context-fg);
+  background: var(--context-surface);
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.07),
-    0 0 0 1px color-mix(in srgb, var(--n-border-color, #ddd) 74%, transparent);
+    0 1px 2px oklch(0.18 0.008 285 / 8%),
+    inset 0 0 0 1px var(--context-stroke);
 }
 
 .context-view-switch svg {
@@ -996,9 +1021,9 @@ watchEffect(() => {
   width: clamp(280px, 24vw, 360px);
   height: 38px;
   padding: 0 8px 0 11px;
-  border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
+  border: 1px solid var(--context-stroke);
   border-radius: 10px;
-  background: var(--n-action-color);
+  background: var(--context-control);
   transition:
     border-color 0.16s ease,
     background 0.16s ease,
@@ -1006,13 +1031,13 @@ watchEffect(() => {
 }
 
 .context-search:hover {
-  border-color: color-mix(in srgb, var(--n-text-color-3) 55%, var(--n-border-color));
-  background: color-mix(in srgb, var(--n-action-color) 88%, var(--n-color));
+  border-color: var(--context-stroke-hover);
+  background: var(--context-control-hover);
 }
 
 .context-search.is-focused {
-  border-color: color-mix(in srgb, var(--n-primary-color, #d03050) 72%, var(--n-border-color));
-  background: var(--n-color);
+  border-color: color-mix(in srgb, var(--n-primary-color, #d03050) 72%, var(--context-stroke));
+  background: var(--context-surface);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--n-primary-color, #d03050) 10%, transparent);
 }
 
@@ -1021,9 +1046,11 @@ watchEffect(() => {
   height: 16px;
   flex: 0 0 auto;
   fill: none;
-  stroke: var(--n-text-color-3);
+  color: var(--context-icon);
+  stroke: currentColor;
   stroke-linecap: round;
-  stroke-width: 1.45;
+  stroke-width: 1.65;
+  opacity: 1;
 }
 
 .context-search.is-focused .context-search__icon {
@@ -1038,7 +1065,7 @@ watchEffect(() => {
   border: 0;
   outline: 0;
   background: transparent;
-  color: var(--n-text-color);
+  color: var(--context-fg);
   font: inherit;
   font-size: 13px;
 }
@@ -1048,16 +1075,16 @@ watchEffect(() => {
 }
 
 .context-search input::placeholder {
-  color: color-mix(in srgb, var(--n-text-color-3) 88%, transparent);
+  color: var(--context-muted);
 }
 
 .context-search__shortcut {
   flex: 0 0 auto;
   padding: 3px 6px;
-  border: 1px solid color-mix(in srgb, var(--n-border-color) 85%, transparent);
+  border: 1px solid var(--context-stroke);
   border-radius: 5px;
-  background: color-mix(in srgb, var(--n-color) 78%, transparent);
-  color: var(--n-text-color-3);
+  background: var(--context-surface);
+  color: var(--context-muted);
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
@@ -1098,11 +1125,10 @@ watchEffect(() => {
   gap: 6px;
   height: 38px;
   padding: 0 10px;
-  border: 1px solid
-    color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
+  border: 1px solid var(--context-stroke);
   border-radius: 10px;
-  background: var(--n-action-color);
-  color: var(--n-text-color);
+  background: var(--context-control);
+  color: var(--context-fg);
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -1115,8 +1141,8 @@ watchEffect(() => {
 }
 
 .context-toolbar__manager:hover {
-  border-color: color-mix(in srgb, var(--n-text-color-3) 58%, var(--n-border-color));
-  background: color-mix(in srgb, var(--n-action-color) 88%, var(--n-color));
+  border-color: var(--context-stroke-hover);
+  background: var(--context-control-hover);
 }
 
 .context-toolbar__manager svg {

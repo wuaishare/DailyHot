@@ -1,8 +1,13 @@
 <template>
-  <div class="setting" :class="{ embedded }">
+  <div
+    class="setting"
+    :class="[{ embedded }, `is-${store.siteTheme}`]"
+  >
     <div v-if="!embedded" class="title">{{ t("settings.title") }}</div>
-    <n-h6 id="settings-base" prefix="bar"> {{ t("settings.baseSection") }} </n-h6>
-    <n-card class="set-item full appearance-setting">
+    <n-h6 v-if="showsDisplay" id="settings-base" prefix="bar">
+      {{ t("settings.baseSection") }}
+    </n-h6>
+    <n-card v-if="showsDisplay" class="set-item full appearance-setting">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.theme") }}</n-text>
@@ -23,7 +28,7 @@
         </div>
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsDisplay" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.linkOpenType") }}</n-text>
@@ -38,7 +43,7 @@
         />
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsDisplay" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.headerFixed") }}</n-text>
@@ -49,7 +54,7 @@
         <n-switch v-model:value="headerFixed" :round="false" />
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsDisplay" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.headerCollapsed") }}</n-text>
@@ -60,7 +65,7 @@
         <n-switch v-model:value="headerCollapsed" :round="false" />
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsDisplay" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.compactMode") }}</n-text>
@@ -71,7 +76,7 @@
         <n-switch v-model:value="compactMode" :round="false" />
       </div>
     </n-card>
-    <n-card class="set-item full view-memory-setting">
+    <n-card v-if="showsDisplay" class="set-item full view-memory-setting">
       <div class="view-memory-head">
         <div class="name">
           <n-text class="text">{{ t("settings.categoryView") }}</n-text>
@@ -96,7 +101,7 @@
         {{ t("settings.viewHierarchyNote") }}
       </n-text>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsDisplay" class="set-item">
       <div class="top" style="flex-direction: column; align-items: flex-start">
         <div class="name">
           <n-text class="text">{{ t("settings.listFontSize") }}</n-text>
@@ -123,7 +128,7 @@
         />
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsDisplay" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.categoryEnabled") }}</n-text>
@@ -136,33 +141,7 @@
         </n-space>
       </div>
     </n-card>
-    <n-card class="set-item full">
-      <div class="top">
-        <div class="name">
-          <n-text class="text">{{ t("settings.privacyControl") }}</n-text>
-          <n-text class="tip" :depth="3">
-            {{ t("settings.privacyControlTip") }}
-          </n-text>
-        </div>
-        <n-space wrap>
-          <n-tag type="success">
-            {{ t("settings.analyticsRequiredTag") }}
-          </n-tag>
-          <n-button size="small" secondary strong @click="openConsentSettings">
-            {{ t("settings.manageAdPreferences") }}
-          </n-button>
-          <n-button
-            v-if="isAnalyticsPanelVisible"
-            size="small"
-            tertiary
-            @click="router.push(buildFixedLocalePath(locale, '/analytics'))"
-          >
-            {{ t("settings.viewAnalytics") }}
-          </n-button>
-        </n-space>
-      </div>
-    </n-card>
-    <n-card class="set-item full">
+    <n-card v-if="showsCategories" class="set-item full">
       <div class="top" style="align-items: flex-start">
         <div class="name">
           <n-text class="text">{{ t("settings.categoryManagement") }}</n-text>
@@ -185,7 +164,7 @@
           <div class="list">
             <div
               class="cat-item"
-              v-for="cat in store.categories.sort((a, b) => a.order - b.order)"
+              v-for="cat in categories"
               :key="cat.id"
             >
               <n-input
@@ -214,98 +193,36 @@
         </div>
       </div>
     </n-card>
-    <n-card class="set-item full">
+    <n-h6 v-if="showsMisc" id="settings-misc" prefix="bar">
+      {{ t("settings.miscSection") }}
+    </n-h6>
+    <n-card v-if="showsMisc" class="set-item full">
       <div class="top">
         <div class="name">
-          <n-text class="text">{{ t("settings.rankingOrder") }}</n-text>
+          <n-text class="text">{{ t("settings.privacyControl") }}</n-text>
           <n-text class="tip" :depth="3">
-            {{ t("settings.rankingOrderTip") }}
+            {{ t("settings.privacyControlTip") }}
           </n-text>
         </div>
         <n-space wrap>
-          <n-popconfirm @positive-click="restoreDefaultOrder">
-            <template #trigger>
-              <n-button class="control" size="small">
-                {{ t("settings.restoreDefaultOrder") }}
-              </n-button>
-            </template>
-            {{ t("settings.restoreDefaultOrderConfirm") }}
-          </n-popconfirm>
-          <n-popconfirm @positive-click="restoreDefaultCategory">
-            <template #trigger>
-              <n-button class="control" size="small">
-                {{ t("settings.restoreDefaultCategory") }}
-              </n-button>
-            </template>
-            {{ t("settings.restoreDefaultCategoryConfirm") }}
-          </n-popconfirm>
-          <n-popconfirm @positive-click="restoreDefaultStatus">
-            <template #trigger>
-              <n-button class="control" size="small">
-                {{ t("settings.restoreDefaultStatus") }}
-              </n-button>
-            </template>
-            {{ t("settings.restoreDefaultStatusConfirm") }}
-          </n-popconfirm>
+          <n-tag type="success">
+            {{ t("settings.analyticsRequiredTag") }}
+          </n-tag>
+          <n-button size="small" secondary strong @click="openConsentSettings">
+            {{ t("settings.manageAdPreferences") }}
+          </n-button>
+          <n-button
+            v-if="isAnalyticsPanelVisible"
+            size="small"
+            tertiary
+            @click="router.push(buildFixedLocalePath(locale, '/analytics'))"
+          >
+            {{ t("settings.viewAnalytics") }}
+          </n-button>
         </n-space>
       </div>
-      <draggable
-        :list="newsArr"
-        :animation="200"
-        class="mews-group"
-        item-key="order"
-        @end="saveSoreData()"
-      >
-        <template #item="{ element }">
-          <n-card
-            class="item"
-            embedded
-            :content-style="{ display: 'flex', alignItems: 'center' }"
-          >
-            <div class="desc" :style="{ opacity: element.show ? null : 0.6 }">
-              <img
-                class="logo"
-                :src="logoSrc(element.name)"
-                alt="logo"
-                @error="handleLogoError"
-              />
-              <n-text
-                class="news-name"
-                v-html="getSourceDisplayLabel(element)"
-              />
-              <n-tag
-                size="small"
-                type="warning"
-                v-if="store.unavailableSources.includes(element.name)"
-              >
-                {{ t("settings.unavailable") }}
-              </n-tag>
-            </div>
-            <n-select
-              size="small"
-              class="category-select"
-              multiple
-              max-tag-count="responsive"
-              :options="categoryOptions"
-              :value="element.categoryIds"
-              :placeholder="t('settings.categoryPlaceholder')"
-              :disabled="!categoryEnabled"
-              @update:value="(value) => updateSourceCategories(element, value)"
-            />
-            <n-switch
-              class="switch"
-              :round="false"
-              v-model:value="element.show"
-              @update:value="
-                saveSoreData(getSourceDisplayLabel(element), element.show)
-              "
-            />
-          </n-card>
-        </template>
-      </draggable>
     </n-card>
-    <n-h6 id="settings-misc" prefix="bar"> {{ t("settings.miscSection") }} </n-h6>
-    <n-card class="set-item">
+    <n-card v-if="showsMisc" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.autoRefresh") }}</n-text>
@@ -356,7 +273,7 @@
         </div>
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsMisc" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.showImages") }}</n-text>
@@ -367,7 +284,7 @@
         <n-switch v-model:value="showImages" :round="false" />
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsMisc" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.clearCache") }}</n-text>
@@ -384,7 +301,7 @@
         </n-button>
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsMisc" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.importExport") }}</n-text>
@@ -409,7 +326,7 @@
         />
       </div>
     </n-card>
-    <n-card class="set-item">
+    <n-card v-if="showsMisc" class="set-item">
       <div class="top">
         <div class="name">
           <n-text class="text">{{ t("settings.resetAll") }}</n-text>
@@ -435,17 +352,28 @@ import { storeToRefs } from "pinia";
 import { mainStore } from "@/store";
 import { clearAppCaches, getCacheVersion } from "@/utils/cache";
 import { OPEN_CONSENT_EVENT } from "@/utils/analytics";
-import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { useOsTheme } from "naive-ui";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import draggable from "vuedraggable";
 import { buildFixedLocalePath, getCategoryLabel } from "@/utils/locale";
-import { getCategoryDepth, getSourceCategoryIds } from "@/utils/categoryTree";
-import { getSourceDisplayLabel as getLocalizedSourceDisplayLabel } from "@/utils/sourceLabels";
 
-const props = defineProps({ embedded: { type: Boolean, default: false } });
+const props = defineProps({
+  embedded: { type: Boolean, default: false },
+  section: {
+    type: String,
+    default: "all",
+    validator: (value) =>
+      ["all", "display", "categories", "misc"].includes(value),
+  },
+});
 const embedded = computed(() => props.embedded);
+const showsDisplay = computed(() =>
+  ["all", "display"].includes(props.section),
+);
+const showsCategories = computed(() =>
+  ["all", "categories"].includes(props.section),
+);
+const showsMisc = computed(() => ["all", "misc"].includes(props.section));
 const store = mainStore();
 const osThemeRef = useOsTheme();
 const router = useRouter();
@@ -453,7 +381,6 @@ const { t, locale } = useI18n({ useScope: "global" });
 const {
   siteTheme,
   siteThemeAuto,
-  newsArr,
   linkOpenType,
   headerFixed,
   headerCollapsed,
@@ -469,28 +396,12 @@ const {
 const categories = computed(() =>
   store.categories.slice().sort((a, b) => a.order - b.order),
 );
-const categoryOptions = computed(() =>
-  categories.value.map((c) => ({
-    label: `${"—".repeat(Math.max(0, getCategoryDepth(categories.value, c.id) - 1))}${getCategoryLabel(c.name, locale.value)}`,
-    value: c.id,
-  })),
-);
 const newCategory = ref("");
 const cacheVersion = ref(getCacheVersion());
-const logoSrc = (name) => getSourceLogo(name);
 const getCategoryDisplayName = (category) =>
   category?.builtin
     ? getCategoryLabel(category.name, locale.value)
     : category?.name || "";
-const getSourceDisplayLabel = (item) =>
-  getLocalizedSourceDisplayLabel(
-    item?.name,
-    locale.value,
-    item?.label || item?.name,
-  );
-const handleLogoError = (event) => {
-  event.target.src = getSourceLogoFallback();
-};
 const importFileRef = ref(null);
 const isAnalyticsPanelVisible = !import.meta.env.PROD;
 const persistedKeys = [
@@ -558,81 +469,6 @@ const listFontMarks = computed(() => ({
   16: t("settings.listFontDefault"),
   20: t("settings.listFontLarge"),
 }));
-
-// 归一化顺序，保证 order 与当前展示一致
-const normalizeOrder = () => {
-  newsArr.value = newsArr.value.map((item, idx) => ({
-    ...item,
-    order: idx,
-  }));
-};
-
-const restoreDefaultOrder = () => {
-  const defaultOrder = store.defaultNewsArr
-    .slice()
-    .sort((a, b) => a.order - b.order);
-  const defaultNames = new Set(defaultOrder.map((item) => item.name));
-  const currentByName = new Map(newsArr.value.map((item) => [item.name, item]));
-  const restored = defaultOrder.map((item, idx) => {
-    const current = currentByName.get(item.name) || item;
-    return { ...current, order: idx };
-  });
-  const extra = newsArr.value.filter((item) => !defaultNames.has(item.name));
-  const extraWithOrder = extra.map((item, idx) => ({
-    ...item,
-    order: restored.length + idx,
-  }));
-  newsArr.value = restored.concat(extraWithOrder);
-  $message.success(t("settings.restoreOrderSuccess"));
-};
-
-const updateSourceCategories = (item, value) => {
-  store.setSourceCategories(item.name, value);
-};
-
-const restoreDefaultCategory = () => {
-  const defaultCategoryMap = new Map(
-    store.defaultNewsArr.map((item) => [
-      item.name,
-      getSourceCategoryIds(item, store.categories),
-    ]),
-  );
-  newsArr.value.forEach((item) => {
-    const categoryIds =
-      defaultCategoryMap.get(item.name) ||
-      getSourceCategoryIds(item, store.categories);
-    store.setSourceCategories(item.name, categoryIds);
-    const target = newsArr.value.find((source) => source.name === item.name);
-    if (target) target.categoryIdsCustomized = false;
-  });
-  $message.success(t("settings.restoreCategorySuccess"));
-};
-
-const restoreDefaultStatus = () => {
-  const defaultStatusMap = new Map(
-    store.defaultNewsArr.map((item) => [item.name, item.show]),
-  );
-  newsArr.value = newsArr.value.map((item) => ({
-    ...item,
-    show:
-      typeof defaultStatusMap.get(item.name) === "boolean"
-        ? defaultStatusMap.get(item.name)
-        : item.show,
-  }));
-  $message.success(t("settings.restoreStatusSuccess"));
-};
-
-// 将排序结果写入
-const saveSoreData = (name = null, open = false) => {
-  normalizeOrder();
-  $message.success(
-    name
-      ? t(open ? "settings.sourceEnabled" : "settings.sourceDisabled", {
-          name,
-        })
-      : t("settings.sortSuccess"),
-  );
-};
 
 // 重置数据
 const reset = () => {
@@ -796,12 +632,25 @@ watch(
 
 <style lang="scss" scoped>
 .setting {
+  --settings-panel: oklch(0.955 0.005 285);
+  --settings-hover: oklch(0.935 0.006 285);
+  --settings-text: oklch(0.27 0.008 285);
+  --settings-muted: oklch(0.52 0.008 285);
+  --settings-stroke: oklch(0.36 0.008 285 / 15%);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
+  }
+
+  &.is-dark {
+    --settings-panel: oklch(0.235 0.009 285);
+    --settings-hover: oklch(0.265 0.01 285);
+    --settings-text: oklch(0.9 0.006 285);
+    --settings-muted: oklch(0.67 0.008 285);
+    --settings-stroke: oklch(0.86 0.006 285 / 13%);
   }
 
   &.embedded {
@@ -999,54 +848,6 @@ watch(
       }
     }
 
-    .mews-group {
-      margin-top: 16px;
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0px, 1fr));
-      gap: 24px;
-
-      @media (max-width: 1666px) {
-        grid-template-columns: repeat(4, minmax(0px, 1fr));
-      }
-
-      @media (max-width: 1200px) {
-        grid-template-columns: repeat(3, minmax(0px, 1fr));
-      }
-
-      @media (max-width: 890px) {
-        grid-template-columns: repeat(2, minmax(0px, 1fr));
-      }
-
-      @media (max-width: 620px) {
-        grid-template-columns: repeat(1, minmax(0px, 1fr));
-      }
-
-      .item {
-        cursor: pointer;
-
-        .desc {
-          display: flex;
-          align-items: center;
-          width: 100%;
-          transition: all 0.3s;
-
-          .logo {
-            width: 40px;
-            height: 40px;
-            margin-right: 12px;
-            object-fit: contain;
-          }
-
-          .news-name {
-            font-size: 16px;
-          }
-        }
-
-        .switch {
-          margin-left: auto;
-        }
-      }
-    }
   }
 }
 </style>
