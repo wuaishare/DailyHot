@@ -5,7 +5,7 @@
       <router-link
         v-for="topic in TOPIC_REGISTRY"
         :key="topic.id"
-        :to="buildTopicPath(topic, locale)"
+        :to="topicDestination(topic)"
         class="topic-switcher__item"
         :class="{ 'is-active': topic.id === activeTopic }"
         :aria-current="topic.id === activeTopic ? 'page' : undefined"
@@ -17,6 +17,7 @@
 </template>
 
 <script setup>
+import { useRoute } from "vue-router";
 import {
   TOPIC_REGISTRY,
   buildTopicPath,
@@ -24,11 +25,21 @@ import {
   getTopicNavLabel,
 } from "@/config/topics";
 
+const route = useRoute();
 const props = defineProps({
   activeTopic: { type: String, required: true },
   locale: { type: String, default: "zh-CN" },
 });
 const navLabel = computed(() => getTopicNavLabel(props.locale));
+const topicDestination = (topic) => {
+  const q = String(
+    Array.isArray(route.query.q) ? route.query.q[0] || "" : route.query.q || "",
+  ).trim();
+  return {
+    path: buildTopicPath(topic, props.locale),
+    query: q ? { q } : {},
+  };
+};
 </script>
 <style scoped>
 .topic-switcher {

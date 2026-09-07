@@ -1,27 +1,5 @@
 <template>
   <div class="home">
-    <nav
-      v-if="categoryTrail.length > 1 || childCategories.length"
-      class="category-subnav"
-      aria-label="分类导航"
-    >
-      <div class="category-breadcrumb">
-        <router-link
-          v-for="item in categoryTrail"
-          :key="item.id"
-          :to="categoryPath(item)"
-          >{{ categoryLabel(item) }}</router-link
-        >
-      </div>
-      <div v-if="childCategories.length" class="category-children">
-        <router-link
-          v-for="item in childCategories"
-          :key="item.id"
-          :to="categoryPath(item)"
-          >{{ categoryLabel(item) }}</router-link
-        >
-      </div>
-    </nav>
     <router-link
       v-if="isGamesCategory"
       :to="gameDealsTopicPath"
@@ -101,9 +79,7 @@ import draggable from "vuedraggable";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import {
-  buildCategoryPath,
   buildFixedLocalePath,
-  getCategoryLabel,
   getCategoryNameBySlug,
   getLocaleFromRoute,
   normalizeLocale,
@@ -113,6 +89,7 @@ import {
   WOOL_TOPIC_METADATA,
 } from "@/config/site-metadata.mjs";
 import { sourceBelongsToCategory } from "@/utils/categoryTree";
+import { getSourceDisplayLabel } from "@/utils/sourceLabels";
 
 const store = mainStore();
 const { t } = useI18n({ useScope: "global" });
@@ -130,34 +107,30 @@ const forcedCategoryName = computed(() =>
   getCategoryNameBySlug(route.params?.categorySlug, store.categories),
 );
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
-const currentCategory = computed(
-  () =>
-    store.categories.find((item) => item.name === forcedCategoryName.value) ||
-    null,
-);
-const childCategories = computed(() =>
-  currentCategory.value
-    ? store.categories
-        .filter((item) => item.parentId === currentCategory.value.id)
-        .sort((a, b) => a.order - b.order)
-    : [],
-);
-const categoryTrail = computed(() => {
-  const result = [];
-  const seen = new Set();
-  let node = currentCategory.value;
-  while (node && !seen.has(node.id)) {
-    seen.add(node.id);
-    result.unshift(node);
-    node = node.parentId
-      ? store.categories.find((item) => item.id === node.parentId)
-      : null;
-  }
-  return result;
-});
-const categoryLabel = (item) =>
-  item.builtin ? getCategoryLabel(item.name, locale.value) : item.name;
-const categoryPath = (item) => buildCategoryPath(locale.value, item.slug);
+const queryValue = (value) =>
+  String(Array.isArray(value) ? value[0] || "" : value || "").trim();
+const searchQuery = computed(() => queryValue(route.query.q).toLowerCase());
+const sourceMatchesSearch = (item) => {
+  const query = searchQuery.value;
+  if (!query) return true;
+  const categoryNames = Array.isArray(item.categoryIds)
+    ? item.categoryIds
+        .map((id) => store.categories.find((category) => category.id === id)?.name)
+        .filter(Boolean)
+    : [];
+  const haystack = [
+    item.name,
+    item.label,
+    item.category,
+    item.subtype,
+    ...categoryNames,
+    getSourceDisplayLabel(item.name, locale.value, item.label || item.name),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(query);
+};
 const isWoolCategory = computed(() => forcedCategoryName.value === "羊毛");
 const isGamesCategory = computed(() => forcedCategoryName.value === "游戏");
 const gameDealsTopicCopy = computed(
@@ -175,17 +148,17 @@ const woolTopicPath = computed(() =>
   buildFixedLocalePath(locale.value, "/topic/wool"),
 );
 const filteredNews = computed(() => {
+  let scoped = renderNews.value;
   if (forcedCategoryName.value) {
-    return renderNews.value.filter((item) =>
+    scoped = scoped.filter((item) =>
       sourceBelongsToCategory(item, forcedCategoryName.value, store.categories),
     );
+  } else if (store.categoryEnabled && store.activeCategory !== "全部") {
+    scoped = scoped.filter((item) =>
+      sourceBelongsToCategory(item, store.activeCategory, store.categories),
+    );
   }
-  if (!store.categoryEnabled || store.activeCategory === "全部") {
-    return renderNews.value;
-  }
-  return renderNews.value.filter((item) =>
-    sourceBelongsToCategory(item, store.activeCategory, store.categories),
-  );
+  return scoped.filter(sourceMatchesSearch);
 });
 const syncSortableNews = () => {
   sortableNews.value = filteredNews.value.slice();
@@ -387,46 +360,4 @@ const reset = () => {
   }
 }
 
-.category-subnav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-  min-width: 0;
-}
-.category-breadcrumb,
-.category-children {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.category-breadcrumb::-webkit-scrollbar,
-.category-children::-webkit-scrollbar {
-  display: none;
-}
-.category-breadcrumb a,
-.category-children a {
-  flex: 0 0 auto;
-  padding: 5px 9px;
-  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
-  border-radius: 8px;
-  color: var(--n-text-color-2, #555);
-  font-size: 12px;
-  text-decoration: none;
-}
-.category-breadcrumb a:last-child {
-  color: var(--n-text-color, #222);
-  font-weight: 650;
-}
-@media (max-width: 680px) {
-  .category-subnav {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
-  }
-}
 </style>

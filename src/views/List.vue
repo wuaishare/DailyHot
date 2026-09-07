@@ -1,65 +1,9 @@
 <template>
   <div class="list">
-    <div
-      ref="typeContainerRef"
-      v-if="availableNews.length"
-      class="type-shell"
-      :class="{
-        'has-left-shadow': typeCanScrollLeft,
-        'has-right-shadow': typeCanScrollRight,
-        'is-dragging': typeDragging,
-      }"
-    >
-      <div
-        ref="typeTrackRef"
-        class="type"
-        @pointerdown="startTypeDrag"
-        @pointermove="dragTypeTrack"
-        @pointerup="endTypeDrag"
-        @pointercancel="endTypeDrag"
-        @pointerleave="endTypeDrag"
-        @scroll="updateTypeShadow"
-      >
-        <div
-          v-for="(row, rowIndex) in sourceRows"
-          :key="rowIndex"
-          class="type-row"
-        >
-          <n-tag
-            round
-            size="large"
-            class="tag"
-            :class="{ 'is-active-source': isActiveSource(item.name) }"
-            v-for="item in row"
-            :key="item.name"
-            :type="isActiveSource(item.name) ? 'primary' : 'default'"
-            :aria-current="isActiveSource(item.name) ? 'page' : undefined"
-            @click="changeType(item.name, $event)"
-          >
-            {{ getSourceDisplayLabel(item) }}
-            <template #avatar>
-              <img
-                :src="logoSrc(item.name)"
-                alt="logo"
-                class="logo"
-                @error="handleLogoError"
-              />
-            </template>
-          </n-tag>
-        </div>
-      </div>
-    </div>
-    <div v-if="subtypeGroups.length" class="subtype-actions">
+    <div v-if="showNativeOrderControl" class="subtype-actions">
       <MarketRankDirectionControl
-        v-if="showNativeOrderControl"
         :direction="marketRankDirection"
         @change="changeMarketRankDirection"
-      />
-      <SubtypeBar
-        class="subtype"
-        :groups="subtypeGroups"
-        :active-value="listSubType"
-        @change="changeSubType"
       />
     </div>
     <n-card class="card">
@@ -127,8 +71,14 @@
         <template v-else>
           <div class="all">
             <n-empty
-              v-if="isIndexOverviewSource && !orderedListItems.length"
-              :description="t('hotList.indexRegionEmpty')"
+              v-if="!orderedListItems.length"
+              :description="
+                listSearchQuery
+                  ? t('common.noContent')
+                  : isIndexOverviewSource
+                    ? t('hotList.indexRegionEmpty')
+                    : t('common.noContent')
+              "
               style="padding: 48px 16px"
             />
             <GlobalIndexTable
@@ -158,17 +108,17 @@
                     v-if="!isIndexOverviewSource"
                     class="num"
                     :class="
-                      index + 1 + (pageNumber - 1) * 20 === 1
+                      (item.contextRank || index + 1 + (pageNumber - 1) * 20) === 1
                         ? 'one'
-                        : index + 1 + (pageNumber - 1) * 20 === 2
+                        : (item.contextRank || index + 1 + (pageNumber - 1) * 20) === 2
                           ? 'two'
-                          : index + 1 + (pageNumber - 1) * 20 === 3
+                          : (item.contextRank || index + 1 + (pageNumber - 1) * 20) === 3
                             ? 'three'
                             : null
                     "
                     :depth="2"
                   >
-                    {{ index + 1 + (pageNumber - 1) * 20 }}
+                    {{ item.contextRank || index + 1 + (pageNumber - 1) * 20 }}
                   </n-text>
                 </template>
                 <n-a
@@ -187,7 +137,9 @@
                       meta: {
                         itemId: item.id,
                         itemTitle: item.title,
-                        rankIndex: index + 1 + (pageNumber - 1) * 20,
+                        rankIndex:
+                          item.contextRank ||
+                          index + 1 + (pageNumber - 1) * 20,
                       },
                     })
                   "
@@ -307,7 +259,6 @@ import { formatTime } from "@/utils/getTime";
 import { getHotListsWithFallback } from "@/api";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
-import SubtypeBar from "@/components/SubtypeBar.vue";
 import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
 import GlobalIndexTable from "@/components/GlobalIndexTable.vue";
 import MarketQuoteTable from "@/components/MarketQuoteTable.vue";
@@ -365,18 +316,6 @@ const isPrerender =
   window.__PRERENDER_INJECTED &&
   window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
-const SOURCE_FAMILY_ALIASES = {
-  "clawhub-skills": "clawhub",
-  "clawhub-plugins": "clawhub",
-  "openai-news": "openai",
-  "openai-research": "openai",
-  lmarena: "arena-ai",
-  "huggingface-blog": "huggingface",
-  "hf-models": "huggingface",
-  "hf-papers": "huggingface",
-};
-const normalizeSourceFamily = (name = "") =>
-  SOURCE_FAMILY_ALIASES[name] || name;
 const API_LOCALIZED_SOURCE_NAMES = new Set([
   "designarena",
   "clawhub",
@@ -386,7 +325,6 @@ const API_LOCALIZED_SOURCE_NAMES = new Set([
 ]);
 const shouldReloadForLocaleChange = (name = "") =>
   API_LOCALIZED_SOURCE_NAMES.has(name);
-const READABLE_TRANSLATION_FALLBACK_MS = 3000;
 
 const updateTime = ref(null);
 const availableNews = computed(() => {
@@ -401,17 +339,6 @@ const availableNews = computed(() => {
     )
     .sort((a, b) => a.order - b.order);
 });
-const typeContainerRef = ref(null);
-const typeRowCount = ref(2);
-const sourceRows = computed(() =>
-  availableNews.value.reduce(
-    (rows, item, index) => {
-      rows[index % typeRowCount.value].push(item);
-      return rows;
-    },
-    Array.from({ length: typeRowCount.value }, () => []),
-  ),
-);
 const resolveRouteType = (targetRoute) =>
   getSourceNameBySlug(
     targetRoute?.params?.sourceSlug ||
@@ -427,22 +354,11 @@ const pageNumber = ref(
 );
 const listData = ref(null);
 const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
-const typeTrackRef = ref(null);
-const typeCanScrollLeft = ref(false);
-const typeCanScrollRight = ref(false);
-const typeDragging = ref(false);
-const typeDragMoved = ref(false);
-let typeDragStartX = 0;
-let typeDragStartScrollLeft = 0;
-let typePointerCaptured = false;
-let typeResizeObserver = null;
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self",
 );
 const showImages = computed(() => store.showImages);
 const logoSrc = (name) => getSourceLogo(name);
-const isActiveSource = (name) =>
-  normalizeSourceFamily(name) === normalizeSourceFamily(listType.value);
 const getSourceDisplayLabel = (item) =>
   getLocalizedSourceDisplayLabel(
     item?.name,
@@ -526,15 +442,49 @@ const isDuplicateDesc = (desc = "", ...titles) => {
     return normalizedTitle && normalizedDesc === normalizedTitle;
   });
 };
+const queryValue = (value) =>
+  String(Array.isArray(value) ? value[0] || "" : value || "").trim();
+const listSearchQuery = computed(() => queryValue(route.query.q).toLowerCase());
+const normalizeSearchText = (value = "") =>
+  String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+const applyListSearch = (items = []) => {
+  const query = listSearchQuery.value;
+  if (!query) return items;
+  return items.filter((item) =>
+    [
+      item?.title,
+      item?.originalTitle,
+      item?.desc,
+      item?.originalDesc,
+      item?.author,
+      item?.hot,
+      item?.code,
+      item?.symbol,
+      item?.name,
+      item?.subtitle,
+    ].some((value) => normalizeSearchText(value).includes(query)),
+  );
+};
 const orderedListItems = computed(() => {
   const items = listData.value?.data || [];
-  if (isIndexOverviewSource.value) return applyGlobalIndexPreferences(items);
-  if (showNativeOrderControl.value) {
-    return applyMarketRankDirection(items, listType.value, listSubType.value);
+  let ordered = items;
+  if (isIndexOverviewSource.value) {
+    ordered = applyGlobalIndexPreferences(items);
+  } else if (showNativeOrderControl.value) {
+    ordered = applyMarketRankDirection(items, listType.value, listSubType.value);
+  } else if (showMarketSortControl.value) {
+    ordered = applyMarketListSort(items, listType.value);
   }
-  if (showMarketSortControl.value)
-    return applyMarketListSort(items, listType.value);
-  return items;
+  return applyListSearch(
+    ordered.map((item, index) => ({
+      ...item,
+      contextRank: index + 1,
+    })),
+  );
 });
 const currentPageItems = computed(() =>
   orderedListItems.value
@@ -648,29 +598,16 @@ const enhanceAndApplyListResult = async (
   name,
   shouldTranslate,
 ) => {
-  if (!shouldTranslate) {
-    applyListResult(result);
-    return;
-  }
-
-  let fallbackApplied = false;
-  const fallbackTimer = window.setTimeout(() => {
-    if (!isCurrentListRequest(requestId, name)) return;
-    fallbackApplied = true;
-    applyListResult(result);
-  }, READABLE_TRANSLATION_FALLBACK_MS);
+  if (!isCurrentListRequest(requestId, name)) return;
+  applyListResult(result);
+  if (!shouldTranslate) return;
 
   try {
     const nextResult = await enhanceListResult(result);
     if (!isCurrentListRequest(requestId, name)) return;
     applyListResult(nextResult);
   } catch {
-    if (!isCurrentListRequest(requestId, name)) return;
-    if (!fallbackApplied) {
-      applyListResult(result);
-    }
-  } finally {
-    window.clearTimeout(fallbackTimer);
+    // Raw provider data is already visible; readable-title enhancement is best effort.
   }
 };
 
@@ -687,7 +624,7 @@ const applyListFailureResult = (item, result = {}) => {
 };
 
 const isCurrentListRequest = (requestId, name) =>
-  requestId === listRequestId || listType.value === name;
+  requestId === listRequestId && listType.value === name;
 
 // 获取热榜数据
 const getHotListsData = async (name, isNew = false) => {
@@ -831,160 +768,20 @@ const trackMarketTableItemClick = (item, index) =>
     },
   });
 
-const getTypeTrackElement = () => typeTrackRef.value?.$el || typeTrackRef.value;
-
-const updateTypeShadow = () => {
-  const track = getTypeTrackElement();
-  if (!track) {
-    typeCanScrollLeft.value = false;
-    typeCanScrollRight.value = false;
-    return;
-  }
-  const maxScrollLeft = Math.max(0, track.scrollWidth - track.clientWidth);
-  typeCanScrollLeft.value = track.scrollLeft > 1;
-  typeCanScrollRight.value = maxScrollLeft - track.scrollLeft > 1;
-};
-
-const alignActiveTypeIntoView = () => {
-  const track = getTypeTrackElement();
-  const activeTag = track?.querySelector?.(".tag.is-active-source");
-  if (!track || !activeTag) return;
-  const trackRect = track.getBoundingClientRect();
-  const activeRect = activeTag.getBoundingClientRect();
-  const padding = 18;
-  let nextScrollLeft = track.scrollLeft;
-  if (activeRect.left < trackRect.left + padding) {
-    nextScrollLeft -= trackRect.left + padding - activeRect.left;
-  } else if (activeRect.right > trackRect.right - padding) {
-    nextScrollLeft += activeRect.right - (trackRect.right - padding);
-  }
-  if (nextScrollLeft !== track.scrollLeft) {
-    track.scrollTo({ left: Math.max(0, nextScrollLeft), behavior: "auto" });
-  }
-  updateTypeShadow();
-};
-
-const scrollActiveTypeIntoView = () => {
-  nextTick(() => {
-    alignActiveTypeIntoView();
-    if (!isClient) return;
-    window.requestAnimationFrame(() => alignActiveTypeIntoView());
-    window.setTimeout(() => alignActiveTypeIntoView(), 120);
-    window.setTimeout(() => alignActiveTypeIntoView(), 600);
-  });
-};
-
-const updateTypeRowCount = () => {
-  const container = typeContainerRef.value;
-  const track = getTypeTrackElement();
-  if (!container || !track) {
-    typeRowCount.value = 2;
-    return;
-  }
-  typeRowCount.value = track.scrollWidth <= container.clientWidth ? 1 : 2;
-};
-
-const refreshTypeScrollState = () => {
-  nextTick(() => {
-    const track = getTypeTrackElement();
-    if (typeResizeObserver) {
-      typeResizeObserver.disconnect();
-      typeResizeObserver = null;
-    }
-    if (track && typeof ResizeObserver !== "undefined") {
-      typeResizeObserver = new ResizeObserver(() => {
-        updateTypeRowCount();
-        updateTypeShadow();
-      });
-      typeResizeObserver.observe(track);
-      if (typeContainerRef.value) {
-        typeResizeObserver.observe(typeContainerRef.value);
-      }
-    }
-    updateTypeRowCount();
-    updateTypeShadow();
-    scrollActiveTypeIntoView();
-  });
-};
-
-const startTypeDrag = (event) => {
-  const track = getTypeTrackElement();
-  if (!track || event.button !== 0 || track.scrollWidth <= track.clientWidth) {
-    return;
-  }
-  typeDragging.value = true;
-  typeDragMoved.value = false;
-  typePointerCaptured = false;
-  typeDragStartX = event.clientX;
-  typeDragStartScrollLeft = track.scrollLeft;
-};
-
-const dragTypeTrack = (event) => {
-  const track = getTypeTrackElement();
-  if (!typeDragging.value || !track) return;
-  const deltaX = event.clientX - typeDragStartX;
-  if (!typeDragMoved.value && Math.abs(deltaX) > 4) {
-    typeDragMoved.value = true;
-    track.setPointerCapture?.(event.pointerId);
-    typePointerCaptured = true;
-  }
-  track.scrollLeft = typeDragStartScrollLeft - deltaX;
-  updateTypeShadow();
-};
-
-const endTypeDrag = (event) => {
-  const track = getTypeTrackElement();
-  if (!typeDragging.value) return;
-  typeDragging.value = false;
-  if (typePointerCaptured) {
-    track?.releasePointerCapture?.(event.pointerId);
-    typePointerCaptured = false;
-  }
-  updateTypeShadow();
-  if (typeDragMoved.value && typeof window !== "undefined") {
-    window.setTimeout(() => {
-      typeDragMoved.value = false;
-    }, 0);
-  }
-};
-
-// 切换类别
-const changeType = (type, event) => {
-  if (typeDragMoved.value) {
-    event?.preventDefault();
-    return;
-  }
+const changeType = (type) => {
   if (!type) return;
-  trackEvent({
-    event: "list_source_change",
-    source: type,
-    category: store.activeCategory,
-  });
   const nextSubtype = resolveSourceSubtype(
     getSourceSubtypeOptions(type),
     readSourceSubtype(type),
   );
-  router.push(
-    buildRankPath(getLocaleFromRoute(route), type, nextSubtype || ""),
-  );
+  router.push({
+    path: buildRankPath(getLocaleFromRoute(route), type, nextSubtype || ""),
+    query: queryValue(route.query.q) ? { q: queryValue(route.query.q) } : {},
+  });
 };
 
 const changeMarketRankDirection = (direction) => {
   saveMarketRankDirection(listType.value, listSubType.value, direction);
-};
-
-const changeSubType = (subtype) => {
-  if (!subtype || subtype === listSubType.value) return;
-  trackEvent({
-    event: "list_subtype_change",
-    source: listType.value,
-    subtype,
-    category: store.activeCategory,
-  });
-  persistSourceSubtype(listType.value, subtype);
-  router.push(
-    buildRankPath(getLocaleFromRoute(route), listType.value, subtype),
-  );
 };
 
 // 实时改变更新时间
@@ -1051,9 +848,11 @@ watch(
 watch(
   () => pageNumber.value,
   (val) => {
-    const query = {
-      page: val,
-    };
+    const query = { ...route.query };
+    delete query.type;
+    delete query.subtype;
+    if (val > 1) query.page = String(val);
+    else delete query.page;
     router.push({
       path: buildRankPath(
         getLocaleFromRoute(route),
@@ -1066,10 +865,18 @@ watch(
   },
 );
 
-// 类别变化
+// 榜单上下文变化。q 仅影响本地搜索，不应触发重新拉取 provider 数据。
 watch(
-  () => router.currentRoute.value,
-  (val) => {
+  [
+    () => router.currentRoute.value.name,
+    () => router.currentRoute.value.params?.sourceSlug,
+    () => router.currentRoute.value.params?.subtypeSlug,
+    () => router.currentRoute.value.query?.type,
+    () => router.currentRoute.value.query?.subtype,
+    () => router.currentRoute.value.query?.page,
+  ],
+  () => {
+    const val = router.currentRoute.value;
     if (["list", "list-locale", "list-legacy"].includes(val.name)) {
       listType.value = resolveRouteType(val);
       pageNumber.value = Number(val.query.page) || 1;
@@ -1089,7 +896,6 @@ watch(
     } else if (exists && !listData.value) {
       getHotListsData(listType.value);
     }
-    refreshTypeScrollState();
   },
   { deep: true },
 );
@@ -1100,7 +906,6 @@ watch(
     const nextSubtype = resolveSubType(router.currentRoute.value);
     if (nextSubtype === listSubType.value) return;
     listSubType.value = nextSubtype;
-    refreshTypeScrollState();
   },
   { deep: true },
 );
@@ -1109,10 +914,8 @@ onMounted(() => {
   updateIsDesktop();
   if (isClient) {
     window.addEventListener("resize", updateIsDesktop);
-    window.addEventListener("resize", updateTypeShadow);
     window.addEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
   }
-  refreshTypeScrollState();
   listSubType.value = resolveSubType(router.currentRoute.value);
   getHotListsData(listType.value);
 });
@@ -1126,7 +929,6 @@ onActivated(() => {
   if (!listData.value) {
     getHotListsData(listType.value);
   }
-  refreshTypeScrollState();
 });
 
 onDeactivated(() => {
@@ -1136,118 +938,13 @@ onDeactivated(() => {
 onBeforeUnmount(() => {
   if (isClient) {
     window.removeEventListener("resize", updateIsDesktop);
-    window.removeEventListener("resize", updateTypeShadow);
     window.removeEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
-  }
-  if (typeResizeObserver) {
-    typeResizeObserver.disconnect();
-    typeResizeObserver = null;
   }
 });
 </script>
 
 <style lang="scss" scoped>
 .list {
-  .type-shell {
-    position: relative;
-    overflow: hidden;
-    max-height: 78px;
-
-    &::before,
-    &::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      bottom: 4px;
-      z-index: 2;
-      width: 34px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.16s ease;
-    }
-
-    &::before {
-      left: 0;
-      background: linear-gradient(90deg, var(--n-color, #fff), transparent);
-    }
-
-    &::after {
-      right: 0;
-      background: linear-gradient(270deg, var(--n-color, #fff), transparent);
-    }
-
-    &.has-left-shadow::before,
-    &.has-right-shadow::after {
-      opacity: 0.94;
-    }
-
-    &.is-dragging {
-      .type {
-        cursor: grabbing;
-        user-select: none;
-      }
-    }
-  }
-
-  .type {
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 8px;
-    cursor: grab;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  .type-row {
-    display: flex;
-    width: max-content;
-    min-width: 100%;
-    gap: 8px;
-
-    &::after {
-      content: "";
-      flex: 0 0 42px;
-    }
-
-    & + .type-row {
-      margin-top: 6px;
-    }
-
-    .tag {
-      flex: 0 0 auto;
-      width: max-content;
-      cursor: pointer;
-      transition:
-        background 0.18s ease,
-        box-shadow 0.18s ease,
-        transform 0.18s ease;
-
-      &.is-active-source {
-        background: rgba(234, 68, 77, 0.12);
-        box-shadow: 0 0 0 2px rgba(234, 68, 77, 0.18);
-        color: #ea444d;
-        font-weight: 700;
-        transform: translateY(-1px);
-
-        :deep(.n-tag__content) {
-          color: #ea444d;
-        }
-      }
-
-      .logo {
-        height: 22px;
-        width: 22px;
-        margin-left: 6px;
-        object-fit: contain;
-      }
-    }
-  }
   .subtype-actions {
     display: flex;
     align-items: center;
@@ -1255,10 +952,6 @@ onBeforeUnmount(() => {
     gap: 7px;
     width: 100%;
     margin-top: 6px;
-  }
-  .subtype {
-    width: auto;
-    min-width: 0;
   }
   .card {
     margin-top: 10px;

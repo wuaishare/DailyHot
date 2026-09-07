@@ -26,6 +26,7 @@
     "audit:i18n": "node scripts/audit-i18n-labels.cjs",
     "audit:subtypes": "node scripts/audit-source-subtypes.cjs",
     "audit:feedback": "node scripts/audit-feedback-config.mjs",
+    "audit:fallback": "node scripts/audit-api-fallback.mjs",
     "deploy:prod": "node scripts/vercel-deploy-prod.cjs",
     "submit:indexnow": "node scripts/submit-indexnow.cjs"
   },
