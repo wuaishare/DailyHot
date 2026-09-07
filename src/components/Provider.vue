@@ -50,11 +50,20 @@ const { locale } = useI18n({ useScope: "global" });
 
 // 明暗切换
 let theme = ref(null);
+const applyDocumentTheme = (value) => {
+  if (typeof document === "undefined") return;
+  const normalized = value === "dark" ? "dark" : "light";
+  document.documentElement.dataset.dailyhotTheme = normalized;
+  document.documentElement.style.colorScheme = normalized;
+};
+
 const changeTheme = () => {
   if (store.siteTheme === "light") {
     theme.value = null;
+    applyDocumentTheme("light");
   } else if (store.siteTheme === "dark") {
     theme.value = darkTheme;
+    applyDocumentTheme("dark");
   }
 };
 

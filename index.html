@@ -4,6 +4,44 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/ico/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (() => {
+        const resolveInitialTheme = () => {
+          const prefersDark =
+            typeof window.matchMedia === "function" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          try {
+            const persisted = JSON.parse(localStorage.getItem("mainData") || "null");
+            if (persisted?.siteThemeAuto !== false) {
+              return prefersDark ? "dark" : "light";
+            }
+            return persisted?.siteTheme === "dark" ? "dark" : "light";
+          } catch {
+            return prefersDark ? "dark" : "light";
+          }
+        };
+
+        const theme = resolveInitialTheme();
+        const root = document.documentElement;
+        root.dataset.dailyhotTheme = theme;
+        root.style.colorScheme = theme;
+      })();
+    </script>
+    <style>
+      html,
+      body,
+      #app {
+        min-height: 100%;
+        background: #ffffff;
+      }
+
+      html[data-dailyhot-theme="dark"],
+      html[data-dailyhot-theme="dark"] body,
+      html[data-dailyhot-theme="dark"] #app {
+        background: #101014;
+      }
+    </style>
     <link rel="dns-prefetch" href="//hotapi2.wuaishare.cn" />
     <link rel="preconnect" href="https://hotapi2.wuaishare.cn" crossorigin />
     <title>吾爱热榜 - 全网热点排行榜聚合、分类热榜与实时趋势追踪_吾爱分享网</title>
