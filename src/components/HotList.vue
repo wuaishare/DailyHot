@@ -106,7 +106,18 @@
             @focusout="hidePreview"
             @keydown.esc="hidePreview"
           >
-            <div class="line">
+            <div
+              class="line"
+              :class="{
+                'has-inline-cover':
+                  showImages &&
+                  item.cover &&
+                  !coverErrorMap[item.cover] &&
+                  !item.marketQuote &&
+                  !item.fundMetric &&
+                  !isIndexOverviewSource,
+              }"
+            >
               <n-text
                 v-if="!isIndexOverviewSource"
                 class="num"
@@ -122,6 +133,29 @@
                 :depth="2"
                 >{{ index + 1 }}</n-text
               >
+              <a
+                v-if="
+                  showImages &&
+                  item.cover &&
+                  !coverErrorMap[item.cover] &&
+                  !item.marketQuote &&
+                  !item.fundMetric &&
+                  !isIndexOverviewSource
+                "
+                class="item-thumb"
+                :href="getItemLink(item)"
+                :target="linkTarget"
+                rel="noopener noreferrer nofollow"
+                tabindex="-1"
+                @click.stop
+              >
+                <img
+                  :src="getCoverDisplaySrc(item.cover)"
+                  alt=""
+                  loading="lazy"
+                  @error="coverErrorMap[item.cover] = true"
+                />
+              </a>
               <n-a
                 v-if="item.marketQuote"
                 :style="{ fontSize: store.listFontSize + 'px' }"
@@ -1577,9 +1611,36 @@ onBeforeUnmount(() => {
 
       .line {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
         gap: 8px;
+
+        &.has-inline-cover {
+          grid-template-columns: auto 54px minmax(0, 1fr);
+        }
+      }
+
+      .item-thumb {
+        display: block;
+        width: 54px;
+        height: 34px;
+        overflow: hidden;
+        border-radius: 6px;
+        background: var(--n-action-color);
+        box-shadow: inset 0 0 0 1px
+          color-mix(in srgb, var(--n-border-color) 70%, transparent);
+
+        img {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.18s ease;
+        }
+
+        &:hover img {
+          transform: scale(1.04);
+        }
       }
 
       &.is-market-quote,

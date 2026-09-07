@@ -16,6 +16,7 @@
         @mouseenter="handleHeaderEnter"
         @mouseleave="handleHeaderLeave"
         @click="handleHeaderClick"
+        @open-settings="settingsOpen = true"
       />
       <main>
         <ContextToolbar @open-hotboard-manager="openHotboardManager" />
@@ -36,6 +37,7 @@
         v-model:show="hotboardManagerOpen"
         :initial-category-id="hotboardManagerCategoryId"
       />
+      <SettingsModal v-model:show="settingsOpen" />
       <SpeedInsights v-if="showSpeedInsights" />
     </n-layout>
   </Provider>
@@ -49,6 +51,7 @@ import Footer from "@/components/Footer.vue";
 import FloatingActions from "@/components/FloatingActions.vue";
 import AnalyticsConsent from "@/components/AnalyticsConsent.vue";
 import ContextToolbar from "@/components/ContextToolbar.vue";
+import SettingsModal from "@/components/SettingsModal.vue";
 import { defineAsyncComponent } from "vue";
 import { SpeedInsights } from "@vercel/speed-insights/vue";
 import { useRouter } from "vue-router";
@@ -61,6 +64,7 @@ const HotboardManager = defineAsyncComponent(
 );
 const hotboardManagerOpen = ref(false);
 const hotboardManagerCategoryId = ref(null);
+const settingsOpen = ref(false);
 const openHotboardManager = (categoryId = null) => {
   hotboardManagerCategoryId.value = categoryId || null;
   hotboardManagerOpen.value = true;
@@ -126,6 +130,9 @@ const isSettingRoute = computed(() => {
     /\/setting$/.test(path)
   );
 });
+const isSettingsContext = computed(
+  () => isSettingRoute.value || settingsOpen.value,
+);
 const isAutoRefreshRoute = computed(() => {
   const currentRoute = router.currentRoute.value;
   const path = currentRoute?.path || "/";
@@ -330,6 +337,7 @@ const setupAutoRefresh = (preferredDelayMs = null) => {
       !store.autoRefreshEnabled ||
       store.autoRefreshPaused ||
       !isAutoRefreshRoute.value ||
+      isSettingsContext.value ||
       isDocumentHidden() ||
       intervalMs <= 0
     ) {
@@ -382,7 +390,7 @@ const reconcileAutoRefresh = () => {
     return;
   }
 
-  if (isSettingRoute.value) {
+  if (isSettingsContext.value) {
     freezeAutoRefreshForRoute(intervalChanged ? intervalMs : null);
     lastAutoRefreshIntervalMs.value = intervalMs;
     return;
@@ -451,6 +459,7 @@ watch(
     store.autoRefreshPaused,
     router.currentRoute.value?.name,
     router.currentRoute.value?.fullPath,
+    settingsOpen.value,
   ],
   reconcileAutoRefresh,
   { immediate: true },

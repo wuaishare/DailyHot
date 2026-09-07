@@ -27,7 +27,7 @@
       站点未完工
     </n-alert> -->
     <CategoryStream
-      v-if="isCategoryRoute && categoryView === 'stream'"
+      v-if="supportsViewMode && categoryView === 'stream'"
       :sources="scopedNews"
     />
     <draggable
@@ -118,13 +118,19 @@ const renderNews = computed(() => {
 const forcedCategoryName = computed(() =>
   getCategoryNameBySlug(route.params?.categorySlug, store.categories),
 );
+const isHomeRoute = computed(() =>
+  ["home", "home-locale"].includes(String(route.name || "")),
+);
 const isCategoryRoute = computed(() =>
   ["category", "category-locale"].includes(String(route.name || "")),
 );
+const supportsViewMode = computed(
+  () => isHomeRoute.value || isCategoryRoute.value,
+);
 const categoryView = computed(() =>
-  isCategoryRoute.value
-    ? store.resolveCategoryViewMode(forcedCategoryName.value || null)
-    : "card",
+  store.resolveCategoryViewMode(
+    isCategoryRoute.value ? forcedCategoryName.value || null : null,
+  ),
 );
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
 const queryValue = (value) =>
