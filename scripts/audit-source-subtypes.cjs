@@ -234,15 +234,29 @@ const checkMetadata = async (groups, sourceName) => {
 
 const buildDataCases = (groups) => {
   const dataSources = getDataSources(groups);
+  const requiredDefaultSources = new Set(DEFAULT_SOURCE_CASES);
   const cases = DEFAULT_SOURCE_CASES.map((source) => ({
     source,
     label: "default",
     param: "",
     apiValue: "",
+    requireItems: true,
   }));
 
   for (const source of dataSources) {
-    flattenSubtypeOptions(groups, source).forEach((item) => cases.push(item));
+    if (!requiredDefaultSources.has(source)) {
+      cases.push({
+        source,
+        label: "default",
+        param: "",
+        apiValue: "",
+        requireItems: true,
+      });
+      requiredDefaultSources.add(source);
+    }
+    flattenSubtypeOptions(groups, source).forEach((item) =>
+      cases.push({ ...item, requireItems: false })
+    );
   }
   return cases;
 };
@@ -256,7 +270,8 @@ const checkDataCase = async (item) => {
   const result = await fetchJson(url.toString(), 3);
   const json = result.json || {};
   const total = Array.isArray(json.data) ? json.data.length : Number(json.total || 0);
-  const ok = result.status === 200 && json.code === 200 && total > 0;
+  const responseOk = result.status === 200 && json.code === 200;
+  const ok = responseOk && (!item.requireItems || total > 0);
   return {
     ...item,
     ok,
