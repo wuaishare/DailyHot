@@ -45,9 +45,9 @@ const topicDestination = (topic) => {
 .topic-switcher {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
-  padding: 7px 9px;
+  padding: 8px 10px;
   border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
   border-radius: 10px;
   background: var(--n-action-color, rgba(127, 127, 127, 0.06));
@@ -59,7 +59,7 @@ const topicDestination = (topic) => {
   color: var(--n-text-color);
   background: var(--n-color, #fff);
   box-shadow: inset 0 0 0 1px var(--n-border-color, rgba(127, 127, 127, 0.18));
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
 }
 .topic-switcher__rail {
@@ -75,10 +75,10 @@ const topicDestination = (topic) => {
 }
 .topic-switcher__item {
   flex: 0 0 auto;
-  padding: 6px 11px;
-  border-radius: 7px;
+  padding: 7px 12px;
+  border-radius: 8px;
   color: var(--n-text-color-2);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   line-height: 1.2;
   text-decoration: none;
@@ -103,15 +103,15 @@ const topicDestination = (topic) => {
     gap: 7px;
   }
   .topic-switcher__label {
-    font-size: 10px;
+    font-size: 12px;
   }
   .topic-switcher__rail {
     margin-right: -2px;
     padding-right: 2px;
   }
   .topic-switcher__item {
-    padding: 5px 8px;
-    font-size: 11px;
+    padding: 6px 9px;
+    font-size: 13px;
   }
 }
 </style>
