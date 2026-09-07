@@ -321,8 +321,8 @@ export default defineConfig(async ({ mode }) => {
           description: "汇聚全网热点，热门尽览无余_吾爱分享网",
           display: "standalone",
           start_url: "/",
-          theme_color: "#fff",
-          background_color: "#efefef",
+          theme_color: "#101014",
+          background_color: "#101014",
           icons: [
             {
               src: versionPublicAsset("/ico/favicon.png"),

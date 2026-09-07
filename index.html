@@ -5,6 +5,11 @@
     <link rel="icon" href="/ico/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
+    <meta
+      name="theme-color"
+      data-dailyhot-theme-color
+      content="#ffffff"
+    />
     <script>
       (() => {
         const resolveInitialTheme = () => {
@@ -26,6 +31,9 @@
         const root = document.documentElement;
         root.dataset.dailyhotTheme = theme;
         root.style.colorScheme = theme;
+        document
+          .querySelector('meta[name="theme-color"][data-dailyhot-theme-color]')
+          ?.setAttribute("content", theme === "dark" ? "#101014" : "#ffffff");
       })();
     </script>
     <style>
@@ -40,6 +48,12 @@
       html[data-dailyhot-theme="dark"] body,
       html[data-dailyhot-theme="dark"] #app {
         background: #101014;
+      }
+
+      /* Vue 刚挂载时 Naive Layout 也必须继承 boot theme，避免中间白帧。 */
+      html[data-dailyhot-theme="dark"] .n-layout,
+      html[data-dailyhot-theme="dark"] .n-layout-scroll-container {
+        background-color: #101014 !important;
       }
     </style>
     <link rel="dns-prefetch" href="//hotapi2.wuaishare.cn" />
