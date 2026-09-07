@@ -656,26 +656,6 @@ const topicMenuOptions = computed(() =>
   })),
 );
 
-watch(
-  () => [
-    routeKind.value,
-    currentCategory.value?.id || "",
-    queryValue(route.query.view),
-  ],
-  ([kind, categoryId, legacyView]) => {
-    if (kind !== "category" || !categoryId || !legacyView) return;
-    const mode = ["list", "compact", "stream"].includes(legacyView)
-      ? "stream"
-      : "card";
-    store.setCategoryViewMode(categoryId, mode);
-    const query = { ...route.query };
-    delete query.view;
-    delete query.page;
-    router.replace({ path: route.path, query, hash: route.hash });
-  },
-  { immediate: true },
-);
-
 const queryValue = (value) =>
   String(Array.isArray(value) ? value[0] || "" : value || "");
 const categorySources = computed(() => {
@@ -760,6 +740,26 @@ const resetStreamFilters = () =>
     to: null,
     order: null,
   });
+
+watch(
+  () => [
+    routeKind.value,
+    currentCategory.value?.id || "",
+    queryValue(route.query.view),
+  ],
+  ([kind, categoryId, legacyView]) => {
+    if (kind !== "category" || !categoryId || !legacyView) return;
+    const mode = ["list", "compact", "stream"].includes(legacyView)
+      ? "stream"
+      : "card";
+    store.setCategoryViewMode(categoryId, mode);
+    const query = { ...route.query };
+    delete query.view;
+    delete query.page;
+    router.replace({ path: route.path, query, hash: route.hash });
+  },
+  { immediate: true },
+);
 
 const searchInput = ref(queryValue(route.query.q));
 const searchInputEl = ref(null);
@@ -957,7 +957,7 @@ watchEffect(() => {
 .context-breadcrumb__item,
 .context-breadcrumb__trigger,
 .context-search,
- .context-toolbar__manager {
+.context-toolbar__manager {
   display: flex;
   align-items: center;
 }
