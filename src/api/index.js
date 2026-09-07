@@ -1,4 +1,5 @@
 import axios from "@/api/request";
+import { raceWithDelayedFallback } from "@/api/fallbackRace.mjs";
 import { getAdminToken } from "@/utils/adminAuth";
 
 const DEFAULT_FALLBACK_DELAY_MS = 1200;
@@ -553,89 +554,57 @@ export const getHotListsWithFallback = async (
     return withTrendsShadow(type, params, { result, usedApi2: useApi2, usedFallback: false });
   }
 
-  const createAttempt = (useApi2) =>
-    run(useApi2, { silent: true }).then((result) => {
+  const createAttempt = async (useApi2) => {
+    try {
+      const result = await run(useApi2, { silent: true });
       if (result?.code === 200) {
-        return { result, usedApi2 };
+        return { result, usedApi2: useApi2 };
       }
       const error = new Error(result?.message || "request failed");
       error.result = result;
+      throw error;
+    } catch (error) {
       error.usedApi2 = useApi2;
       throw error;
+    }
+  };
+
+  const buildFailure = (primaryError, fallbackError) => {
+    const chosenError = primaryError || fallbackError || {};
+    const result = chosenError.result || {
+      code: 500,
+      title: "请求失败",
+      message: "请稍后再试",
+    };
+    return {
+      result,
+      usedApi2: Boolean(fallbackError),
+      usedFallback: true,
+      fallbackSuccess: false,
+    };
+  };
+
+  try {
+    const { source, value: success } = await raceWithDelayedFallback({
+      primary: () => createAttempt(false),
+      fallback: () => createAttempt(true),
+      delayMs: fallbackDelay,
     });
-
-  return new Promise((resolve) => {
-    let finished = false;
-    let fallbackStarted = false;
-    const errors = [];
-
-    const finish = (payload) => {
-      if (finished) return;
-      finished = true;
-      resolve(withTrendsShadow(type, params, payload));
-    };
-
-    const buildFailure = (primaryError, fallbackError) => {
-      const chosenError = primaryError || fallbackError || {};
-      const result = chosenError.result || {
-        code: 500,
-        title: "请求失败",
-        message: "请稍后再试",
-      };
-      return {
-        result,
-        usedApi2: Boolean(fallbackError),
-        usedFallback: true,
-        fallbackSuccess: false,
-      };
-    };
-
-    const recordError = (error) => {
-      errors.push(error);
-      const primaryError = errors.find((item) => item?.usedApi2 === false);
-      const fallbackError = errors.find((item) => item?.usedApi2 === true);
-      if (primaryError && fallbackError) {
-        finish(buildFailure(primaryError, fallbackError));
-      }
-    };
-
-    const startFallback = () => {
-      if (fallbackStarted) return;
-      fallbackStarted = true;
-      createAttempt(true)
-        .then((success) => {
-          finish({
-            result: success.result,
-            usedApi2: true,
-            usedFallback: true,
-            fallbackSuccess: true,
-          });
-        })
-        .catch((error) => {
-          recordError(error);
-        });
-    };
-
-    const fallbackTimer = setTimeout(() => {
-      if (!finished) {
-        startFallback();
-      }
-    }, fallbackDelay);
-
-    createAttempt(false)
-      .then((success) => {
-        clearTimeout(fallbackTimer);
-        finish({
-          result: success.result,
-          usedApi2: false,
-          usedFallback: false,
-          fallbackSuccess: false,
-        });
-      })
-      .catch((error) => {
-        clearTimeout(fallbackTimer);
-        recordError(error);
-        startFallback();
-      });
-  });
+    const usedFallback = source === "fallback";
+    return withTrendsShadow(type, params, {
+      result: success.result,
+      usedApi2: success.usedApi2,
+      usedFallback,
+      fallbackSuccess: usedFallback,
+    });
+  } catch (error) {
+    const errors = Array.isArray(error?.errors) ? error.errors : [error];
+    const primaryError = errors.find((item) => item?.usedApi2 === false);
+    const fallbackError = errors.find((item) => item?.usedApi2 === true);
+    return withTrendsShadow(
+      type,
+      params,
+      buildFailure(primaryError, fallbackError),
+    );
+  }
 };

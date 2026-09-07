@@ -18,18 +18,13 @@
         @click="handleHeaderClick"
       />
       <main>
-        <div v-if="currentTopic" class="topic-persistent-switcher">
-          <TopicSwitcher
-            :active-topic="currentTopic.id"
-            :locale="currentTopicLocale"
-          />
-        </div>
+        <ContextToolbar />
         <router-view v-slot="{ Component }">
           <keep-alive>
             <transition name="scale" mode="out-in">
               <component
                 :is="Component"
-                :key="router.currentRoute.value.fullPath"
+                :key="routeViewKey"
               />
             </transition>
           </keep-alive>
@@ -49,21 +44,33 @@ import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
 import FloatingActions from "@/components/FloatingActions.vue";
 import AnalyticsConsent from "@/components/AnalyticsConsent.vue";
-import TopicSwitcher from "@/components/TopicSwitcher.vue";
+import ContextToolbar from "@/components/ContextToolbar.vue";
 import { SpeedInsights } from "@vercel/speed-insights/vue";
 import { useRouter } from "vue-router";
 import { DATA_REFRESH_EVENT, requestDataRefresh } from "@/utils/dataRefresh";
-import { getTopicByRouteName } from "@/config/topics";
-import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
 
 const store = mainStore();
 const router = useRouter();
-const currentTopic = computed(() =>
-  getTopicByRouteName(router.currentRoute.value?.name),
-);
-const currentTopicLocale = computed(() =>
-  normalizeLocale(getLocaleFromRoute(router.currentRoute.value)),
-);
+const softQueryRouteNames = new Set([
+  "home",
+  "home-locale",
+  "category",
+  "category-locale",
+  "list",
+  "list-locale",
+  "list-legacy",
+]);
+const routeViewKey = computed(() => {
+  const currentRoute = router.currentRoute.value;
+  if (!softQueryRouteNames.has(String(currentRoute?.name || ""))) {
+    return currentRoute?.fullPath || currentRoute?.path || "/";
+  }
+  const query = { ...(currentRoute?.query || {}) };
+  delete query.q;
+  return `${currentRoute?.path || "/"}:${JSON.stringify(
+    Object.entries(query).sort(([left], [right]) => left.localeCompare(right)),
+  )}`;
+});
 const showSpeedInsights =
   import.meta.env.PROD &&
   (typeof window === "undefined" ||
@@ -546,11 +553,6 @@ onBeforeUnmount(() => {
     min-height: calc(100vh - 238px);
     transition: padding 0.25s ease;
   }
-}
-
-.topic-persistent-switcher {
-  width: min(100%, 1240px);
-  margin: 0 auto 10px;
 }
 
 .app-layout.compact {
