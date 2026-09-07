@@ -925,10 +925,21 @@ watch(
 watch(
   () => [availableNews.value, store.activeCategory],
   () => {
-    const exists = availableNews.value.find((i) => i.name === listType.value);
-    if (!exists && availableNews.value[0]) {
+    const visibleSource = availableNews.value.find(
+      (item) => item.name === listType.value,
+    );
+    const knownSource = store.newsArr.find(
+      (item) => item.name === listType.value,
+    );
+
+    // Hidden sources remain valid direct routes. Hiding the source from the
+    // navigation/aggregates must not redirect the page behind an open settings
+    // modal. Only fall back when the source no longer exists at all.
+    if (!knownSource && availableNews.value[0]) {
       changeType(availableNews.value[0].name);
-    } else if (exists && !listData.value) {
+      return;
+    }
+    if ((visibleSource || knownSource) && !listData.value) {
       getHotListsData(listType.value);
     }
   },

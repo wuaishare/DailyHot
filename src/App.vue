@@ -37,7 +37,10 @@
         v-model:show="hotboardManagerOpen"
         :initial-category-id="hotboardManagerCategoryId"
       />
-      <SettingsModal v-model:show="settingsOpen" />
+      <SettingsModal
+        v-if="settingsWarm || settingsOpen"
+        v-model:show="settingsOpen"
+      />
       <SpeedInsights v-if="showSpeedInsights" />
     </n-layout>
   </Provider>
@@ -51,7 +54,6 @@ import Footer from "@/components/Footer.vue";
 import FloatingActions from "@/components/FloatingActions.vue";
 import AnalyticsConsent from "@/components/AnalyticsConsent.vue";
 import ContextToolbar from "@/components/ContextToolbar.vue";
-import SettingsModal from "@/components/SettingsModal.vue";
 import { defineAsyncComponent } from "vue";
 import { SpeedInsights } from "@vercel/speed-insights/vue";
 import { useRouter } from "vue-router";
@@ -62,9 +64,27 @@ const router = useRouter();
 const HotboardManager = defineAsyncComponent(
   () => import("@/components/HotboardManager.vue"),
 );
+const SettingsModal = defineAsyncComponent(
+  () => import("@/components/SettingsModal.vue"),
+);
 const hotboardManagerOpen = ref(false);
 const hotboardManagerCategoryId = ref(null);
 const settingsOpen = ref(false);
+const settingsWarm = ref(false);
+let settingsWarmHandle = null;
+const warmSettingsModal = () => {
+  if (settingsWarm.value) return;
+  settingsWarm.value = true;
+};
+const scheduleSettingsWarmup = () => {
+  if (typeof window === "undefined") return;
+  settingsWarmHandle = window.setTimeout(warmSettingsModal, 320);
+};
+const cancelSettingsWarmup = () => {
+  if (settingsWarmHandle == null || typeof window === "undefined") return;
+  window.clearTimeout(settingsWarmHandle);
+  settingsWarmHandle = null;
+};
 const openHotboardManager = (categoryId = null) => {
   hotboardManagerCategoryId.value = categoryId || null;
   hotboardManagerOpen.value = true;
@@ -159,7 +179,16 @@ const handleHeaderLeave = () => {
   clearTimeout(collapseTimer.value);
 };
 
-const handleHeaderClick = () => {
+const handleHeaderClick = (event) => {
+  const path = event?.composedPath?.() || [];
+  const interactiveTrigger = path.some(
+    (element) =>
+      element?.classList &&
+      (element.classList.contains("control-hit-area") ||
+        element.classList.contains("category-hit-area") ||
+        element.classList.contains("mobile-trigger")),
+  );
+  if (interactiveTrigger) return;
   if (!headerExpanded.value) {
     headerExpanded.value = true;
   }
@@ -471,6 +500,7 @@ onMounted(() => {
   });
   reconcileAutoRefresh();
   store.checkNewsUpdate();
+  scheduleSettingsWarmup();
   if (typeof document !== "undefined") {
     document.addEventListener("click", handleOutsideClick);
     document.addEventListener(
@@ -505,6 +535,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearTimeout(collapseTimer.value);
+  cancelSettingsWarmup();
   if (removeAutoRefreshRouteGuard) {
     removeAutoRefreshRouteGuard();
     removeAutoRefreshRouteGuard = null;

@@ -150,10 +150,10 @@
             trigger="hover"
             placement="bottom"
             :show-arrow="false"
-            style="max-width: 320px"
+            style="max-width: 360px"
           >
             <template #trigger>
-              <div class="control-hit-area">
+              <div class="control-hit-area" @click.stop>
                 <n-button
                   class="header-control-btn"
                   secondary
@@ -174,16 +174,28 @@
               </div>
             </template>
             <div class="refresh-panel" @click.stop>
-              <div class="panel-header">
-                <n-text>{{ t("header.refreshControl") }}</n-text>
-                <n-text depth="3" v-if="countdownText"
-                  >{{ t("header.nextRefresh") }}: {{ countdownText }}</n-text
+              <div class="refresh-panel__hero">
+                <span class="refresh-panel__icon" aria-hidden="true">
+                  <n-icon :component="Refresh" />
+                </span>
+                <div class="refresh-panel__heading">
+                  <strong>{{ t("header.refreshControl") }}</strong>
+                  <span>{{ t("header.nextRefresh") }}</span>
+                </div>
+                <span
+                  class="refresh-panel__countdown"
+                  :class="{ paused: store.autoRefreshPaused }"
                 >
+                  {{ countdownText || "—" }}
+                </span>
               </div>
+
               <n-button
                 block
+                class="refresh-panel__now"
                 type="primary"
-                dashed
+                secondary
+                strong
                 :disabled="!canManualRefresh"
                 @click="manualRefresh"
               >
@@ -192,73 +204,82 @@
                 </template>
                 {{ t("header.refreshNow") }}
               </n-button>
-              <div class="auto-row">
-                <n-space align="center" justify="space-between">
-                  <n-space align="center">
+
+              <div class="refresh-panel__section">
+                <div class="refresh-panel__auto-head">
+                  <div>
+                    <strong>{{ t("header.autoRefresh") }}</strong>
+                    <n-text depth="3" class="refresh-panel__auto-tip">
+                      {{ t("header.refreshTip") }}
+                    </n-text>
+                  </div>
+                  <div class="refresh-panel__auto-actions">
+                    <n-button
+                      size="tiny"
+                      quaternary
+                      :disabled="!store.autoRefreshEnabled"
+                      @click="togglePause"
+                    >
+                      {{
+                        store.autoRefreshPaused
+                          ? t("header.resume")
+                          : t("header.pause")
+                      }}
+                    </n-button>
                     <n-switch
                       size="small"
                       v-model:value="autoEnabled"
                       @update:value="toggleAutoRefresh"
                     />
-                    <n-text>{{ t("header.autoRefresh") }}</n-text>
-                  </n-space>
-                  <n-button
-                    text
-                    size="small"
-                    @click="togglePause"
-                    :disabled="!store.autoRefreshEnabled"
-                  >
-                    {{
-                      store.autoRefreshPaused
-                        ? t("header.resume")
-                        : t("header.pause")
-                    }}
-                  </n-button>
-                </n-space>
+                  </div>
+                </div>
+
                 <div class="time-inputs">
-                  <div class="time-item">
+                  <label class="time-item">
+                    <span class="unit">{{ t("header.hour") }}</span>
                     <n-input-number
                       size="small"
                       v-model:value="timeForm.hour"
                       :min="0"
                       :max="23"
-                      button-placement="both"
+                      :show-button="false"
                       @update:value="applyAutoInterval"
                     />
-                    <span class="unit">{{ t("header.hour") }}</span>
-                  </div>
-                  <div class="time-item">
+                  </label>
+                  <label class="time-item">
+                    <span class="unit">{{ t("header.minute") }}</span>
                     <n-input-number
                       size="small"
                       v-model:value="timeForm.minute"
                       :min="0"
                       :max="59"
-                      button-placement="both"
+                      :show-button="false"
                       @update:value="applyAutoInterval"
                     />
-                    <span class="unit">{{ t("header.minute") }}</span>
-                  </div>
-                  <div class="time-item">
+                  </label>
+                  <label class="time-item">
+                    <span class="unit">{{ t("header.second") }}</span>
                     <n-input-number
                       size="small"
                       v-model:value="timeForm.second"
                       :min="0"
                       :max="59"
-                      button-placement="both"
+                      :show-button="false"
                       @update:value="applyAutoInterval"
                     />
-                    <span class="unit">{{ t("header.second") }}</span>
-                  </div>
+                  </label>
                 </div>
-                <n-text depth="3" class="tip">
-                  {{ t("header.refreshTip") }}
-                </n-text>
               </div>
             </div>
           </n-popover>
-          <n-popover trigger="click" placement="bottom-end" :show-arrow="false">
+          <n-popover
+            trigger="hover"
+            placement="bottom-end"
+            :delay="80"
+            :show-arrow="false"
+          >
             <template #trigger>
-              <div class="control-hit-area">
+              <div class="control-hit-area" @click.stop>
                 <n-button
                   class="header-control-btn"
                   secondary
@@ -268,29 +289,60 @@
                   :title="themeToggleLabel"
                 >
                   <template #icon>
-                    <n-icon
-                      :component="store.siteTheme === 'dark' ? Moon : SunOne"
-                    />
+                    <n-icon v-if="appearanceMode !== 'auto'">
+                      <component :is="appearanceMode === 'dark' ? Moon : SunOne" />
+                    </n-icon>
+                    <svg
+                      v-else
+                      class="auto-theme-icon"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <rect x="3" y="4" width="14" height="10" rx="2" />
+                      <path d="M7 17h6M10 14v3" />
+                      <path d="M6.4 8.9a3.6 3.6 0 0 1 6.9-1.4 3.8 3.8 0 0 0-4.5 4.6 3.6 3.6 0 0 1-2.4-3.2Z" />
+                    </svg>
                   </template>
                 </n-button>
               </div>
             </template>
-            <div class="theme-mode-menu" :aria-label="t('settings.theme')">
+            <div
+              class="theme-mode-menu"
+              :aria-label="t('settings.theme')"
+              @click.stop
+            >
               <button
                 v-for="mode in appearanceModeOptions"
                 :key="mode.value"
                 type="button"
                 :class="{ active: appearanceMode === mode.value }"
-                @click="selectAppearanceMode(mode.value)"
+                @click.stop="selectAppearanceMode(mode.value)"
               >
-                <span>{{ mode.label }}</span>
+                <span class="theme-mode-menu__option">
+                  <svg
+                    v-if="mode.value === 'auto'"
+                    class="theme-mode-menu__icon"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="4" width="14" height="10" rx="2" />
+                    <path d="M7 17h6M10 14v3" />
+                    <path d="M6.4 8.9a3.6 3.6 0 0 1 6.9-1.4 3.8 3.8 0 0 0-4.5 4.6 3.6 3.6 0 0 1-2.4-3.2Z" />
+                  </svg>
+                  <n-icon
+                    v-else
+                    class="theme-mode-menu__icon"
+                    :component="mode.value === 'dark' ? Moon : SunOne"
+                  />
+                  <span>{{ mode.label }}</span>
+                </span>
                 <i v-if="appearanceMode === mode.value">✓</i>
               </button>
             </div>
           </n-popover>
           <n-popover>
             <template #trigger>
-              <div class="control-hit-area" @click="goSetting">
+              <div class="control-hit-area" @click.stop="goSetting">
                 <n-button
                   class="header-control-btn"
                   secondary
@@ -446,6 +498,26 @@ const appearanceModeOptions = computed(() => [
   { value: "light", label: t("settings.themeLight") },
   { value: "dark", label: t("settings.themeDark") },
 ]);
+const renderAutoThemeIcon = () =>
+  h(
+    "svg",
+    {
+      viewBox: "0 0 20 20",
+      class: "auto-theme-render-icon",
+      "aria-hidden": "true",
+    },
+    [
+      h("rect", { x: 3, y: 4, width: 14, height: 10, rx: 2 }),
+      h("path", { d: "M7 17h6M10 14v3" }),
+      h("path", {
+        d: "M6.4 8.9a3.6 3.6 0 0 1 6.9-1.4 3.8 3.8 0 0 0-4.5 4.6 3.6 3.6 0 0 1-2.4-3.2Z",
+      }),
+    ],
+  );
+const renderAppearanceIcon = (mode) =>
+  mode === "auto"
+    ? renderAutoThemeIcon()
+    : h(mode === "dark" ? Moon : SunOne);
 const themeToggleLabel = computed(
   () =>
     appearanceModeOptions.value.find(
@@ -799,11 +871,15 @@ const menuOptions = computed(() => [
     key: "appearance",
     icon: () =>
       h(NIcon, null, {
-        default: () => (store.siteTheme === "dark" ? h(Moon) : h(SunOne)),
+        default: () => renderAppearanceIcon(appearanceMode.value),
       }),
     children: appearanceModeOptions.value.map((item) => ({
       label: item.label,
       key: `appearance:${item.value}`,
+      icon: () =>
+        h(NIcon, null, {
+          default: () => renderAppearanceIcon(item.value),
+        }),
     })),
   },
   {
@@ -1163,41 +1239,129 @@ onBeforeUnmount(() => {
       font-size: 12px;
     }
     .refresh-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      min-width: 260px;
-      .panel-header {
+      display: grid;
+      gap: 12px;
+      min-width: 324px;
+      padding: 2px;
+
+      .refresh-panel__hero {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .refresh-panel__icon {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        background: color-mix(
+          in srgb,
+          var(--n-primary-color) 12%,
+          var(--n-action-color)
+        );
+        color: var(--n-primary-color);
+        font-size: 18px;
+      }
+
+      .refresh-panel__heading {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+
+        strong {
+          color: var(--n-text-color);
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        span {
+          color: var(--n-text-color-3);
+          font-size: 11px;
+        }
+      }
+
+      .refresh-panel__countdown {
+        min-width: 58px;
+        padding: 6px 9px;
+        border-radius: 8px;
+        background: var(--n-action-color);
+        color: var(--n-text-color);
+        font-variant-numeric: tabular-nums;
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+
+        &.paused {
+          color: var(--n-text-color-3);
+        }
+      }
+
+      .refresh-panel__now {
+        min-height: 36px;
+        border-radius: 9px;
+      }
+
+      .refresh-panel__section {
+        display: grid;
+        gap: 10px;
+        padding-top: 12px;
+        border-top: 1px solid
+          color-mix(in srgb, var(--n-text-color-3) 22%, transparent);
+      }
+
+      .refresh-panel__auto-head,
+      .refresh-panel__auto-actions {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
-      }
-      .auto-row {
-        padding: 4px 0;
-        border-top: 1px solid var(--n-border-color);
-      }
-      .time-inputs {
-        display: flex;
-        flex-direction: row;
         gap: 10px;
+      }
+
+      .refresh-panel__auto-head > div:first-child {
+        display: grid;
+        gap: 2px;
+      }
+
+      .refresh-panel__auto-head strong {
+        color: var(--n-text-color);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .refresh-panel__auto-tip {
+        max-width: 210px;
+        font-size: 10px;
+        line-height: 1.45;
+      }
+
+      .time-inputs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
         width: 100%;
-        flex-wrap: nowrap;
+
         .time-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
+          display: grid;
+          gap: 4px;
+
           .unit {
-            font-size: 12px;
+            color: var(--n-text-color-3);
+            font-size: 10px;
             line-height: 1;
           }
+
           :deep(.n-input-number) {
-            width: 120px;
+            width: 100%;
+          }
+
+          :deep(.n-input__input-el) {
+            text-align: center;
+            font-variant-numeric: tabular-nums;
           }
         }
-      }
-      .tip {
-        font-size: 12px;
       }
     }
   }
@@ -1436,10 +1600,23 @@ onBeforeUnmount(() => {
   }
 }
 
+.auto-theme-icon,
+.auto-theme-render-icon,
+.theme-mode-menu__icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.45;
+}
+
 .theme-mode-menu {
   display: grid;
-  gap: 4px;
-  min-width: 150px;
+  gap: 3px;
+  min-width: 176px;
+  padding: 4px;
 }
 
 .theme-mode-menu button {
@@ -1448,8 +1625,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 38px;
+  padding: 0 9px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -1463,16 +1640,37 @@ onBeforeUnmount(() => {
 .theme-mode-menu button:hover,
 .theme-mode-menu button.active {
   color: var(--n-text-color);
-  background: var(--n-action-color);
+  background: color-mix(
+    in srgb,
+    var(--n-action-color) 88%,
+    var(--n-primary-color) 4%
+  );
 }
 
 .theme-mode-menu button.active {
-  box-shadow: inset 2px 0 0 var(--n-primary-color);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--n-primary-color) 28%, transparent);
+}
+
+.theme-mode-menu__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.theme-mode-menu__icon {
+  flex: 0 0 auto;
+  color: var(--n-text-color-2);
+}
+
+.theme-mode-menu button.active .theme-mode-menu__icon {
+  color: var(--n-primary-color);
 }
 
 .theme-mode-menu i {
   color: var(--n-primary-color);
   font-style: normal;
+  font-weight: 700;
 }
 
 .locale-option {

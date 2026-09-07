@@ -1,18 +1,25 @@
 <template>
   <n-modal
     :show="show"
+    display-directive="show"
     :mask-closable="true"
     @update:show="updateShow"
   >
     <section
       class="settings-modal"
+      :class="`is-${store.siteTheme}`"
       role="dialog"
       aria-modal="true"
       :aria-label="t('settings.title')"
     >
       <header class="settings-modal__header">
         <div class="settings-modal__title">
-          <span class="settings-modal__icon">⚙</span>
+          <span class="settings-modal__icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20">
+              <path d="M8.3 2.8h3.4l.6 2a6.2 6.2 0 0 1 1.4.8l2-.5 1.7 2.9-1.5 1.5v1.1l1.5 1.5-1.7 2.9-2-.5a6.2 6.2 0 0 1-1.4.8l-.6 2H8.3l-.6-2a6.2 6.2 0 0 1-1.4-.8l-2 .5-1.7-2.9 1.5-1.5V9.5L2.6 8l1.7-2.9 2 .5a6.2 6.2 0 0 1 1.4-.8l.6-2Z" />
+              <circle cx="10" cy="10" r="2.4" />
+            </svg>
+          </span>
           <div>
             <strong>{{ t("settings.title") }}</strong>
             <p>{{ t("settings.modalSubtitle") }}</p>
@@ -24,32 +31,46 @@
           :aria-label="t('settings.close')"
           @click="updateShow(false)"
         >
-          ×
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="m4 4 8 8m0-8-8 8" />
+          </svg>
         </button>
       </header>
 
       <div class="settings-modal__body">
-        <aside class="settings-modal__nav" :aria-label="t('settings.title')">
+        <div
+          class="settings-modal__tabs"
+          role="tablist"
+          :aria-label="t('settings.title')"
+          @keydown.left.prevent="selectRelativeTab(-1)"
+          @keydown.right.prevent="selectRelativeTab(1)"
+        >
           <button
+            v-for="tab in tabs"
+            :key="tab.value"
             type="button"
-            :class="{ active: activeSection === 'base' }"
-            @click="scrollTo('base')"
+            role="tab"
+            :tabindex="activeTab === tab.value ? 0 : -1"
+            :aria-selected="activeTab === tab.value"
+            :class="{ active: activeTab === tab.value }"
+            @click="activeTab = tab.value"
           >
-            <span>◫</span>
-            {{ t("settings.displayAndView") }}
+            <span class="settings-modal__tab-icon" aria-hidden="true" v-html="tab.icon" />
+            <span>{{ tab.label }}</span>
           </button>
-          <button
-            type="button"
-            :class="{ active: activeSection === 'misc' }"
-            @click="scrollTo('misc')"
-          >
-            <span>☷</span>
-            {{ t("settings.dataAndMisc") }}
-          </button>
-        </aside>
+        </div>
 
-        <div ref="scrollEl" class="settings-modal__content" @scroll="syncSection">
-          <GeneralSettings embedded />
+        <div
+          class="settings-modal__content"
+          role="tabpanel"
+          :aria-label="activeTabLabel"
+        >
+          <GeneralSettings
+            v-if="activeTab !== 'ranking'"
+            embedded
+            :section="activeTab"
+          />
+          <RankingOrderSettings v-else />
         </div>
       </div>
     </section>
@@ -58,61 +79,134 @@
 
 <script setup>
 import GeneralSettings from "@/components/GeneralSettings.vue";
+import { defineAsyncComponent } from "vue";
+import { mainStore } from "@/store";
 import { useI18n } from "vue-i18n";
+
+const loadRankingOrderSettings = () =>
+  import("@/components/RankingOrderSettings.vue");
+const RankingOrderSettings = defineAsyncComponent(loadRankingOrderSettings);
 
 const props = defineProps({
   show: { type: Boolean, default: false },
 });
 const emit = defineEmits(["update:show"]);
+const store = mainStore();
 const { t } = useI18n({ useScope: "global" });
-const scrollEl = ref(null);
-const activeSection = ref("base");
+const activeTab = ref("display");
+let rankingPrefetchHandle = null;
+
+const prefetchRankingSettings = () => {
+  void loadRankingOrderSettings();
+};
+const scheduleRankingPrefetch = () => {
+  if (typeof window === "undefined") return;
+  if ("requestIdleCallback" in window) {
+    rankingPrefetchHandle = window.requestIdleCallback(
+      prefetchRankingSettings,
+      { timeout: 1800 },
+    );
+    return;
+  }
+  rankingPrefetchHandle = window.setTimeout(prefetchRankingSettings, 1000);
+};
+const cancelRankingPrefetch = () => {
+  if (rankingPrefetchHandle == null || typeof window === "undefined") return;
+  if (
+    "cancelIdleCallback" in window &&
+    typeof window.cancelIdleCallback === "function"
+  ) {
+    window.cancelIdleCallback(rankingPrefetchHandle);
+  } else {
+    window.clearTimeout(rankingPrefetchHandle);
+  }
+  rankingPrefetchHandle = null;
+};
+
+const tabs = computed(() => [
+  {
+    value: "display",
+    label: t("settings.displayAndView"),
+    icon: '<svg viewBox="0 0 18 18"><rect x="2.5" y="3" width="13" height="9" rx="2"/><path d="M6 15h6M9 12v3"/></svg>',
+  },
+  {
+    value: "categories",
+    label: t("settings.categoryManagement"),
+    icon: '<svg viewBox="0 0 18 18"><path d="M3 4.5h5l1 1.5h6v8H3z"/><path d="M3 7h12"/></svg>',
+  },
+  {
+    value: "ranking",
+    label: t("settings.rankingOrder"),
+    icon: '<svg viewBox="0 0 18 18"><path d="M6 4h9M6 9h9M6 14h9"/><circle cx="3" cy="4" r="1"/><circle cx="3" cy="9" r="1"/><circle cx="3" cy="14" r="1"/></svg>',
+  },
+  {
+    value: "misc",
+    label: t("settings.dataAndMisc"),
+    icon: '<svg viewBox="0 0 18 18"><path d="M4 4h10M4 9h10M4 14h10"/><circle cx="7" cy="4" r="1.6"/><circle cx="11" cy="9" r="1.6"/><circle cx="8" cy="14" r="1.6"/></svg>',
+  },
+]);
+
+const activeTabLabel = computed(
+  () => tabs.value.find((tab) => tab.value === activeTab.value)?.label || "",
+);
+const selectRelativeTab = (direction) => {
+  const values = tabs.value.map((tab) => tab.value);
+  const currentIndex = Math.max(values.indexOf(activeTab.value), 0);
+  const nextIndex = (currentIndex + direction + values.length) % values.length;
+  activeTab.value = values[nextIndex];
+  nextTick(() => {
+    document
+      .querySelector(".settings-modal__tabs button.active")
+      ?.focus({ preventScroll: true });
+  });
+};
 
 const updateShow = (value) => {
   emit("update:show", Boolean(value));
 };
 
-const scrollTo = (section) => {
-  activeSection.value = section;
-  const target = scrollEl.value?.querySelector(
-    section === "misc" ? "#settings-misc" : "#settings-base",
-  );
-  target?.scrollIntoView({ behavior: "smooth", block: "start" });
-};
-
-const syncSection = () => {
-  const root = scrollEl.value;
-  if (!root) return;
-  const misc = root.querySelector("#settings-misc");
-  if (!misc) return;
-  const rootTop = root.getBoundingClientRect().top;
-  activeSection.value =
-    misc.getBoundingClientRect().top - rootTop < 90 ? "misc" : "base";
-};
-
 watch(
   () => props.show,
   (value) => {
-    if (value) activeSection.value = "base";
+    if (value) activeTab.value = "display";
   },
 );
+
+onMounted(scheduleRankingPrefetch);
+onBeforeUnmount(cancelRankingPrefetch);
 </script>
 
 <style scoped>
 .settings-modal {
-  width: min(980px, calc(100vw - 28px));
-  max-height: min(840px, calc(100vh - 28px));
+  --settings-surface: oklch(0.985 0.004 285);
+  --settings-panel: oklch(0.955 0.005 285);
+  --settings-hover: oklch(0.935 0.006 285);
+  --settings-text: oklch(0.27 0.008 285);
+  --settings-muted: oklch(0.52 0.008 285);
+  --settings-stroke: oklch(0.36 0.008 285 / 15%);
+  --settings-accent: oklch(0.62 0.19 28);
+  width: min(1360px, calc(100vw - 32px));
+  height: min(820px, calc(100vh - 32px));
   overflow: hidden;
-  border: 1px solid
-    color-mix(in srgb, var(--n-border-color) 82%, transparent);
-  border-radius: 20px;
-  background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, var(--n-color) 96%, var(--n-primary-color) 4%),
-      var(--n-color)
-    );
-  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.38);
+  border: 1px solid var(--settings-stroke);
+  border-radius: 18px;
+  box-shadow: 0 28px 90px oklch(0.08 0.006 285 / 46%);
+}
+
+.settings-modal.is-dark {
+  --settings-surface: oklch(0.205 0.008 285);
+  --settings-panel: oklch(0.235 0.009 285);
+  --settings-hover: oklch(0.265 0.01 285);
+  --settings-text: oklch(0.9 0.006 285);
+  --settings-muted: oklch(0.67 0.008 285);
+  --settings-stroke: oklch(0.86 0.006 285 / 13%);
+  background: var(--settings-surface);
+  color: var(--settings-text);
+}
+
+.settings-modal.is-light {
+  background: var(--settings-surface);
+  color: var(--settings-text);
 }
 
 .settings-modal__header {
@@ -120,10 +214,9 @@ watch(
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  min-height: 78px;
-  padding: 18px 20px;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--n-border-color) 76%, transparent);
+  min-height: 76px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--settings-stroke);
 }
 
 .settings-modal__title {
@@ -136,25 +229,35 @@ watch(
 .settings-modal__icon {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
-  border-radius: 13px;
-  color: var(--n-text-color);
-  background: color-mix(in srgb, var(--n-primary-color) 12%, var(--n-action-color));
-  font-size: 22px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--settings-accent) 13%, var(--settings-panel));
+  color: var(--settings-accent);
+}
+
+.settings-modal__icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.35;
 }
 
 .settings-modal__title strong {
   display: block;
-  color: var(--n-text-color);
-  font-size: 20px;
+  color: var(--settings-text);
+  font-size: 19px;
+  font-weight: 720;
 }
 
 .settings-modal__title p {
   margin: 3px 0 0;
-  color: var(--n-text-color-3);
-  font-size: 12px;
+  color: var(--settings-muted);
+  font-size: 11px;
 }
 
 .settings-modal__close {
@@ -163,61 +266,87 @@ watch(
   width: 34px;
   height: 34px;
   border: 0;
-  border-radius: 10px;
-  background: var(--n-action-color);
-  color: var(--n-text-color-2);
-  font-size: 24px;
-  line-height: 1;
+  border-radius: 9px;
+  background: var(--settings-panel);
+  color: var(--settings-muted);
   cursor: pointer;
 }
 
 .settings-modal__close:hover {
-  color: var(--n-text-color);
-  background: color-mix(in srgb, var(--n-action-color) 72%, var(--n-primary-color) 10%);
+  color: var(--settings-text);
+  background: var(--settings-hover);
+}
+
+.settings-modal__close svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.7;
 }
 
 .settings-modal__body {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: 190px minmax(0, 1fr);
   min-height: 0;
-  height: min(700px, calc(100vh - 110px));
+  height: calc(100% - 76px);
 }
 
-.settings-modal__nav {
+.settings-modal__tabs {
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: 5px;
   padding: 14px 12px;
-  border-right: 1px solid
-    color-mix(in srgb, var(--n-border-color) 76%, transparent);
-  background: color-mix(in srgb, var(--n-action-color) 48%, transparent);
+  border-right: 1px solid var(--settings-stroke);
+  background: color-mix(in srgb, var(--settings-panel) 72%, transparent);
 }
 
-.settings-modal__nav button {
+.settings-modal__tabs button {
   appearance: none;
   display: flex;
   align-items: center;
   gap: 9px;
   min-height: 42px;
-  padding: 0 12px;
+  padding: 0 11px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 9px;
   background: transparent;
-  color: var(--n-text-color-2);
+  color: var(--settings-muted);
   text-align: left;
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.settings-modal__nav button:hover,
-.settings-modal__nav button.active {
-  color: var(--n-text-color);
-  background: color-mix(in srgb, var(--n-primary-color) 10%, var(--n-action-color));
+.settings-modal__tabs button:hover,
+.settings-modal__tabs button.active {
+  color: var(--settings-text);
+  background: var(--settings-hover);
 }
 
-.settings-modal__nav button.active {
-  box-shadow: inset 2px 0 0 var(--n-primary-color);
+.settings-modal__tabs button.active {
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--settings-accent) 26%, transparent);
+}
+
+.settings-modal__tab-icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.settings-modal__tab-icon :deep(svg) {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.35;
 }
 
 .settings-modal__content {
@@ -226,6 +355,7 @@ watch(
   overflow: auto;
   overscroll-behavior: contain;
   padding: 14px;
+  background: transparent;
 }
 
 .settings-modal__content :deep(.setting.embedded) {
@@ -234,28 +364,41 @@ watch(
 }
 
 .settings-modal__content :deep(.setting .n-h) {
-  scroll-margin-top: 8px;
-  margin-top: 2px;
-  font-size: 16px;
+  margin: 0 0 2px;
+  padding-left: 2px;
+  font-size: 14px;
 }
 
 .settings-modal__content :deep(.setting .set-item) {
-  border-radius: 12px;
+  border-radius: 11px;
+  border-color: var(--settings-stroke);
+  background: color-mix(in srgb, var(--settings-panel) 92%, transparent);
+}
+
+.settings-modal__content :deep(.ranking-order-card) {
+  background: transparent;
+  border: 0;
 }
 
 @media (max-width: 760px) {
-  .settings-modal__body {
-    grid-template-columns: 1fr;
+  .settings-modal {
+    width: calc(100vw - 16px);
+    height: calc(100vh - 16px);
   }
 
-  .settings-modal__nav {
+  .settings-modal__body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .settings-modal__tabs {
     display: flex;
     overflow-x: auto;
     border-right: 0;
-    border-bottom: 1px solid var(--n-border-color);
+    border-bottom: 1px solid var(--settings-stroke);
   }
 
-  .settings-modal__nav button {
+  .settings-modal__tabs button {
     flex: 0 0 auto;
   }
 }
