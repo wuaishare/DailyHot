@@ -79,6 +79,36 @@
       </div>
     </n-card>
     <n-card class="set-item">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">{{ t("settings.categoryView") }}</n-text>
+          <n-text class="tip" :depth="3">
+            {{ t("settings.categoryViewTip") }}
+          </n-text>
+        </div>
+        <n-select
+          class="set"
+          v-model:value="categoryViewMode"
+          :options="categoryViewOptions"
+        />
+      </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">{{ t("settings.categoryViewPerCategory") }}</n-text>
+          <n-text class="tip" :depth="3">
+            {{ t("settings.categoryViewPerCategoryTip") }}
+          </n-text>
+        </div>
+        <n-switch
+          :value="categoryViewPerCategory"
+          :round="false"
+          @update:value="store.setCategoryViewPerCategory"
+        />
+      </div>
+    </n-card>
+    <n-card class="set-item">
       <div class="top" style="flex-direction: column; align-items: flex-start">
         <div class="name">
           <n-text class="text">{{ t("settings.listFontSize") }}</n-text>
@@ -440,6 +470,8 @@ const {
   headerFixed,
   headerCollapsed,
   compactMode,
+  categoryViewMode,
+  categoryViewPerCategory,
   listFontSize,
   autoRefreshEnabled,
   autoRefreshInterval,
@@ -482,6 +514,9 @@ const persistedKeys = [
   "headerFixed",
   "headerCollapsed",
   "compactMode",
+  "categoryViewMode",
+  "categoryViewPerCategory",
+  "categoryViewModes",
   "autoRefreshEnabled",
   "autoRefreshPaused",
   "autoRefreshInterval",
@@ -501,6 +536,17 @@ const themeOptions = computed(() => [
   {
     label: t("settings.themeDark"),
     value: "dark",
+  },
+]);
+
+const categoryViewOptions = computed(() => [
+  {
+    label: t("settings.categoryViewCard"),
+    value: "card",
+  },
+  {
+    label: t("settings.categoryViewStream"),
+    value: "stream",
   },
 ]);
 
