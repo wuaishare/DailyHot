@@ -143,6 +143,53 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "steam-deals": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "热门特惠", value: "featured" },
+        { label: "75%+ 高折扣", value: "discount75" },
+        { label: "90%+ 超低折扣", value: "discount90" },
+        { label: "10 元以内", value: "under10" },
+        { label: "30 元以内", value: "under30" },
+      ],
+    },
+  ],
+  "epic-free-games": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "正在免费", value: "current" },
+        { label: "即将免费", value: "upcoming" },
+      ],
+    },
+  ],
+  "xiaoheihe-deals": [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "热门折扣", value: "popular" },
+        { label: "史低游戏", value: "lowest" },
+        { label: "90%+ 超低折扣", value: "discount90" },
+        { label: "10 元以内", value: "under10" },
+        { label: "30 元以内", value: "under30" },
+      ],
+    },
+  ],
+  ggdeals: [
+    {
+      key: "feed",
+      label: "",
+      items: [
+        { label: "免费游戏", value: "freebies" },
+        { label: "优惠资讯", value: "deals" },
+        { label: "游戏包", value: "bundles" },
+      ],
+    },
+  ],
   smzdm: [
     {
       key: "period",
@@ -266,35 +313,55 @@ const SOURCE_SUBTYPE_GROUPS = {
     },
   ],
   nyse: [
-    { key: "rank", label: "榜单", param: "type", items: [
-      { label: "成交额", value: "turnover" },
-      { label: "成交量", value: "volume" },
-      { label: "涨幅榜", value: "gain" },
-      { label: "跌幅榜", value: "loss" },
-    ] },
+    {
+      key: "rank",
+      label: "榜单",
+      param: "type",
+      items: [
+        { label: "成交额", value: "turnover" },
+        { label: "成交量", value: "volume" },
+        { label: "涨幅榜", value: "gain" },
+        { label: "跌幅榜", value: "loss" },
+      ],
+    },
   ],
   twse: [
-    { key: "rank", label: "榜单", param: "type", items: [
-      { label: "成交额", value: "turnover" },
-      { label: "成交量", value: "volume" },
-      { label: "涨幅榜", value: "gain" },
-      { label: "跌幅榜", value: "loss" },
-    ] },
+    {
+      key: "rank",
+      label: "榜单",
+      param: "type",
+      items: [
+        { label: "成交额", value: "turnover" },
+        { label: "成交量", value: "volume" },
+        { label: "涨幅榜", value: "gain" },
+        { label: "跌幅榜", value: "loss" },
+      ],
+    },
   ],
   nse: [
-    { key: "rank", label: "榜单", param: "type", items: [
-      { label: "成交额", value: "turnover" },
-      { label: "成交量", value: "volume" },
-      { label: "涨幅榜", value: "gain" },
-      { label: "跌幅榜", value: "loss" },
-    ] },
+    {
+      key: "rank",
+      label: "榜单",
+      param: "type",
+      items: [
+        { label: "成交额", value: "turnover" },
+        { label: "成交量", value: "volume" },
+        { label: "涨幅榜", value: "gain" },
+        { label: "跌幅榜", value: "loss" },
+      ],
+    },
   ],
   asx: [
-    { key: "rank", label: "榜单", param: "type", items: [
-      { label: "成交额", value: "turnover" },
-      { label: "成交量", value: "volume" },
-      { label: "成交笔数", value: "trades" },
-    ] },
+    {
+      key: "rank",
+      label: "榜单",
+      param: "type",
+      items: [
+        { label: "成交额", value: "turnover" },
+        { label: "成交量", value: "volume" },
+        { label: "成交笔数", value: "trades" },
+      ],
+    },
   ],
   nytimes: [
     {
@@ -564,16 +631,12 @@ const SOURCE_SUBTYPE_GROUPS = {
     {
       key: "audio",
       label: "Audio",
-      items: [
-        { label: "TTS", value: "tts" },
-      ],
+      items: [{ label: "TTS", value: "tts" }],
     },
     {
       key: "builders",
       label: "Builders",
-      items: [
-        { label: "AI Builder", value: "builders" },
-      ],
+      items: [{ label: "AI Builder", value: "builders" }],
     },
   ],
   "arena-ai": [
@@ -616,7 +679,7 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
-  "artificialanalysis": [
+  artificialanalysis: [
     {
       key: "core",
       label: "核心",
@@ -629,9 +692,7 @@ const SOURCE_SUBTYPE_GROUPS = {
     {
       key: "media",
       label: "媒体",
-      items: [
-        { label: "文生图榜", value: "text-to-image" },
-      ],
+      items: [{ label: "文生图榜", value: "text-to-image" }],
     },
   ],
   "aicpb-rankings": [
@@ -853,9 +914,7 @@ const SOURCE_SUBTYPE_GROUPS = {
     {
       key: "category",
       label: "分类",
-      items: [
-        { label: "Data & APIs", value: "data" },
-      ],
+      items: [{ label: "Data & APIs", value: "data" }],
     },
   ],
 };
@@ -913,11 +972,11 @@ export const buildSourceSubtypeParams = (sourceName, subtype) => {
   const groups = getSourceSubtypeGroups(sourceName);
   const resolved = resolveSourceSubtype(
     groups.flatMap((group) => group.items || []),
-    subtype
+    subtype,
   );
   if (!resolved) return {};
   const group = groups.find((item) =>
-    (item.items || []).some((option) => option.value === resolved)
+    (item.items || []).some((option) => option.value === resolved),
   );
   const option = (group?.items || []).find((item) => item.value === resolved);
   return { [group?.param || "type"]: option?.apiValue || resolved };

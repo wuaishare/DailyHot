@@ -20,6 +20,10 @@ const DIRECT_PUBLIC_API_SOURCES = new Set([
   "douban-wool",
   "douban-pet-wool",
   "ithome-xijiayi",
+  "steam-deals",
+  "epic-free-games",
+  "xiaoheihe-deals",
+  "ggdeals",
   "xueqiu",
   "sse",
   "szse",
@@ -37,7 +41,9 @@ const PUBLIC_API2_BASE =
 const appApiBase = import.meta.env.VITE_GLOBAL_API;
 const analyticsApiBases = import.meta.env.PROD
   ? ["/api", import.meta.env.VITE_GLOBAL_API].filter(Boolean)
-  : [import.meta.env.VITE_GLOBAL_API2, import.meta.env.VITE_GLOBAL_API].filter(Boolean);
+  : [import.meta.env.VITE_GLOBAL_API2, import.meta.env.VITE_GLOBAL_API].filter(
+      Boolean,
+    );
 
 const requestAnalytics = async (config) => {
   let lastError;
@@ -65,12 +71,16 @@ const requestAnalytics = async (config) => {
  */
 export const getHotLists = (type, isNew = false, params, options = {}) => {
   const forceSameOrigin = Boolean(options?.forceSameOrigin);
-  const useDirectPublicApi = DIRECT_PUBLIC_API_SOURCES.has(type) && !forceSameOrigin;
+  const useDirectPublicApi =
+    DIRECT_PUBLIC_API_SOURCES.has(type) && !forceSameOrigin;
   const useSameOriginApi = forceSameOrigin || SAME_ORIGIN_API_SOURCES.has(type);
   const useApi2 =
-    useDirectPublicApi || (!useSameOriginApi && (options?.useApi2 || API2_ONLY_SOURCES.has(type)));
+    useDirectPublicApi ||
+    (!useSameOriginApi && (options?.useApi2 || API2_ONLY_SOURCES.has(type)));
   const apiBase = appApiBase;
-  const apiBase2 = useDirectPublicApi ? PUBLIC_API2_BASE : import.meta.env.VITE_GLOBAL_API2;
+  const apiBase2 = useDirectPublicApi
+    ? PUBLIC_API2_BASE
+    : import.meta.env.VITE_GLOBAL_API2;
   const timeout = options?.timeout;
   const forceNoCache = Boolean(options?.forceNoCache);
   const silent = Boolean(options?.silent);
@@ -80,8 +90,8 @@ export const getHotLists = (type, isNew = false, params, options = {}) => {
     baseURL: useSameOriginApi
       ? "/api"
       : useApi2
-      ? apiBase2 || apiBase
-      : undefined,
+        ? apiBase2 || apiBase
+        : undefined,
     params: {
       cache: forceNoCache ? false : !isNew,
       ...params,
@@ -137,7 +147,7 @@ export const getHotListsWithFallback = async (
   type,
   isNew = false,
   params,
-  options = {}
+  options = {},
 ) => {
   const useDirectPublicApi = DIRECT_PUBLIC_API_SOURCES.has(type);
   const useSameOriginApi = SAME_ORIGIN_API_SOURCES.has(type);
@@ -149,7 +159,12 @@ export const getHotListsWithFallback = async (
         forceNoCache: Boolean(options?.forceNoCache),
         silent: true,
       });
-      return { result, usedApi2: true, usedFallback: false, fallbackSuccess: false };
+      return {
+        result,
+        usedApi2: true,
+        usedFallback: false,
+        fallbackSuccess: false,
+      };
     } catch (primaryError) {
       try {
         const result = await getHotLists(type, isNew, params, {
@@ -158,16 +173,22 @@ export const getHotListsWithFallback = async (
           forceSameOrigin: true,
           silent: true,
         });
-        return { result, usedApi2: false, usedFallback: true, fallbackSuccess: true };
+        return {
+          result,
+          usedApi2: false,
+          usedFallback: true,
+          fallbackSuccess: true,
+        };
       } catch {
         throw primaryError;
       }
     }
   }
 
-  const hasApi2 = Boolean(import.meta.env.VITE_GLOBAL_API2) && !useSameOriginApi;
+  const hasApi2 =
+    Boolean(import.meta.env.VITE_GLOBAL_API2) && !useSameOriginApi;
   const preferApi2 = Boolean(
-    !useSameOriginApi && (options?.useApi2 || API2_ONLY_SOURCES.has(type))
+    !useSameOriginApi && (options?.useApi2 || API2_ONLY_SOURCES.has(type)),
   );
   const disableFallback = Boolean(options?.disableFallback || useSameOriginApi);
   const timeout = options?.timeout;
@@ -211,12 +232,11 @@ export const getHotListsWithFallback = async (
 
     const buildFailure = (primaryError, fallbackError) => {
       const chosenError = primaryError || fallbackError || {};
-      const result =
-        chosenError.result || {
-          code: 500,
-          title: "请求失败",
-          message: "请稍后再试",
-        };
+      const result = chosenError.result || {
+        code: 500,
+        title: "请求失败",
+        message: "请稍后再试",
+      };
       return {
         result,
         usedApi2: Boolean(fallbackError),

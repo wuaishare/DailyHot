@@ -34,7 +34,7 @@ const DEFAULT_SEO = {
 const SEO_BRAND_NAME_ZH = "吾爱热榜";
 
 const CATEGORY_SEO_MAP = {
-  "综合": {
+  综合: {
     title: "综合热榜",
     titleTail: "微博、知乎、抖音、头条与新闻站全网热点聚合",
     description:
@@ -50,7 +50,7 @@ const CATEGORY_SEO_MAP = {
       "实时热点",
     ],
   },
-  "科技": {
+  科技: {
     title: "科技热榜",
     titleTail: "科技新闻、数码资讯与开发者趋势聚合",
     description:
@@ -66,7 +66,7 @@ const CATEGORY_SEO_MAP = {
       "掘金热榜",
     ],
   },
-  "财经": {
+  财经: {
     title: "财经热榜",
     titleTail: "股票、ETF、证券市场与投资话题趋势聚合",
     description:
@@ -99,11 +99,11 @@ const CATEGORY_SEO_MAP = {
       "投资热点",
     ],
   },
-  "羊毛": {
+  羊毛: {
     title: "羊毛优惠",
     titleTail: "限免、优惠券、免费福利与实测线报实时聚合",
     description:
-      "羊毛优惠聚合超级线报、0818团、NodeLoc优惠与 IT之家喜加一等高时效信息，覆盖限免、免费额度、优惠券、秒杀、抽奖、补贴与游戏免费领取，帮助你快速发现值得立即行动的福利线报。",
+      "羊毛优惠聚合超级线报、0818团、NodeLoc、豆瓣优惠及 Steam、Epic、小黑盒、GG.deals 游戏福利，覆盖限免、优惠券、史低、超低价、抽奖、免费额度与游戏免费领取。",
     keywords: [
       "羊毛",
       "优惠线报",
@@ -119,7 +119,7 @@ const CATEGORY_SEO_MAP = {
       "NodeLoc优惠",
     ],
   },
-  "生活": {
+  生活: {
     title: "生活热榜",
     titleTail: "消费、阅读、影视与生活方式热点聚合",
     description:
@@ -135,11 +135,11 @@ const CATEGORY_SEO_MAP = {
       "影视热榜",
     ],
   },
-  "游戏": {
+  游戏: {
     title: "游戏热榜",
     titleTail: "游戏资讯、官方公告与玩家社区讨论聚合",
     description:
-      "游戏热榜聚合游戏葡萄、游研社、米游社、原神、崩坏：星穹铁道、英雄联盟等热门榜单，覆盖游戏资讯、官方动态、版本公告与玩家讨论热点。",
+      "游戏热榜聚合 Steam 官方特惠、Epic 免费游戏、小黑盒史低与高折扣、GG.deals 免费及促销情报，并结合游戏葡萄、游研社、米游社等资讯社区，覆盖免费领取、史低、超低价、游戏资讯与玩家讨论。",
     keywords: [
       "游戏热榜",
       "游戏资讯",
@@ -149,9 +149,15 @@ const CATEGORY_SEO_MAP = {
       "星穹铁道热榜",
       "英雄联盟热榜",
       "游戏公告",
+      "Steam 特惠",
+      "Epic 免费游戏",
+      "游戏史低",
+      "游戏折扣",
+      "小黑盒",
+      "GG.deals",
     ],
   },
-  "社区": {
+  社区: {
     title: "社区热榜",
     titleTail: "论坛热议、社区热帖与开发者讨论聚合",
     description:
@@ -186,9 +192,10 @@ const CATEGORY_SEO_MAP = {
 };
 
 const CATEGORY_LOCALE_SEO_MAP = {
-  "羊毛": {
+  羊毛: {
     en: {
-      title: "Deals & Freebies - Coupons, giveaways and limited-time offers | DailyHot",
+      title:
+        "Deals & Freebies - Coupons, giveaways and limited-time offers | DailyHot",
       description:
         "Deals & Freebies aggregates time-sensitive offers from Super Deals, 0818 Deals, NodeLoc Deals and ITHome Free Games, including coupons, free credits, giveaways, discounts and limited-time freebies.",
       keywords:
@@ -198,24 +205,28 @@ const CATEGORY_LOCALE_SEO_MAP = {
       title: "優惠情報 - 限免、優惠券、免費福利與即時線報 | 吾愛熱榜",
       description:
         "優惠情報彙整超級線報、0818團、NodeLoc優惠與 IT之家喜加一等高時效資訊，涵蓋限免、免費額度、優惠券、抽獎、折扣及遊戲免費領取。",
-      keywords: "優惠情報,限免,免費福利,優惠券,抽獎,折扣,0818團,NodeLoc優惠,喜加一,吾愛熱榜",
+      keywords:
+        "優惠情報,限免,免費福利,優惠券,抽獎,折扣,0818團,NodeLoc優惠,喜加一,吾愛熱榜",
     },
     ja: {
       title: "お得情報 - 無料配布、クーポン、キャンペーン速報 | DailyHot",
       description:
         "スーパーお得情報、0818、NodeLoc、ITHome の無料配布やクーポン、無料クレジット、抽選、割引など、行動価値の高いお得情報をまとめて確認できます。",
-      keywords: "お得情報,無料配布,クーポン,キャンペーン,割引,無料クレジット,0818,NodeLoc,ITHome,DailyHot",
+      keywords:
+        "お得情報,無料配布,クーポン,キャンペーン,割引,無料クレジット,0818,NodeLoc,ITHome,DailyHot",
     },
     ko: {
       title: "혜택 정보 - 무료 배포, 쿠폰, 할인 및 이벤트 | DailyHot",
       description:
         "Super Deals, 0818, NodeLoc, ITHome에서 제공하는 무료 배포, 쿠폰, 무료 크레딧, 경품, 할인 등 시의성 높은 혜택 정보를 한곳에서 확인합니다.",
-      keywords: "혜택,무료 배포,쿠폰,할인,경품,무료 크레딧,0818,NodeLoc,ITHome,DailyHot",
+      keywords:
+        "혜택,무료 배포,쿠폰,할인,경품,무료 크레딧,0818,NodeLoc,ITHome,DailyHot",
     },
   },
-  "财经": {
+  财经: {
     en: {
-      title: "Finance Rankings - Stocks, ETFs, market activity, and investor topics | DailyHot",
+      title:
+        "Finance Rankings - Stocks, ETFs, market activity, and investor topics | DailyHot",
       description:
         "Finance Rankings combine Xueqiu investor topics, hot stocks and popular funds with official Shanghai, Shenzhen, Hong Kong and Nasdaq market activity rankings plus major global market indexes across Asia, India, the U.S. and Europe.",
       keywords:
@@ -229,7 +240,8 @@ const CATEGORY_LOCALE_SEO_MAP = {
         "財經熱榜,股票成交額榜,ETF成交額榜,上海證券交易所,深圳證券交易所,香港交易所,Nasdaq,NIFTY 50,SENSEX,美股,港股,雪球熱門股票,熱門基金,A股熱榜,證券市場,吾愛熱榜",
     },
     ja: {
-      title: "金融ランキング - 株式、ETF、市場活況、投資トピックの集約 | DailyHot",
+      title:
+        "金融ランキング - 株式、ETF、市場活況、投資トピックの集約 | DailyHot",
       description:
         "金融ランキングは Xueqiu の投資トピック、人気株、人気ファンドと、上海・深圳・香港取引所、Nasdaq の公式市場アクティビティ、インドを含む世界主要株価指数を集約します。",
       keywords:
@@ -245,7 +257,8 @@ const CATEGORY_LOCALE_SEO_MAP = {
   },
   AI: {
     en: {
-      title: "AI Hot Rankings - AI model leaderboards, AI news, and tool trends | DailyHot",
+      title:
+        "AI Hot Rankings - AI model leaderboards, AI news, and tool trends | DailyHot",
       description:
         "AI Hot Rankings aggregate OpenRouter, Artificial Analysis, Arena AI, DesignArena, LLM Stats, OpenAI, Anthropic, Hugging Face, Product Hunt, and Hacker News to track model rankings, official AI updates, research trends, and AI product discovery.",
       keywords:
@@ -259,7 +272,8 @@ const CATEGORY_LOCALE_SEO_MAP = {
         "AI熱榜,AI模型排行榜,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI資訊,AI工具,吾愛熱榜",
     },
     ja: {
-      title: "AIランキング - AIモデル評価、AIニュース、人気ツール動向の集約 | DailyHot",
+      title:
+        "AIランキング - AIモデル評価、AIニュース、人気ツール動向の集約 | DailyHot",
       description:
         "AIランキングは OpenRouter、Artificial Analysis、Arena AI、DesignArena、LLM Stats、OpenAI、Anthropic、Hugging Face、Product Hunt、Hacker News を集約し、モデル順位、公式AIニュース、研究動向、AIプロダクト発見を追跡します。",
       keywords:
@@ -288,8 +302,11 @@ const stripLeadingPhrases = (value = "", phrases = []) =>
     .filter(Boolean)
     .reduce(
       (result, phrase) =>
-        result.replace(new RegExp(`^${escapeRegExp(String(phrase).trim())}[\\s·:：-]*`, "u"), ""),
-      String(value).trim()
+        result.replace(
+          new RegExp(`^${escapeRegExp(String(phrase).trim())}[\\s·:：-]*`, "u"),
+          "",
+        ),
+      String(value).trim(),
     )
     .trim();
 
@@ -304,7 +321,7 @@ const stripLeadingZhIntentVerb = (value = "") =>
     .trim()
     .replace(
       /^(?:聚合|追踪|收录|覆盖|精选|汇总|关注|发现|整理|展示|呈现)[\s，,、]*/u,
-      ""
+      "",
     )
     .trim();
 
@@ -327,7 +344,9 @@ const keywordTokensFrom = (value) =>
         .filter(Boolean);
 
 const mergeKeywords = (...segments) =>
-  [...new Set(segments.flatMap((segment) => keywordTokensFrom(segment)))].join(",");
+  [...new Set(segments.flatMap((segment) => keywordTokensFrom(segment)))].join(
+    ",",
+  );
 
 const buildZhTitle = (main, detail) =>
   detail
@@ -662,9 +681,8 @@ const getClawHubZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
   const baseSeo = CLAWHUB_ZH_BASE_SEO[sourceKey];
   if (!baseSeo) return null;
 
-  const subtypeSeo = CLAWHUB_ZH_SUBTYPE_SEO[
-    getClawHubSubtypeSeoKey(sourceKey, subtypeSlug)
-  ];
+  const subtypeSeo =
+    CLAWHUB_ZH_SUBTYPE_SEO[getClawHubSubtypeSeoKey(sourceKey, subtypeSlug)];
   if (subtypeSeo) {
     return {
       titleLabel: normalizeTitleLabel(`ClawHub ${subtypeSeo.titleSegment}`),
@@ -714,7 +732,9 @@ const getArtificialAnalysisZhRouteSeo = ({ sourceKey, subtypeSlug }) => {
   if (!subtypeSeo) return null;
 
   return {
-    titleLabel: normalizeTitleLabel(`Artificial Analysis ${subtypeSeo.titleSegment}`),
+    titleLabel: normalizeTitleLabel(
+      `Artificial Analysis ${subtypeSeo.titleSegment}`,
+    ),
     intent: subtypeSeo.intent,
   };
 };
@@ -726,14 +746,10 @@ const getZhRouteSeo = ({ sourceKey, subtypeSlug }) =>
   getBilibiliZhRouteSeo({ sourceKey, subtypeSlug }) ||
   getArtificialAnalysisZhRouteSeo({ sourceKey, subtypeSlug });
 
-const buildZhListIntent = ({
-  sourceLabel,
-  subtypeLabel,
-  meta,
-}) => {
+const buildZhListIntent = ({ sourceLabel, subtypeLabel, meta }) => {
   const rawDescription = trimTerminalPunctuation(meta?.description || "");
   const stripped = normalizeZhIntent(
-    stripLeadingPhrases(rawDescription, [sourceLabel, subtypeLabel])
+    stripLeadingPhrases(rawDescription, [sourceLabel, subtypeLabel]),
   );
   return stripped || "实时热榜与趋势榜";
 };
@@ -741,18 +757,47 @@ const buildZhListIntent = ({
 const LIST_SEO_MAP = {
   "super-deals": {
     label: "超级线报",
-    keywords: "超级线报,实时线报,羊毛线报,优惠券,免单,红包,一小时排行,三小时排行,六小时排行",
-    description: "聚合超级线报公开的最新线报及 1 小时、3 小时、6 小时排行，覆盖优惠券、红包、免单、低价商品与限时福利。",
+    keywords:
+      "超级线报,实时线报,羊毛线报,优惠券,免单,红包,一小时排行,三小时排行,六小时排行",
+    description:
+      "聚合超级线报公开的最新线报及 1 小时、3 小时、6 小时排行，覆盖优惠券、红包、免单、低价商品与限时福利。",
   },
   "douban-wool": {
     label: "豆瓣羊毛",
     keywords: "豆瓣羊毛,豆瓣买组,豆瓣拼组,优惠,拼单,刷券,低价好物",
-    description: "聚合豆瓣买组与拼组的最新消费优惠讨论，覆盖刷券、拼单、低价商品、红包与限时好价。",
+    description:
+      "聚合豆瓣买组与拼组的最新消费优惠讨论，覆盖刷券、拼单、低价商品、红包与限时好价。",
   },
   "douban-pet-wool": {
     label: "豆瓣宠物羊毛",
-    keywords: "豆瓣宠物羊毛,爱猫生活,爱猫澡盆,豆瓣狗组,宠物好价,猫粮优惠,猫砂优惠,狗粮优惠,宠物团购",
-    description: "从豆瓣爱猫生活、爱猫澡盆与豆瓣狗组中筛选高信噪宠物消费机会，只保留团购、开车、作业、拼团、试用与明确好价，过滤领养、求助、闲置、转卖和医疗讨论。",
+    keywords:
+      "豆瓣宠物羊毛,爱猫生活,爱猫澡盆,豆瓣狗组,宠物好价,猫粮优惠,猫砂优惠,狗粮优惠,宠物团购",
+    description:
+      "从豆瓣爱猫生活、爱猫澡盆与豆瓣狗组中筛选高信噪宠物消费机会，只保留团购、开车、作业、拼团、试用与明确好价，过滤领养、求助、闲置、转卖和医疗讨论。",
+  },
+  "steam-deals": {
+    label: "Steam 特惠",
+    keywords: "Steam特惠,Steam折扣,Steam低价,Steam 90%折扣,Steam游戏优惠",
+    description:
+      "基于 Steam 官方当前特惠，筛选热门折扣、75%+、90%+ 与 10/30 元以内低价游戏。",
+  },
+  "epic-free-games": {
+    label: "Epic 免费游戏",
+    keywords: "Epic免费游戏,Epic喜加一,Epic限免,免费领取游戏",
+    description:
+      "聚合 Epic Games Store 官方正在免费与即将免费的游戏，直接跳转官方商店领取。",
+  },
+  "xiaoheihe-deals": {
+    label: "小黑盒游戏折扣",
+    keywords: "小黑盒游戏折扣,Steam史低,游戏史低,90%折扣,低价游戏",
+    description:
+      "使用小黑盒公开折扣情报识别 Steam 史低、新史低、高折扣与低价游戏，并直达 Steam 官方商品页。",
+  },
+  ggdeals: {
+    label: "GG.deals 游戏优惠",
+    keywords: "GG.deals,游戏免费,游戏折扣,游戏包,game freebies,game deals",
+    description:
+      "聚合 GG.deals 官方公开的 Freebies、Deals 与 Bundles RSS，追踪全球游戏免费领取、促销与游戏包情报。",
   },
   weibo: {
     label: "微博热搜",
@@ -761,53 +806,73 @@ const LIST_SEO_MAP = {
   },
   xueqiu: {
     label: "雪球",
-    keywords: "雪球热门话题,雪球热股榜,雪球热门基金,财经热点,投资话题,证券市场热点",
-    description: "聚合雪球热门投资话题、全球热股榜与热门基金，覆盖股票行情、基金长期收益与投资社区关注焦点。",
+    keywords:
+      "雪球热门话题,雪球热股榜,雪球热门基金,财经热点,投资话题,证券市场热点",
+    description:
+      "聚合雪球热门投资话题、全球热股榜与热门基金，覆盖股票行情、基金长期收益与投资社区关注焦点。",
   },
   sse: {
     label: "上海证券交易所",
-    keywords: "上海证券交易所,上交所,沪市股票成交额榜,沪市股票成交量榜,沪市股票涨幅榜,沪市股票跌幅榜,沪市ETF成交额榜,A股行情,证券市场",
-    description: "上海证券交易所官方全市场行情排行，覆盖沪市股票成交额、成交量、涨幅、跌幅 Top20，并提供官方 ETF 成交额排行。",
+    keywords:
+      "上海证券交易所,上交所,沪市股票成交额榜,沪市股票成交量榜,沪市股票涨幅榜,沪市股票跌幅榜,沪市ETF成交额榜,A股行情,证券市场",
+    description:
+      "上海证券交易所官方全市场行情排行，覆盖沪市股票成交额、成交量、涨幅、跌幅 Top20，并提供官方 ETF 成交额排行。",
   },
   szse: {
     label: "深圳证券交易所",
-    keywords: "深圳证券交易所,深交所,深市股票成交额榜,深市股票成交量榜,深市股票涨幅榜,深市股票跌幅榜,成交笔数榜,换手率榜,深市ETF成交额榜,A股行情,证券市场",
-    description: "深圳证券交易所官方指标排名，覆盖深市股票成交额、成交量、成交笔数、涨幅、跌幅、换手率 Top20，并提供官方 ETF 成交额排行。",
+    keywords:
+      "深圳证券交易所,深交所,深市股票成交额榜,深市股票成交量榜,深市股票涨幅榜,深市股票跌幅榜,成交笔数榜,换手率榜,深市ETF成交额榜,A股行情,证券市场",
+    description:
+      "深圳证券交易所官方指标排名，覆盖深市股票成交额、成交量、成交笔数、涨幅、跌幅、换手率 Top20，并提供官方 ETF 成交额排行。",
   },
   hkex: {
     label: "香港交易所",
-    keywords: "香港交易所,港交所,HKEX,港股成交额榜,港股成交量榜,港股涨幅榜,港股跌幅榜,主板,GEM,香港股票,证券市场",
-    description: "基于香港交易所官方日行情和最新股票代码分配规则，提供港股主板及 GEM 证券成交额、成交量、涨幅与跌幅 Top20。",
+    keywords:
+      "香港交易所,港交所,HKEX,港股成交额榜,港股成交量榜,港股涨幅榜,港股跌幅榜,主板,GEM,香港股票,证券市场",
+    description:
+      "基于香港交易所官方日行情和最新股票代码分配规则，提供港股主板及 GEM 证券成交额、成交量、涨幅与跌幅 Top20。",
   },
   nasdaq: {
     label: "Nasdaq",
-    keywords: "Nasdaq,Nasdaq most active,美股成交额活跃榜,美股成交量榜,美股涨幅榜,美股跌幅榜,NVDA,美股热榜,美国股市",
-    description: "汇总 Nasdaq 官方美元成交额活跃榜，并基于官方股票筛选器全市场行情提供成交量、涨幅与跌幅 Top20。",
+    keywords:
+      "Nasdaq,Nasdaq most active,美股成交额活跃榜,美股成交量榜,美股涨幅榜,美股跌幅榜,NVDA,美股热榜,美国股市",
+    description:
+      "汇总 Nasdaq 官方美元成交额活跃榜，并基于官方股票筛选器全市场行情提供成交量、涨幅与跌幅 Top20。",
   },
   nyse: {
     label: "纽约证券交易所",
-    keywords: "纽约证券交易所,NYSE,NYSE成交额榜,NYSE成交量榜,NYSE涨幅榜,NYSE跌幅榜,美股行情,美国股市",
-    description: "聚合 NYSE 上市股票行情，提供成交额、成交量、涨幅与跌幅 Top20，并明确标注 Nasdaq Stock Screener 行情数据来源。",
+    keywords:
+      "纽约证券交易所,NYSE,NYSE成交额榜,NYSE成交量榜,NYSE涨幅榜,NYSE跌幅榜,美股行情,美国股市",
+    description:
+      "聚合 NYSE 上市股票行情，提供成交额、成交量、涨幅与跌幅 Top20，并明确标注 Nasdaq Stock Screener 行情数据来源。",
   },
   twse: {
     label: "台湾证券交易所",
-    keywords: "台湾证券交易所,TWSE,台股成交额榜,台股成交量榜,台股涨幅榜,台股跌幅榜,台湾股票",
-    description: "基于台湾证券交易所官方 OpenAPI 全市场日行情，提供台股成交额、成交量、涨幅与跌幅 Top20。",
+    keywords:
+      "台湾证券交易所,TWSE,台股成交额榜,台股成交量榜,台股涨幅榜,台股跌幅榜,台湾股票",
+    description:
+      "基于台湾证券交易所官方 OpenAPI 全市场日行情，提供台股成交额、成交量、涨幅与跌幅 Top20。",
   },
   nse: {
     label: "印度国家证券交易所",
-    keywords: "印度国家证券交易所,NSE India,NSE成交额榜,NSE成交量榜,NSE涨幅榜,NSE跌幅榜,印度股票",
-    description: "基于印度国家证券交易所官方市场分析接口，提供 NSE 股票成交额、成交量、涨幅与跌幅 Top20。",
+    keywords:
+      "印度国家证券交易所,NSE India,NSE成交额榜,NSE成交量榜,NSE涨幅榜,NSE跌幅榜,印度股票",
+    description:
+      "基于印度国家证券交易所官方市场分析接口，提供 NSE 股票成交额、成交量、涨幅与跌幅 Top20。",
   },
   asx: {
     label: "澳大利亚证券交易所",
-    keywords: "澳大利亚证券交易所,ASX,澳股成交额榜,澳股成交量榜,澳股成交笔数榜,澳大利亚股票",
-    description: "基于澳大利亚证券交易所官方每日 Top20 报告，提供澳股成交额、成交量与成交笔数排行。",
+    keywords:
+      "澳大利亚证券交易所,ASX,澳股成交额榜,澳股成交量榜,澳股成交笔数榜,澳大利亚股票",
+    description:
+      "基于澳大利亚证券交易所官方每日 Top20 报告，提供澳股成交额、成交量与成交笔数排行。",
   },
   "global-indexes": {
     label: "全球股指",
-    keywords: "全球股指,全球指数,上证指数,沪深300,深证成指,创业板指,恒生指数,恒生科技指数,台湾加权指数,TAIEX,标普500,S&P 500,SPX,道琼斯指数,Dow Jones,罗素2000,Russell 2000,纳斯达克综合指数,Nasdaq 100,日经225,Nikkei 225,KOSPI,KOSPI 200,KOSDAQ,NIFTY 50,SENSEX,S&P TSX,TSX Composite,S&P ASX 200,ASX 200,Ibovespa,SMI,IBEX 35,FTSE MIB,富时100,FTSE 100,CAC 40,DAX,EURO STOXX 50",
-    description: "聚合中国大陆、中国香港、中国台湾、日本、韩国、印度、加拿大、澳大利亚、巴西、美国、瑞士、西班牙、意大利、英国、法国、德国与欧元区主要股票指数行情，覆盖标普500、道琼斯、纳斯达克、日经225、KOSPI、NIFTY 50、SENSEX、S&P/TSX Composite、S&P/ASX 200、Ibovespa、SMI、IBEX 35、FTSE MIB、FTSE 100、CAC 40、DAX、EURO STOXX 50 等全球核心市场基准。"
+    keywords:
+      "全球股指,全球指数,上证指数,沪深300,深证成指,创业板指,恒生指数,恒生科技指数,台湾加权指数,TAIEX,标普500,S&P 500,SPX,道琼斯指数,Dow Jones,罗素2000,Russell 2000,纳斯达克综合指数,Nasdaq 100,日经225,Nikkei 225,KOSPI,KOSPI 200,KOSDAQ,NIFTY 50,SENSEX,S&P TSX,TSX Composite,S&P ASX 200,ASX 200,Ibovespa,SMI,IBEX 35,FTSE MIB,富时100,FTSE 100,CAC 40,DAX,EURO STOXX 50",
+    description:
+      "聚合中国大陆、中国香港、中国台湾、日本、韩国、印度、加拿大、澳大利亚、巴西、美国、瑞士、西班牙、意大利、英国、法国、德国与欧元区主要股票指数行情，覆盖标普500、道琼斯、纳斯达克、日经225、KOSPI、NIFTY 50、SENSEX、S&P/TSX Composite、S&P/ASX 200、Ibovespa、SMI、IBEX 35、FTSE MIB、FTSE 100、CAC 40、DAX、EURO STOXX 50 等全球核心市场基准。",
   },
   zhihu: {
     label: "知乎热榜",
@@ -822,7 +887,8 @@ const LIST_SEO_MAP = {
   bilibili: {
     label: "B站热榜",
     keywords: "B站热榜,哔哩哔哩热门,综合热门,每周必看,入站必刷,视频排行榜",
-    description: "哔哩哔哩综合热门、每周必看、入站必刷、排行榜与全站音乐榜聚合。",
+    description:
+      "哔哩哔哩综合热门、每周必看、入站必刷、排行榜与全站音乐榜聚合。",
   },
   toutiao: {
     label: "今日头条热榜",
@@ -872,7 +938,8 @@ const LIST_SEO_MAP = {
   "douban-movie": {
     label: "豆瓣电影与剧集热榜",
     keywords: "豆瓣电影榜单,豆瓣电视剧榜单,热门电影,热门剧集",
-    description: "豆瓣电影与剧集热榜，覆盖热映电影、热门电影、热门电视剧、综艺、动画与纪录片。",
+    description:
+      "豆瓣电影与剧集热榜，覆盖热映电影、热门电影、热门电视剧、综艺、动画与纪录片。",
   },
   "douban-group": {
     label: "豆瓣小组热帖",
@@ -882,7 +949,8 @@ const LIST_SEO_MAP = {
   nytimes: {
     label: "纽约时报",
     keywords: "纽约时报,纽约时报中文网,纽约时报全球版,国际新闻",
-    description: "纽约时报中文网与全球版新闻榜单，覆盖国际时事、商业、科技与文化报道。",
+    description:
+      "纽约时报中文网与全球版新闻榜单，覆盖国际时事、商业、科技与文化报道。",
   },
   tianya: {
     label: "天涯社区精华帖",
@@ -912,12 +980,14 @@ const LIST_SEO_MAP = {
   acfun: {
     label: "AcFun 排行榜",
     keywords: "AcFun,AcFun 排行榜,视频热榜,弹幕视频",
-    description: "AcFun 视频排行榜，覆盖综合、动画、游戏、科技、番剧等分区与时间热度。",
+    description:
+      "AcFun 视频排行榜，覆盖综合、动画、游戏、科技、番剧等分区与时间热度。",
   },
   miyoushe: {
     label: "米游社热榜",
     keywords: "米游社,米游社公告,米哈游游戏资讯,原神,崩坏星穹铁道,绝区零",
-    description: "米游社官方动态榜单，覆盖米哈游游戏公告、活动、资讯与社区更新。",
+    description:
+      "米游社官方动态榜单，覆盖米哈游游戏公告、活动、资讯与社区更新。",
   },
   genshin: {
     label: "原神热榜",
@@ -961,7 +1031,8 @@ const LIST_SEO_MAP = {
   },
   designarena: {
     label: "DesignArena",
-    keywords: "DesignArena,AI 设计榜单,Agentic WebDev,Full-Stack模型榜,AI创意生成榜,Daily Usage",
+    keywords:
+      "DesignArena,AI 设计榜单,Agentic WebDev,Full-Stack模型榜,AI创意生成榜,Daily Usage",
     description: "DesignArena AI 模型与应用生成榜单入口。",
   },
   "aicpb-rankings": {
@@ -1042,7 +1113,8 @@ const LIST_SEO_MAP = {
   paperswithcode: {
     label: "Papers with Code",
     keywords: "Papers with Code,热门论文,论文代码,镜像榜",
-    description: "Papers with Code 论文代码镜像榜，当前由 Hugging Face Trending Papers 承载。",
+    description:
+      "Papers with Code 论文代码镜像榜，当前由 Hugging Face Trending Papers 承载。",
   },
   "producthunt-ai": {
     label: "Product Hunt",
@@ -1103,7 +1175,8 @@ const SYSTEM_ROUTE_SEO_KEY_MAP = {
   "500-locale": "serverError",
 };
 
-const containsNonLatin = (value = "") => /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(value);
+const containsNonLatin = (value = "") =>
+  /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(value);
 
 const titleCaseToken = (token = "") =>
   token
@@ -1112,16 +1185,13 @@ const titleCaseToken = (token = "") =>
     .map((part) =>
       /^[A-Z0-9]+$/.test(part)
         ? part
-        : part.charAt(0).toUpperCase() + part.slice(1)
+        : part.charAt(0).toUpperCase() + part.slice(1),
     )
     .join(" ");
 
 const prettifySlug = (value = "") =>
   titleCaseToken(
-    String(value)
-      .replace(/[-_]+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
+    String(value).replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim(),
   );
 
 const getSourceLabel = (typeKey, locale = "zh-CN") => {
@@ -1132,7 +1202,7 @@ const getSourceLabel = (typeKey, locale = "zh-CN") => {
 const getSubtypeLabel = (sourceSlug, subtypeSlug, locale = "zh-CN") => {
   if (!sourceSlug || !subtypeSlug) return "";
   const subtype = getSourceSubtypeOptions(sourceSlug).find(
-    (item) => item.value === subtypeSlug
+    (item) => item.value === subtypeSlug,
   );
   const rawLabel = subtype?.label || "";
   const normalizedLocale = normalizeLocale(locale);
@@ -1193,7 +1263,7 @@ const setAlternateLinks = (route, siteUrl) => {
     link.setAttribute("hreflang", item.htmlLang);
     link.setAttribute(
       "href",
-      buildAbsoluteUrl(buildLocalePathFromRoute(route, item.code), siteUrl)
+      buildAbsoluteUrl(buildLocalePathFromRoute(route, item.code), siteUrl),
     );
     link.setAttribute("data-i18n-alt", "true");
     document.head.appendChild(link);
@@ -1203,7 +1273,7 @@ const setAlternateLinks = (route, siteUrl) => {
   xDefault.setAttribute("hreflang", "x-default");
   xDefault.setAttribute(
     "href",
-    buildAbsoluteUrl(buildLocalePathFromRoute(route, "zh-CN"), siteUrl)
+    buildAbsoluteUrl(buildLocalePathFromRoute(route, "zh-CN"), siteUrl),
   );
   xDefault.setAttribute("data-i18n-alt", "true");
   document.head.appendChild(xDefault);
@@ -1249,7 +1319,8 @@ const getPageSeo = (route, locale) => {
 const getHomeJsonLd = (siteUrl, title, description, locale) => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: i18n.global.t("common.siteName", {}, { locale }) || DEFAULT_SEO.siteName,
+  name:
+    i18n.global.t("common.siteName", {}, { locale }) || DEFAULT_SEO.siteName,
   url: siteUrl || "/",
   description,
   inLanguage: getLocaleMeta(locale)?.htmlLang || "zh-CN",
@@ -1273,7 +1344,7 @@ const getCategorySeo = (route, canonical) => {
       categoryMeta.keywords,
       rawCategoryName,
       categoryName,
-      SEO_BRAND_NAME_ZH
+      SEO_BRAND_NAME_ZH,
     );
     return {
       title,
@@ -1294,7 +1365,8 @@ const getCategorySeo = (route, canonical) => {
       },
     };
   }
-  const localizedCategoryMeta = CATEGORY_LOCALE_SEO_MAP[rawCategoryName]?.[locale];
+  const localizedCategoryMeta =
+    CATEGORY_LOCALE_SEO_MAP[rawCategoryName]?.[locale];
   if (localizedCategoryMeta) {
     const { title, description, keywords } = localizedCategoryMeta;
     return {
@@ -1319,17 +1391,17 @@ const getCategorySeo = (route, canonical) => {
   const title = i18n.global.t(
     "seo.categoryTitle",
     { category: categoryName },
-    { locale }
+    { locale },
   );
   const description = i18n.global.t(
     "seo.categoryDescription",
     { category: categoryName },
-    { locale }
+    { locale },
   );
   const keywords = i18n.global.t(
     "seo.categoryKeywords",
     { category: categoryName },
-    { locale }
+    { locale },
   );
   return {
     title,
@@ -1362,7 +1434,8 @@ const getListSeo = (route, siteUrl, canonical) => {
   const meta = LIST_SEO_MAP[sourceKey] || LIST_SEO_MAP.default;
   const sourceLabel = getSourceLabel(sourceKey, locale);
   const sourceDisplayLabel =
-    getLocalizedSourceDisplayLabel(sourceKey, locale, sourceLabel) || sourceLabel;
+    getLocalizedSourceDisplayLabel(sourceKey, locale, sourceLabel) ||
+    sourceLabel;
   const sourceSeoLabel =
     locale === "zh-CN" && meta?.label ? meta.label : sourceLabel;
   const subtypeSlug = Array.isArray(route?.params?.subtypeSlug)
@@ -1379,7 +1452,7 @@ const getListSeo = (route, siteUrl, canonical) => {
     : sourceSeoLabel;
   const descriptionLabel = subtypeLabel ? sourceDisplayLabel : sourceSeoLabel;
   const defaultTitleLabel = normalizeTitleLabel(
-    subtypeLabel ? `${sourceDisplayLabel} ${subtypeLabel}` : sourceSeoLabel
+    subtypeLabel ? `${sourceDisplayLabel} ${subtypeLabel}` : sourceSeoLabel,
   );
   const zhRouteSeo =
     locale === "zh-CN"
@@ -1389,39 +1462,45 @@ const getListSeo = (route, siteUrl, canonical) => {
   const localizedDefaultDescription = i18n.global.t(
     "seo.listDescription",
     {},
-    { locale }
+    { locale },
   );
   const localizedDefaultKeywords = i18n.global.t(
     "seo.listKeywords",
     {},
-    { locale }
+    { locale },
   );
-  const description =
-    subtypeLabel
-      ? i18n.global.t(
-          "seo.sourceSubtypeDescription",
-          {
-            label: descriptionLabel,
-            subtype: subtypeLabel,
-          },
-          { locale }
-        )
-      : locale === "zh-CN" && meta.description
-        ? meta.description
-        : i18n.global.t("seo.sourceDescription", { label: descriptionLabel }, { locale });
-  const keywords =
-    subtypeLabel
-      ? i18n.global.t(
-          "seo.sourceSubtypeKeywords",
-          {
-            label: descriptionLabel,
-            subtype: subtypeLabel,
-          },
-          { locale }
-        )
-      : locale === "zh-CN" && meta.keywords
-        ? meta.keywords
-        : i18n.global.t("seo.sourceKeywords", { label: descriptionLabel }, { locale });
+  const description = subtypeLabel
+    ? i18n.global.t(
+        "seo.sourceSubtypeDescription",
+        {
+          label: descriptionLabel,
+          subtype: subtypeLabel,
+        },
+        { locale },
+      )
+    : locale === "zh-CN" && meta.description
+      ? meta.description
+      : i18n.global.t(
+          "seo.sourceDescription",
+          { label: descriptionLabel },
+          { locale },
+        );
+  const keywords = subtypeLabel
+    ? i18n.global.t(
+        "seo.sourceSubtypeKeywords",
+        {
+          label: descriptionLabel,
+          subtype: subtypeLabel,
+        },
+        { locale },
+      )
+    : locale === "zh-CN" && meta.keywords
+      ? meta.keywords
+      : i18n.global.t(
+          "seo.sourceKeywords",
+          { label: descriptionLabel },
+          { locale },
+        );
   const localizedSiteName = i18n.global.t("common.siteName", {}, { locale });
   const zhIntent =
     zhRouteSeo?.intent ||
@@ -1439,7 +1518,7 @@ const getListSeo = (route, siteUrl, canonical) => {
     locale === "zh-CN"
       ? `${appendZhPageSuffix(titleLabel)}，${joinZhVerbObject(
           "聚合",
-          zhIntent
+          zhIntent,
         )}、对应平台最新数据与原站入口，支持实时浏览、榜单切换、分页跳转与一键直达。`
       : description || localizedDefaultDescription;
   const finalKeywords =
@@ -1451,7 +1530,7 @@ const getListSeo = (route, siteUrl, canonical) => {
           subtypeLabel,
           zhIntent,
           titleLabel,
-          SEO_BRAND_NAME_ZH
+          SEO_BRAND_NAME_ZH,
         )
       : keywords || localizedDefaultKeywords;
 
@@ -1505,17 +1584,27 @@ export const applySeoMeta = (route) => {
   const localizedHomeDescription = i18n.global.t(
     "seo.homeDescription",
     {},
-    { locale }
+    { locale },
   );
-  const localizedHomeKeywords = i18n.global.t("seo.homeKeywords", {}, { locale });
+  const localizedHomeKeywords = i18n.global.t(
+    "seo.homeKeywords",
+    {},
+    { locale },
+  );
   const localizedListTitle = i18n.global.t("seo.listTitle", {}, { locale });
   const localizedListDescription = i18n.global.t(
     "seo.listDescription",
     {},
-    { locale }
+    { locale },
   );
-  const localizedListKeywords = i18n.global.t("seo.listKeywords", {}, { locale });
-  const isListRoute = ["list", "list-locale", "list-legacy"].includes(route?.name);
+  const localizedListKeywords = i18n.global.t(
+    "seo.listKeywords",
+    {},
+    { locale },
+  );
+  const isListRoute = ["list", "list-locale", "list-legacy"].includes(
+    route?.name,
+  );
   const isHomeRoute = ["home", "home-locale"].includes(route?.name);
 
   const title =
@@ -1548,7 +1637,7 @@ export const applySeoMeta = (route) => {
   const ogType = resolveValue(meta.ogType, context) || "website";
   const ogImage = buildAbsoluteUrl(
     resolveValue(meta.ogImage, context) || DEFAULT_SEO.ogImage,
-    siteUrl
+    siteUrl,
   );
 
   document.title = title;
@@ -1561,11 +1650,15 @@ export const applySeoMeta = (route) => {
   setMetaTag("property", "og:description", description);
   setMetaTag("property", "og:url", canonical);
   setMetaTag("property", "og:image", ogImage);
-  setMetaTag("property", "og:site_name", i18n.global.t("common.siteName", {}, { locale }) || DEFAULT_SEO.siteName);
+  setMetaTag(
+    "property",
+    "og:site_name",
+    i18n.global.t("common.siteName", {}, { locale }) || DEFAULT_SEO.siteName,
+  );
   setMetaTag(
     "property",
     "og:locale",
-    (getLocaleMeta(locale)?.htmlLang || DEFAULT_SEO.locale).replace("-", "_")
+    (getLocaleMeta(locale)?.htmlLang || DEFAULT_SEO.locale).replace("-", "_"),
   );
 
   setMetaTag("name", "twitter:card", "summary_large_image");

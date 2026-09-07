@@ -6,6 +6,10 @@ const SOURCE_LOGO_MAP = {
   "nodeloc-deals": "/logo/wool/nodeloc.png",
   "douban-wool": "/logo/douban-group.png",
   "douban-pet-wool": "/logo/douban-group.png",
+  "steam-deals": "https://store.steampowered.com/favicon.ico",
+  "epic-free-games": "https://store.epicgames.com/favicon.ico",
+  "xiaoheihe-deals": "/logo/game/xiaoheihe.png",
+  ggdeals: "https://gg.deals/favicon.ico",
   xueqiu: "/logo/xueqiu.png",
   sse: "https://www.sse.com.cn/favicon.ico",
   szse: "https://res.szse.cn/common/images/favicon.ico",
@@ -60,4 +64,5 @@ export const getSourceLogo = (name) => {
   return getPublicAssetUrl(path);
 };
 
-export const getSourceLogoFallback = () => getPublicAssetUrl("/ico/favicon.png");
+export const getSourceLogoFallback = () =>
+  getPublicAssetUrl("/ico/favicon.png");

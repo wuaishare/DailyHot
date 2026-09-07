@@ -556,6 +556,34 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     ja: "Douban ペットお得情報",
     ko: "Douban 반려동물 혜택",
   },
+  "steam-deals": {
+    "zh-CN": "Steam 特惠",
+    "zh-TW": "Steam 特惠",
+    en: "Steam Deals",
+    ja: "Steam セール",
+    ko: "Steam 할인",
+  },
+  "epic-free-games": {
+    "zh-CN": "Epic 免费游戏",
+    "zh-TW": "Epic 免費遊戲",
+    en: "Epic Free Games",
+    ja: "Epic 無料ゲーム",
+    ko: "Epic 무료 게임",
+  },
+  "xiaoheihe-deals": {
+    "zh-CN": "小黑盒游戏折扣",
+    "zh-TW": "小黑盒遊戲折扣",
+    en: "Xiaoheihe Game Deals",
+    ja: "Xiaoheihe ゲームセール",
+    ko: "Xiaoheihe 게임 할인",
+  },
+  ggdeals: {
+    "zh-CN": "GG.deals 游戏优惠",
+    "zh-TW": "GG.deals 遊戲優惠",
+    en: "GG.deals Game Deals",
+    ja: "GG.deals ゲームセール",
+    ko: "GG.deals 게임 할인",
+  },
   "ithome-xijiayi": {
     "zh-CN": "IT之家「喜加一」",
     "zh-TW": "IT之家「喜加一」",
@@ -779,24 +807,8 @@ const SOURCE_DISPLAY_LABEL_OVERRIDES = {
 };
 
 const SOURCE_DISPLAY_SUFFIXES = {
-  "zh-CN": [
-    "热门文章榜",
-    "热榜",
-    "热搜",
-    "趋势",
-    "热议",
-    "精选",
-    "排行榜",
-  ],
-  "zh-TW": [
-    "熱門文章榜",
-    "熱榜",
-    "熱搜",
-    "趨勢",
-    "熱議",
-    "精選",
-    "排行榜",
-  ],
+  "zh-CN": ["热门文章榜", "热榜", "热搜", "趋势", "热议", "精选", "排行榜"],
+  "zh-TW": ["熱門文章榜", "熱榜", "熱搜", "趨勢", "熱議", "精選", "排行榜"],
   en: [
     " Hot Search",
     " Hot List",
@@ -813,13 +825,7 @@ const SOURCE_DISPLAY_SUFFIXES = {
     "人気",
     "セレクト",
   ],
-  ko: [
-    " 인기 검색어",
-    " 인기 랭킹",
-    " 트렌드",
-    " 인기",
-    " 큐레이션",
-  ],
+  ko: [" 인기 검색어", " 인기 랭킹", " 트렌드", " 인기", " 큐레이션"],
 };
 
 const GENERIC_SOURCE_SUBTITLE_LABELS = {
@@ -1275,7 +1281,7 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "全体音楽ランキング",
     ko: "전체 음악 랭킹",
   },
-  "模型周度热度榜": {
+  模型周度热度榜: {
     "zh-CN": "模型周度热度榜",
     "zh-TW": "模型週熱度榜",
     en: "Weekly Model Usage Rankings",
@@ -1366,14 +1372,14 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "10Kコンテキスト",
     ko: "10K 컨텍스트",
   },
-  "模型综合评测榜": {
+  模型综合评测榜: {
     "zh-CN": "模型综合评测榜",
     "zh-TW": "模型綜合評測榜",
     en: "Model Evaluation Rankings",
     ja: "総合モデル評価ランキング",
     ko: "모델 종합 평가 랭킹",
   },
-  "模型偏好对战榜": {
+  模型偏好对战榜: {
     "zh-CN": "模型偏好对战榜",
     "zh-TW": "模型偏好對戰榜",
     en: "Preference Battle Rankings",
@@ -1387,7 +1393,7 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "世界AIプロダクト人気ランキング",
     ko: "글로벌 AI 제품 인기 랭킹",
   },
-  "排行榜总榜": {
+  排行榜总榜: {
     "zh-CN": "排行榜总榜",
     "zh-TW": "排行榜總榜",
     en: "Overall Rankings",
@@ -1485,7 +1491,7 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "フルスタックアプリ品質ランキング",
     ko: "풀스택 앱 품질 랭킹",
   },
-  "全栈应用质量榜": {
+  全栈应用质量榜: {
     "zh-CN": "全栈应用质量榜",
     "zh-TW": "全棧應用品質榜",
     en: "Fullstack App Quality",
@@ -1891,14 +1897,14 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "公式ニュース",
     ko: "공식 뉴스",
   },
-  "官方研究": {
+  官方研究: {
     "zh-CN": "官方研究",
     "zh-TW": "官方研究",
     en: "Official Research",
     ja: "公式研究",
     ko: "공식 연구",
   },
-  "官方研究更新": {
+  官方研究更新: {
     "zh-CN": "官方研究",
     "zh-TW": "官方研究",
     en: "Official Research",
@@ -1919,14 +1925,14 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "公式AIアップデート",
     ko: "공식 AI 업데이트",
   },
-  "开源模型趋势榜": {
+  开源模型趋势榜: {
     "zh-CN": "开源模型趋势榜",
     "zh-TW": "開源模型趨勢榜",
     en: "Open Model Rankings",
     ja: "オープンモデル人気ランキング",
     ko: "오픈 모델 트렌드 랭킹",
   },
-  "热门论文趋势榜": {
+  热门论文趋势榜: {
     "zh-CN": "热门论文趋势榜",
     "zh-TW": "熱門論文趨勢榜",
     en: "Trending Papers Rankings",
@@ -1954,63 +1960,63 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "週間ランキング",
     ko: "주간 랭킹",
   },
-  "开放模型总榜": {
+  开放模型总榜: {
     "zh-CN": "开放模型总榜",
     "zh-TW": "開放模型總榜",
     en: "Open Model Rankings",
     ja: "オープンモデル総合",
     ko: "오픈 모델 종합",
   },
-  "编程能力榜": {
+  编程能力榜: {
     "zh-CN": "编程能力榜",
     "zh-TW": "程式能力榜",
     en: "Coding Rankings",
     ja: "コーディングランキング",
     ko: "코딩 랭킹",
   },
-  "写作能力榜": {
+  写作能力榜: {
     "zh-CN": "写作能力榜",
     "zh-TW": "寫作能力榜",
     en: "Writing Rankings",
     ja: "ライティングランキング",
     ko: "글쓰기 랭킹",
   },
-  "数学能力榜": {
+  数学能力榜: {
     "zh-CN": "数学能力榜",
     "zh-TW": "數學能力榜",
     en: "Math Rankings",
     ja: "数学ランキング",
     ko: "수학 랭킹",
   },
-  "研究能力榜": {
+  研究能力榜: {
     "zh-CN": "研究能力榜",
     "zh-TW": "研究能力榜",
     en: "Research Rankings",
     ja: "研究ランキング",
     ko: "연구 랭킹",
   },
-  "长上下文榜": {
+  长上下文榜: {
     "zh-CN": "长上下文榜",
     "zh-TW": "長上下文榜",
     en: "Long Context Rankings",
     ja: "長文脈ランキング",
     ko: "롱컨텍스트 랭킹",
   },
-  "工具调用榜": {
+  工具调用榜: {
     "zh-CN": "工具调用榜",
     "zh-TW": "工具調用榜",
     en: "Tool Calling Rankings",
     ja: "ツール利用ランキング",
     ko: "툴콜링 랭킹",
   },
-  "推理能力榜": {
+  推理能力榜: {
     "zh-CN": "推理能力榜",
     "zh-TW": "推理能力榜",
     en: "Reasoning Rankings",
     ja: "推論ランキング",
     ko: "추론 랭킹",
   },
-  "图像生成榜": {
+  图像生成榜: {
     "zh-CN": "图像生成榜",
     "zh-TW": "圖像生成榜",
     en: "Image Generation Rankings",
@@ -2024,21 +2030,21 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "画像生成",
     ko: "이미지 생성",
   },
-  "视频生成榜": {
+  视频生成榜: {
     "zh-CN": "视频生成榜",
     "zh-TW": "影片生成榜",
     en: "Video Generation Rankings",
     ja: "動画生成ランキング",
     ko: "비디오 생성 랭킹",
   },
-  "模型厂商榜": {
+  模型厂商榜: {
     "zh-CN": "模型厂商榜",
     "zh-TW": "模型廠商榜",
     en: "Provider Rankings",
     ja: "プロバイダランキング",
     ko: "프로바이더 랭킹",
   },
-  "全球网站热度榜": {
+  全球网站热度榜: {
     "zh-CN": "全球网站热度榜",
     "zh-TW": "全球網站熱度榜",
     en: "Global Website Rankings",
@@ -2157,14 +2163,14 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "AIクラウドランキング",
     ko: "AI 클라우드 랭킹",
   },
-  "全球增长榜": {
+  全球增长榜: {
     "zh-CN": "全球增长榜",
     "zh-TW": "全球增長榜",
     en: "Global Growth Rankings",
     ja: "グローバル成長ランキング",
     ko: "글로벌 성장 랭킹",
   },
-  "中国增长榜": {
+  中国增长榜: {
     "zh-CN": "中国增长榜",
     "zh-TW": "中國增長榜",
     en: "China Growth Rankings",
@@ -2178,14 +2184,14 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "Claw成長ランキング",
     ko: "Claw 성장 랭킹",
   },
-  "全球放缓榜": {
+  全球放缓榜: {
     "zh-CN": "全球放缓榜",
     "zh-TW": "全球放緩榜",
     en: "Global Slowdown Rankings",
     ja: "グローバル減速ランキング",
     ko: "글로벌 둔화 랭킹",
   },
-  "综合对话榜": {
+  综合对话榜: {
     "zh-CN": "综合对话榜",
     "zh-TW": "綜合對話榜",
     en: "Overall Chat Rankings",
@@ -2283,7 +2289,7 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "Searchランキング",
     ko: "Search 랭킹",
   },
-  "论文代码镜像榜": {
+  论文代码镜像榜: {
     "zh-CN": "论文代码镜像榜",
     "zh-TW": "論文程式碼鏡像榜",
     en: "Paper-Code Mirror Rankings",
@@ -2647,7 +2653,7 @@ const SUBTYPE_LABEL_OVERRIDES = {
     ja: "フルスタックアプリ品質",
     ko: "풀스택 앱 품질",
   },
-  "全栈应用质量": {
+  全栈应用质量: {
     "zh-CN": "全栈应用质量",
     "zh-TW": "全棧應用品質",
     en: "Fullstack App Quality",
@@ -3223,6 +3229,90 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     en: "Dog Group",
     ja: "犬グループ",
     ko: "강아지 그룹",
+  },
+  热门特惠: {
+    "zh-CN": "热门特惠",
+    "zh-TW": "熱門特惠",
+    en: "Featured Deals",
+    ja: "人気セール",
+    ko: "인기 할인",
+  },
+  "75%+ 高折扣": {
+    "zh-CN": "75%+ 高折扣",
+    "zh-TW": "75%+ 高折扣",
+    en: "75%+ Off",
+    ja: "75%以上割引",
+    ko: "75%+ 할인",
+  },
+  "90%+ 超低折扣": {
+    "zh-CN": "90%+ 超低折扣",
+    "zh-TW": "90%+ 超低折扣",
+    en: "90%+ Off",
+    ja: "90%以上割引",
+    ko: "90%+ 할인",
+  },
+  "10 元以内": {
+    "zh-CN": "10 元以内",
+    "zh-TW": "10 元以內",
+    en: "Under ¥10",
+    ja: "10元以下",
+    ko: "10위안 이하",
+  },
+  "30 元以内": {
+    "zh-CN": "30 元以内",
+    "zh-TW": "30 元以內",
+    en: "Under ¥30",
+    ja: "30元以下",
+    ko: "30위안 이하",
+  },
+  正在免费: {
+    "zh-CN": "正在免费",
+    "zh-TW": "正在免費",
+    en: "Free Now",
+    ja: "現在無料",
+    ko: "현재 무료",
+  },
+  即将免费: {
+    "zh-CN": "即将免费",
+    "zh-TW": "即將免費",
+    en: "Upcoming Free",
+    ja: "近日無料",
+    ko: "곧 무료",
+  },
+  热门折扣: {
+    "zh-CN": "热门折扣",
+    "zh-TW": "熱門折扣",
+    en: "Popular Deals",
+    ja: "人気割引",
+    ko: "인기 할인",
+  },
+  史低游戏: {
+    "zh-CN": "史低游戏",
+    "zh-TW": "史低遊戲",
+    en: "Historical Lows",
+    ja: "史上最安",
+    ko: "역대 최저가",
+  },
+  免费游戏: {
+    "zh-CN": "免费游戏",
+    "zh-TW": "免費遊戲",
+    en: "Free Games",
+    ja: "無料ゲーム",
+    ko: "무료 게임",
+  },
+  优惠资讯: {
+    "zh-CN": "优惠资讯",
+    "zh-TW": "優惠資訊",
+    en: "Deal News",
+    ja: "セール情報",
+    ko: "할인 소식",
+  },
+  游戏包: {
+    "zh-CN": "游戏包",
+    "zh-TW": "遊戲包",
+    en: "Bundles",
+    ja: "バンドル",
+    ko: "게임 번들",
   },
   今日热门: {
     "zh-CN": "今日热门",
@@ -4426,16 +4516,13 @@ const titleCaseToken = (token = "") =>
     .map((part) =>
       /^[A-Z0-9]+$/.test(part)
         ? part
-        : part.charAt(0).toUpperCase() + part.slice(1)
+        : part.charAt(0).toUpperCase() + part.slice(1),
     )
     .join(" ");
 
 export const prettifySlug = (value = "") =>
   titleCaseToken(
-    String(value)
-      .replace(/[-_]+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
+    String(value).replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim(),
   );
 
 export const getSourceLabel = (
@@ -4446,7 +4533,10 @@ export const getSourceLabel = (
   const normalizedLocale = normalizeLocale(locale);
   const overrides = SOURCE_LABEL_OVERRIDES[sourceName] || null;
   if (overrides?.[normalizedLocale]) return overrides[normalizedLocale];
-  if ((normalizedLocale === "zh-CN" || normalizedLocale === "zh-TW") && fallbackLabel) {
+  if (
+    (normalizedLocale === "zh-CN" || normalizedLocale === "zh-TW") &&
+    fallbackLabel
+  ) {
     return fallbackLabel;
   }
   if (overrides?.en) return overrides.en;
@@ -4461,7 +4551,7 @@ const stripDisplaySuffix = (label = "", locale = "zh-CN") => {
   const suffix = suffixes.find(
     (item) =>
       normalizedLabel.endsWith(item) &&
-      normalizedLabel.length > item.length + 1
+      normalizedLabel.length > item.length + 1,
   );
   if (!suffix) return normalizedLabel;
   return normalizeLookupLabel(normalizedLabel.slice(0, -suffix.length));
@@ -4473,7 +4563,10 @@ export const getSourceDisplayLabel = (
   fallbackLabel = "",
 ) => {
   const normalizedLocale = normalizeLocale(locale);
-  const fallbackDisplayLabel = stripDisplaySuffix(fallbackLabel, normalizedLocale);
+  const fallbackDisplayLabel = stripDisplaySuffix(
+    fallbackLabel,
+    normalizedLocale,
+  );
   const overrides = SOURCE_DISPLAY_LABEL_OVERRIDES[sourceName] || null;
   if (overrides?.[normalizedLocale]) return overrides[normalizedLocale];
   if (normalizedLocale === "zh-CN" && fallbackDisplayLabel) {
@@ -4482,7 +4575,7 @@ export const getSourceDisplayLabel = (
   if (overrides?.en) return overrides.en;
   return stripDisplaySuffix(
     getSourceLabel(sourceName, normalizedLocale, fallbackLabel),
-    normalizedLocale
+    normalizedLocale,
   );
 };
 
@@ -4513,7 +4606,7 @@ export const getSourceSubtitleLabel = (label = "", locale = "zh-CN") => {
   if (!rawLabel) return "";
   const subtypeLabel = getSubtypeLabel(
     { label: rawLabel, value: rawLabel },
-    normalizedLocale
+    normalizedLocale,
   );
   if (subtypeLabel && subtypeLabel !== rawLabel) {
     return subtypeLabel;
@@ -4532,7 +4625,7 @@ export const isGenericSourceSubtitleLabel = (label = "", locale = "zh-CN") => {
   const normalizedLabel = normalizeLookupLabel(label);
   if (!normalizedLabel) return false;
   return (GENERIC_SOURCE_SUBTITLE_LABELS[normalizedLocale] || []).includes(
-    normalizedLabel
+    normalizedLabel,
   );
 };
 
@@ -4540,7 +4633,7 @@ export const getSubtypeGroupLabel = (group, locale = "zh-CN") => {
   const normalizedLocale = normalizeLocale(locale);
   const rawLabel = normalizeLookupLabel(group?.label || "");
   const groupKey = normalizeLookupLabel(
-    group?.key || rawLabel || group?.items?.[0]?.value || ""
+    group?.key || rawLabel || group?.items?.[0]?.value || "",
   );
   const override = GROUP_LABEL_OVERRIDES[groupKey];
   if (override?.[normalizedLocale]) return override[normalizedLocale];
