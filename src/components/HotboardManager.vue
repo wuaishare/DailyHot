@@ -16,24 +16,10 @@
             <strong>{{ copy.title }}</strong>
             <span>{{ copy.subtitle }}</span>
           </div>
-          <div class="manager-section-tabs" role="tablist" :aria-label="copy.settingsTabs">
-            <n-button
-              size="small"
-              :type="activeSection === 'boards' ? 'primary' : 'default'"
-              :secondary="activeSection !== 'boards'"
-              @click="activeSection = 'boards'"
-            >{{ copy.boardsTab }}</n-button>
-            <n-button
-              size="small"
-              :type="activeSection === 'general' ? 'primary' : 'default'"
-              :secondary="activeSection !== 'general'"
-              @click="activeSection = 'general'"
-            >{{ copy.generalTab }}</n-button>
-          </div>
         </div>
       </template>
 
-      <div v-if="activeSection === 'boards'" class="manager-layout">
+      <div class="manager-layout">
         <aside class="category-panel">
           <div class="panel-toolbar">
             <strong>{{ copy.categories }}</strong>
@@ -194,19 +180,13 @@
           />
         </section>
       </div>
-      <div v-else class="hotboard-general-settings">
-        <GeneralSettings embedded />
-      </div>
-
       <template #footer>
         <div class="manager-footer">
           <n-button
-            v-if="activeSection === 'boards'"
             quaternary
             size="small"
             @click="restoreDefaults"
           >{{ copy.restore }}</n-button>
-          <span v-else></span>
           <n-button
             type="primary"
             size="small"
@@ -234,17 +214,14 @@ import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { useI18n } from "vue-i18n";
 import { Drag } from "@icon-park/vue-next";
 import { BUILTIN_CATEGORIES } from "@/config/site-metadata.mjs";
-import GeneralSettings from "@/components/GeneralSettings.vue";
 
 const props = defineProps({
   show: { type: Boolean, default: false },
-  initialSection: { type: String, default: "boards" },
   initialCategoryId: { type: [String, Number], default: null },
 });
 const emit = defineEmits(["update:show"]);
 const store = mainStore();
 const { locale } = useI18n({ useScope: "global" });
-const activeSection = ref(props.initialSection === "general" ? "general" : "boards");
 const selectedCategoryId = ref("all");
 const search = ref("");
 const addingCategory = ref(false);
@@ -387,8 +364,6 @@ const selectedCategory = computed(() =>
 );
 
 const applyInitialContext = () => {
-  activeSection.value =
-    props.initialSection === "general" ? "general" : "boards";
   const requestedId =
     props.initialCategoryId === null ||
     typeof props.initialCategoryId === "undefined"
@@ -402,7 +377,7 @@ const applyInitialContext = () => {
 };
 
 watch(
-  () => [props.show, props.initialCategoryId, props.initialSection],
+  () => [props.show, props.initialCategoryId],
   ([show]) => {
     if (show) applyInitialContext();
   },
@@ -503,7 +478,6 @@ watch(
   () => props.show,
   (value) => {
     if (value) {
-      activeSection.value = props.initialSection === "general" ? "general" : "boards";
       store.ensureNewsList();
       store.ensureBuiltinCategories();
       syncSources();
@@ -586,11 +560,6 @@ const restoreDefaults = () => {
   min-height: 0;
   overflow: hidden;
 }
-.manager-section-tabs {
-  display: flex;
-  gap: 6px;
-  flex: 0 0 auto;
-}
 .manager-title,
 .boards-toolbar,
 .manager-footer,
@@ -637,14 +606,6 @@ const restoreDefaults = () => {
   min-height: 0;
   padding-left: 16px;
   overflow: auto;
-}
-.hotboard-general-settings {
-  height: 100%;
-  min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  padding: 2px 4px 4px 2px;
-  background: var(--n-color, #fff);
 }
 .panel-toolbar,
 .boards-toolbar {
