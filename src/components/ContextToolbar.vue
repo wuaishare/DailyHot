@@ -1253,11 +1253,31 @@ watchEffect(() => {
   stroke-width: 1.5;
 }
 
-.context-toolbar__manager,
-.context-toolbar__manager:hover {
-  border-color: color-mix(in srgb, var(--n-text-color-3) 58%, var(--n-border-color));
+.context-toolbar__manager {
+  box-sizing: border-box;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid
+    color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
+  border-radius: 10px;
   background: var(--n-action-color);
   color: var(--n-text-color);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+
+.context-toolbar__manager:hover {
+  border-color: color-mix(in srgb, var(--n-text-color-3) 58%, var(--n-border-color));
+  background: color-mix(in srgb, var(--n-action-color) 88%, var(--n-color));
 }
 
 .context-toolbar__manager svg {
