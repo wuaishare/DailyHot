@@ -1362,8 +1362,7 @@ watchEffect(() => {
     min-width: 0;
   }
 
-  .context-toolbar__manager,
-  .context-toolbar__display {
+  .context-toolbar__manager {
     width: 38px;
     min-width: 38px;
     padding: 0;
