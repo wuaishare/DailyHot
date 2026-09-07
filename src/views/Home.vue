@@ -26,8 +26,13 @@
     <!-- <n-alert type="info" :show-icon="false" style="margin-bottom: 20px">
       站点未完工
     </n-alert> -->
+    <CategoryStream
+      v-if="isCategoryRoute && categoryView !== 'card'"
+      :sources="scopedNews"
+      :compact="categoryView === 'compact'"
+    />
     <draggable
-      v-if="sortableNews[0]"
+      v-else-if="sortableNews[0]"
       v-model="sortableNews"
       class="news-grid"
       :class="{ 'is-compact': store.compactMode }"
@@ -56,7 +61,14 @@
         </div>
       </template>
     </draggable>
-    <div class="error" v-if="renderNews[0] && sortableNews.length === 0">
+    <div
+      class="error"
+      v-if="
+        categoryView === 'card' &&
+        renderNews[0] &&
+        sortableNews.length === 0
+      "
+    >
       <n-divider dashed class="tip">
         {{ t("common.emptyCategory") }}
       </n-divider>
@@ -75,6 +87,7 @@
 <script setup>
 import { mainStore } from "@/store";
 import HotList from "@/components/HotList.vue";
+import CategoryStream from "@/components/CategoryStream.vue";
 import draggable from "vuedraggable";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -106,6 +119,13 @@ const renderNews = computed(() => {
 const forcedCategoryName = computed(() =>
   getCategoryNameBySlug(route.params?.categorySlug, store.categories),
 );
+const isCategoryRoute = computed(() =>
+  ["category", "category-locale"].includes(String(route.name || "")),
+);
+const categoryView = computed(() => {
+  const value = String(route.query.view || "");
+  return ["list", "compact"].includes(value) ? value : "card";
+});
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
 const queryValue = (value) =>
   String(Array.isArray(value) ? value[0] || "" : value || "").trim();
@@ -147,7 +167,7 @@ const woolTopicCopy = computed(
 const woolTopicPath = computed(() =>
   buildFixedLocalePath(locale.value, "/topic/wool"),
 );
-const filteredNews = computed(() => {
+const scopedNews = computed(() => {
   let scoped = renderNews.value;
   if (forcedCategoryName.value) {
     scoped = scoped.filter((item) =>
@@ -158,8 +178,13 @@ const filteredNews = computed(() => {
       sourceBelongsToCategory(item, store.activeCategory, store.categories),
     );
   }
-  return scoped.filter(sourceMatchesSearch);
+  return scoped;
 });
+const filteredNews = computed(() =>
+  categoryView.value === "card"
+    ? scopedNews.value.filter(sourceMatchesSearch)
+    : scopedNews.value,
+);
 const syncSortableNews = () => {
   sortableNews.value = filteredNews.value.slice();
 };

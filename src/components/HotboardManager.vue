@@ -239,6 +239,7 @@ import GeneralSettings from "@/components/GeneralSettings.vue";
 const props = defineProps({
   show: { type: Boolean, default: false },
   initialSection: { type: String, default: "boards" },
+  initialCategoryId: { type: [String, Number], default: null },
 });
 const emit = defineEmits(["update:show"]);
 const store = mainStore();
@@ -383,6 +384,29 @@ const selectedCategory = computed(() =>
     ? null
     : store.categories.find((item) => item.id === selectedCategoryId.value) ||
       null,
+);
+
+const applyInitialContext = () => {
+  activeSection.value =
+    props.initialSection === "general" ? "general" : "boards";
+  const requestedId =
+    props.initialCategoryId === null ||
+    typeof props.initialCategoryId === "undefined"
+      ? ""
+      : String(props.initialCategoryId);
+  const exists = store.categories.some(
+    (item) => String(item.id) === requestedId,
+  );
+  selectedCategoryId.value = exists ? requestedId : "all";
+  search.value = "";
+};
+
+watch(
+  () => [props.show, props.initialCategoryId, props.initialSection],
+  ([show]) => {
+    if (show) applyInitialContext();
+  },
+  { immediate: true },
 );
 const selectedCategoryLabel = computed(() =>
   selectedCategory.value

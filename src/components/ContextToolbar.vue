@@ -1,145 +1,255 @@
 <template>
   <nav v-if="visible" class="context-toolbar" :aria-label="copy.context">
     <div class="context-toolbar__left">
-      <TopicSwitcher
-        v-if="currentTopic"
-        class="context-toolbar__topics"
-        :active-topic="currentTopic.id"
-        :locale="locale"
-      />
-
       <div
-        v-else-if="routeKind === 'category' && secondLevelOptions.length"
-        class="context-toolbar__levels"
+        v-if="routeKind === 'category' || routeKind === 'list'"
+        class="context-breadcrumb"
+        :aria-label="copy.breadcrumb"
       >
-        <div class="context-toolbar__level">
-          <span class="context-toolbar__level-label">{{ copy.subcategory }}</span>
-          <div class="context-toolbar__rail">
-            <router-link
-              :to="withSearch(buildCategoryPath(locale, rootCategory.slug))"
-              class="context-toolbar__chip"
-              :class="{ 'is-active': !activeSecondCategory }"
-            >
-              {{ copy.all }}
-            </router-link>
-            <router-link
-              v-for="category in secondLevelOptions"
-              :key="category.id"
-              :to="withSearch(buildCategoryPath(locale, category.slug))"
-              class="context-toolbar__chip"
-              :class="{ 'is-active': category.id === activeSecondCategory?.id }"
-            >
-              {{ categoryLabel(category) }}
-            </router-link>
-          </div>
-        </div>
-
-        <div
-          v-if="activeSecondCategory && thirdLevelOptions.length"
-          class="context-toolbar__level context-toolbar__level--detail"
-        >
-          <span class="context-toolbar__level-divider" aria-hidden="true"></span>
-          <span class="context-toolbar__level-label">{{ copy.detail }}</span>
-          <div class="context-toolbar__rail">
-            <router-link
-              :to="withSearch(buildCategoryPath(locale, activeSecondCategory.slug))"
-              class="context-toolbar__chip"
-              :class="{ 'is-active': !activeThirdCategory }"
-            >
-              {{ copy.all }}
-            </router-link>
-            <router-link
-              v-for="category in thirdLevelOptions"
-              :key="category.id"
-              :to="withSearch(buildCategoryPath(locale, category.slug))"
-              class="context-toolbar__chip"
-              :class="{ 'is-active': category.id === activeThirdCategory?.id }"
-            >
-              {{ categoryLabel(category) }}
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <div v-else-if="routeKind === 'list'" class="context-toolbar__list-nav">
         <router-link
-          v-if="currentSourceCategory"
-          :to="withSearch(buildCategoryPath(locale, currentSourceCategory.slug))"
-          class="context-toolbar__back"
-          :aria-label="copy.backCategory"
-          :title="copy.backCategory"
+          :to="withSearch(buildHomePath(locale))"
+          class="context-breadcrumb__home"
+          :aria-label="copy.home"
+          :title="copy.home"
         >
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path d="m9.5 3.5-4.5 4.5 4.5 4.5" />
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path d="M3 8.1 9 3l6 5.1v6.4a.5.5 0 0 1-.5.5h-3.2v-4.2H6.7V15H3.5a.5.5 0 0 1-.5-.5V8.1Z" />
           </svg>
-          <span>{{ copy.category }}</span>
+          <span>{{ copy.home }}</span>
         </router-link>
 
-        <n-dropdown
-          trigger="click"
-          :options="sourceMenuOptions"
-          @select="switchSource"
-        >
-          <button
-            type="button"
-            class="context-toolbar__select"
-            :aria-label="copy.source"
+        <template v-for="category in categoryTrail" :key="category.id">
+          <span class="context-breadcrumb__separator" aria-hidden="true">›</span>
+          <n-dropdown
+            trigger="manual"
+            placement="bottom-start"
+            :options="categoryMenuOptions(category)"
+            :show="activeBreadcrumbMenu === 'category:' + category.id"
+            :menu-props="() => breadcrumbMenuProps('category:' + category.id)"
+            @select="switchCategory"
           >
-            <span class="context-toolbar__select-label">{{ copy.source }}</span>
-            <strong>{{ currentSourceLabel }}</strong>
-            <svg viewBox="0 0 12 12" aria-hidden="true">
-              <path d="m2.5 4.5 3.5 3 3.5-3" />
-            </svg>
-          </button>
-        </n-dropdown>
+            <div
+              class="context-breadcrumb__trigger"
+              @mouseenter="openBreadcrumbMenu('category:' + category.id)"
+              @mouseleave="scheduleBreadcrumbMenuClose('category:' + category.id)"
+            >
+              <router-link
+                :to="withSearch(buildCategoryPath(locale, category.slug))"
+                class="context-breadcrumb__item"
+                :class="{ 'is-current': category.id === currentCategory?.id }"
+              >
+                <span>{{ categoryLabel(category) }}</span>
+                <svg
+                  v-if="categoryMenuOptions(category).length > 1"
+                  class="context-breadcrumb__caret"
+                  viewBox="0 0 12 12"
+                  aria-hidden="true"
+                >
+                  <path d="m2.5 4.5 3.5 3 3.5-3" />
+                </svg>
+              </router-link>
+            </div>
+          </n-dropdown>
+        </template>
 
-        <n-dropdown
-          v-if="variantMenuOptions.length"
-          trigger="click"
-          :options="variantMenuOptions"
-          @select="switchVariant"
-        >
-          <button
-            type="button"
-            class="context-toolbar__select"
-            :aria-label="copy.variant"
+        <template v-if="routeKind === 'list'">
+          <span class="context-breadcrumb__separator" aria-hidden="true">›</span>
+          <n-dropdown
+            trigger="manual"
+            placement="bottom-start"
+            :options="sourceMenuOptions"
+            :show="activeBreadcrumbMenu === 'source'"
+            :menu-props="() => breadcrumbMenuProps('source')"
+            @select="switchSource"
           >
-            <span class="context-toolbar__select-label">{{ copy.variant }}</span>
-            <strong>{{ currentVariantLabel }}</strong>
-            <svg viewBox="0 0 12 12" aria-hidden="true">
-              <path d="m2.5 4.5 3.5 3 3.5-3" />
-            </svg>
-          </button>
+            <div
+              class="context-breadcrumb__trigger"
+              @mouseenter="openBreadcrumbMenu('source')"
+              @mouseleave="scheduleBreadcrumbMenuClose('source')"
+            >
+              <button type="button" class="context-breadcrumb__item is-current">
+                <span>{{ currentSourceLabel }}</span>
+                <svg
+                  v-if="sourceMenuOptions.length > 1"
+                  class="context-breadcrumb__caret"
+                  viewBox="0 0 12 12"
+                  aria-hidden="true"
+                >
+                  <path d="m2.5 4.5 3.5 3 3.5-3" />
+                </svg>
+              </button>
+            </div>
+          </n-dropdown>
+
+          <template v-if="variantMenuOptions.length > 1">
+            <span class="context-breadcrumb__separator" aria-hidden="true">›</span>
+            <n-dropdown
+              trigger="manual"
+              placement="bottom-start"
+              :options="variantMenuOptions"
+              :show="activeBreadcrumbMenu === 'variant'"
+              :menu-props="() => breadcrumbMenuProps('variant')"
+              @select="switchVariant"
+            >
+              <div
+                class="context-breadcrumb__trigger"
+                @mouseenter="openBreadcrumbMenu('variant')"
+                @mouseleave="scheduleBreadcrumbMenuClose('variant')"
+              >
+                <button type="button" class="context-breadcrumb__item is-current">
+                  <span>{{ currentVariantLabel }}</span>
+                  <svg
+                    class="context-breadcrumb__caret"
+                    viewBox="0 0 12 12"
+                    aria-hidden="true"
+                  >
+                    <path d="m2.5 4.5 3.5 3 3.5-3" />
+                  </svg>
+                </button>
+              </div>
+            </n-dropdown>
+          </template>
+        </template>
+      </div>
+
+      <div v-else-if="currentTopic" class="context-breadcrumb">
+        <router-link
+          :to="withSearch(buildHomePath(locale))"
+          class="context-breadcrumb__home"
+        >
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path d="M3 8.1 9 3l6 5.1v6.4a.5.5 0 0 1-.5.5h-3.2v-4.2H6.7V15H3.5a.5.5 0 0 1-.5-.5V8.1Z" />
+          </svg>
+          <span>{{ copy.home }}</span>
+        </router-link>
+        <span class="context-breadcrumb__separator" aria-hidden="true">›</span>
+        <span class="context-breadcrumb__section">{{ copy.topic }}</span>
+        <span class="context-breadcrumb__separator" aria-hidden="true">›</span>
+        <n-dropdown
+          trigger="manual"
+          placement="bottom-start"
+          :options="topicMenuOptions"
+          :show="activeBreadcrumbMenu === 'topic'"
+          :menu-props="() => breadcrumbMenuProps('topic')"
+          @select="switchTopic"
+        >
+          <div
+            class="context-breadcrumb__trigger"
+            @mouseenter="openBreadcrumbMenu('topic')"
+            @mouseleave="scheduleBreadcrumbMenuClose('topic')"
+          >
+            <button type="button" class="context-breadcrumb__item is-current">
+              <span>{{ currentTopicLabel }}</span>
+              <svg
+                class="context-breadcrumb__caret"
+                viewBox="0 0 12 12"
+                aria-hidden="true"
+              >
+                <path d="m2.5 4.5 3.5 3 3.5-3" />
+              </svg>
+            </button>
+          </div>
         </n-dropdown>
       </div>
     </div>
 
     <div class="context-toolbar__right">
-      <label class="context-toolbar__search">
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <circle cx="7" cy="7" r="4.5" />
-          <path d="m10.5 10.5 3 3" />
+      <div
+        v-if="routeKind === 'category'"
+        class="context-view-switch"
+        role="group"
+        :aria-label="copy.viewMode"
+      >
+        <button
+          type="button"
+          :class="{ active: viewMode === 'card' }"
+          :aria-label="copy.cardView"
+          :title="copy.cardView"
+          @click="setViewMode('card')"
+        >
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <rect x="2.5" y="2.5" width="5" height="5" rx="1" />
+            <rect x="10.5" y="2.5" width="5" height="5" rx="1" />
+            <rect x="2.5" y="10.5" width="5" height="5" rx="1" />
+            <rect x="10.5" y="10.5" width="5" height="5" rx="1" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          :class="{ active: viewMode === 'list' }"
+          :aria-label="copy.listView"
+          :title="copy.listView"
+          @click="setViewMode('list')"
+        >
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path d="M3 4h2M7.5 4H15M3 9h2M7.5 9H15M3 14h2M7.5 14H15" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          :class="{ active: viewMode === 'compact' }"
+          :aria-label="copy.compactView"
+          :title="copy.compactView"
+          @click="setViewMode('compact')"
+        >
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path d="M3 5h12M3 9h12M3 13h12" />
+          </svg>
+        </button>
+      </div>
+
+      <label
+        class="context-search"
+        :class="{ 'has-value': Boolean(searchInput), 'is-focused': searchFocused }"
+      >
+        <svg class="context-search__icon" viewBox="0 0 18 18" aria-hidden="true">
+          <circle cx="7.6" cy="7.6" r="4.7" />
+          <path d="m11.2 11.2 3.6 3.6" />
         </svg>
         <span class="sr-only">{{ copy.search }}</span>
         <input
+          ref="searchInputEl"
           v-model="searchInput"
           type="search"
           :placeholder="searchPlaceholder"
           :aria-label="copy.search"
+          @focus="searchFocused = true"
+          @blur="searchFocused = false"
           @input="queueSearchUpdate"
           @keydown.enter.prevent="flushSearchUpdate"
           @keydown.esc.prevent="clearSearch"
         />
+        <span v-if="!searchInput" class="context-search__shortcut" aria-hidden="true">
+          {{ searchShortcut }}
+        </span>
         <button
-          v-if="searchInput"
+          v-else
           type="button"
-          class="context-toolbar__clear"
+          class="context-search__clear"
           :aria-label="copy.clear"
-          @click="clearSearch"
+          @click.prevent="clearSearch"
         >
-          ×
+          <svg viewBox="0 0 14 14" aria-hidden="true">
+            <path d="m3.5 3.5 7 7m0-7-7 7" />
+          </svg>
         </button>
       </label>
+
+      <button
+        type="button"
+        class="context-toolbar__manager"
+        :aria-label="managerButtonLabel"
+        :title="managerButtonLabel"
+        @click="emit('open-hotboard-manager', managerCategoryId)"
+      >
+        <svg viewBox="0 0 18 18" aria-hidden="true">
+          <rect x="2.5" y="3" width="5" height="4.5" rx="1" />
+          <rect x="10.5" y="3" width="5" height="4.5" rx="1" />
+          <rect x="2.5" y="10.5" width="5" height="4.5" rx="1" />
+          <rect x="10.5" y="10.5" width="5" height="4.5" rx="1" />
+        </svg>
+        <span>{{ copy.manage }}</span>
+      </button>
 
       <n-popover trigger="click" placement="bottom-end" :show-arrow="false">
         <template #trigger>
@@ -149,11 +259,11 @@
             :aria-label="copy.displayPreferences"
             :title="copy.displayPreferences"
           >
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M3 4h10M3 8h10M3 12h10" />
-              <circle cx="6" cy="4" r="1.2" />
-              <circle cx="10" cy="8" r="1.2" />
-              <circle cx="7" cy="12" r="1.2" />
+            <svg viewBox="0 0 18 18" aria-hidden="true">
+              <path d="M3 4.5h12M3 9h12M3 13.5h12" />
+              <circle cx="6.5" cy="4.5" r="1.35" />
+              <circle cx="11.5" cy="9" r="1.35" />
+              <circle cx="8" cy="13.5" r="1.35" />
             </svg>
           </button>
         </template>
@@ -194,9 +304,15 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref, watch, watchEffect } from "vue";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
-import TopicSwitcher from "@/components/TopicSwitcher.vue";
 import { mainStore } from "@/store";
 import {
   getCategoryByRef,
@@ -204,6 +320,7 @@ import {
 } from "@/utils/categoryTree";
 import {
   buildCategoryPath,
+  buildHomePath,
   buildRankPath,
   getCategoryLabel,
   getLocaleFromRoute,
@@ -220,26 +337,36 @@ import {
   getSourceDisplayLabel,
   getSubtypeLabel,
 } from "@/utils/sourceLabels";
-import { getTopicByRouteName } from "@/config/topics";
+import {
+  TOPIC_REGISTRY,
+  buildTopicPath,
+  getTopicByRouteName,
+  getTopicLabel,
+} from "@/config/topics";
 
+const emit = defineEmits(["open-hotboard-manager"]);
 const route = useRoute();
 const router = useRouter();
 const store = mainStore();
 
 const COPY = {
   "zh-CN": {
-    all: "全部",
-    category: "分类",
-    subcategory: "分类",
-    detail: "细分",
-    backCategory: "返回所属分类",
-    source: "来源",
-    variant: "榜单",
+    home: "首页",
+    topic: "专题",
+    breadcrumb: "当前位置",
+    viewMode: "视图",
+    cardView: "卡片视图",
+    listView: "列表视图",
+    compactView: "紧凑列表",
     search: "搜索当前上下文",
-    searchCategory: "搜索当前分类榜单",
-    searchList: "搜索当前榜单",
-    searchTopic: "搜索当前专题",
+    searchCategory: "搜索当前分类中的榜单",
+    searchStream: "搜索当前分类聚合内容",
+    searchList: "搜索当前榜单内容",
+    searchTopic: "搜索当前专题内容",
     clear: "清除搜索",
+    manage: "榜单管理",
+    manageCurrent: "管理「{category}」分类下的榜单",
+    manageAll: "管理全部榜单",
     displayPreferences: "显示偏好",
     compact: "紧凑布局",
     compactTip: "减少卡片间距，提升信息密度",
@@ -249,18 +376,22 @@ const COPY = {
     context: "上下文工具栏",
   },
   en: {
-    all: "All",
-    category: "Category",
-    subcategory: "Sections",
-    detail: "Detail",
-    backCategory: "Back to category",
-    source: "Source",
-    variant: "View",
+    home: "Home",
+    topic: "Topics",
+    breadcrumb: "Current location",
+    viewMode: "View",
+    cardView: "Card view",
+    listView: "List view",
+    compactView: "Compact list",
     search: "Search current context",
     searchCategory: "Search rankings in this category",
-    searchList: "Search this ranking",
-    searchTopic: "Search this topic",
+    searchStream: "Search the aggregated category stream",
+    searchList: "Search within this ranking",
+    searchTopic: "Search within this topic",
     clear: "Clear search",
+    manage: "Manage",
+    manageCurrent: "Manage rankings in “{category}”",
+    manageAll: "Manage all rankings",
     displayPreferences: "Display preferences",
     compact: "Compact layout",
     compactTip: "Reduce card spacing and increase density",
@@ -270,18 +401,22 @@ const COPY = {
     context: "Context toolbar",
   },
   "zh-TW": {
-    all: "全部",
-    category: "分類",
-    subcategory: "分類",
-    detail: "細分",
-    backCategory: "返回所屬分類",
-    source: "來源",
-    variant: "榜單",
+    home: "首頁",
+    topic: "專題",
+    breadcrumb: "目前位置",
+    viewMode: "檢視",
+    cardView: "卡片檢視",
+    listView: "列表檢視",
+    compactView: "緊湊列表",
     search: "搜尋目前內容",
-    searchCategory: "搜尋目前分類榜單",
-    searchList: "搜尋目前榜單",
-    searchTopic: "搜尋目前專題",
+    searchCategory: "搜尋目前分類中的榜單",
+    searchStream: "搜尋目前分類彙整內容",
+    searchList: "搜尋目前榜單內容",
+    searchTopic: "搜尋目前專題內容",
     clear: "清除搜尋",
+    manage: "榜單管理",
+    manageCurrent: "管理「{category}」分類下的榜單",
+    manageAll: "管理全部榜單",
     displayPreferences: "顯示偏好",
     compact: "緊湊版面",
     compactTip: "減少卡片間距，提高資訊密度",
@@ -291,18 +426,22 @@ const COPY = {
     context: "內容工具列",
   },
   ja: {
-    all: "すべて",
-    category: "カテゴリ",
-    subcategory: "カテゴリ",
-    detail: "詳細",
-    backCategory: "カテゴリに戻る",
-    source: "ソース",
-    variant: "ランキング",
+    home: "ホーム",
+    topic: "特集",
+    breadcrumb: "現在地",
+    viewMode: "表示",
+    cardView: "カード表示",
+    listView: "リスト表示",
+    compactView: "コンパクトリスト",
     search: "現在の内容を検索",
     searchCategory: "このカテゴリのランキングを検索",
-    searchList: "このランキングを検索",
-    searchTopic: "この特集を検索",
+    searchStream: "カテゴリの統合結果を検索",
+    searchList: "このランキング内を検索",
+    searchTopic: "この特集内を検索",
     clear: "検索をクリア",
+    manage: "管理",
+    manageCurrent: "「{category}」のランキングを管理",
+    manageAll: "すべてのランキングを管理",
     displayPreferences: "表示設定",
     compact: "コンパクト表示",
     compactTip: "カード間隔を縮めて情報密度を上げます",
@@ -312,18 +451,22 @@ const COPY = {
     context: "コンテキストツールバー",
   },
   ko: {
-    all: "전체",
-    category: "분류",
-    subcategory: "분류",
-    detail: "세부",
-    backCategory: "분류로 돌아가기",
-    source: "출처",
-    variant: "랭킹",
+    home: "홈",
+    topic: "주제",
+    breadcrumb: "현재 위치",
+    viewMode: "보기",
+    cardView: "카드 보기",
+    listView: "목록 보기",
+    compactView: "컴팩트 목록",
     search: "현재 컨텍스트 검색",
-    searchCategory: "현재 분류 랭킹 검색",
-    searchList: "현재 랭킹 검색",
-    searchTopic: "현재 주제 검색",
+    searchCategory: "현재 분류의 랭킹 검색",
+    searchStream: "현재 분류 통합 결과 검색",
+    searchList: "현재 랭킹 내용 검색",
+    searchTopic: "현재 주제 내용 검색",
     clear: "검색 지우기",
+    manage: "관리",
+    manageCurrent: "‘{category}’ 분류 랭킹 관리",
+    manageAll: "전체 랭킹 관리",
     displayPreferences: "표시 설정",
     compact: "컴팩트 레이아웃",
     compactTip: "카드 간격을 줄여 정보 밀도를 높입니다",
@@ -334,9 +477,7 @@ const COPY = {
   },
 };
 
-const locale = computed(() =>
-  normalizeLocale(getLocaleFromRoute(route)),
-);
+const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
 const copy = computed(() => COPY[locale.value] || COPY["zh-CN"]);
 
 const routeKind = computed(() => {
@@ -347,13 +488,28 @@ const routeKind = computed(() => {
   if (name.includes("-topic")) return "topic";
   return "";
 });
-
-// Header owns level-1 navigation. The context toolbar begins at level 2 and
-// therefore never appears on the home route.
 const visible = computed(() =>
   ["category", "list", "topic"].includes(routeKind.value),
 );
 const currentTopic = computed(() => getTopicByRouteName(route.name));
+const currentTopicLabel = computed(() =>
+  currentTopic.value ? getTopicLabel(currentTopic.value, locale.value) : "",
+);
+
+const viewMode = computed(() => {
+  if (routeKind.value !== "category") return "card";
+  const value = String(route.query.view || "");
+  return ["list", "compact"].includes(value) ? value : "card";
+});
+const setViewMode = (mode) => {
+  if (routeKind.value !== "category") return;
+  const nextMode = ["list", "compact"].includes(mode) ? mode : "card";
+  const query = { ...route.query };
+  if (nextMode === "card") delete query.view;
+  else query.view = nextMode;
+  delete query.page;
+  router.replace({ path: route.path, query, hash: route.hash });
+};
 
 const availableCategoryIds = computed(() => {
   const available = new Set();
@@ -379,7 +535,6 @@ const routeCategory = computed(() => {
   if (routeKind.value !== "category") return null;
   return getCategoryByRef(store.categories, route.params?.categorySlug);
 });
-
 const currentSourceName = computed(() => {
   if (routeKind.value !== "list") return "";
   return getSourceNameBySlug(
@@ -401,12 +556,13 @@ const currentSourceCategory = computed(() => {
   const [categoryId] = getSourceCategoryIds(source, store.categories);
   return getCategoryByRef(store.categories, categoryId);
 });
-
-const currentCategory = computed(() => {
-  if (routeKind.value === "category") return routeCategory.value;
-  if (routeKind.value === "list") return currentSourceCategory.value;
-  return null;
-});
+const currentCategory = computed(() =>
+  routeKind.value === "category"
+    ? routeCategory.value
+    : routeKind.value === "list"
+      ? currentSourceCategory.value
+      : null,
+);
 
 const categoryTrail = computed(() => {
   const result = [];
@@ -421,44 +577,30 @@ const categoryTrail = computed(() => {
   }
   return result;
 });
-
-const rootCategory = computed(() => categoryTrail.value[0] || null);
-const activeSecondCategory = computed(() => categoryTrail.value[1] || null);
-const activeThirdCategory = computed(() => categoryTrail.value[2] || null);
-
-const childCategories = (parentId) =>
-  store.categories
-    .filter(
-      (item) =>
-        String(item.parentId || "") === String(parentId || "") &&
-        availableCategoryIds.value.has(String(item.id)),
-    )
-    .slice()
-    .sort((a, b) => a.order - b.order);
-
-const secondLevelOptions = computed(() => {
-  if (routeKind.value !== "category" || !rootCategory.value) return [];
-  return childCategories(rootCategory.value.id);
-});
-
-const thirdLevelOptions = computed(() => {
-  if (
-    routeKind.value !== "category" ||
-    !activeSecondCategory.value
-  ) {
-    return [];
-  }
-  return childCategories(activeSecondCategory.value.id);
-});
-
 const categoryLabel = (category) =>
   category?.builtin
     ? getCategoryLabel(category.name, locale.value)
     : category?.name || "";
 
+const siblingCategories = (category) =>
+  store.categories
+    .filter(
+      (item) =>
+        String(item.parentId || "") === String(category?.parentId || "") &&
+        availableCategoryIds.value.has(String(item.id)),
+    )
+    .slice()
+    .sort((a, b) => a.order - b.order);
+
+const categoryMenuOptions = (category) =>
+  siblingCategories(category).map((item) => ({
+    key: String(item.id),
+    label: categoryLabel(item),
+  }));
+
 const sourceMenuOptions = computed(() => {
   const category = currentSourceCategory.value;
-  const candidates = store.newsArr
+  return store.newsArr
     .filter((item) => item.show)
     .filter((item) => {
       if (!category) return true;
@@ -467,17 +609,16 @@ const sourceMenuOptions = computed(() => {
       );
     })
     .slice()
-    .sort((a, b) => a.order - b.order);
-  return candidates.map((item) => ({
-    key: item.name,
-    label: getSourceDisplayLabel(
-      item.name,
-      locale.value,
-      item.label || item.name,
-    ),
-  }));
+    .sort((a, b) => a.order - b.order)
+    .map((item) => ({
+      key: item.name,
+      label: getSourceDisplayLabel(
+        item.name,
+        locale.value,
+        item.label || item.name,
+      ),
+    }));
 });
-
 const currentSourceLabel = computed(() => {
   const item = currentSourceMeta.value;
   return getSourceDisplayLabel(
@@ -486,7 +627,6 @@ const currentSourceLabel = computed(() => {
     item?.label || currentSourceName.value,
   );
 });
-
 const variantOptions = computed(() =>
   getSourceSubtypeOptions(currentSourceName.value),
 );
@@ -508,13 +648,24 @@ const currentVariantLabel = computed(() => {
   const item = variantOptions.value.find(
     (option) => option.value === currentVariant.value,
   );
-  return item ? getSubtypeLabel(item, locale.value) : copy.value.variant;
+  return item ? getSubtypeLabel(item, locale.value) : "";
 });
+const topicMenuOptions = computed(() =>
+  TOPIC_REGISTRY.map((topic) => ({
+    key: topic.id,
+    label: getTopicLabel(topic, locale.value),
+  })),
+);
 
 const queryValue = (value) =>
   String(Array.isArray(value) ? value[0] || "" : value || "");
 const searchInput = ref(queryValue(route.query.q));
+const searchInputEl = ref(null);
+const searchFocused = ref(false);
+const searchShortcut = ref("⌘K");
 let searchTimer;
+let breadcrumbCloseTimer;
+const activeBreadcrumbMenu = ref("");
 
 watch(
   () => route.query.q,
@@ -531,11 +682,7 @@ const updateSearch = () => {
   if (value) query.q = value;
   else delete query.q;
   delete query.page;
-  router.replace({
-    path: route.path,
-    query,
-    hash: route.hash,
-  });
+  router.replace({ path: route.path, query, hash: route.hash });
 };
 const queueSearchUpdate = () => {
   clearTimeout(searchTimer);
@@ -548,24 +695,53 @@ const flushSearchUpdate = () => {
 const clearSearch = () => {
   searchInput.value = "";
   flushSearchUpdate();
+  searchInputEl.value?.focus();
 };
-
 const searchPlaceholder = computed(() => {
   if (routeKind.value === "list") return copy.value.searchList;
   if (routeKind.value === "topic") return copy.value.searchTopic;
+  if (
+    routeKind.value === "category" &&
+    ["list", "compact"].includes(viewMode.value)
+  ) {
+    return copy.value.searchStream;
+  }
   return copy.value.searchCategory;
 });
-
 const currentSearchQuery = () => {
   const q = queryValue(route.query.q).trim();
   return q ? { q } : {};
 };
-const withSearch = (path) => ({
-  path,
-  query: currentSearchQuery(),
-});
+const withSearch = (path) => ({ path, query: currentSearchQuery() });
 
+const cancelBreadcrumbClose = () => {
+  clearTimeout(breadcrumbCloseTimer);
+  breadcrumbCloseTimer = undefined;
+};
+const openBreadcrumbMenu = (id) => {
+  cancelBreadcrumbClose();
+  activeBreadcrumbMenu.value = id;
+};
+const scheduleBreadcrumbMenuClose = (id) => {
+  cancelBreadcrumbClose();
+  breadcrumbCloseTimer = window.setTimeout(() => {
+    if (activeBreadcrumbMenu.value === id) {
+      activeBreadcrumbMenu.value = "";
+    }
+  }, 140);
+};
+const breadcrumbMenuProps = (id) => ({
+  onMouseenter: () => openBreadcrumbMenu(id),
+  onMouseleave: () => scheduleBreadcrumbMenuClose(id),
+});
+const switchCategory = (categoryId) => {
+  activeBreadcrumbMenu.value = "";
+  const category = getCategoryByRef(store.categories, categoryId);
+  if (!category) return;
+  router.push(withSearch(buildCategoryPath(locale.value, category.slug)));
+};
 const switchSource = (sourceName) => {
+  activeBreadcrumbMenu.value = "";
   const subtype = resolveSourceSubtype(
     getSourceSubtypeOptions(sourceName),
     readSourceSubtype(sourceName),
@@ -576,11 +752,59 @@ const switchSource = (sourceName) => {
   });
 };
 const switchVariant = (variant) => {
+  activeBreadcrumbMenu.value = "";
   router.push({
     path: buildRankPath(locale.value, currentSourceName.value, variant),
     query: currentSearchQuery(),
   });
 };
+const switchTopic = (topicId) => {
+  activeBreadcrumbMenu.value = "";
+  const topic = TOPIC_REGISTRY.find((item) => item.id === topicId);
+  if (!topic) return;
+  router.push({
+    path: buildTopicPath(topic, locale.value),
+    query: currentSearchQuery(),
+  });
+};
+
+const managerCategoryId = computed(() => currentCategory.value?.id || null);
+const managerButtonLabel = computed(() => {
+  const label = currentCategory.value ? categoryLabel(currentCategory.value) : "";
+  return label
+    ? copy.value.manageCurrent.replace("{category}", label)
+    : copy.value.manageAll;
+});
+
+const handleGlobalShortcut = (event) => {
+  const target = event.target;
+  const editable =
+    target?.matches?.("input, textarea, select, [contenteditable='true']") ||
+    target?.closest?.("[contenteditable='true']");
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+    event.preventDefault();
+    searchInputEl.value?.focus();
+    searchInputEl.value?.select?.();
+    return;
+  }
+  if (!editable && event.key === "/" && !event.metaKey && !event.ctrlKey) {
+    event.preventDefault();
+    searchInputEl.value?.focus();
+  }
+};
+
+onMounted(() => {
+  const isMac = /Mac|iPhone|iPad|iPod/i.test(
+    navigator?.platform || navigator?.userAgent || "",
+  );
+  searchShortcut.value = isMac ? "⌘K" : "Ctrl K";
+  window.addEventListener("keydown", handleGlobalShortcut);
+});
+onBeforeUnmount(() => {
+  clearTimeout(searchTimer);
+  cancelBreadcrumbClose();
+  window.removeEventListener("keydown", handleGlobalShortcut);
+});
 
 watchEffect(() => {
   if (routeKind.value === "home") {
@@ -596,10 +820,6 @@ watchEffect(() => {
     store.setActiveCategory(category.name);
   }
 });
-
-onBeforeUnmount(() => {
-  clearTimeout(searchTimer);
-});
 </script>
 
 <style scoped>
@@ -608,29 +828,39 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 18px;
   width: 100%;
-  min-height: 52px;
+  min-height: 58px;
   margin: 0 auto 16px;
-  padding: 8px 10px;
-  border: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--n-color, #fff) 96%, transparent);
-}
-
-.context-toolbar__left,
-.context-toolbar__right,
-.context-toolbar__levels,
-.context-toolbar__level,
-.context-toolbar__rail,
-.context-toolbar__list-nav {
-  display: flex;
-  align-items: center;
+  padding: 9px 10px 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 82%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--n-color, #fff) 98%, white 2%),
+      color-mix(in srgb, var(--n-color, #fff) 94%, transparent)
+    );
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.025),
+    0 8px 28px rgba(0, 0, 0, 0.025);
 }
 
 .context-toolbar__left {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.context-toolbar__right,
+.context-breadcrumb,
+.context-breadcrumb__home,
+.context-breadcrumb__item,
+.context-breadcrumb__trigger,
+.context-search,
+.context-toolbar__manager,
+.context-toolbar__display {
+  display: flex;
+  align-items: center;
 }
 
 .context-toolbar__right {
@@ -640,205 +870,193 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.context-toolbar__topics {
-  width: 100%;
-  min-width: 0;
+.context-view-switch {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-action-color, #f5f5f5) 52%, transparent);
+}
+
+.context-view-switch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 31px;
+  height: 30px;
   padding: 0;
   border: 0;
+  border-radius: 7px;
   background: transparent;
+  color: var(--n-text-color-3);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.context-toolbar__levels {
-  flex: 1 1 auto;
-  gap: 12px;
+.context-view-switch button:hover {
+  color: var(--n-text-color);
+  background: color-mix(in srgb, var(--n-color, #fff) 74%, transparent);
+}
+
+.context-view-switch button.active {
+  color: var(--n-text-color);
+  background: var(--n-color, #fff);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.07),
+    0 0 0 1px color-mix(in srgb, var(--n-border-color, #ddd) 74%, transparent);
+}
+
+.context-view-switch svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.35;
+}
+
+.context-breadcrumb {
+  min-width: 0;
+  gap: 3px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.context-breadcrumb__home,
+.context-breadcrumb__item {
+  box-sizing: border-box;
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--n-text-color-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 560;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.context-breadcrumb__home {
+  gap: 6px;
+  padding: 0 8px;
+}
+
+.context-breadcrumb__home svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 1.35;
+}
+
+.context-breadcrumb__item {
+  gap: 5px;
+  max-width: 190px;
+  padding: 0 8px;
+}
+
+.context-breadcrumb__item > span {
   min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.context-toolbar__level {
-  flex: 0 1 auto;
-  gap: 7px;
-  min-width: 0;
-}
-
-.context-toolbar__level--detail {
-  flex: 1 1 auto;
-}
-
-.context-toolbar__level-divider {
-  width: 1px;
-  height: 22px;
-  margin-right: 4px;
-  flex: 0 0 auto;
-  background: var(--n-border-color, rgba(127, 127, 127, 0.2));
-}
-
-.context-toolbar__level-label {
-  flex: 0 0 auto;
-  color: var(--n-text-color-3);
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1;
-}
-
-.context-toolbar__rail {
-  flex: 0 1 auto;
-  gap: 4px;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.context-toolbar__rail::-webkit-scrollbar {
-  display: none;
-}
-
-.context-toolbar__chip {
-  flex: 0 0 auto;
-  padding: 7px 11px;
-  border-radius: 8px;
-  color: var(--n-text-color-2);
-  font-size: 14px;
-  font-weight: 560;
-  line-height: 1.2;
-  text-decoration: none;
-  white-space: nowrap;
-  transition:
-    color 0.16s ease,
-    background 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.context-toolbar__chip:hover,
-.context-toolbar__chip:focus-visible {
+.context-breadcrumb__home:hover,
+.context-breadcrumb__item:hover,
+.context-breadcrumb__item:focus-visible {
   color: var(--n-text-color);
   background: var(--n-action-color);
   outline: none;
 }
 
-.context-toolbar__chip.is-active {
-  color: var(--n-primary-color, #d03050);
-  background: color-mix(
-    in srgb,
-    var(--n-primary-color, #d03050) 9%,
-    transparent
-  );
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--n-primary-color, #d03050) 24%, transparent);
-}
-
-.context-toolbar__list-nav {
-  flex: 1 1 auto;
-  gap: 7px;
-  min-width: 0;
-}
-
-.context-toolbar__back,
-.context-toolbar__select,
-.context-toolbar__display {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  border: 1px solid var(--n-border-color);
-  border-radius: 9px;
-  background: transparent;
+.context-breadcrumb__item.is-current {
   color: var(--n-text-color);
-  text-decoration: none;
+  font-weight: 650;
 }
 
-.context-toolbar__back {
+.context-breadcrumb__separator {
   flex: 0 0 auto;
-  gap: 5px;
-  padding: 0 9px 0 7px;
-  color: var(--n-text-color-2);
-  font-size: 13px;
-  font-weight: 600;
+  color: color-mix(in srgb, var(--n-text-color-3) 68%, transparent);
+  font-size: 17px;
+  font-weight: 300;
+  user-select: none;
 }
 
-.context-toolbar__back:hover,
-.context-toolbar__select:hover,
-.context-toolbar__display:hover {
-  background: var(--n-action-color);
-}
-
-.context-toolbar__back svg {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.6;
-}
-
-.context-toolbar__select {
-  gap: 6px;
-  max-width: 240px;
-  padding: 0 10px;
-  cursor: pointer;
-}
-
-.context-toolbar__select-label {
+.context-breadcrumb__section {
+  padding: 0 5px;
   color: var(--n-text-color-3);
   font-size: 12px;
+  font-weight: 550;
 }
 
-.context-toolbar__select strong {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.context-toolbar__select svg {
-  width: 12px;
-  height: 12px;
-  flex: 0 0 auto;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.5;
-}
-
-.context-toolbar__search {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  width: clamp(220px, 22vw, 320px);
-  min-height: 36px;
-  padding: 0 9px;
-  border: 1px solid var(--n-border-color);
-  border-radius: 9px;
-  background: transparent;
-  transition:
-    border-color 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.context-toolbar__search:focus-within {
-  border-color: var(--n-primary-color, #d03050);
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--n-primary-color, #d03050) 10%, transparent);
-}
-
-.context-toolbar__search > svg {
-  width: 15px;
-  height: 15px;
+.context-breadcrumb__caret {
+  width: 10px;
+  height: 10px;
   flex: 0 0 auto;
   fill: none;
   stroke: var(--n-text-color-3);
   stroke-linecap: round;
+  stroke-linejoin: round;
   stroke-width: 1.5;
 }
 
-.context-toolbar__search input {
+.context-search {
+  box-sizing: border-box;
+  gap: 8px;
+  width: clamp(280px, 24vw, 360px);
+  height: 38px;
+  padding: 0 8px 0 11px;
+  border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--n-action-color, #f5f5f5) 65%, transparent);
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.context-search:hover {
+  border-color: color-mix(in srgb, var(--n-text-color-3) 55%, var(--n-border-color));
+  background: color-mix(in srgb, var(--n-action-color, #f5f5f5) 88%, transparent);
+}
+
+.context-search.is-focused {
+  border-color: color-mix(in srgb, var(--n-primary-color, #d03050) 72%, var(--n-border-color));
+  background: var(--n-color, #fff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--n-primary-color, #d03050) 10%, transparent);
+}
+
+.context-search__icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--n-text-color-3);
+  stroke-linecap: round;
+  stroke-width: 1.45;
+}
+
+.context-search.is-focused .context-search__icon {
+  stroke: var(--n-primary-color, #d03050);
+}
+
+.context-search input {
   width: 100%;
   min-width: 0;
+  height: 100%;
+  padding: 0;
   border: 0;
   outline: 0;
   background: transparent;
@@ -847,38 +1065,100 @@ onBeforeUnmount(() => {
   font-size: 13px;
 }
 
-.context-toolbar__search input::placeholder {
-  color: var(--n-text-color-3);
+.context-search input::-webkit-search-cancel-button {
+  display: none;
 }
 
-.context-toolbar__clear {
-  width: 20px;
-  height: 20px;
+.context-search input::placeholder {
+  color: color-mix(in srgb, var(--n-text-color-3) 88%, transparent);
+}
+
+.context-search__shortcut {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border: 1px solid color-mix(in srgb, var(--n-border-color) 85%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--n-color) 78%, transparent);
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.context-search__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
   padding: 0;
   border: 0;
+  border-radius: 6px;
   background: transparent;
   color: var(--n-text-color-3);
   cursor: pointer;
-  font-size: 18px;
-  line-height: 18px;
+}
+
+.context-search__clear:hover {
+  background: var(--n-action-color);
+  color: var(--n-text-color);
+}
+
+.context-search__clear svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+.context-toolbar__manager,
+.context-toolbar__display {
+  box-sizing: border-box;
+  justify-content: center;
+  height: 38px;
+  border: 1px solid color-mix(in srgb, var(--n-border-color, #ddd) 86%, transparent);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--n-text-color-2);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.context-toolbar__manager {
+  gap: 6px;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .context-toolbar__display {
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
+  width: 38px;
+  min-width: 38px;
   padding: 0;
-  cursor: pointer;
 }
 
+.context-toolbar__manager:hover,
+.context-toolbar__display:hover {
+  border-color: color-mix(in srgb, var(--n-text-color-3) 58%, var(--n-border-color));
+  background: var(--n-action-color);
+  color: var(--n-text-color);
+}
+
+.context-toolbar__manager svg,
 .context-toolbar__display svg {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 1.5;
+  stroke-width: 1.35;
 }
 
 .context-toolbar__preferences {
@@ -946,10 +1226,11 @@ onBeforeUnmount(() => {
   border: 0;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 900px) {
   .context-toolbar {
     align-items: stretch;
     flex-wrap: wrap;
+    gap: 8px;
   }
 
   .context-toolbar__left,
@@ -957,56 +1238,67 @@ onBeforeUnmount(() => {
     width: 100%;
   }
 
-  .context-toolbar__levels {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .context-toolbar__levels::-webkit-scrollbar {
-    display: none;
-  }
-
   .context-toolbar__right {
     justify-content: flex-end;
   }
 
-  .context-toolbar__search {
+  .context-search {
     flex: 1 1 auto;
     width: auto;
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 680px) {
   .context-toolbar {
-    gap: 8px;
     margin-bottom: 10px;
     padding: 7px;
+    border-radius: 11px;
   }
 
-  .context-toolbar__level-label {
+  .context-breadcrumb {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .context-breadcrumb::-webkit-scrollbar {
     display: none;
   }
 
-  .context-toolbar__level {
-    gap: 4px;
-  }
-
-  .context-toolbar__level-divider {
-    margin-inline: 2px;
-  }
-
-  .context-toolbar__chip {
-    padding: 6px 9px;
-    font-size: 13px;
-  }
-
-  .context-toolbar__back span,
-  .context-toolbar__select-label {
+  .context-breadcrumb__home span,
+  .context-toolbar__manager span,
+  .context-search__shortcut {
     display: none;
   }
 
-  .context-toolbar__select {
-    max-width: 170px;
+  .context-breadcrumb__home {
+    padding-inline: 7px;
+  }
+
+  .context-breadcrumb__item {
+    max-width: 150px;
+  }
+
+  .context-toolbar__right {
+    gap: 6px;
+  }
+
+  .context-view-switch {
+    flex: 0 0 auto;
+  }
+
+  .context-view-switch button {
+    width: 30px;
+  }
+
+  .context-search {
+    min-width: 0;
+  }
+
+  .context-toolbar__manager,
+  .context-toolbar__display {
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
   }
 }
 </style>

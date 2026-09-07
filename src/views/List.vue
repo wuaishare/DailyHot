@@ -256,7 +256,7 @@ import { sourceBelongsToCategory } from "@/utils/categoryTree";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { formatTime } from "@/utils/getTime";
-import { getHotListsWithFallback } from "@/api";
+import { getSharedRanking } from "@/utils/rankingCollection";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
@@ -667,7 +667,7 @@ const getHotListsData = async (name, isNew = false) => {
       }
     : params;
   try {
-    let response = await getHotListsWithFallback(
+    let response = await getSharedRanking(
       item.name,
       isNew,
       requestParams,
@@ -681,7 +681,7 @@ const getHotListsData = async (name, isNew = false) => {
       isCurrentListRequest(requestId, item.name)
     ) {
       await new Promise((resolve) => setTimeout(resolve, 800));
-      response = await getHotListsWithFallback(item.name, true, requestParams, {
+      response = await getSharedRanking(item.name, true, requestParams, {
         useApi2,
         forceNoCache: true,
       });
@@ -707,7 +707,7 @@ const getHotListsData = async (name, isNew = false) => {
   } catch {
     if (!isCurrentListRequest(requestId, item.name)) return;
     try {
-      const retryResponse = await getHotListsWithFallback(
+      const retryResponse = await getSharedRanking(
         item.name,
         true,
         requestParams,
