@@ -358,6 +358,7 @@ import { useI18n } from "vue-i18n";
 import { h } from "vue";
 import {
   buildCategoryPath,
+  buildFixedLocalePath,
   buildHomePath,
   buildLocalePathFromRoute,
   getCategoryLabel,
@@ -368,12 +369,7 @@ import {
   savePreferredLocale,
 } from "@/utils/locale";
 
-const emit = defineEmits([
-  "mouseenter",
-  "mouseleave",
-  "click",
-  "open-hotboard-manager",
-]);
+const emit = defineEmits(["mouseenter", "mouseleave", "click"]);
 
 const router = useRouter();
 const route = useRoute();
@@ -734,16 +730,7 @@ const timeRender = () => {
   );
 };
 
-const hotboardManagerLabels = {
-  "zh-CN": "热榜管理",
-  en: "Hotboard Manager",
-  "zh-TW": "熱榜管理",
-  ja: "ランキング管理",
-  ko: "인기 목록 관리",
-};
-const hotboardManagerLabel = computed(
-  () => hotboardManagerLabels[locale.value] || hotboardManagerLabels["zh-CN"],
-);
+const hotboardManagerLabel = computed(() => t("common.settings"));
 
 // 移动端菜单
 const menuOptions = computed(() => [
@@ -828,7 +815,7 @@ const menuOptionsSelect = (val) => {
 };
 
 const goSetting = () => {
-  emit("open-hotboard-manager");
+  router.push(buildFixedLocalePath(locale.value, "/setting"));
   mobileMenuOpen.value = false;
 };
 
