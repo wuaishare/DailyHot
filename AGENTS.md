@@ -25,6 +25,13 @@
 - Preserve the current lazy-loading behavior for the Quackback SDK and the shared floating-actions UI. Feedback integrations should use the existing provider configuration (`off`, `quackback`, `github`, `url`) and public metadata. Never expose Quackback management/API secrets in the browser bundle.
 - Before claiming a production change is complete, run the relevant audit/build checks and verify the deployed `main` build rather than relying only on local compilation.
 
+## Repository execution governance
+
+- Follow `docs/engineering/git-worktree-governance.md` for branch/worktree lifecycle, WIP limits and Return-to-Trunk closeout.
+- `main` is the only long-lived development/production branch. The retired `live` deployment branch must not be recreated from historical instructions.
+- Use the canonical checkout by default. A second worktree requires a concrete isolation reason plus an exit condition.
+- After every merged PR, finish Return-to-Trunk before starting another product branch: fast-forward `main`, verify merged-main/production as appropriate, delete the short-lived branch/worktree, and prune stale worktree metadata.
+
 ## Cross-project promotion rule
 
 - Experiments may start in DailyHot when rapid public UX validation is useful.
