@@ -72,6 +72,13 @@
         </div>
       </div>
 
+      <TrendIntelligenceStrip
+        v-if="intelligence"
+        :data="intelligence"
+        :locale="locale"
+        :source-label="getSourceLabel('weibo', locale, '微博')"
+      />
+
       <TopicLaneGrid
         v-if="featuredGroups.length"
         :lanes="featuredGroups"
@@ -164,6 +171,14 @@
                 >{{ formatFreshness(item.timestamp) }}</time
               >
               <span
+                v-for="signal in intelligenceSignalsFor(item).slice(0, 3)"
+                :key="`${item.id}-signal-${signal.key}`"
+                class="intelligence-pill"
+                :class="`is-${signal.key}`"
+              >
+                {{ signal.label }}
+              </span>
+              <span
                 v-for="confirmation in visibleConfirmations(item)"
                 :key="`${item.id}-${confirmation.source}`"
                 class="source-pill"
@@ -206,7 +221,8 @@
 <script setup>
 import CompactFilter from "@/components/CompactFilter.vue";
 import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
-import { getHotListsWithFallback } from "@/api";
+import TrendIntelligenceStrip from "@/components/TrendIntelligenceStrip.vue";
+import { getHotListsWithFallback, getTrendIntelligence } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
@@ -216,6 +232,7 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 const result = ref(null);
+const intelligence = ref(null);
 const loading = ref(false);
 const loadError = ref("");
 const searchQuery = ref(
@@ -445,6 +462,61 @@ const UI_COPY = {
   },
 };
 const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
+const INTELLIGENCE_SIGNAL_KEYS = [
+  "accelerating",
+  "decelerating",
+  "volatility",
+  "positiveMomentum",
+  "currentPeaks",
+  "reentries",
+];
+const INTELLIGENCE_SIGNAL_LABELS = {
+  "zh-CN": {
+    accelerating: "加速",
+    decelerating: "减速",
+    volatility: "波动",
+    positiveMomentum: "正向动量",
+    currentPeaks: "峰值",
+    reentries: "重入",
+  },
+  en: {
+    accelerating: "Accelerating",
+    decelerating: "Decelerating",
+    volatility: "Volatility",
+    positiveMomentum: "Momentum",
+    currentPeaks: "At peak",
+    reentries: "Re-entry",
+  },
+  "zh-TW": {
+    accelerating: "加速",
+    decelerating: "減速",
+    volatility: "波動",
+    positiveMomentum: "正向動量",
+    currentPeaks: "峰值",
+    reentries: "重入",
+  },
+  ja: {
+    accelerating: "加速",
+    decelerating: "減速",
+    volatility: "変動",
+    positiveMomentum: "上昇勢い",
+    currentPeaks: "ピーク",
+    reentries: "再浮上",
+  },
+  ko: {
+    accelerating: "가속",
+    decelerating: "감속",
+    volatility: "변동",
+    positiveMomentum: "상승 모멘텀",
+    currentPeaks: "정점",
+    reentries: "재진입",
+  },
+};
+const intelligenceSignalLabels = computed(
+  () =>
+    INTELLIGENCE_SIGNAL_LABELS[locale.value] ||
+    INTELLIGENCE_SIGNAL_LABELS["zh-CN"],
+);
 const viewAllLabel = computed(() =>
   ({
     "zh-CN": "查看全部",
@@ -498,6 +570,37 @@ const confirmationTitle = (item) =>
     .join(" + ");
 const textFor = (item) =>
   `${item.title || ""} ${item.desc || ""} ${confirmationTitle(item)}`.toLowerCase();
+const normalizeIntelligenceTitle = (value) =>
+  String(value || "")
+    .normalize("NFKC")
+    .trim()
+    .toLowerCase()
+    .replace(/^(?:视频|图集|组图|直播)\s*[丨|｜:：\-—]\s*/u, "")
+    .replace(/[#＃【】（）()“”‘’"'《》<>·•|丨｜—–_~～:：;；,，。.!！?？\s]/gu, "")
+    .replace(/\[|\]/gu, "");
+
+const intelligenceSignalIndex = computed(() => {
+  const index = new Map();
+  const signals = intelligence.value?.signals || {};
+  for (const key of INTELLIGENCE_SIGNAL_KEYS) {
+    const rows = Array.isArray(signals[key]) ? signals[key] : [];
+    for (const row of rows) {
+      const normalized = normalizeIntelligenceTitle(row?.title);
+      if (!normalized) continue;
+      const current = index.get(normalized) || [];
+      if (!current.some((signal) => signal.key === key)) {
+        current.push({
+          key,
+          label: intelligenceSignalLabels.value[key] || key,
+        });
+      }
+      index.set(normalized, current);
+    }
+  }
+  return index;
+});
+const intelligenceSignalsFor = (item) =>
+  intelligenceSignalIndex.value.get(normalizeIntelligenceTitle(item?.title)) || [];
 
 const categoryOptions = computed(() => [
   { value: "all", label: ui.value.all, count: data.value.length },
@@ -797,15 +900,37 @@ const loadTopic = async (force = false) => {
     loading.value = false;
   }
 };
-const handleGlobalDataRefresh = (event) =>
+const loadTrendIntelligence = async () => {
+  try {
+    const response = await getTrendIntelligence("weibo", {
+      window: "24h",
+      limit: 100,
+      breakthroughRank: 10,
+    });
+    if (
+      response?.data?.schema === "trend-intelligence-v1" &&
+      response?.data?.algorithm === "deterministic-ranking-signals-v2"
+    ) {
+      intelligence.value = response.data;
+    }
+  } catch {
+    // Intelligence is an enhancement layer. Keep the topic feed usable when
+    // the licensed server-side proxy is unavailable or not configured.
+  }
+};
+const handleGlobalDataRefresh = (event) => {
   void loadTopic(Boolean(event?.detail?.force));
+  void loadTrendIntelligence();
+};
 onMounted(() => {
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   void loadTopic(false);
+  void loadTrendIntelligence();
 });
 onActivated(() => {
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  void loadTrendIntelligence();
 });
 onDeactivated(() =>
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh),
@@ -1153,7 +1278,8 @@ watch(locale, () => void loadTopic(false));
   font-size: 11px;
 }
 .category-pill,
-.source-pill {
+.source-pill,
+.intelligence-pill {
   padding: 1px 5px;
   border-radius: 999px;
   background: var(--n-action-color);
@@ -1164,6 +1290,12 @@ watch(locale, () => void loadTopic(false));
 }
 .source-pill {
   color: var(--n-text-color-3);
+}
+.intelligence-pill {
+  border: 1px solid color-mix(in srgb, var(--n-primary-color) 22%, transparent);
+  background: color-mix(in srgb, var(--n-primary-color) 8%, transparent);
+  color: var(--n-primary-color);
+  font-weight: 650;
 }
 .event-open {
   min-width: 72px;
@@ -1310,9 +1442,6 @@ watch(locale, () => void loadTopic(false));
   }
   .event-meta {
     gap: 5px;
-  }
-  .source-pill:nth-of-type(n + 4) {
-    display: none;
   }
   .event-pagination {
     align-items: flex-start;

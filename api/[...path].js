@@ -1,3 +1,5 @@
+import { handleTrendsIntelligenceProxy } from "./_trends-intelligence.mjs";
+
 export const config = {
   runtime: "nodejs",
   maxDuration: 30,
@@ -2874,6 +2876,8 @@ export default async function handler(req, res) {
     });
     return;
   }
+
+  if (await handleTrendsIntelligenceProxy({ req, res, pathValue })) return;
 
   const body = await readBody(req);
 

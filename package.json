@@ -27,6 +27,7 @@
     "audit:subtypes": "node scripts/audit-source-subtypes.cjs",
     "audit:feedback": "node scripts/audit-feedback-config.mjs",
     "audit:fallback": "node scripts/audit-api-fallback.mjs",
+    "audit:trends-intelligence": "node scripts/audit-trends-intelligence-proxy.mjs",
     "deploy:prod": "node scripts/vercel-deploy-prod.cjs",
     "submit:indexnow": "node scripts/submit-indexnow.cjs"
   },

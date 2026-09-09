@@ -201,6 +201,23 @@ const normalizeTrendsRankingResult = (payload) => {
   };
 };
 
+export const getTrendIntelligence = async (
+  source,
+  { window = "24h", limit = 100, breakthroughRank = 10 } = {},
+) =>
+  axios({
+    method: "GET",
+    url: `/trends-intelligence/${encodeURIComponent(source)}`,
+    baseURL: "/api",
+    params: {
+      window,
+      limit,
+      breakthrough_rank: breakthroughRank,
+    },
+    timeout: 15000,
+    silent: true,
+  });
+
 const requestTrendsRanking = async (source, params = {}) => {
   if (!TRENDS_PUBLIC_API) throw new Error("trends_public_api_unavailable");
   const variant = getTrendsShadowVariant(source, params);
