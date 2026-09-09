@@ -218,6 +218,24 @@ export const getTrendIntelligence = async (
     silent: true,
   });
 
+export const getTrendResonance = async ({
+  minSources = 2,
+  limit = 100,
+  maxRank = 100,
+} = {}) =>
+  axios({
+    method: "GET",
+    url: "/trends-resonance",
+    baseURL: "/api",
+    params: {
+      min_sources: minSources,
+      limit,
+      max_rank: maxRank,
+    },
+    timeout: 15000,
+    silent: true,
+  });
+
 const requestTrendsRanking = async (source, params = {}) => {
   if (!TRENDS_PUBLIC_API) throw new Error("trends_public_api_unavailable");
   const variant = getTrendsShadowVariant(source, params);

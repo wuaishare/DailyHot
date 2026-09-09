@@ -84,7 +84,33 @@ try {
     },
   });
   assert.equal(invalidRes.statusCode, 404);
-  assert.equal(invalidFetchCalled, false);  delete process.env.TRENDS_INTELLIGENCE_LICENSE_KEY;
+  assert.equal(invalidFetchCalled, false);
+
+  captured = null;
+  const resonanceRes = makeResponse();
+  await handleTrendsIntelligenceProxy({
+    req: {
+      method: "GET",
+      query: { category: "other", min_sources: "1", limit: "999", max_rank: "9999" },
+    },
+    res: resonanceRes,
+    pathValue: "trends-resonance",
+    fetchImpl,
+  });
+  assert.equal(resonanceRes.statusCode, 200);
+  const resonanceTarget = new URL(captured.url);
+  assert.equal(resonanceTarget.pathname, "/v1/intelligence/resonance");
+  assert.equal(resonanceTarget.searchParams.get("category"), "general");
+  assert.equal(resonanceTarget.searchParams.get("min_sources"), "2");
+  assert.equal(resonanceTarget.searchParams.get("limit"), "100");
+  assert.equal(resonanceTarget.searchParams.get("max_rank"), "500");
+  assert.equal(
+    captured.options.headers.Authorization,
+    ["Bearer", "test-server-only-secret"].join(" "),
+  );
+  assert.doesNotMatch(resonanceRes.body, /test-server-only-secret|hot\.example/);
+
+  delete process.env.TRENDS_INTELLIGENCE_LICENSE_KEY;
   const missingRes = makeResponse();
   await handleTrendsIntelligenceProxy({
     req: { method: "GET", query: {} },

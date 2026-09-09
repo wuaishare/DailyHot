@@ -37,7 +37,10 @@ const handleTrendsIntelligenceProxy = async ({
   pathValue,
   fetchImpl = fetch,
 }) => {
-  if (!String(pathValue || "").startsWith("trends-intelligence/")) return false;
+  const route = String(pathValue || "");
+  const isResonance = route === "trends-resonance";
+  const isSourceIntelligence = route.startsWith("trends-intelligence/");
+  if (!isResonance && !isSourceIntelligence) return false;
 
   if (req.method !== "GET" && req.method !== "HEAD") {
     res.setHeader("allow", "GET, HEAD");
@@ -45,8 +48,10 @@ const handleTrendsIntelligenceProxy = async ({
     return true;
   }
 
-  const source = decodeURIComponent(String(pathValue).slice("trends-intelligence/".length));
-  if (!ALLOWED_SOURCES.has(source)) {
+  const source = isSourceIntelligence
+    ? decodeURIComponent(route.slice("trends-intelligence/".length))
+    : "";
+  if (isSourceIntelligence && !ALLOWED_SOURCES.has(source)) {
     sendJson(res, 404, { code: 404, message: "Trend intelligence source is not available" });
     return true;
   }
@@ -60,14 +65,27 @@ const handleTrendsIntelligenceProxy = async ({
     return true;
   }
 
-  const windowValue = queryValue(req.query.window, "24h");
-  const window = ALLOWED_WINDOWS.has(windowValue) ? windowValue : "24h";
-  const limit = boundedInt(req.query.limit, 50, 1, 100);
-  const breakthroughRank = boundedInt(req.query.breakthrough_rank, 10, 1, 100);
-  const target = new URL(`${baseUrl}/intelligence/${encodeURIComponent(source)}`);
-  target.searchParams.set("window", window);
-  target.searchParams.set("limit", String(limit));
-  target.searchParams.set("breakthrough_rank", String(breakthroughRank));
+  const target = isResonance
+    ? new URL(`${baseUrl}/intelligence/resonance`)
+    : new URL(`${baseUrl}/intelligence/${encodeURIComponent(source)}`);
+
+  if (isResonance) {
+    const minSources = boundedInt(req.query.min_sources, 2, 2, 10);
+    const limit = boundedInt(req.query.limit, 50, 1, 100);
+    const maxRank = boundedInt(req.query.max_rank, 100, 1, 500);
+    target.searchParams.set("category", "general");
+    target.searchParams.set("min_sources", String(minSources));
+    target.searchParams.set("limit", String(limit));
+    target.searchParams.set("max_rank", String(maxRank));
+  } else {
+    const windowValue = queryValue(req.query.window, "24h");
+    const window = ALLOWED_WINDOWS.has(windowValue) ? windowValue : "24h";
+    const limit = boundedInt(req.query.limit, 50, 1, 100);
+    const breakthroughRank = boundedInt(req.query.breakthrough_rank, 10, 1, 100);
+    target.searchParams.set("window", window);
+    target.searchParams.set("limit", String(limit));
+    target.searchParams.set("breakthrough_rank", String(breakthroughRank));
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);

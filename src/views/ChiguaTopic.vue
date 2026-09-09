@@ -79,6 +79,12 @@
         :source-label="getSourceLabel('weibo', locale, '微博')"
       />
 
+      <CrossSourceResonanceStrip
+        v-if="resonance"
+        :data="resonance"
+        :locale="locale"
+      />
+
       <TopicLaneGrid
         v-if="featuredGroups.length"
         :lanes="featuredGroups"
@@ -171,6 +177,13 @@
                 >{{ formatFreshness(item.timestamp) }}</time
               >
               <span
+                v-if="verifiedResonanceFor(item)"
+                class="verified-resonance-pill"
+                :title="verifiedResonanceTitle(verifiedResonanceFor(item))"
+              >
+                {{ verifiedResonanceCopy.label }}
+              </span>
+              <span
                 v-for="signal in intelligenceSignalsFor(item).slice(0, 3)"
                 :key="`${item.id}-signal-${signal.key}`"
                 class="intelligence-pill"
@@ -222,7 +235,12 @@
 import CompactFilter from "@/components/CompactFilter.vue";
 import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
 import TrendIntelligenceStrip from "@/components/TrendIntelligenceStrip.vue";
-import { getHotListsWithFallback, getTrendIntelligence } from "@/api";
+import CrossSourceResonanceStrip from "@/components/CrossSourceResonanceStrip.vue";
+import {
+  getHotListsWithFallback,
+  getTrendIntelligence,
+  getTrendResonance,
+} from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
@@ -233,6 +251,7 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 const result = ref(null);
 const intelligence = ref(null);
+const resonance = ref(null);
 const loading = ref(false);
 const loadError = ref("");
 const searchQuery = ref(
@@ -505,6 +524,61 @@ const intelligenceSignalLabels = computed(
     INTELLIGENCE_SIGNAL_LABELS[locale.value] ||
     INTELLIGENCE_SIGNAL_LABELS["zh-CN"],
 );
+const VERIFIED_RESONANCE_COPY = {
+  "zh-CN": {
+    label: "已核验共振",
+    platforms: "个平台",
+    first: "首发",
+    spread: "扩散",
+    best: "最佳",
+    minutes: (value) => value + " 分钟",
+    hours: (value) => value + " 小时",
+    instant: "几乎同步",
+  },
+  en: {
+    label: "Verified resonance",
+    platforms: "platforms",
+    first: "first",
+    spread: "spread",
+    best: "best",
+    minutes: (value) => value + "m",
+    hours: (value) => value + "h",
+    instant: "near-simultaneous",
+  },
+  "zh-TW": {
+    label: "已核驗共振",
+    platforms: "個平台",
+    first: "首發",
+    spread: "擴散",
+    best: "最佳",
+    minutes: (value) => value + " 分鐘",
+    hours: (value) => value + " 小時",
+    instant: "幾乎同步",
+  },
+  ja: {
+    label: "検証済み共振",
+    platforms: "プラットフォーム",
+    first: "最初",
+    spread: "拡散",
+    best: "最高",
+    minutes: (value) => value + "分",
+    hours: (value) => value + "時間",
+    instant: "ほぼ同時",
+  },
+  ko: {
+    label: "검증된 공명",
+    platforms: "개 플랫폼",
+    first: "최초",
+    spread: "확산",
+    best: "최고",
+    minutes: (value) => value + "분",
+    hours: (value) => value + "시간",
+    instant: "거의 동시",
+  },
+};
+const verifiedResonanceCopy = computed(
+  () => VERIFIED_RESONANCE_COPY[locale.value] || VERIFIED_RESONANCE_COPY["zh-CN"],
+);
 const viewAllLabel = computed(() =>
   ({
     "zh-CN": "查看全部",
@@ -589,6 +663,50 @@ const intelligenceSignalIndex = computed(() => {
 });
 const intelligenceSignalsFor = (item) =>
   intelligenceSignalIndex.value.get(normalizeIntelligenceTitle(item?.title)) || [];
+
+const verifiedResonanceIndex = computed(() => {
+  const index = new Map();
+  const events = Array.isArray(resonance.value?.events) ? resonance.value.events : [];
+  for (const event of events) {
+    const normalized = normalizeIntelligenceTitle(event?.title);
+    if (!normalized || Number(event?.sourceCount || 0) < 2) continue;
+    index.set(normalized, event);
+  }
+  return index;
+});
+const verifiedResonanceFor = (item) =>
+  verifiedResonanceIndex.value.get(normalizeIntelligenceTitle(item?.title)) || null;
+
+const formatResonanceSpan = (seconds) => {
+  const value = Number(seconds || 0);
+  if (value <= 60) return verifiedResonanceCopy.value.instant;
+  if (value < 3600) {
+    return verifiedResonanceCopy.value.minutes(Math.max(1, Math.round(value / 60)));
+  }
+  return verifiedResonanceCopy.value.hours(
+    Math.max(1, Math.round((value / 3600) * 10) / 10),
+  );
+};
+const verifiedResonanceTitle = (event) => {
+  if (!event) return "";
+  const parts = [
+    Number(event.sourceCount || 0) + " " + verifiedResonanceCopy.value.platforms,
+  ];
+  if (event.firstSourceName) {
+    parts.push(verifiedResonanceCopy.value.first + " " + event.firstSourceName);
+  }
+  if (event.propagationEvidenceComplete) {
+    parts.push(
+      verifiedResonanceCopy.value.spread +
+        " " +
+        formatResonanceSpan(event.propagationSpanSeconds),
+    );
+  }
+  if (event.bestRank) {
+    parts.push(verifiedResonanceCopy.value.best + " #" + event.bestRank);
+  }
+  return parts.join(" · ");
+};
 
 const categoryOptions = computed(() => [
   { value: "all", label: ui.value.all, count: data.value.length },
@@ -906,19 +1024,40 @@ const loadTrendIntelligence = async () => {
     // the licensed server-side proxy is unavailable or not configured.
   }
 };
+const loadTrendResonance = async () => {
+  try {
+    const response = await getTrendResonance({
+      minSources: 2,
+      limit: 100,
+      maxRank: 100,
+    });
+    if (
+      response?.data?.schema === "cross-source-resonance-v1" &&
+      response?.data?.algorithm === "normalized-title-exact-v1"
+    ) {
+      resonance.value = response.data;
+    }
+  } catch {
+    // Cross-source evidence is an enhancement layer and must fail independently
+    // from the main topic feed and single-source trend dynamics.
+  }
+};
 const handleGlobalDataRefresh = (event) => {
   void loadTopic(Boolean(event?.detail?.force));
   void loadTrendIntelligence();
+  void loadTrendResonance();
 };
 onMounted(() => {
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   void loadTopic(false);
   void loadTrendIntelligence();
+  void loadTrendResonance();
 });
 onActivated(() => {
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   void loadTrendIntelligence();
+  void loadTrendResonance();
 });
 onDeactivated(() =>
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh),
@@ -1267,7 +1406,8 @@ watch(locale, () => void loadTopic(false));
 }
 .category-pill,
 .source-pill,
-.intelligence-pill {
+.intelligence-pill,
+.verified-resonance-pill {
   padding: 1px 5px;
   border-radius: 999px;
   background: var(--n-action-color);
@@ -1284,6 +1424,12 @@ watch(locale, () => void loadTopic(false));
   background: color-mix(in srgb, var(--n-primary-color) 8%, transparent);
   color: var(--n-primary-color);
   font-weight: 650;
+}
+.verified-resonance-pill {
+  border: 1px solid color-mix(in srgb, var(--n-success-color, #18a058) 28%, transparent);
+  background: color-mix(in srgb, var(--n-success-color, #18a058) 9%, transparent);
+  color: var(--n-success-color, #18a058);
+  font-weight: 680;
 }
 .event-open {
   min-width: 72px;
