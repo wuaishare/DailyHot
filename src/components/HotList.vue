@@ -121,18 +121,19 @@
               <n-text
                 v-if="!isIndexOverviewSource"
                 class="num"
-                :class="
-                  index === 0
-                    ? 'one'
-                    : index === 1
-                    ? 'two'
-                    : index === 2
-                    ? 'three'
-                    : null
-                "
+                :class="{
+                  one: item.displayRank === 1,
+                  two: item.displayRank === 2,
+                  three: item.displayRank === 3,
+                  'is-pinned': item.isPinned,
+                }"
                 :depth="2"
-                >{{ index + 1 }}</n-text
+                :title="item.isPinned ? '置顶' : undefined"
+                :aria-label="item.isPinned ? '置顶' : `第 ${item.displayRank} 名`"
               >
+                <n-icon v-if="item.isPinned" :component="Pushpin" />
+                <template v-else>{{ item.displayRank }}</template>
+              </n-text>
               <a
                 v-if="
                   showImages &&
@@ -237,6 +238,37 @@
                 @click.stop
               >
                 <span
+                  v-if="item.inlinePrefixBadges.length"
+                  class="ranking-badges is-prefix notranslate"
+                  translate="no"
+                >
+                  <span
+                    v-for="(badge, badgeIndex) in item.inlinePrefixBadges"
+                    :key="`prefix-${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
+                    class="ranking-badge"
+                    :class="[
+                      `is-${badge.kind}`,
+                      {
+                        'is-strong': badge.prominence === 'strong',
+                        'has-icon': Boolean(badge.iconUrl) && !rankingBadgeImageErrors[badge.iconUrl],
+                      },
+                    ]"
+                    role="img"
+                    :title="badge.label"
+                    :aria-label="badge.label"
+                  >
+                    <img
+                      v-if="badge.iconUrl && !rankingBadgeImageErrors[badge.iconUrl]"
+                      class="ranking-badge-icon"
+                      :src="badge.iconUrl"
+                      alt=""
+                      loading="lazy"
+                      @error="handleRankingBadgeImageError(badge.iconUrl)"
+                    />
+                    <span v-else class="ranking-badge-label" aria-hidden="true">{{ badge.label }}</span>
+                  </span>
+                </span>
+                <span
                   class="title-text"
                   :class="{
                     'no-auto-translate': item.hasReadableTranslation,
@@ -245,6 +277,38 @@
                   :translate="item.hasReadableTranslation ? 'no' : undefined"
                 >
                   {{ item.displayTitle }}
+                </span>
+                <span
+                  v-if="item.suffixBadges.length"
+                  class="ranking-badges notranslate"
+                  translate="no"
+                >
+                  <span
+                    v-for="(badge, badgeIndex) in item.suffixBadges"
+                    :key="`${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
+                    class="ranking-badge"
+                    :class="[
+                      `is-${badge.kind}`,
+                      {
+                        'is-strong': badge.prominence === 'strong',
+                        'is-animated': badge.animated,
+                        'has-icon': Boolean(badge.iconUrl) && !rankingBadgeImageErrors[badge.iconUrl],
+                      },
+                    ]"
+                    role="img"
+                    :title="badge.label"
+                    :aria-label="badge.label"
+                  >
+                    <img
+                      v-if="badge.iconUrl && !rankingBadgeImageErrors[badge.iconUrl]"
+                      class="ranking-badge-icon"
+                      :src="badge.iconUrl"
+                      alt=""
+                      loading="lazy"
+                      @error="handleRankingBadgeImageError(badge.iconUrl)"
+                    />
+                    <span v-else class="ranking-badge-label" aria-hidden="true">{{ badge.label }}</span>
+                  </span>
                 </span>
               </n-a>
             </div>
@@ -379,7 +443,7 @@
 </template>
 
 <script setup>
-import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
+import { Drag, Fire, Refresh, More, Pushpin } from "@icon-park/vue-next";
 import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
@@ -436,6 +500,7 @@ const isClient = typeof window !== "undefined";
 const isPrerender =
   isClient && window.__PRERENDER_INJECTED && window.__PRERENDER_INJECTED.prerender;
 const coverErrorMap = reactive({});
+const rankingBadgeImageErrors = reactive({});
 const logoSrc = (name) => getSourceLogo(name);
 const errorLogoUrl = getPublicAssetUrl("/ico/icon_error.png");
 const props = defineProps({
@@ -592,6 +657,65 @@ const formatPreviewHot = (value) => {
     return rawValue;
   }
 };
+const rankingBadgeKinds = new Set([
+  "hot",
+  "new",
+  "explosive",
+  "boiling",
+  "hot-live",
+  "first-release",
+  "challenge",
+  "rumor",
+  "discussion",
+  "interpretation",
+  "depth",
+  "pinned",
+  "live",
+  "commercial",
+  "category",
+  "source",
+]);
+
+const normalizeRankingBadges = (badges) => {
+  if (!Array.isArray(badges)) return [];
+  return badges
+    .map((badge) => {
+      if (!badge || typeof badge !== "object") return null;
+      const label = String(badge.label || "").trim();
+      const kind = rankingBadgeKinds.has(String(badge.kind || ""))
+        ? String(badge.kind)
+        : "source";
+      if (!label) return null;
+      const rawIconUrl = String(badge.iconUrl || "").trim();
+      let iconUrl = "";
+      if (rawIconUrl) {
+        try {
+          const parsed = new URL(rawIconUrl);
+          if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+            iconUrl = parsed.toString();
+          }
+        } catch {
+          iconUrl = "";
+        }
+      }
+      return {
+        kind,
+        label,
+        placement: badge.placement === "prefix" ? "prefix" : "suffix",
+        iconUrl,
+        animated: Boolean(badge.animated),
+        prominence: badge.prominence === "strong" ? "strong" : "normal",
+        sourceCode: String(badge.sourceCode || "").trim(),
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 4);
+};
+
+const handleRankingBadgeImageError = (iconUrl) => {
+  if (iconUrl) rankingBadgeImageErrors[iconUrl] = true;
+};
+
 const visibleItems = computed(() => {
   const items = hotListData.value?.data || [];
   const sortedItems = showNativeOrderControl.value
@@ -605,6 +729,7 @@ const visibleItems = computed(() => {
         0,
         isSortableMarketSource.value ? MARKET_LIST_VISIBLE_LIMIT : HOT_LIST_VISIBLE_LIMIT
       );
+  let nextDisplayRank = 1;
   const decoratedItems = visibleSourceItems.map((item) => {
     const originalTitle = String(item?.originalTitle || "");
     const originalDesc = String(item?.originalDesc || "");
@@ -635,12 +760,24 @@ const visibleItems = computed(() => {
             .filter(Boolean)
             .join(" · ")
         : defaultDisplayDesc;
+    const rankingBadges = normalizeRankingBadges(item?.badges);
+    const prefixBadges = rankingBadges.filter((badge) => badge.placement === "prefix");
+    const suffixBadges = rankingBadges.filter((badge) => badge.placement !== "prefix");
+    const isPinned = prefixBadges.some((badge) => badge.kind === "pinned");
+    const inlinePrefixBadges = prefixBadges.filter((badge) => badge.kind !== "pinned");
+    const displayRank = isIndexOverviewSource.value || isPinned ? null : nextDisplayRank++;
     return {
       ...item,
       originalTitle,
       originalDesc,
       displayTitle,
       displayDesc,
+      rankingBadges,
+      prefixBadges,
+      inlinePrefixBadges,
+      suffixBadges,
+      isPinned,
+      displayRank,
       marketQuote,
       fundMetric: getFundMetricView(item, locale.value),
       hasReadableTranslation:
@@ -1688,6 +1825,19 @@ onBeforeUnmount(() => {
           background-color: #eead3f;
           color: #fff;
         }
+
+        &.is-pinned {
+          background: transparent;
+          color: #3f7cff;
+          font-size: 24px;
+          font-weight: 800;
+          line-height: 1;
+          transform: translateY(-1px);
+        }
+
+        &.is-pinned:hover {
+          background: color-mix(in srgb, #3f7cff 10%, transparent);
+        }
       }
 
       .text {
@@ -1702,9 +1852,115 @@ onBeforeUnmount(() => {
 
         .title-text {
           display: -webkit-box;
+          min-width: 0;
           overflow: hidden;
           -webkit-box-orient: vertical;
           -webkit-line-clamp: 2;
+        }
+
+        .ranking-badges {
+          display: inline-flex;
+          flex: 0 0 auto;
+          align-items: center;
+          gap: 4px;
+          line-height: 1;
+        }
+
+        .ranking-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex: 0 0 auto;
+          min-width: 18px;
+          height: 18px;
+          padding: 0 4px;
+          border-radius: 4px;
+          box-sizing: border-box;
+          font-size: 11px;
+          font-weight: 700;
+          line-height: 18px;
+          color: #fff;
+          background: #ff3852;
+          vertical-align: middle;
+        }
+
+        .ranking-badge.is-hot,
+        .ranking-badge.is-boiling {
+          background: #ff9406;
+        }
+
+        .ranking-badge.is-new,
+        .ranking-badge.is-first-release,
+        .ranking-badge.is-discussion {
+          background: #ff3852;
+        }
+
+        .ranking-badge.is-explosive {
+          min-width: 20px;
+          height: 20px;
+          padding: 0 4px;
+          border-radius: 3px;
+          background: linear-gradient(135deg, #f04438, #c81e1e);
+          box-shadow: 0 2px 8px color-mix(in srgb, #c81e1e 36%, transparent);
+          font-size: 12px;
+          font-weight: 800;
+          line-height: 20px;
+          transform: translateY(-1px);
+        }
+
+        .ranking-badge.is-interpretation,
+        .ranking-badge.is-depth {
+          background: linear-gradient(135deg, #4d7cff, #6d5ce7);
+        }
+
+        .ranking-badge.is-rumor {
+          background: #2788f5;
+        }
+
+        .ranking-badge.is-challenge {
+          background: #ff4b7d;
+        }
+
+        .ranking-badge.is-live,
+        .ranking-badge.is-hot-live {
+          background: #ff3852;
+        }
+
+        .ranking-badge.is-commercial {
+          background: #00a6d9;
+        }
+
+        .ranking-badge.is-category,
+        .ranking-badge.is-source {
+          background: color-mix(in srgb, var(--n-text-color) 68%, transparent);
+        }
+
+        .ranking-badge.has-icon {
+          width: auto;
+          min-width: 18px;
+          padding: 0;
+          background: transparent;
+          box-shadow: none;
+          transform: none;
+        }
+
+        .ranking-badge-icon {
+          display: block;
+          width: auto;
+          max-width: 34px;
+          height: 18px;
+          object-fit: contain;
+        }
+
+        .ranking-badge.is-hot-live .ranking-badge-icon {
+          width: 20px;
+          max-width: 20px;
+          height: 20px;
+        }
+
+        .ranking-badge.is-animated .ranking-badge-icon {
+          animation: ranking-badge-live 1.25s ease-in-out infinite;
+          transform-origin: 50% 80%;
         }
 
         &.market-quote-link {
@@ -2011,4 +2267,20 @@ onBeforeUnmount(() => {
     transform: none;
   }
 }
+@keyframes ranking-badge-live {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(-2px) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ranking-badge.is-animated .ranking-badge-icon {
+    animation: none !important;
+  }
+}
+
 </style>
