@@ -58,7 +58,9 @@ const handleTrendsIntelligenceProxy = async ({
   if (!licenseKey || !siteUrl) {
     sendJson(res, 503, { code: 503, message: "Trend intelligence is not configured" });
     return true;
-  }  const windowValue = queryValue(req.query.window, "24h");
+  }
+
+  const windowValue = queryValue(req.query.window, "24h");
   const window = ALLOWED_WINDOWS.has(windowValue) ? windowValue : "24h";
   const limit = boundedInt(req.query.limit, 50, 1, 100);
   const breakthroughRank = boundedInt(req.query.breakthrough_rank, 10, 1, 100);
@@ -81,6 +83,19 @@ const handleTrendsIntelligenceProxy = async ({
     });
     const body = await response.json().catch(() => null);
     if (!body || typeof body !== "object") {
+      const contentType = response.headers.get("content-type") || "";
+      const upstreamServer = response.headers.get("server") || "";
+      const via = response.headers.get("via") || "";
+      console.warn(
+        "[DailyHot Trends Intelligence] upstream_non_json",
+        JSON.stringify({
+          status: response.status,
+          contentType,
+          server: upstreamServer,
+          via,
+        }),
+      );
+      res.setHeader("cache-control", "no-store");
       sendJson(res, 502, { code: 502, message: "Trend intelligence returned invalid JSON" });
       return true;
     }
@@ -93,7 +108,9 @@ const handleTrendsIntelligenceProxy = async ({
       );
     } else {
       res.setHeader("cache-control", "no-store");
-    }    const safe = response.ok
+    }
+
+    const safe = response.ok
       ? { data: body.data || null, requestId: body.requestId || null }
       : {
           error: {
