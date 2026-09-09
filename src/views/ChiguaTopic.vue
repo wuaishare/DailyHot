@@ -60,13 +60,13 @@
           <div class="toolbar-actions">
             <div class="result-count"><strong>{{ filteredData.length }}</strong><span>{{ ui.matches }}</span></div>
             <button
-              v-if="dashboard?.multiSourceCount"
+              v-if="resonanceMatchCount"
               type="button"
               class="resonance-toggle"
               :class="{ active: activeConfirmed }"
               :aria-pressed="activeConfirmed"
               @click="activeConfirmed = !activeConfirmed"
-            >{{ ui.resonance }} <span>{{ dashboard.multiSourceCount }}</span></button>
+            >{{ ui.resonance }} <span>{{ resonanceMatchCount }}</span></button>
             <n-button size="small" tertiary :loading="loading" @click="loadTopic(true)">{{ ui.refresh }}</n-button>
           </div>
         </div>
@@ -151,10 +151,12 @@
               />
               <span>{{ sourceLabel(item) }}</span>
               <em
-                v-if="eventSourceCount(item) > 1"
-                :title="confirmationTitle(item)"
+                v-if="isResonanceItem(item)"
+                :title="verifiedResonanceFor(item)
+                  ? verifiedResonanceTitle(verifiedResonanceFor(item))
+                  : confirmationTitle(item)"
               >
-                {{ eventSourceCount(item) }} {{ ui.platformResonance }}
+                {{ effectiveResonanceSourceCount(item) }} {{ ui.platformResonance }}
               </em>
             </div>
             <a
@@ -677,6 +679,23 @@ const verifiedResonanceIndex = computed(() => {
 const verifiedResonanceFor = (item) =>
   verifiedResonanceIndex.value.get(normalizeIntelligenceTitle(item?.title)) || null;
 
+const hasCentralResonance = computed(
+  () =>
+    resonance.value?.schema === "cross-source-resonance-v1" &&
+    resonance.value?.algorithm === "normalized-title-exact-v1",
+);
+const isResonanceItem = (item) =>
+  hasCentralResonance.value
+    ? Boolean(verifiedResonanceFor(item))
+    : eventSourceCount(item) > 1;
+const effectiveResonanceSourceCount = (item) =>
+  hasCentralResonance.value
+    ? Number(verifiedResonanceFor(item)?.sourceCount || 1)
+    : eventSourceCount(item);
+const resonanceMatchCount = computed(
+  () => data.value.filter((item) => isResonanceItem(item)).length,
+);
+
 const formatResonanceSpan = (seconds) => {
   const value = Number(seconds || 0);
   if (value <= 60) return verifiedResonanceCopy.value.instant;
@@ -771,13 +790,13 @@ const filteredData = computed(() => {
       !eventSources(item).includes(activeSource.value)
     )
       return false;
-    if (activeConfirmed.value && eventSourceCount(item) < 2) return false;
+    if (activeConfirmed.value && !isResonanceItem(item)) return false;
     return true;
   });
   return rows.slice().sort((a, b) => {
     if (activeSort.value === "resonance")
       return (
-        eventSourceCount(b) - eventSourceCount(a) ||
+        effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a) ||
         eventScore(b) - eventScore(a)
       );
     if (activeSort.value === "hot")
@@ -790,7 +809,8 @@ const filteredData = computed(() => {
         eventScore(b) - eventScore(a)
       );
     return (
-      eventScore(b) - eventScore(a) || eventSourceCount(b) - eventSourceCount(a)
+      eventScore(b) - eventScore(a) ||
+      effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a)
     );
   });
 });
@@ -821,11 +841,11 @@ const featuredGroups = computed(() => {
       .slice()
       .sort(
         (a, b) =>
-          eventSourceCount(b) - eventSourceCount(a) ||
+          effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a) ||
           eventScore(b) - eventScore(a),
       );
   const resonanceItems = byScore(
-    data.value.filter((item) => eventSourceCount(item) > 1),
+    data.value.filter((item) => isResonanceItem(item)),
   );
   const entertainmentItems = byScore(
     data.value.filter((item) => eventCategory(item) === "entertainment"),
@@ -834,14 +854,18 @@ const featuredGroups = computed(() => {
     data.value.filter((item) => eventCategory(item) === "society"),
   );
   return [
-    {
-      key: "resonance",
-      label: ui.value.featured.resonance,
-      count: resonanceItems.length,
-      items: resonanceItems.slice(0, FEATURED_LANE_LIMIT),
-      actionLabel: `${viewAllLabel.value} ${resonanceItems.length}`,
-      filter: { confirmed: true },
-    },
+    ...(hasCentralResonance.value
+      ? []
+      : [
+          {
+            key: "resonance",
+            label: ui.value.featured.resonance,
+            count: resonanceItems.length,
+            items: resonanceItems.slice(0, FEATURED_LANE_LIMIT),
+            actionLabel: `${viewAllLabel.value} ${resonanceItems.length}`,
+            filter: { confirmed: true },
+          },
+        ]),
     {
       key: "entertainment",
       label: ui.value.featured.entertainment,

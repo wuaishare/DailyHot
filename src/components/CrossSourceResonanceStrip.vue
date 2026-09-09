@@ -54,8 +54,8 @@ const props = defineProps({
 
 const COPY = {
   "zh-CN": {
-    title: "全网共振",
-    subtitle: "同一热点正在多个平台同步出现",
+    title: "跨平台传播",
+    subtitle: "这些热点已在多个平台出现，看看从哪儿先起、多久扩散",
     verified: "中央历史证据核验",
     platforms: "个平台",
     first: "首发",
@@ -66,8 +66,8 @@ const COPY = {
     instant: "几乎同步出现",
   },
   en: {
-    title: "Cross-platform resonance",
-    subtitle: "The same story is appearing across independent platforms",
+    title: "Cross-platform spread",
+    subtitle: "See where a story appeared first and how quickly it spread",
     verified: "verified against central history",
     platforms: "platforms",
     first: "First",
@@ -78,8 +78,8 @@ const COPY = {
     instant: "appeared almost simultaneously",
   },
   "zh-TW": {
-    title: "全網共振",
-    subtitle: "同一熱點正在多個平台同步出現",
+    title: "跨平台傳播",
+    subtitle: "這些熱點已在多個平台出現，看看從哪裡先起、多久擴散",
     verified: "中央歷史證據核驗",
     platforms: "個平台",
     first: "首發",
@@ -90,8 +90,8 @@ const COPY = {
     instant: "幾乎同步出現",
   },
   ja: {
-    title: "全体共振",
-    subtitle: "同じ話題が複数の独立プラットフォームで同時に浮上",
+    title: "クロスプラットフォーム拡散",
+    subtitle: "どこで先に現れ、どれくらいで広がったかを確認",
     verified: "中央履歴データで検証",
     platforms: "プラットフォーム",
     first: "最初",
@@ -102,8 +102,8 @@ const COPY = {
     instant: "ほぼ同時に登場",
   },
   ko: {
-    title: "전 플랫폼 공명",
-    subtitle: "같은 이슈가 여러 독립 플랫폼에서 동시에 부상",
+    title: "플랫폼 간 확산",
+    subtitle: "어디서 먼저 나타났고 얼마나 빨리 퍼졌는지 확인",
     verified: "중앙 이력 데이터로 검증",
     platforms: "개 플랫폼",
     first: "최초",
