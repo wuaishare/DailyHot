@@ -61,7 +61,12 @@
               :class="rankTone(entry.rank, entry.isPinned)"
               :title="entry.isPinned ? '置顶' : undefined"
             >
-              <span v-if="entry.isPinned" class="category-stream__pin-icon" aria-hidden="true"></span>
+              <UiGlyph
+                v-if="entry.isPinned"
+                class="category-stream__pin-icon"
+                name="pin"
+                aria-hidden="true"
+              />
               <template v-else><span>#</span>{{ entry.rank }}</template>
             </div>
 
@@ -276,6 +281,7 @@ import {
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
+import UiGlyph from "@/components/ui/UiGlyph.vue";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 
 const props = defineProps({
@@ -1104,9 +1110,10 @@ const hideBrokenCover = (event) => {
 
 .category-stream__pin-icon {
   display: block;
-  width: 24px;
-  height: 24px;
-  background: center / contain no-repeat url("/icons/ranking-pinned.png");
+  width: 20px;
+  height: 20px;
+  color: var(--n-primary-color);
+  stroke-width: 1.9;
 }
 
 .category-stream__source {

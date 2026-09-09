@@ -16,7 +16,7 @@
           <n-text :depth="3">{{ t("common.siteTagline") }}</n-text>
         </div>
       </div>
-      <div v-if="!store.categoryEnabled">
+      <div v-if="!store.categoryEnabled" class="header-center">
         <div class="current-time" v-if="store.timeData">
           <n-text class="time">{{ store.timeData.time.text }}</n-text>
           <n-text class="date" :depth="3">
@@ -27,7 +27,7 @@
           <n-text class="time">{{ t("common.loadingTime") }}</n-text>
         </div>
       </div>
-      <div v-else class="category-select">
+      <div v-else class="category-select header-center">
         <div v-if="isSettingPage" class="category-back">
           <div class="category-hit-area" @click="goHome">
             <n-button size="small" type="primary" strong @click.stop="goHome">
@@ -139,7 +139,7 @@
                     :style="localeFlagStyle"
                   />
                 </template>
-                <span v-if="!isSmallScreen">{{
+                <span v-if="!isSmallScreen" class="locale-trigger-label">{{
                   currentLocaleMeta.shortLabel
                 }}</span>
               </n-button>
@@ -165,7 +165,7 @@
                   :title="refreshButtonLabel"
                 >
                   <template #icon>
-                    <n-icon :component="Refresh" />
+                    <UiGlyph class="header-glyph" name="refresh" />
                   </template>
                   <span
                     v-if="countdownText && !isSmallScreen"
@@ -178,7 +178,7 @@
             <div class="refresh-panel" @click.stop>
               <div class="refresh-panel__hero">
                 <span class="refresh-panel__icon" aria-hidden="true">
-                  <n-icon :component="Refresh" />
+                  <UiGlyph class="header-glyph" name="refresh" />
                 </span>
                 <div class="refresh-panel__heading">
                   <strong>{{ t("header.refreshControl") }}</strong>
@@ -202,7 +202,7 @@
                 @click="manualRefresh"
               >
                 <template #icon>
-                  <n-icon :component="Refresh" />
+                  <UiGlyph class="header-glyph" name="refresh" />
                 </template>
                 {{ t("header.refreshNow") }}
               </n-button>
@@ -293,10 +293,10 @@
                   :title="themeToggleLabel"
                 >
                   <template #icon>
-                    <n-icon v-if="appearanceMode !== 'auto'">
-                      <component :is="appearanceMode === 'dark' ? Moon : SunOne" />
-                    </n-icon>
-                    <n-icon v-else :component="ComputerOne" />
+                    <UiGlyph
+                      class="header-glyph"
+                      :name="appearanceGlyphName(appearanceMode)"
+                    />
                   </template>
                 </n-button>
               </div>
@@ -314,15 +314,9 @@
                 @click.stop="selectAppearanceMode(mode.value)"
               >
                 <span class="theme-mode-menu__option">
-                  <n-icon
+                  <UiGlyph
                     class="theme-mode-menu__icon"
-                    :component="
-                      mode.value === 'auto'
-                        ? ComputerOne
-                        : mode.value === 'dark'
-                          ? Moon
-                          : SunOne
-                    "
+                    :name="appearanceGlyphName(mode.value)"
                   />
                   <span>{{ mode.label }}</span>
                 </span>
@@ -343,7 +337,7 @@
                   @click.stop="goSetting"
                 >
                   <template #icon>
-                    <n-icon :component="SettingTwo" />
+                    <UiGlyph class="header-glyph" name="settings" />
                   </template>
                 </n-button>
               </div>
@@ -380,14 +374,8 @@
 </template>
 
 <script setup>
-import {
-  SunOne,
-  Moon,
-  ComputerOne,
-  Refresh,
-  SettingTwo,
-  HamburgerButton,
-} from "@icon-park/vue-next";
+import { HamburgerButton } from "@icon-park/vue-next";
+import UiGlyph from "@/components/ui/UiGlyph.vue";
 import { getCurrentTime } from "@/utils/getTime.js";
 import { getPublicAssetUrl } from "@/utils/publicAssets";
 import { requestDataRefresh } from "@/utils/dataRefresh";
@@ -489,14 +477,10 @@ const appearanceModeOptions = computed(() => [
   { value: "light", label: t("settings.themeLight") },
   { value: "dark", label: t("settings.themeDark") },
 ]);
+const appearanceGlyphName = (mode) =>
+  mode === "auto" ? "monitor" : mode === "dark" ? "moon" : "sun";
 const renderAppearanceIcon = (mode) =>
-  h(
-    mode === "auto"
-      ? ComputerOne
-      : mode === "dark"
-        ? Moon
-        : SunOne,
-  );
+  h(UiGlyph, { name: appearanceGlyphName(mode) });
 const themeToggleLabel = computed(
   () =>
     appearanceModeOptions.value.find(
@@ -822,11 +806,7 @@ const menuOptions = computed(() => [
       : t("header.refreshPage"),
     key: "refresh",
     disabled: !canManualRefresh.value,
-    icon: () => {
-      return h(NIcon, null, {
-        default: () => h(Refresh),
-      });
-    },
+    icon: () => h(UiGlyph, { name: "refresh" }),
   },
   {
     key: "topic-divider",
@@ -864,11 +844,7 @@ const menuOptions = computed(() => [
   {
     label: hotboardManagerLabel.value,
     key: "setting",
-    icon: () => {
-      return h(NIcon, null, {
-        default: () => h(SettingTwo),
-      });
-    },
+    icon: () => h(UiGlyph, { name: "settings" }),
   },
 ]);
 
@@ -1140,11 +1116,23 @@ onBeforeUnmount(() => {
     max-width: 1800px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: minmax(150px, 0.68fr) minmax(0, 1.65fr) max-content;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
-    justify-content: space-between;
     column-gap: 12px;
     transition: all 0.2s ease;
+  }
+
+  .logo {
+    justify-self: start;
+  }
+
+  .header-center {
+    min-width: 0;
+    justify-self: center;
+  }
+
+  .controls {
+    justify-self: end;
   }
 
   .logo {
@@ -1198,6 +1186,7 @@ onBeforeUnmount(() => {
       min-height: 56px;
       flex-wrap: nowrap !important;
       align-items: stretch !important;
+      gap: 8px !important;
     }
     :deep(.n-space > div),
     :deep(.n-space-item) {
@@ -1213,9 +1202,17 @@ onBeforeUnmount(() => {
     :deep(.header-control-btn) {
       height: 100%;
     }
+    .header-glyph {
+      width: 19px;
+      height: 19px;
+      font-size: 19px;
+      stroke-width: 1.8;
+    }
+
     .countdown {
-      margin-left: 3px;
+      margin-left: 5px;
       font-size: 12px;
+      font-variant-numeric: tabular-nums;
     }
     .refresh-panel {
       display: grid;
@@ -1485,6 +1482,11 @@ onBeforeUnmount(() => {
         padding: 0;
       }
 
+      .locale-trigger-label,
+      .countdown {
+        display: none;
+      }
+
       :deep(.header-control-btn .n-button__content),
       :deep(.header-control-btn .n-button__icon) {
         display: flex;
@@ -1511,10 +1513,31 @@ onBeforeUnmount(() => {
     &.collapsed {
       padding: 0 4vw;
       min-height: 48px;
+
+      .controls {
+        :deep(.n-space) {
+          min-height: 48px;
+          gap: 7px !important;
+          align-items: center !important;
+        }
+
+        .control-hit-area {
+          min-height: 48px;
+          align-items: center;
+          justify-content: center;
+        }
+
+        :deep(.header-control-btn) {
+          width: 38px;
+          min-width: 38px;
+          height: 38px;
+          padding: 0;
+        }
+      }
     }
 
     section {
-      grid-template-columns: minmax(150px, 1fr) minmax(220px, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       column-gap: 10px;
     }
 
@@ -1529,16 +1552,40 @@ onBeforeUnmount(() => {
     }
 
     .controls {
+      align-self: center;
+
       :deep(.n-space) {
         min-height: 48px;
         flex-wrap: nowrap !important;
-        gap: 8px !important;
+        gap: 7px !important;
+        align-items: center !important;
+      }
+
+      .control-hit-area {
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
       }
 
       :deep(.header-control-btn) {
-        min-width: 44px;
-        height: 48px;
-        padding-inline: 13px;
+        width: 38px;
+        min-width: 38px;
+        height: 38px;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .locale-trigger-label,
+      .countdown {
+        display: none;
+      }
+
+      :deep(.header-control-btn .n-button__content),
+      :deep(.header-control-btn .n-button__icon) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
       }
     }
 

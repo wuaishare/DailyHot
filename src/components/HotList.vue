@@ -131,7 +131,12 @@
                 :title="item.isPinned ? '置顶' : undefined"
                 :aria-label="item.isPinned ? '置顶' : `第 ${item.displayRank} 名`"
               >
-                <span v-if="item.isPinned" class="ranking-pin-icon" aria-hidden="true"></span>
+                <UiGlyph
+                  v-if="item.isPinned"
+                  class="ranking-pin-icon"
+                  name="pin"
+                  aria-hidden="true"
+                />
                 <template v-else>{{ item.displayRank }}</template>
               </n-text>
               <a
@@ -448,6 +453,7 @@ import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
+import UiGlyph from "@/components/ui/UiGlyph.vue";
 import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -1732,6 +1738,7 @@ onBeforeUnmount(() => {
         &:hover img {
           transform: scale(1.04);
         }
+
       }
 
       &.is-market-quote,
@@ -1792,9 +1799,10 @@ onBeforeUnmount(() => {
 
         .ranking-pin-icon {
           display: block;
-          width: 24px;
-          height: 24px;
-          background: center / contain no-repeat url("/icons/ranking-pinned.png");
+          width: 20px;
+          height: 20px;
+          color: var(--n-primary-color);
+          stroke-width: 1.9;
         }
       }
 
