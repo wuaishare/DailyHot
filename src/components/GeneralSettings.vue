@@ -76,6 +76,17 @@
         <n-switch v-model:value="compactMode" :round="false" />
       </div>
     </n-card>
+    <n-card v-if="showsDisplay" class="set-item">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">{{ t("settings.showPinnedRankings") }}</n-text>
+          <n-text class="tip" :depth="3">
+            {{ t("settings.showPinnedRankingsTip") }}
+          </n-text>
+        </div>
+        <n-switch v-model:value="showPinnedRankings" :round="false" />
+      </div>
+    </n-card>
     <n-card v-if="showsDisplay" class="set-item full view-memory-setting">
       <div class="view-memory-head">
         <div class="name">
@@ -385,6 +396,7 @@ const {
   headerFixed,
   headerCollapsed,
   compactMode,
+  showPinnedRankings,
   categoryViewMode,
   listFontSize,
   autoRefreshEnabled,
@@ -412,6 +424,7 @@ const persistedKeys = [
   "headerFixed",
   "headerCollapsed",
   "compactMode",
+  "showPinnedRankings",
   "categoryViewMode",
   "categoryViewPerCategory",
   "categoryViewModes",

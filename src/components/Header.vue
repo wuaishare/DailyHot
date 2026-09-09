@@ -150,6 +150,8 @@
             trigger="hover"
             placement="bottom"
             :show-arrow="false"
+            content-class="header-refresh-popover"
+            :content-style="{ padding: '12px' }"
             style="max-width: 360px"
           >
             <template #trigger>
@@ -277,6 +279,8 @@
             placement="bottom-end"
             :delay="80"
             :show-arrow="false"
+            content-class="header-theme-popover"
+            :content-style="{ padding: '6px' }"
           >
             <template #trigger>
               <div class="control-hit-area" @click.stop>
@@ -292,16 +296,7 @@
                     <n-icon v-if="appearanceMode !== 'auto'">
                       <component :is="appearanceMode === 'dark' ? Moon : SunOne" />
                     </n-icon>
-                    <svg
-                      v-else
-                      class="auto-theme-icon"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <rect x="3" y="4" width="14" height="10" rx="2" />
-                      <path d="M7 17h6M10 14v3" />
-                      <path d="M6.4 8.9a3.6 3.6 0 0 1 6.9-1.4 3.8 3.8 0 0 0-4.5 4.6 3.6 3.6 0 0 1-2.4-3.2Z" />
-                    </svg>
+                    <n-icon v-else :component="ComputerOne" />
                   </template>
                 </n-button>
               </div>
@@ -319,20 +314,15 @@
                 @click.stop="selectAppearanceMode(mode.value)"
               >
                 <span class="theme-mode-menu__option">
-                  <svg
-                    v-if="mode.value === 'auto'"
-                    class="theme-mode-menu__icon"
-                    viewBox="0 0 20 20"
-                    aria-hidden="true"
-                  >
-                    <rect x="3" y="4" width="14" height="10" rx="2" />
-                    <path d="M7 17h6M10 14v3" />
-                    <path d="M6.4 8.9a3.6 3.6 0 0 1 6.9-1.4 3.8 3.8 0 0 0-4.5 4.6 3.6 3.6 0 0 1-2.4-3.2Z" />
-                  </svg>
                   <n-icon
-                    v-else
                     class="theme-mode-menu__icon"
-                    :component="mode.value === 'dark' ? Moon : SunOne"
+                    :component="
+                      mode.value === 'auto'
+                        ? ComputerOne
+                        : mode.value === 'dark'
+                          ? Moon
+                          : SunOne
+                    "
                   />
                   <span>{{ mode.label }}</span>
                 </span>
@@ -393,6 +383,7 @@
 import {
   SunOne,
   Moon,
+  ComputerOne,
   Refresh,
   SettingTwo,
   HamburgerButton,
@@ -498,26 +489,14 @@ const appearanceModeOptions = computed(() => [
   { value: "light", label: t("settings.themeLight") },
   { value: "dark", label: t("settings.themeDark") },
 ]);
-const renderAutoThemeIcon = () =>
-  h(
-    "svg",
-    {
-      viewBox: "0 0 20 20",
-      class: "auto-theme-render-icon",
-      "aria-hidden": "true",
-    },
-    [
-      h("rect", { x: 3, y: 4, width: 14, height: 10, rx: 2 }),
-      h("path", { d: "M7 17h6M10 14v3" }),
-      h("path", {
-        d: "M6.4 8.9a3.6 3.6 0 0 1 6.9-1.4 3.8 3.8 0 0 0-4.5 4.6 3.6 3.6 0 0 1-2.4-3.2Z",
-      }),
-    ],
-  );
 const renderAppearanceIcon = (mode) =>
-  mode === "auto"
-    ? renderAutoThemeIcon()
-    : h(mode === "dark" ? Moon : SunOne);
+  h(
+    mode === "auto"
+      ? ComputerOne
+      : mode === "dark"
+        ? Moon
+        : SunOne,
+  );
 const themeToggleLabel = computed(
   () =>
     appearanceModeOptions.value.find(
@@ -1476,18 +1455,41 @@ onBeforeUnmount(() => {
     }
     :deep(.controls .n-button),
     :deep(.mobile .n-button) {
-      transform: scale(0.88);
+      transform: none;
     }
     .controls {
+      align-self: center;
+
       :deep(.n-space) {
         min-height: 39px;
+        align-items: center !important;
       }
+
+      :deep(.n-space > div),
+      :deep(.n-space-item) {
+        align-items: center;
+      }
+
       .control-hit-area {
+        min-height: 39px;
         margin: 0;
         padding: 0;
+        align-items: center;
+        justify-content: center;
       }
+
       :deep(.header-control-btn) {
+        width: 34px;
+        min-width: 34px;
         height: 34px;
+        padding: 0;
+      }
+
+      :deep(.header-control-btn .n-button__content),
+      :deep(.header-control-btn .n-button__icon) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
     }
     .category-select {
@@ -1600,40 +1602,174 @@ onBeforeUnmount(() => {
   }
 }
 
-.auto-theme-icon,
-.auto-theme-render-icon,
-.theme-mode-menu__icon {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.45;
+
+.refresh-panel {
+  display: grid;
+  gap: 12px;
+  width: 332px;
+}
+
+.refresh-panel__hero {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.refresh-panel__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--n-primary-color) 12%,
+    var(--n-action-color)
+  );
+  color: var(--n-primary-color);
+  font-size: 18px;
+}
+
+.refresh-panel__heading {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.refresh-panel__heading strong {
+  color: var(--n-text-color);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.refresh-panel__heading span {
+  color: var(--n-text-color-3);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.refresh-panel__countdown {
+  min-width: 64px;
+  padding: 6px 9px;
+  border: 1px solid color-mix(in srgb, var(--n-border-color) 85%, transparent);
+  border-radius: 8px;
+  background: color-mix(
+    in srgb,
+    var(--n-action-color) 92%,
+    var(--n-primary-color) 3%
+  );
+  color: var(--n-text-color);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.refresh-panel__countdown.paused {
+  color: var(--n-text-color-3);
+}
+
+.refresh-panel__now {
+  min-height: 38px;
+  border-radius: 9px;
+}
+
+.refresh-panel__section {
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, var(--n-border-color) 82%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--n-action-color) 72%, transparent);
+}
+
+.refresh-panel__auto-head,
+.refresh-panel__auto-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.refresh-panel__auto-head > div:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.refresh-panel__auto-head strong {
+  color: var(--n-text-color);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.refresh-panel__auto-tip {
+  max-width: 205px;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.refresh-panel .time-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.refresh-panel .time-item {
+  display: grid;
+  gap: 5px;
+}
+
+.refresh-panel .time-item .unit {
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.refresh-panel .time-item :deep(.n-input-number) {
+  width: 100%;
+}
+
+.refresh-panel .time-item :deep(.n-input) {
+  border-radius: 8px;
+}
+
+.refresh-panel .time-item :deep(.n-input__input-el) {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .theme-mode-menu {
   display: grid;
-  gap: 3px;
-  min-width: 176px;
-  padding: 4px;
+  gap: 2px;
+  width: 188px;
+  padding: 0;
 }
 
 .theme-mode-menu button {
   appearance: none;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  min-height: 38px;
-  padding: 0 9px;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 10px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
   color: var(--n-text-color-2);
   text-align: left;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.2;
   cursor: pointer;
 }
 
@@ -1653,14 +1789,28 @@ onBeforeUnmount(() => {
 }
 
 .theme-mode-menu__option {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
   align-items: center;
-  gap: 9px;
+  gap: 10px;
+  min-width: 0;
+}
+
+.theme-mode-menu__option > span:last-child {
+  display: block;
+  min-width: 0;
+  line-height: 20px;
 }
 
 .theme-mode-menu__icon {
-  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
   color: var(--n-text-color-2);
+  font-size: 20px;
+  line-height: 1;
 }
 
 .theme-mode-menu button.active .theme-mode-menu__icon {
@@ -1668,9 +1818,13 @@ onBeforeUnmount(() => {
 }
 
 .theme-mode-menu i {
+  display: grid;
+  place-items: center;
+  width: 16px;
   color: var(--n-primary-color);
   font-style: normal;
-  font-weight: 700;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .locale-option {

@@ -131,7 +131,7 @@
                 :title="item.isPinned ? '置顶' : undefined"
                 :aria-label="item.isPinned ? '置顶' : `第 ${item.displayRank} 名`"
               >
-                <n-icon v-if="item.isPinned" :component="Pushpin" />
+                <span v-if="item.isPinned" class="ranking-pin-icon" aria-hidden="true"></span>
                 <template v-else>{{ item.displayRank }}</template>
               </n-text>
               <a
@@ -443,10 +443,11 @@
 </template>
 
 <script setup>
-import { Drag, Fire, Refresh, More, Pushpin } from "@icon-park/vue-next";
+import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
 import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
+import { normalizeRankingBadges } from "@/utils/rankingBadges";
 import { mainStore } from "@/store";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -600,7 +601,10 @@ const cardSubtitle = computed(() => {
       ? props.hotData.subtype ?? ""
       : hotListData.value?.type || "";
   const subtitle = getSourceSubtitleLabel(rawSubtitle, locale.value);
-  if (isGenericSourceSubtitleLabel(subtitle, locale.value)) {
+  if (
+    isGenericSourceSubtitleLabel(subtitle, locale.value) &&
+    !hotListData.value?.centralized
+  ) {
     return "";
   }
   return subtitle;
@@ -657,61 +661,6 @@ const formatPreviewHot = (value) => {
     return rawValue;
   }
 };
-const rankingBadgeKinds = new Set([
-  "hot",
-  "new",
-  "explosive",
-  "boiling",
-  "hot-live",
-  "first-release",
-  "challenge",
-  "rumor",
-  "discussion",
-  "interpretation",
-  "depth",
-  "pinned",
-  "live",
-  "commercial",
-  "category",
-  "source",
-]);
-
-const normalizeRankingBadges = (badges) => {
-  if (!Array.isArray(badges)) return [];
-  return badges
-    .map((badge) => {
-      if (!badge || typeof badge !== "object") return null;
-      const label = String(badge.label || "").trim();
-      const kind = rankingBadgeKinds.has(String(badge.kind || ""))
-        ? String(badge.kind)
-        : "source";
-      if (!label) return null;
-      const rawIconUrl = String(badge.iconUrl || "").trim();
-      let iconUrl = "";
-      if (rawIconUrl) {
-        try {
-          const parsed = new URL(rawIconUrl);
-          if (parsed.protocol === "https:" || parsed.protocol === "http:") {
-            iconUrl = parsed.toString();
-          }
-        } catch {
-          iconUrl = "";
-        }
-      }
-      return {
-        kind,
-        label,
-        placement: badge.placement === "prefix" ? "prefix" : "suffix",
-        iconUrl,
-        animated: Boolean(badge.animated),
-        prominence: badge.prominence === "strong" ? "strong" : "normal",
-        sourceCode: String(badge.sourceCode || "").trim(),
-      };
-    })
-    .filter(Boolean)
-    .slice(0, 4);
-};
-
 const handleRankingBadgeImageError = (iconUrl) => {
   if (iconUrl) rankingBadgeImageErrors[iconUrl] = true;
 };
@@ -723,9 +672,14 @@ const visibleItems = computed(() => {
     : showMarketSortControl.value
       ? applyMarketListSort(items, props.hotData.name)
       : items;
-  const visibleSourceItems = isIndexOverviewSource.value
+  const pinnedFilteredItems = store.showPinnedRankings
     ? sortedItems
-    : sortedItems.slice(
+    : sortedItems.filter((item) =>
+        !normalizeRankingBadges(item?.badges).some((badge) => badge.kind === "pinned")
+      );
+  const visibleSourceItems = isIndexOverviewSource.value
+    ? pinnedFilteredItems
+    : pinnedFilteredItems.slice(
         0,
         isSortableMarketSource.value ? MARKET_LIST_VISIBLE_LIMIT : HOT_LIST_VISIBLE_LIMIT
       );
@@ -1828,15 +1782,19 @@ onBeforeUnmount(() => {
 
         &.is-pinned {
           background: transparent;
-          color: #3f7cff;
-          font-size: 24px;
-          font-weight: 800;
           line-height: 1;
           transform: translateY(-1px);
         }
 
         &.is-pinned:hover {
-          background: color-mix(in srgb, #3f7cff 10%, transparent);
+          background: color-mix(in srgb, var(--n-primary-color) 8%, transparent);
+        }
+
+        .ranking-pin-icon {
+          display: block;
+          width: 24px;
+          height: 24px;
+          background: center / contain no-repeat url("/icons/ranking-pinned.png");
         }
       }
 

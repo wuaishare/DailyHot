@@ -56,8 +56,13 @@
             :key="entry.key"
             class="category-stream__row"
           >
-            <div class="category-stream__rank" :class="rankTone(entry.rank)">
-              <span>#</span>{{ entry.rank }}
+            <div
+              class="category-stream__rank"
+              :class="rankTone(entry.rank, entry.isPinned)"
+              :title="entry.isPinned ? '置顶' : undefined"
+            >
+              <span v-if="entry.isPinned" class="category-stream__pin-icon" aria-hidden="true"></span>
+              <template v-else><span>#</span>{{ entry.rank }}</template>
             </div>
 
             <router-link
@@ -79,7 +84,70 @@
               :target="linkTarget"
               rel="noopener noreferrer nofollow"
             >
-              <div class="category-stream__title">{{ entry.title }}</div>
+              <div class="category-stream__title-row">
+                <span
+                  v-if="entry.inlinePrefixBadges.length"
+                  class="category-stream__badges is-prefix notranslate"
+                  translate="no"
+                >
+                  <span
+                    v-for="(badge, badgeIndex) in entry.inlinePrefixBadges"
+                    :key="`prefix-${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
+                    class="category-stream__badge"
+                    :class="[
+                      `is-${badge.kind}`,
+                      {
+                        'is-strong': badge.prominence === 'strong',
+                        'has-icon': Boolean(badge.iconUrl) && !rankingBadgeImageErrors[badge.iconUrl],
+                      },
+                    ]"
+                    role="img"
+                    :title="badge.label"
+                    :aria-label="badge.label"
+                  >
+                    <img
+                      v-if="badge.iconUrl && !rankingBadgeImageErrors[badge.iconUrl]"
+                      :src="badge.iconUrl"
+                      alt=""
+                      loading="lazy"
+                      @error="handleRankingBadgeImageError(badge.iconUrl)"
+                    />
+                    <span v-else aria-hidden="true">{{ badge.label }}</span>
+                  </span>
+                </span>
+                <div class="category-stream__title">{{ entry.title }}</div>
+                <span
+                  v-if="entry.suffixBadges.length"
+                  class="category-stream__badges notranslate"
+                  translate="no"
+                >
+                  <span
+                    v-for="(badge, badgeIndex) in entry.suffixBadges"
+                    :key="`${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
+                    class="category-stream__badge"
+                    :class="[
+                      `is-${badge.kind}`,
+                      {
+                        'is-strong': badge.prominence === 'strong',
+                        'is-animated': badge.animated,
+                        'has-icon': Boolean(badge.iconUrl) && !rankingBadgeImageErrors[badge.iconUrl],
+                      },
+                    ]"
+                    role="img"
+                    :title="badge.label"
+                    :aria-label="badge.label"
+                  >
+                    <img
+                      v-if="badge.iconUrl && !rankingBadgeImageErrors[badge.iconUrl]"
+                      :src="badge.iconUrl"
+                      alt=""
+                      loading="lazy"
+                      @error="handleRankingBadgeImageError(badge.iconUrl)"
+                    />
+                    <span v-else aria-hidden="true">{{ badge.label }}</span>
+                  </span>
+                </span>
+              </div>
               <p v-if="entry.description" class="category-stream__desc">
                 {{ entry.description }}
               </p>
@@ -207,6 +275,7 @@ import {
 } from "@/utils/readableTitles";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
+import { normalizeRankingBadges } from "@/utils/rankingBadges";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 
 const props = defineProps({
@@ -217,6 +286,7 @@ const props = defineProps({
 const route = useRoute();
 const router = useRouter();
 const store = mainStore();
+const rankingBadgeImageErrors = reactive({});
 const { locale: i18nLocale } = useI18n({ useScope: "global" });
 const locale = computed(() =>
   normalizeLocale(getLocaleFromRoute(route) || i18nLocale.value),
@@ -614,9 +684,17 @@ const entries = computed(() => {
       locale.value,
       source.label || result?.title || source.name,
     );
-    data.forEach((item, index) => {
-      const rank = index + 1;
-      if (rank < rankFrom.value || rank > rankTo.value) return;
+    let nextDisplayRank = 1;
+    data.forEach((item) => {
+      const rankingBadges = normalizeRankingBadges(item?.badges);
+      const prefixBadges = rankingBadges.filter((badge) => badge.placement === "prefix");
+      const suffixBadges = rankingBadges.filter((badge) => badge.placement !== "prefix");
+      const isPinned = prefixBadges.some((badge) => badge.kind === "pinned");
+      if (isPinned && !store.showPinnedRankings) return;
+      const inlinePrefixBadges = prefixBadges.filter((badge) => badge.kind !== "pinned");
+      const rank = isPinned ? null : nextDisplayRank++;
+      if (!isPinned && (rank < rankFrom.value || rank > rankTo.value)) return;
+      if (isPinned && rankFrom.value > 1) return;
       const title = stripText(item?.title || item?.originalTitle || "");
       const description = stripText(item?.desc || item?.originalDesc || "");
       const hot = stripText(item?.hot || "");
@@ -628,13 +706,16 @@ const entries = computed(() => {
           "::" +
           source.name +
           "::" +
-          rank,
+          (isPinned ? "pinned" : rank),
         sourceName: source.name,
         sourceLabel,
         sourceLogo: getSourceLogo(source.name),
         sourceOrder: sourceIndex.value.get(source.name) ?? 9999,
         sourcePath: sourcePathFor(source),
         rank,
+        isPinned,
+        inlinePrefixBadges,
+        suffixBadges,
         title,
         description,
         hot,
@@ -704,10 +785,14 @@ const retryFailed = () => {
   void loadActiveSources({ forceFailed: true });
 };
 
-const rankTone = (rank) => ({
-  "is-top": rank <= 3,
-  "is-top10": rank > 3 && rank <= 10,
+const rankTone = (rank, isPinned = false) => ({
+  "is-pinned": isPinned,
+  "is-top": !isPinned && rank <= 3,
+  "is-top10": !isPinned && rank > 3 && rank <= 10,
 });
+const handleRankingBadgeImageError = (iconUrl) => {
+  if (iconUrl) rankingBadgeImageErrors[iconUrl] = true;
+};
 const handleLogoError = (event) => {
   if (event.target) event.target.src = getSourceLogoFallback();
 };
@@ -1012,6 +1097,18 @@ const hideBrokenCover = (event) => {
   color: var(--n-text-color-2);
 }
 
+.category-stream__rank.is-pinned {
+  display: flex;
+  align-items: center;
+}
+
+.category-stream__pin-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  background: center / contain no-repeat url("/icons/ranking-pinned.png");
+}
+
 .category-stream__source {
   min-width: 0;
   display: flex;
@@ -1045,13 +1142,108 @@ const hideBrokenCover = (event) => {
   text-decoration: none;
 }
 
+.category-stream__title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .category-stream__title {
+  min-width: 0;
   overflow: hidden;
   font-size: var(--category-stream-font-size, 15px);
   font-weight: 620;
   line-height: 1.42;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.category-stream__badges {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+.category-stream__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #fff;
+  background: #ff3852;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 18px;
+}
+
+.category-stream__badge.is-hot,
+.category-stream__badge.is-boiling {
+  background: #ff9406;
+}
+
+.category-stream__badge.is-explosive {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #f04438, #c81e1e);
+  box-shadow: 0 2px 8px color-mix(in srgb, #c81e1e 36%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.category-stream__badge.is-interpretation,
+.category-stream__badge.is-depth {
+  background: linear-gradient(135deg, #4d7cff, #6d5ce7);
+}
+
+.category-stream__badge.is-rumor {
+  background: #2788f5;
+}
+
+.category-stream__badge.is-challenge {
+  background: #ff4b7d;
+}
+
+.category-stream__badge.is-commercial {
+  background: #00a6d9;
+}
+
+.category-stream__badge.is-category,
+.category-stream__badge.is-source {
+  background: color-mix(in srgb, var(--n-text-color) 68%, transparent);
+}
+
+.category-stream__badge.has-icon {
+  min-width: 18px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.category-stream__badge img {
+  display: block;
+  width: auto;
+  max-width: 38px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.category-stream__badge.is-hot-live img {
+  width: 20px;
+  max-width: 20px;
+  height: 20px;
+}
+
+.category-stream__badge.is-animated img {
+  animation: category-ranking-badge-live 1.25s ease-in-out infinite;
+  transform-origin: 50% 80%;
 }
 
 .category-stream__desc {
@@ -1210,6 +1402,22 @@ const hideBrokenCover = (event) => {
 
   .category-stream__cover {
     display: none;
+  }
+}
+
+@keyframes category-ranking-badge-live {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(-2px) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-stream__badge.is-animated img {
+    animation: none !important;
   }
 }
 </style>

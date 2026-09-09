@@ -1255,6 +1255,8 @@ export const mainStore = defineStore("mainData", {
       headerCollapsed: true,
       // 紧凑模式
       compactMode: true,
+      // 是否显示榜单置顶条目
+      showPinnedRankings: true,
       // 自动刷新
       autoRefreshEnabled: false,
       autoRefreshPaused: false,
@@ -1782,6 +1784,7 @@ export const mainStore = defineStore("mainData", {
         "headerFixed",
         "headerCollapsed",
         "compactMode",
+        "showPinnedRankings",
         "autoRefreshEnabled",
         "autoRefreshPaused",
         "autoRefreshInterval",
