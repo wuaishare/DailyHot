@@ -1,4 +1,4 @@
-import { handleTrendsIntelligenceProxy } from "./_trends-intelligence.mjs";
+import { handleTrendsIntelligenceProxy } from "./_trends-intelligence.js";
 
 export const config = {
   runtime: "nodejs",

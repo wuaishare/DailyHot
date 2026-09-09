@@ -23,13 +23,15 @@ const queryValue = (value, fallback = "") =>
 const boundedInt = (value, fallback, min, max) => {
   const parsed = Number.parseInt(queryValue(value, String(fallback)), 10);
   return Math.max(min, Math.min(max, Number.isFinite(parsed) ? parsed : fallback));
-};const sendJson = (res, status, payload) => {
+};
+
+const sendJson = (res, status, payload) => {
   res.status(status);
   res.setHeader("content-type", "application/json; charset=utf-8");
   res.send(JSON.stringify(payload));
 };
 
-export const handleTrendsIntelligenceProxy = async ({
+const handleTrendsIntelligenceProxy = async ({
   req,
   res,
   pathValue,
@@ -115,3 +117,5 @@ export const handleTrendsIntelligenceProxy = async ({
     clearTimeout(timer);
   }
 };
+
+module.exports = { handleTrendsIntelligenceProxy };

@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { handleTrendsIntelligenceProxy } from "../api/_trends-intelligence.mjs";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { handleTrendsIntelligenceProxy } = require("../api/_trends-intelligence.js");
 
 const makeResponse = () => {
   const headers = new Map();
