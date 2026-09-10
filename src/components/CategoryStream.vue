@@ -103,7 +103,7 @@
                       `is-${badge.kind}`,
                       {
                         'is-strong': badge.prominence === 'strong',
-                        'has-icon': Boolean(badge.iconUrl) && !rankingBadgeImageErrors[badge.iconUrl],
+                        'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)),
                       },
                     ]"
                     role="img"
@@ -111,11 +111,11 @@
                     :aria-label="badge.label"
                   >
                     <img
-                      v-if="badge.iconUrl && !rankingBadgeImageErrors[badge.iconUrl]"
-                      :src="badge.iconUrl"
+                      v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
+                      :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
                       alt=""
                       loading="lazy"
-                      @error="handleRankingBadgeImageError(badge.iconUrl)"
+                      @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))"
                     />
                     <span v-else aria-hidden="true">{{ badge.label }}</span>
                   </span>
@@ -135,7 +135,7 @@
                       {
                         'is-strong': badge.prominence === 'strong',
                         'is-animated': badge.animated,
-                        'has-icon': Boolean(badge.iconUrl) && !rankingBadgeImageErrors[badge.iconUrl],
+                        'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)),
                       },
                     ]"
                     role="img"
@@ -143,11 +143,11 @@
                     :aria-label="badge.label"
                   >
                     <img
-                      v-if="badge.iconUrl && !rankingBadgeImageErrors[badge.iconUrl]"
-                      :src="badge.iconUrl"
+                      v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
+                      :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
                       alt=""
                       loading="lazy"
-                      @error="handleRankingBadgeImageError(badge.iconUrl)"
+                      @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))"
                     />
                     <span v-else aria-hidden="true">{{ badge.label }}</span>
                   </span>
@@ -281,7 +281,7 @@ import {
 } from "@/utils/readableTitles";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
-import { normalizeRankingBadges } from "@/utils/rankingBadges";
+import { normalizeRankingBadges, resolveRankingBadgeIconUrl } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 
