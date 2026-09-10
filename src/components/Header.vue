@@ -788,10 +788,7 @@ const languageOptions = computed(() =>
               "span",
               {
                 class: "locale-option-label",
-                style: {
-                  ...localeOptionLabelStyle,
-                  ...(active ? localeOptionActiveLabelStyle : {}),
-                },
+                style: localeOptionLabelStyle,
               },
               item.label,
             ),
@@ -803,26 +800,25 @@ const languageOptions = computed(() =>
 );
 const localeOptionStyle = {
   display: "grid",
-  gridTemplateColumns: "16px minmax(0, 1fr)",
+  gridTemplateColumns: "20px minmax(0, 1fr)",
   alignItems: "center",
-  gap: "8px",
-  minWidth: "148px",
+  gap: "10px",
+  width: "136px",
+  minWidth: "0",
   maxWidth: "100%",
   whiteSpace: "nowrap",
 };
 const localeOptionLabelStyle = {
   display: "inline-block",
-  lineHeight: "1.25",
-};
-const localeOptionActiveLabelStyle = {
-  color: "var(--n-option-text-color-active, currentColor)",
-  fontWeight: "700",
+  lineHeight: "1.2",
 };
 const localeFlagStyle = {
-  width: "16px",
-  height: "16px",
-  borderRadius: "50%",
+  width: "20px",
+  height: "20px",
+  borderRadius: "4px",
   objectFit: "cover",
+  boxSizing: "border-box",
+  border: "1px solid rgba(127, 127, 127, 0.18)",
   flexShrink: "0",
   display: "block",
 };
@@ -2028,12 +2024,25 @@ onBeforeUnmount(() => {
 }
 
 .theme-mode-menu button.active {
-  color: var(--n-primary-color, #ea444d);
-  background: color-mix(in srgb, var(--n-primary-color, #ea444d) 12%, transparent);
-  box-shadow:
-    inset 3px 0 0 var(--n-primary-color, #ea444d),
-    inset 0 0 0 1px color-mix(in srgb, var(--n-primary-color, #ea444d) 24%, transparent);
-  font-weight: 700;
+  position: relative;
+  color: var(--n-text-color, inherit);
+  background: color-mix(in srgb, var(--n-primary-color, #ea444d) 7%, transparent);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--n-primary-color, #ea444d) 14%, transparent);
+  font-weight: 650;
+}
+
+.theme-mode-menu button.active::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 2px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--n-primary-color, #ea444d);
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .theme-mode-menu__option {
@@ -2066,39 +2075,47 @@ onBeforeUnmount(() => {
 }
 
 .locale-option {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
-  min-width: 124px;
+  gap: 10px;
+  width: 136px;
+  min-width: 0;
   max-width: 100%;
   white-space: nowrap;
 }
 
 .locale-option-label {
   display: inline-block;
-  line-height: 1.25;
-}
-
-.locale-option.is-active .locale-option-label {
-  color: var(--n-primary-color);
-  font-weight: 700;
+  line-height: 1.2;
 }
 
 .locale-option-flag,
 .locale-trigger-flag {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(127, 127, 127, 0.18);
+  border-radius: 4px;
+  box-sizing: border-box;
   object-fit: cover;
   flex-shrink: 0;
   display: block;
 }
 
 :global(.header-locale-menu.n-dropdown-menu) {
-  --n-padding: 4px 0 !important;
+  --n-padding: 6px 0 !important;
+  --n-option-height: 36px !important;
+  --n-font-size: 14px !important;
+  --n-border-radius: 8px !important;
 }
 
 :global(.header-locale-menu .n-dropdown-option-body) {
+  height: 36px;
   min-height: 36px;
+}
+
+:global(.header-locale-menu .n-dropdown-option-body__label) {
+  display: flex;
+  align-items: center;
 }
 </style>

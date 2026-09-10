@@ -28,39 +28,63 @@ html[data-dailyhot-theme="dark"] #app {
   opacity: 0;
 }
 
-// 统一下拉菜单选中态：用完整行高亮与左侧强调条替代弱提示对钩。
+// 统一单选菜单的选中态：整行轻高亮 + 左侧短强调条。
+// 文字保持正常前景色，避免大面积主色造成“警告态”观感。
 .n-dropdown-option-body.app-dropdown-selection.is-active {
-  color: var(--n-option-text-color-active) !important;
-  font-weight: 700;
+  color: var(--n-option-text-color) !important;
+  font-weight: 650;
 }
 
 .n-dropdown-option-body.app-dropdown-selection.is-active::before {
   background: color-mix(
     in srgb,
-    var(--n-option-text-color-active) 12%,
-    var(--n-option-color-active)
+    var(--n-option-text-color-active) 7%,
+    transparent
   ) !important;
-  box-shadow: inset 3px 0 0 var(--n-option-text-color-active);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--n-option-text-color-active) 14%, transparent);
 }
 
-.n-dropdown-option-body.app-dropdown-selection.is-active
-  .n-dropdown-option-body__prefix,
-.n-dropdown-option-body.app-dropdown-selection.is-active
-  .n-dropdown-option-body__suffix {
-  color: var(--n-option-text-color-active) !important;
+.n-dropdown-option-body.app-dropdown-selection.is-active::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 7px;
+  top: 50%;
+  width: 2px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--n-option-text-color-active);
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
-// 单选 Select 同样使用整行高亮；多选仍保留勾选作为辅助语义。
+// 单选 Select 同样使用整行轻高亮；多选仍保留勾选作为辅助语义。
 .n-base-select-option--selected {
-  color: var(--n-option-text-color-active) !important;
-  font-weight: 700;
+  color: var(--n-option-text-color) !important;
+  font-weight: 650;
 }
 
 .n-base-select-option--selected::before {
   background: color-mix(
     in srgb,
-    var(--n-option-text-color-active) 12%,
-    var(--n-option-color-active)
+    var(--n-option-text-color-active) 7%,
+    transparent
   ) !important;
-  box-shadow: inset 3px 0 0 var(--n-option-text-color-active);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--n-option-text-color-active) 14%, transparent);
+}
+
+.n-base-select-option--selected::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 7px;
+  top: 50%;
+  width: 2px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--n-option-text-color-active);
+  transform: translateY(-50%);
+  pointer-events: none;
 }
