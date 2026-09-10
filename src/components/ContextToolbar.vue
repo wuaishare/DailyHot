@@ -245,6 +245,7 @@ import {
 } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { mainStore } from "@/store";
+import { dropdownSelectionProps } from "@/utils/dropdownSelection";
 import {
   getCategoryByRef,
   getSourceCategoryIds,
@@ -553,6 +554,10 @@ const categoryMenuOptions = (category) =>
   siblingCategories(category).map((item) => ({
     key: String(item.id),
     label: categoryLabel(item),
+    props: dropdownSelectionProps(
+      String(item.id) === String(currentCategory.value?.id || ""),
+      { current: true },
+    ),
   }));
 
 const currentSourceLabel = computed(() => {
@@ -578,6 +583,7 @@ const variantMenuOptions = computed(() =>
   variantOptions.value.map((item) => ({
     key: item.value,
     label: getSubtypeLabel(item, locale.value),
+    props: dropdownSelectionProps(item.value === currentVariant.value, { current: true }),
   })),
 );
 const currentVariantLabel = computed(() => {
@@ -590,6 +596,7 @@ const topicMenuOptions = computed(() =>
   TOPIC_REGISTRY.map((topic) => ({
     key: topic.id,
     label: getTopicLabel(topic, locale.value),
+    props: dropdownSelectionProps(topic.id === currentTopic.value?.id, { current: true }),
   })),
 );
 

@@ -25,6 +25,8 @@ export const messages = {
       hour: "时",
       minute: "分",
       second: "秒",
+      increaseTimeUnit: "增加{unit}",
+      decreaseTimeUnit: "减少{unit}",
       refreshTip:
         "默认 0时30分0秒，最少 60 秒。开启后图标右侧显示倒计时。",
       refreshPage: "刷新页面",
@@ -373,6 +375,8 @@ export const messages = {
       hour: "h",
       minute: "m",
       second: "s",
+      increaseTimeUnit: "Increase {unit}",
+      decreaseTimeUnit: "Decrease {unit}",
       refreshTip:
         "Default 0h 30m 0s, minimum 60 seconds. Countdown appears next to the refresh icon when enabled.",
       refreshPage: "Refresh page",
@@ -738,6 +742,8 @@ export const messages = {
       hour: "時",
       minute: "分",
       second: "秒",
+      increaseTimeUnit: "增加{unit}",
+      decreaseTimeUnit: "減少{unit}",
       refreshTip:
         "預設 0時30分0秒，最少 60 秒。啟用後圖示右側顯示倒數。",
       refreshPage: "重新整理頁面",
@@ -1085,6 +1091,8 @@ export const messages = {
       hour: "時間",
       minute: "分",
       second: "秒",
+      increaseTimeUnit: "{unit}を増やす",
+      decreaseTimeUnit: "{unit}を減らす",
       refreshTip:
         "初期値は 0時間30分0秒、最小 60 秒です。有効時は更新アイコン横にカウントダウンを表示します。",
       refreshPage: "ページを更新",
@@ -1449,6 +1457,8 @@ export const messages = {
       hour: "시간",
       minute: "분",
       second: "초",
+      increaseTimeUnit: "{unit} 늘리기",
+      decreaseTimeUnit: "{unit} 줄이기",
       refreshTip:
         "기본값은 0시간 30분 0초이며 최소 60초입니다. 활성화하면 아이콘 옆에 카운트다운이 표시됩니다.",
       refreshPage: "페이지 새로고침",

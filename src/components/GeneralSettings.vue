@@ -38,6 +38,7 @@
         </div>
         <n-select
           class="set"
+          :show-checkmark="false"
           v-model:value="linkOpenType"
           :options="linkOptions"
         />

@@ -36,6 +36,7 @@
 <script setup>
 import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
 import { HOVER_MENU_OPEN_EVENT, announceHoverMenuOpen } from "@/utils/hoverMenu";
+import { dropdownSelectionProps } from "@/utils/dropdownSelection";
 
 const props = defineProps({
   modelValue: { type: [String, Number], required: true },
@@ -120,6 +121,7 @@ const menuOptions = computed(() =>
       props.showCount && option.count !== undefined
         ? `${option.label} · ${option.count}`
         : option.label,
+    props: dropdownSelectionProps(option.value === props.modelValue),
   })),
 );
 const handleShowChange = (show) => {

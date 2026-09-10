@@ -70,6 +70,7 @@
             />
             <n-select
               v-model:value="newCategoryParent"
+              :show-checkmark="false"
               size="small"
               clearable
               :options="parentOptions"
@@ -95,6 +96,7 @@
             />
             <n-select
               v-model:value="selectedParentId"
+              :show-checkmark="false"
               size="small"
               clearable
               :options="parentOptionsForSelected"

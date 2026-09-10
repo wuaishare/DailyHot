@@ -27,3 +27,40 @@ html[data-dailyhot-theme="dark"] #app {
 .fade-leave-to {
   opacity: 0;
 }
+
+// 统一下拉菜单选中态：用完整行高亮与左侧强调条替代弱提示对钩。
+.n-dropdown-option-body.app-dropdown-selection.is-active {
+  color: var(--n-option-text-color-active) !important;
+  font-weight: 700;
+}
+
+.n-dropdown-option-body.app-dropdown-selection.is-active::before {
+  background: color-mix(
+    in srgb,
+    var(--n-option-text-color-active) 12%,
+    var(--n-option-color-active)
+  ) !important;
+  box-shadow: inset 3px 0 0 var(--n-option-text-color-active);
+}
+
+.n-dropdown-option-body.app-dropdown-selection.is-active
+  .n-dropdown-option-body__prefix,
+.n-dropdown-option-body.app-dropdown-selection.is-active
+  .n-dropdown-option-body__suffix {
+  color: var(--n-option-text-color-active) !important;
+}
+
+// 单选 Select 同样使用整行高亮；多选仍保留勾选作为辅助语义。
+.n-base-select-option--selected {
+  color: var(--n-option-text-color-active) !important;
+  font-weight: 700;
+}
+
+.n-base-select-option--selected::before {
+  background: color-mix(
+    in srgb,
+    var(--n-option-text-color-active) 12%,
+    var(--n-option-color-active)
+  ) !important;
+  box-shadow: inset 3px 0 0 var(--n-option-text-color-active);
+}

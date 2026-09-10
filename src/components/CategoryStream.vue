@@ -200,6 +200,7 @@
             <span>{{ copy.rankRange }}</span>
             <n-select
               size="tiny"
+              :show-checkmark="false"
               :value="rankTo"
               :options="rankOptions"
               @update:value="updateRankTo"

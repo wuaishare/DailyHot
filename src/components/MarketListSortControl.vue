@@ -23,6 +23,7 @@
 <script setup>
 import { SortOne } from "@icon-park/vue-next";
 import { useI18n } from "vue-i18n";
+import { dropdownSelectionProps } from "@/utils/dropdownSelection";
 import {
   MARKET_SORT_MODES,
   getMarketListActivityKind,
@@ -64,7 +65,10 @@ const options = computed(() => [
   { key: MARKET_SORT_MODES.GAIN, label: t("hotList.marketSortGain") },
   { key: MARKET_SORT_MODES.LOSS, label: t("hotList.marketSortLoss") },
   { key: MARKET_SORT_MODES.ACTIVITY, label: activityLabel.value },
-]);
+].map((option) => ({
+  ...option,
+  props: dropdownSelectionProps(option.key === activeMode.value),
+})));
 
 const activeLabel = computed(
   () => options.value.find((item) => item.key === activeMode.value)?.label || t("hotList.marketSortRank")

@@ -10,6 +10,7 @@
       <n-space v-if="authorized">
         <n-select
           v-model:value="days"
+          :show-checkmark="false"
           :options="dayOptions"
           size="small"
           style="width: 120px"

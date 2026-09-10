@@ -111,6 +111,7 @@
         <n-select
           v-else
           v-model:value="activeCategoryLocal"
+          :show-checkmark="false"
           :options="mobileCategoryOptions"
           size="large"
           :placeholder="t('common.selectCategory')"
@@ -246,51 +247,108 @@
                 </div>
 
                 <div class="time-inputs">
-                  <label class="time-item">
+                  <div class="time-item">
                     <span class="unit">{{ t("header.hour") }}</span>
-                    <n-input-number
-                      size="small"
-                      v-model:value="timeForm.hour"
-                      :min="0"
-                      :max="23"
-                      :show-button="true"
-                      button-placement="right"
-                      :keyboard="{ ArrowUp: true, ArrowDown: true }"
-                      :input-props="{ 'aria-label': t('header.hour') }"
-                      @wheel.prevent="handleIntervalWheel('hour', $event)"
-                      @update:value="applyAutoInterval"
-                    />
-                  </label>
-                  <label class="time-item">
+                    <div class="time-number-control">
+                      <n-input-number
+                        size="small"
+                        v-model:value="timeForm.hour"
+                        :min="0"
+                        :max="23"
+                        :show-button="false"
+                        :keyboard="{ ArrowUp: true, ArrowDown: true }"
+                        :input-props="{ 'aria-label': t('header.hour') }"
+                        @wheel.prevent="handleIntervalWheel('hour', $event)"
+                        @update:value="applyAutoInterval"
+                      />
+                      <div class="time-stepper" role="group">
+                        <button
+                          type="button"
+                          :aria-label="t('header.decreaseTimeUnit', { unit: t('header.hour') })"
+                          :disabled="timeForm.hour <= 0"
+                          @click="adjustTimeUnit('hour', -1)"
+                        >
+                          <span aria-hidden="true">−</span>
+                        </button>
+                        <button
+                          type="button"
+                          :aria-label="t('header.increaseTimeUnit', { unit: t('header.hour') })"
+                          :disabled="timeForm.hour >= 23"
+                          @click="adjustTimeUnit('hour', 1)"
+                        >
+                          <span aria-hidden="true">+</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="time-item">
                     <span class="unit">{{ t("header.minute") }}</span>
-                    <n-input-number
-                      size="small"
-                      v-model:value="timeForm.minute"
-                      :min="0"
-                      :max="59"
-                      :show-button="true"
-                      button-placement="right"
-                      :keyboard="{ ArrowUp: true, ArrowDown: true }"
-                      :input-props="{ 'aria-label': t('header.minute') }"
-                      @wheel.prevent="handleIntervalWheel('minute', $event)"
-                      @update:value="applyAutoInterval"
-                    />
-                  </label>
-                  <label class="time-item">
+                    <div class="time-number-control">
+                      <n-input-number
+                        size="small"
+                        v-model:value="timeForm.minute"
+                        :min="0"
+                        :max="59"
+                        :show-button="false"
+                        :keyboard="{ ArrowUp: true, ArrowDown: true }"
+                        :input-props="{ 'aria-label': t('header.minute') }"
+                        @wheel.prevent="handleIntervalWheel('minute', $event)"
+                        @update:value="applyAutoInterval"
+                      />
+                      <div class="time-stepper" role="group">
+                        <button
+                          type="button"
+                          :aria-label="t('header.decreaseTimeUnit', { unit: t('header.minute') })"
+                          :disabled="timeForm.minute <= 0"
+                          @click="adjustTimeUnit('minute', -1)"
+                        >
+                          <span aria-hidden="true">−</span>
+                        </button>
+                        <button
+                          type="button"
+                          :aria-label="t('header.increaseTimeUnit', { unit: t('header.minute') })"
+                          :disabled="timeForm.minute >= 59"
+                          @click="adjustTimeUnit('minute', 1)"
+                        >
+                          <span aria-hidden="true">+</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="time-item">
                     <span class="unit">{{ t("header.second") }}</span>
-                    <n-input-number
-                      size="small"
-                      v-model:value="timeForm.second"
-                      :min="0"
-                      :max="59"
-                      :show-button="true"
-                      button-placement="right"
-                      :keyboard="{ ArrowUp: true, ArrowDown: true }"
-                      :input-props="{ 'aria-label': t('header.second') }"
-                      @wheel.prevent="handleIntervalWheel('second', $event)"
-                      @update:value="applyAutoInterval"
-                    />
-                  </label>
+                    <div class="time-number-control">
+                      <n-input-number
+                        size="small"
+                        v-model:value="timeForm.second"
+                        :min="0"
+                        :max="59"
+                        :show-button="false"
+                        :keyboard="{ ArrowUp: true, ArrowDown: true }"
+                        :input-props="{ 'aria-label': t('header.second') }"
+                        @wheel.prevent="handleIntervalWheel('second', $event)"
+                        @update:value="applyAutoInterval"
+                      />
+                      <div class="time-stepper" role="group">
+                        <button
+                          type="button"
+                          :aria-label="t('header.decreaseTimeUnit', { unit: t('header.second') })"
+                          :disabled="timeForm.second <= 0"
+                          @click="adjustTimeUnit('second', -1)"
+                        >
+                          <span aria-hidden="true">−</span>
+                        </button>
+                        <button
+                          type="button"
+                          :aria-label="t('header.increaseTimeUnit', { unit: t('header.second') })"
+                          :disabled="timeForm.second >= 59"
+                          @click="adjustTimeUnit('second', 1)"
+                        >
+                          <span aria-hidden="true">+</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -333,6 +391,7 @@
                 :key="mode.value"
                 type="button"
                 :class="{ active: appearanceMode === mode.value }"
+                :aria-pressed="appearanceMode === mode.value"
                 @click.stop="selectAppearanceMode(mode.value)"
               >
                 <span class="theme-mode-menu__option">
@@ -342,7 +401,6 @@
                   />
                   <span>{{ mode.label }}</span>
                 </span>
-                <i v-if="appearanceMode === mode.value">✓</i>
               </button>
             </div>
           </n-popover>
@@ -402,6 +460,7 @@ import { getCurrentTime } from "@/utils/getTime.js";
 import { getPublicAssetUrl } from "@/utils/publicAssets";
 import { requestDataRefresh } from "@/utils/dataRefresh";
 import { HOVER_MENU_OPEN_EVENT, announceHoverMenuOpen } from "@/utils/hoverMenu";
+import { dropdownSelectionProps } from "@/utils/dropdownSelection";
 import { mainStore } from "@/store";
 import { getCategoryByRef, getSourceCategoryIds } from "@/utils/categoryTree";
 import {
@@ -659,9 +718,11 @@ const buildCategoryMenuChildren = (parentId) => {
     .sort((a, b) => a.order - b.order);
   return children.map((item) => {
     const nested = buildCategoryMenuChildren(item.id);
+    const active = item.name === activeCategoryLocal.value;
     return {
       label: getCategoryLabel(item.name, locale.value),
       key: item.name,
+      props: dropdownSelectionProps(active, { current: true }),
       ...(nested.length ? { children: nested } : {}),
     };
   });
@@ -687,29 +748,11 @@ const activeTopic = computed(() => getTopicByRouteName(route.name)?.id || "");
 const topicNavLabel = computed(() => getTopicNavLabel(locale.value));
 const topicMenuOptions = computed(() =>
   TOPIC_REGISTRY.map((topic) => {
-    const isActive = topic.id === activeTopic.value;
+    const active = topic.id === activeTopic.value;
     return {
-      label: () =>
-        h(
-          "span",
-          {
-            style: {
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "7px",
-              color: isActive ? "#d03050" : "inherit",
-              fontWeight: isActive ? "700" : "500",
-            },
-            "aria-current": isActive ? "page" : undefined,
-          },
-          [
-            isActive
-              ? h("span", { style: { fontSize: "8px", lineHeight: "1" } }, "●")
-              : null,
-            getTopicLabel(topic, locale.value),
-          ],
-        ),
+      label: getTopicLabel(topic, locale.value),
       key: `topic:${topic.id}`,
+      props: dropdownSelectionProps(active, { current: true }),
     };
   }),
 );
@@ -752,23 +795,15 @@ const languageOptions = computed(() =>
               },
               item.label,
             ),
-            h(
-              "span",
-              {
-                class: "locale-option-check",
-                style: localeOptionCheckStyle,
-                "aria-hidden": "true",
-              },
-              active ? "✓" : "",
-            ),
           ],
         ),
+      props: dropdownSelectionProps(active),
     };
   }),
 );
 const localeOptionStyle = {
   display: "grid",
-  gridTemplateColumns: "16px minmax(0, 1fr) 18px",
+  gridTemplateColumns: "16px minmax(0, 1fr)",
   alignItems: "center",
   gap: "8px",
   minWidth: "148px",
@@ -782,15 +817,6 @@ const localeOptionLabelStyle = {
 const localeOptionActiveLabelStyle = {
   color: "var(--n-option-text-color-active, currentColor)",
   fontWeight: "700",
-};
-const localeOptionCheckStyle = {
-  display: "grid",
-  placeItems: "center",
-  width: "18px",
-  color: "var(--n-option-text-color-active, currentColor)",
-  fontSize: "14px",
-  fontWeight: "800",
-  lineHeight: "1",
 };
 const localeFlagStyle = {
   width: "16px",
@@ -888,8 +914,9 @@ const menuOptions = computed(() => [
     type: "divider",
   },
   ...getSupportedLocales().map((item) => ({
-    label: item.code === locale.value ? `✓  ${item.label}` : item.label,
+    label: item.label,
     key: `locale:${item.code}`,
+    props: dropdownSelectionProps(item.code === locale.value),
   })),
   {
     label: t("settings.theme"),
@@ -901,6 +928,7 @@ const menuOptions = computed(() => [
     children: appearanceModeOptions.value.map((item) => ({
       label: item.label,
       key: `appearance:${item.value}`,
+      props: dropdownSelectionProps(item.value === appearanceMode.value),
       icon: () =>
         h(NIcon, null, {
           default: () => renderAppearanceIcon(item.value),
@@ -981,17 +1009,21 @@ const syncTimeForm = () => {
   timeForm.second = s;
 };
 
-const handleIntervalWheel = (unit, event) => {
-  const limits = {
-    hour: [0, 23],
-    minute: [0, 59],
-    second: [0, 59],
-  };
-  const [min, max] = limits[unit] || [0, 0];
+const TIME_UNIT_LIMITS = {
+  hour: [0, 23],
+  minute: [0, 59],
+  second: [0, 59],
+};
+
+const adjustTimeUnit = (unit, delta) => {
+  const [min, max] = TIME_UNIT_LIMITS[unit] || [0, 0];
   const current = Number(timeForm[unit]) || 0;
-  const delta = event.deltaY < 0 ? 1 : -1;
   timeForm[unit] = Math.min(max, Math.max(min, current + delta));
   applyAutoInterval();
+};
+
+const handleIntervalWheel = (unit, event) => {
+  adjustTimeUnit(unit, event.deltaY < 0 ? 1 : -1);
 };
 
 const applyAutoInterval = () => {
@@ -1903,6 +1935,68 @@ onBeforeUnmount(() => {
   font-variant-numeric: tabular-nums;
 }
 
+.refresh-panel .time-number-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.refresh-panel .time-number-control :deep(.n-input) {
+  min-height: 34px;
+  border-radius: 8px 0 0 8px;
+}
+
+.refresh-panel .time-stepper {
+  display: grid;
+  grid-template-columns: repeat(2, 32px);
+  margin-left: -1px;
+  overflow: hidden;
+  border: 1px solid var(--n-border-color);
+  border-radius: 0 8px 8px 0;
+  background: var(--n-color);
+}
+
+.refresh-panel .time-stepper button {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--n-border-color);
+  background: transparent;
+  color: var(--n-text-color-2);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.refresh-panel .time-stepper button:first-child {
+  border-left: 0;
+}
+
+.refresh-panel .time-stepper button:hover:not(:disabled) {
+  background: var(--n-action-color);
+  color: var(--n-primary-color);
+}
+
+.refresh-panel .time-stepper button:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--n-primary-color);
+  outline-offset: -2px;
+}
+
+.refresh-panel .time-stepper button:disabled {
+  cursor: not-allowed;
+  opacity: 0.34;
+}
+
 .theme-mode-menu {
   display: grid;
   gap: 2px;
@@ -1913,9 +2007,8 @@ onBeforeUnmount(() => {
 .theme-mode-menu button {
   appearance: none;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 16px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
   min-height: 42px;
   padding: 0 10px;
   border: 0;
@@ -1929,19 +2022,18 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
-.theme-mode-menu button:hover,
-.theme-mode-menu button.active {
-  color: var(--n-text-color);
-  background: color-mix(
-    in srgb,
-    var(--n-action-color) 88%,
-    var(--n-primary-color) 4%
-  );
+.theme-mode-menu button:hover {
+  color: var(--n-text-color, inherit);
+  background: rgba(127, 127, 127, 0.1);
 }
 
 .theme-mode-menu button.active {
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--n-primary-color) 28%, transparent);
+  color: var(--n-primary-color, #ea444d);
+  background: color-mix(in srgb, var(--n-primary-color, #ea444d) 12%, transparent);
+  box-shadow:
+    inset 3px 0 0 var(--n-primary-color, #ea444d),
+    inset 0 0 0 1px color-mix(in srgb, var(--n-primary-color, #ea444d) 24%, transparent);
+  font-weight: 700;
 }
 
 .theme-mode-menu__option {
@@ -1970,17 +2062,7 @@ onBeforeUnmount(() => {
 }
 
 .theme-mode-menu button.active .theme-mode-menu__icon {
-  color: var(--n-primary-color);
-}
-
-.theme-mode-menu i {
-  display: grid;
-  place-items: center;
-  width: 16px;
-  color: var(--n-primary-color);
-  font-style: normal;
-  font-weight: 800;
-  line-height: 1;
+  color: var(--n-primary-color, #ea444d);
 }
 
 .locale-option {
@@ -2000,16 +2082,6 @@ onBeforeUnmount(() => {
 .locale-option.is-active .locale-option-label {
   color: var(--n-primary-color);
   font-weight: 700;
-}
-
-.locale-option-check {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  color: var(--n-primary-color);
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1;
 }
 
 .locale-option-flag,
