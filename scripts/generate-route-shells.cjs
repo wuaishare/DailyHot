@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { projectSubtypeGroupsForBuild } = require("./lib/trends-catalog-build.cjs");
 
 const repoRoot = process.cwd();
 const distDir = path.join(repoRoot, "dist");
@@ -628,7 +629,7 @@ const buildWebPageJsonLd = ({ title, description, canonical, htmlLang }) => ({
   url: canonical || undefined,
 });
 
-function main() {
+async function main() {
   ensureFile(indexHtmlPath);
   ensureFile(seoSourcePath);
   ensureFile(storeSourcePath);
@@ -660,7 +661,11 @@ function main() {
     seoSource,
     "ARTIFICIALANALYSIS_ZH_SUBTYPE_SEO"
   );
-  const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
+  const staticSourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
+  const {
+    groups: sourceSubtypeGroups,
+    defaults: catalogDefaultSubtypes,
+  } = await projectSubtypeGroupsForBuild(staticSourceSubtypeGroups, "seo-shell");
   const aggregateSubtypeSources = new Set(
     parseConstant(subtypeSource, "AGGREGATE_SUBTYPE_SOURCES")
   );
@@ -690,6 +695,9 @@ function main() {
   const sourceNames = getSourceNames(storeSource);
   const subtypeValues = getSubtypeValues(sourceSubtypeGroups);
   const defaultSubtypeValues = getDefaultSubtypeValues(subtypeValues);
+  for (const [sourceName, defaultSubtype] of catalogDefaultSubtypes) {
+    defaultSubtypeValues.set(sourceName, defaultSubtype);
+  }
   const subtypeLabelMap = getSubtypeLabelMap(sourceSubtypeGroups);
   const categoryConfigBySlug = new Map(
     builtinCategories.map((category) => [category.slug, category])
@@ -1122,4 +1130,7 @@ function main() {
   console.log(`[seo-shell] generated ${writtenShellCount} route shells`);
 }
 
-main();
+main().catch((error) => {
+  console.error("[seo-shell] failed", error);
+  process.exit(1);
+});

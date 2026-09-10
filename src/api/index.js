@@ -1,6 +1,10 @@
 import axios from "@/api/request";
 import { raceWithDelayedFallback } from "@/api/fallbackRace.mjs";
 import { getAdminToken } from "@/utils/adminAuth";
+import {
+  canFallbackTrendsCatalogVariant,
+  resolveTrendsCatalogVariant,
+} from "@/utils/sourceSubtypes";
 
 const DEFAULT_FALLBACK_DELAY_MS = 1200;
 const API2_ONLY_SOURCES = new Set(["tianya"]);
@@ -168,6 +172,8 @@ const countOrderedShadowOverlap = (leftItems, rightItems, selector) => {
 };
 
 const getTrendsShadowVariant = (source, params = {}) => {
+  const catalogVariant = resolveTrendsCatalogVariant(source, params);
+  if (catalogVariant !== undefined) return catalogVariant;
   const mapping = TRENDS_SHADOW_DEFAULT_VARIANTS[source];
   if (!mapping) return params?.type ? null : undefined;
   if (Array.isArray(mapping)) {
@@ -562,6 +568,7 @@ export const getHotListsWithFallback = async (
         usedTrends: true,
       };
     } catch (error) {
+      const catalogVariant = resolveTrendsCatalogVariant(type, params);
       void requestAnalytics({
         method: "POST",
         url: "/analytics",
@@ -574,6 +581,13 @@ export const getHotListsWithFallback = async (
           },
         },
       }).catch(() => {});
+      if (
+        catalogVariant === null ||
+        (catalogVariant !== undefined &&
+          !canFallbackTrendsCatalogVariant(type, catalogVariant))
+      ) {
+        throw error;
+      }
     }
   }
   const useDirectPublicApi = DIRECT_PUBLIC_API_SOURCES.has(type);

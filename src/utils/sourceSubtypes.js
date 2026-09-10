@@ -1,3 +1,5 @@
+import { flattenSubtypeOptions, projectTrendsCatalog } from "./trendsCatalogProjection.mjs";
+
 const STORAGE_PREFIX = "dailyhot:source-subtype:";
 
 const SOURCE_SUBTYPE_GROUPS = {
@@ -946,6 +948,30 @@ const SOURCE_SUBTYPE_GROUPS = {
 };
 
 const AGGREGATE_SUBTYPE_SOURCES = ["clawhub"];
+const REMOTE_SOURCE_SUBTYPE_GROUPS = new Map();
+const REMOTE_SOURCE_DEFAULT_SUBTYPES = new Map();
+
+export const applyTrendsSourceCatalog = (catalog = {}) => {
+  const projection = projectTrendsCatalog(catalog, SOURCE_SUBTYPE_GROUPS);
+  REMOTE_SOURCE_SUBTYPE_GROUPS.clear();
+  REMOTE_SOURCE_DEFAULT_SUBTYPES.clear();
+  for (const [sourceName, groups] of projection.groupsBySource) {
+    REMOTE_SOURCE_SUBTYPE_GROUPS.set(sourceName, groups);
+  }
+  for (const [sourceName, defaultSubtype] of projection.defaultsBySource) {
+    REMOTE_SOURCE_DEFAULT_SUBTYPES.set(sourceName, defaultSubtype);
+  }
+  return REMOTE_SOURCE_SUBTYPE_GROUPS.size;
+};
+
+export const canFallbackTrendsCatalogVariant = (sourceName, variant) => {
+  if (!REMOTE_SOURCE_SUBTYPE_GROUPS.has(sourceName)) return true;
+  const requested = String(variant || "").trim();
+  if (!requested || requested === REMOTE_SOURCE_DEFAULT_SUBTYPES.get(sourceName)) return true;
+  return flattenSubtypeOptions(SOURCE_SUBTYPE_GROUPS[sourceName] || []).some(
+    (item) => item.value === requested,
+  );
+};
 
 const normalizeValue = (value) => {
   if (Array.isArray(value)) return value[0] || null;
@@ -953,13 +979,38 @@ const normalizeValue = (value) => {
 };
 
 export const getSourceSubtypeGroups = (sourceName) =>
-  SOURCE_SUBTYPE_GROUPS[sourceName] || [];
+  REMOTE_SOURCE_SUBTYPE_GROUPS.get(sourceName) || SOURCE_SUBTYPE_GROUPS[sourceName] || [];
 
 export const getSourceSubtypeOptions = (sourceName) =>
-  getSourceSubtypeGroups(sourceName).flatMap((group) => group.items || []);
+  flattenSubtypeOptions(getSourceSubtypeGroups(sourceName));
 
 export const getDefaultSourceSubtype = (sourceName) =>
-  getSourceSubtypeOptions(sourceName)[0]?.value || null;
+  REMOTE_SOURCE_DEFAULT_SUBTYPES.get(sourceName) ||
+  getSourceSubtypeOptions(sourceName)[0]?.value ||
+  null;
+
+export const resolveTrendsCatalogVariant = (sourceName, params = {}) => {
+  const groups = REMOTE_SOURCE_SUBTYPE_GROUPS.get(sourceName);
+  if (!groups) return undefined;
+  const options = flattenSubtypeOptions(groups);
+  let sawVariantParam = false;
+  for (const group of groups) {
+    const param = group?.param || "type";
+    if (!Object.prototype.hasOwnProperty.call(params || {}, param)) continue;
+    sawVariantParam = true;
+    const requested = String(params?.[param] ?? "").trim();
+    const option = (group.items || []).find(
+      (item) => item.value === requested || item.apiValue === requested
+    );
+    if (option) return option.value;
+  }
+  if (sawVariantParam) return null;
+  const explicitVariant = String(params?.variant || "").trim();
+  if (explicitVariant) {
+    return options.some((item) => item.value === explicitVariant) ? explicitVariant : null;
+  }
+  return getDefaultSourceSubtype(sourceName) || "";
+};
 
 export const shouldCanonicalizeDefaultSubtype = (sourceName) =>
   Boolean(sourceName) &&

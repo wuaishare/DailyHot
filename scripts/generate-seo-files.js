@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { projectSubtypeGroupsForBuild } = require("./lib/trends-catalog-build.cjs");
 
 const rawSiteUrl = process.env.VITE_SITE_URL || "";
 const siteUrl = rawSiteUrl.replace(/\/+$/, "");
@@ -89,7 +90,11 @@ async function main() {
 
   const categorySlugs = BUILTIN_CATEGORIES.map((item) => item.slug).filter(Boolean);
   const sourceNames = [...newsSection.matchAll(/name:\s*"([^"]+)"/g)].map((m) => m[1]);
-  const sourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
+  const staticSourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
+  const { groups: sourceSubtypeGroups } = await projectSubtypeGroupsForBuild(
+    staticSourceSubtypeGroups,
+    "seo",
+  );
   const aggregateSubtypeSources = new Set(
     parseConstant(subtypeSource, "AGGREGATE_SUBTYPE_SOURCES")
   );

@@ -9,6 +9,7 @@ import i18n from "@/i18n";
 import { ensureCacheVersion } from "@/utils/cache";
 import { resolveInitialLocale, savePreferredLocale, setDocumentLanguage } from "@/utils/locale";
 import { applyDynamicTranslation } from "@/utils/translateEngine";
+import { preloadTrendsSourceCatalog } from "@/api/trendsCatalog";
 
 // 全局样式
 import "@/style/global.scss";
@@ -31,6 +32,7 @@ const registerAppServiceWorker = () => {
 
 (async () => {
   await ensureCacheVersion();
+  await preloadTrendsSourceCatalog();
 
   const app = createApp(App);
   const initialLocale = resolveInitialLocale(
