@@ -165,7 +165,7 @@
                   :title="refreshButtonLabel"
                 >
                   <template #icon>
-                    <UiGlyph class="header-glyph" name="refresh" />
+                    <n-icon class="header-glyph" :component="Refresh" />
                   </template>
                   <span
                     v-if="countdownText && !isSmallScreen"
@@ -178,7 +178,7 @@
             <div class="refresh-panel" @click.stop>
               <div class="refresh-panel__hero">
                 <span class="refresh-panel__icon" aria-hidden="true">
-                  <UiGlyph class="header-glyph" name="refresh" />
+                  <n-icon class="header-glyph" :component="Refresh" />
                 </span>
                 <div class="refresh-panel__heading">
                   <strong>{{ t("header.refreshControl") }}</strong>
@@ -202,7 +202,7 @@
                 @click="manualRefresh"
               >
                 <template #icon>
-                  <UiGlyph class="header-glyph" name="refresh" />
+                  <n-icon class="header-glyph" :component="Refresh" />
                 </template>
                 {{ t("header.refreshNow") }}
               </n-button>
@@ -337,7 +337,7 @@
                   @click.stop="goSetting"
                 >
                   <template #icon>
-                    <UiGlyph class="header-glyph" name="settings" />
+                    <n-icon class="header-glyph" :component="SettingTwo" />
                   </template>
                 </n-button>
               </div>
@@ -374,7 +374,7 @@
 </template>
 
 <script setup>
-import { HamburgerButton } from "@icon-park/vue-next";
+import { HamburgerButton, Refresh, SettingTwo } from "@icon-park/vue-next";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
 import { getCurrentTime } from "@/utils/getTime.js";
 import { getPublicAssetUrl } from "@/utils/publicAssets";
@@ -696,35 +696,75 @@ const selectTopic = (key) => {
   if (router.currentRoute.value.fullPath !== target) router.push(target);
 };
 const languageOptions = computed(() =>
-  getSupportedLocales().map((item) => ({
-    key: item.code,
-    label: () =>
-      h("div", { class: "locale-option", style: localeOptionStyle }, [
-        h("img", {
-          class: "locale-option-flag",
-          src: item.flag,
-          alt: item.label,
-          style: localeFlagStyle,
-        }),
+  getSupportedLocales().map((item) => {
+    const active = item.code === locale.value;
+    return {
+      key: item.code,
+      label: () =>
         h(
-          "span",
-          { class: "locale-option-label", style: localeOptionLabelStyle },
-          item.label,
+          "div",
+          {
+            class: ["locale-option", { "is-active": active }],
+            style: localeOptionStyle,
+            "aria-current": active ? "true" : undefined,
+          },
+          [
+            h("img", {
+              class: "locale-option-flag",
+              src: item.flag,
+              alt: item.label,
+              style: localeFlagStyle,
+            }),
+            h(
+              "span",
+              {
+                class: "locale-option-label",
+                style: {
+                  ...localeOptionLabelStyle,
+                  ...(active ? localeOptionActiveLabelStyle : {}),
+                },
+              },
+              item.label,
+            ),
+            h(
+              "span",
+              {
+                class: "locale-option-check",
+                style: localeOptionCheckStyle,
+                "aria-hidden": "true",
+              },
+              active ? "✓" : "",
+            ),
+          ],
         ),
-      ]),
-  })),
+    };
+  }),
 );
 const localeOptionStyle = {
-  display: "inline-flex",
+  display: "grid",
+  gridTemplateColumns: "16px minmax(0, 1fr) 18px",
   alignItems: "center",
   gap: "8px",
-  minWidth: "124px",
+  minWidth: "148px",
   maxWidth: "100%",
   whiteSpace: "nowrap",
 };
 const localeOptionLabelStyle = {
   display: "inline-block",
   lineHeight: "1.25",
+};
+const localeOptionActiveLabelStyle = {
+  color: "var(--n-primary-color)",
+  fontWeight: "700",
+};
+const localeOptionCheckStyle = {
+  display: "grid",
+  placeItems: "center",
+  width: "18px",
+  color: "var(--n-primary-color)",
+  fontSize: "14px",
+  fontWeight: "800",
+  lineHeight: "1",
 };
 const localeFlagStyle = {
   width: "16px",
@@ -806,7 +846,7 @@ const menuOptions = computed(() => [
       : t("header.refreshPage"),
     key: "refresh",
     disabled: !canManualRefresh.value,
-    icon: () => h(UiGlyph, { name: "refresh" }),
+    icon: () => h(NIcon, null, { default: () => h(Refresh) }),
   },
   {
     key: "topic-divider",
@@ -822,7 +862,7 @@ const menuOptions = computed(() => [
     type: "divider",
   },
   ...getSupportedLocales().map((item) => ({
-    label: item.label,
+    label: item.code === locale.value ? `✓  ${item.label}` : item.label,
     key: `locale:${item.code}`,
   })),
   {
@@ -844,7 +884,7 @@ const menuOptions = computed(() => [
   {
     label: hotboardManagerLabel.value,
     key: "setting",
-    icon: () => h(UiGlyph, { name: "settings" }),
+    icon: () => h(NIcon, null, { default: () => h(SettingTwo) }),
   },
 ]);
 
@@ -1886,6 +1926,21 @@ onBeforeUnmount(() => {
 .locale-option-label {
   display: inline-block;
   line-height: 1.25;
+}
+
+.locale-option.is-active .locale-option-label {
+  color: var(--n-primary-color);
+  font-weight: 700;
+}
+
+.locale-option-check {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  color: var(--n-primary-color);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .locale-option-flag,
