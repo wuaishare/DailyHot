@@ -127,6 +127,11 @@ const TRENDS_SHADOW_DEFAULT_VARIANTS = {
     legacyDefault: "hot",
     passthroughVariants: ["hot", "seeding", "entertainment", "society", "challenge"],
   },
+  "qq-news": {
+    param: "type",
+    legacyDefault: "hot",
+    passthroughVariants: ["hot", "entertainment", "sports"],
+  },
   ithome: ["day", "day"],
   baidu: ["realtime", "realtime"],
   github: ["daily", "day"],

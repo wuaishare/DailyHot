@@ -14,6 +14,17 @@ const SOURCE_SUBTYPE_GROUPS = {
       ],
     },
   ],
+  "qq-news": [
+    {
+      key: "rank",
+      label: "榜单",
+      items: [
+        { label: "热点榜", value: "hot" },
+        { label: "娱乐热点榜", value: "entertainment" },
+        { label: "体育热点榜", value: "sports" },
+      ],
+    },
+  ],
   baidu: [
     {
       key: "default",
