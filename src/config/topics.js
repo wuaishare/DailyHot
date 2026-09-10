@@ -16,10 +16,10 @@ export const TOPIC_REGISTRY = [
     routeNames: ["chigua-topic", "chigua-topic-locale"],
     labels: {
       "zh-CN": "吃瓜",
-      en: "Hot Events",
-      "zh-TW": "熱議",
-      ja: "話題",
-      ko: "화제",
+      en: "Entertainment Buzz",
+      "zh-TW": "吃瓜",
+      ja: "エンタメ",
+      ko: "엔터",
     },
   },
   {

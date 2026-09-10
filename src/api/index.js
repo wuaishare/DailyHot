@@ -246,6 +246,37 @@ export const getTrendResonance = async ({
     silent: true,
   });
 
+export const getTopicFeed = async (
+  topic,
+  { limit = 160, maxRank = 80, minSources = 1, force = false } = {},
+) => {
+  if (!TRENDS_PUBLIC_API) throw new Error("trends_public_api_unavailable");
+  const url = new URL(`${TRENDS_PUBLIC_API}/topics/${encodeURIComponent(topic)}`);
+  url.searchParams.set("limit", String(limit));
+  url.searchParams.set("max_rank", String(maxRank));
+  url.searchParams.set("min_sources", String(minSources));
+  if (force) url.searchParams.set("_", String(Date.now()));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "omit",
+      headers: { Accept: "application/json" },
+      ...(force ? { cache: "no-store" } : {}),
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`trends_topic_http_${response.status}`);
+    const payload = await response.json();
+    if (payload?.data?.schema !== "topic-feed-v1" || !Array.isArray(payload?.data?.events)) {
+      throw new Error("trends_topic_invalid_payload");
+    }
+    return payload.data;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 const requestTrendsRanking = async (source, params = {}) => {
   if (!TRENDS_PUBLIC_API) throw new Error("trends_public_api_unavailable");
   const variant = getTrendsShadowVariant(source, params);

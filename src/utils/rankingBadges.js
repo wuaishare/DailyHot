@@ -53,26 +53,45 @@ export const normalizeRankingBadges = (badges, limit = 4) => {
     .slice(0, Math.max(1, Math.min(8, Number(limit) || 4)));
 };
 
-const DOUYIN_BACKUP_CODES = new Set([
-  "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "15", "16", "17", "20", "202", "203", "204", "205",
-]);
+const BADGE_BACKUP_FILES = {
+  douyin: Object.fromEntries(
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "15", "16", "17", "20", "202", "203", "204", "205"]
+      .map((code) => [code, `${code}.${code === "6" ? "gif" : "png"}`]),
+  ),
+  baidu: { "1": "1.png", "3": "3.png", "4": "4.png" },
+  kuaishou: { "新": "new.png", "独家": "exclusive.png", "置顶": "pinned.png" },
+  toutiao: {
+    hot: "hot.png", new: "new.png", onSite: "onSite.png",
+    recentProgress: "recentProgress.png", refuteRumors: "refuteRumors.png",
+    interpretation: "interpretation.png",
+  },
+  zhihu: { hot: "hot.png", new: "new.png", boiling: "boiling.png" },
+};
 
-const isDouyinOfficialBadgeUrl = (value = "") => {
+const officialBadgeProvider = (value = "") => {
   try {
     const parsed = new URL(String(value || ""));
-    return parsed.pathname.includes("/hotspot_detail_page/")
-      || parsed.pathname.includes("/ies/douyin/hot_spot/");
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname;
+    if (path.includes("/hotspot_detail_page/")
+      || path.includes("/ies/douyin/hot_spot/")
+      || host === "lf-douyin-pc-web.douyinstatic.com") return "douyin";
+    if (host === "search-operate.cdn.bcebos.com") return "baidu";
+    if (host === "kwimgs.com" || host.endsWith(".kwimgs.com")) return "kuaishou";
+    if (host === "toutiaoimg.com" || host.endsWith(".toutiaoimg.com")
+      || path.includes("/toutiao_web_pc/hotboard/")) return "toutiao";
+    if (host === "zhimg.com" || host.endsWith(".zhimg.com")) return "zhihu";
   } catch {
-    return false;
+    return "";
   }
+  return "";
 };
 
 export const getRankingBadgeFallbackIconUrl = (badge) => {
   const sourceCode = String(badge?.sourceCode || "").trim();
-  if (!sourceCode || !DOUYIN_BACKUP_CODES.has(sourceCode)) return "";
-  if (!isDouyinOfficialBadgeUrl(badge?.iconUrl)) return "";
-  const extension = sourceCode === "6" ? "gif" : "png";
-  return getPublicAssetUrl(`/ico/ranking-badges/douyin/${sourceCode}.${extension}`);
+  const provider = officialBadgeProvider(badge?.iconUrl);
+  const file = provider && sourceCode ? BADGE_BACKUP_FILES[provider]?.[sourceCode] : "";
+  return file ? getPublicAssetUrl(`/ico/ranking-badges/${provider}/${file}`) : "";
 };
 
 export const resolveRankingBadgeIconUrl = (badge, failedUrls = {}) => {

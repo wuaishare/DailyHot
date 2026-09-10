@@ -568,53 +568,53 @@ export const AI_TOPIC_METADATA = {
 
 export const CHIGUA_TOPIC_METADATA = {
   "zh-CN": {
-    title: "全网热议事件雷达",
+    title: "全网娱乐吃瓜雷达",
     description:
-      "聚合微博、知乎、抖音、百度、头条、快手、B站与虎扑公开热榜，将同一事件跨平台合并，优先展示多平台共同升温的高价值热点。",
-    feedTitle: "实时热议",
-    empty: "当前筛选暂无热议事件",
-    degraded: "部分平台暂时不可用，当前仍展示其余平台的最新热议事件。",
-    seoTitle: "吃瓜热榜 - 全网热议事件与多平台热点共振 | 吾爱热榜",
+      "追踪明星八卦、娱乐圈事件、影视综艺、音乐与网红主播热点，聚合各平台娱乐榜与经核验的综合榜娱乐信号。",
+    feedTitle: "实时吃瓜",
+    empty: "当前筛选暂无娱乐热点",
+    degraded: "部分娱乐数据源暂时不可用，当前仍展示其余来源的最新娱乐热点。",
+    seoTitle: "吃瓜热榜 - 明星八卦·娱乐圈热点·影视综热议 | 吾爱热榜",
     seoDescription:
-      "聚合微博热搜、知乎热榜、抖音热点、百度热搜、今日头条、快手、B站与虎扑，将同一热点跨平台聚类，快速发现全网共同升温的热议事件。",
+      "实时追踪明星八卦、娱乐圈热门事件、影视剧综艺、音乐与网红主播话题，并以多平台证据识别共同升温的娱乐热点。",
     seoKeywords:
-      "吃瓜热榜,全网热点,热议事件,微博热搜,知乎热榜,抖音热点,百度热搜,今日头条,快手热榜,B站热榜,虎扑热帖,多平台热点",
+      "吃瓜热榜,明星八卦,娱乐圈热点,明星热搜,影视剧,综艺热搜,娱乐新闻,网红主播,抖音娱乐榜,微博文娱,多平台娱乐热点",
   },
   en: {
-    title: "Cross-platform Hot Event Radar",
+    title: "Entertainment Buzz Radar",
     description:
-      "Cluster public trending lists from Weibo, Zhihu, Douyin, Baidu, Toutiao, Kuaishou, Bilibili and Hupu, prioritizing events gaining attention across multiple platforms.",
-    feedTitle: "Live Hot Events",
-    empty: "No hot events match this filter.",
+      "Track celebrity gossip, entertainment-industry events, film, TV, variety, music and creator buzz using entertainment-first evidence across major platforms.",
+    feedTitle: "Live Entertainment Buzz",
+    empty: "No entertainment events match this filter.",
     degraded:
-      "Some platforms are temporarily unavailable. Events from the remaining sources are still shown.",
-    seoTitle: "Hot Event Radar - Cross-platform Trending Topics | DailyHot",
+      "Some entertainment sources are temporarily unavailable. Fresh events from the remaining sources are still shown.",
+    seoTitle: "Entertainment Buzz - Celebrity Gossip & Showbiz Trends | DailyHot",
     seoDescription:
-      "Track and cluster trending topics from major Chinese platforms to identify events gaining attention across multiple sources.",
+      "Track celebrity gossip, showbiz, film, TV, variety, music and creator trends with cross-platform evidence.",
     seoKeywords:
-      "hot events,trending topics,Weibo,Zhihu,Douyin,Baidu,Toutiao,Kuaishou,Bilibili,Hupu,cross-platform trends,DailyHot",
+      "celebrity gossip,entertainment trends,showbiz,film,TV,variety,music,creators,Douyin,Weibo,DailyHot",
   },
   "zh-TW": {
-    title: "全網熱議事件雷達",
+    title: "全網娛樂吃瓜雷達",
     description:
-      "彙整微博、知乎、抖音、百度、頭條、快手、B站與虎撲公開熱榜，將同一事件跨平台合併，優先顯示多平台共同升溫的熱門事件。",
-    feedTitle: "即時熱議",
-    empty: "目前篩選沒有熱議事件",
-    degraded: "部分平台暫時無法使用，目前仍顯示其他平台的最新熱議事件。",
-    seoTitle: "全網熱議事件 - 多平台熱門話題共振 | 吾愛熱榜",
+      "追蹤明星八卦、娛樂圈事件、影視綜藝、音樂與網紅主播熱點，彙整各平台娛樂榜與經核驗的綜合榜娛樂訊號。",
+    feedTitle: "即時吃瓜",
+    empty: "目前篩選沒有娛樂熱點",
+    degraded: "部分娛樂資料來源暫時無法使用，目前仍顯示其他來源的最新娛樂熱點。",
+    seoTitle: "吃瓜熱榜 - 明星八卦與娛樂圈熱門話題 | 吾愛熱榜",
     seoDescription:
-      "彙整微博、知乎、抖音、百度、頭條、快手、B站與虎撲熱榜，跨平台聚類同一事件。",
+      "追蹤明星八卦、娛樂圈事件、影視綜藝、音樂與網紅主播熱門話題，並以多平台證據聚合同一娛樂事件。",
     seoKeywords:
-      "全網熱議,熱門事件,微博熱搜,知乎熱榜,抖音熱點,百度熱搜,多平台熱榜,吾愛熱榜",
+      "吃瓜熱榜,明星八卦,娛樂圈,明星熱搜,影視劇,綜藝,音樂,網紅主播,多平台娛樂熱點,吾愛熱榜",
   },
   ja: {
-    title: "クロスプラットフォーム話題レーダー",
+    title: "エンタメ話題レーダー",
     description:
-      "Weibo、Zhihu、Douyin、Baidu、Toutiao、Kuaishou、Bilibili、Hupu の公開ランキングをまとめ、同じ出来事を横断的に統合します。",
-    feedTitle: "リアルタイム話題",
+      "芸能ゴシップ、芸能界、映画・ドラマ、バラエティ、音楽、配信者の話題を主要プラットフォームのエンタメ情報から追跡します。",
+    feedTitle: "リアルタイムエンタメ",
     empty: "条件に一致する話題はありません",
     degraded:
-      "一部プラットフォームが一時利用できません。利用可能な情報源の話題を表示しています。",
+      "一部のエンタメ情報源が一時利用できません。利用可能な情報源の最新話題を表示しています。",
     seoTitle: "話題レーダー - 中国主要プラットフォームのトレンド | DailyHot",
     seoDescription:
       "中国主要プラットフォームのトレンドを横断集約し、複数サービスで同時に盛り上がる出来事を追跡します。",
@@ -622,13 +622,13 @@ export const CHIGUA_TOPIC_METADATA = {
       "トレンド,話題,Weibo,Zhihu,Douyin,Baidu,Bilibili,中国SNS,DailyHot",
   },
   ko: {
-    title: "플랫폼 통합 화제 레이더",
+    title: "엔터테인먼트 화제 레이더",
     description:
-      "Weibo, Zhihu, Douyin, Baidu, Toutiao, Kuaishou, Bilibili, Hupu 공개 인기 목록을 묶어 같은 사건을 통합하고 여러 플랫폼에서 동시에 뜨는 이슈를 우선합니다.",
-    feedTitle: "실시간 화제",
+      "연예 가십, 연예계 사건, 영화·드라마, 예능, 음악, 크리에이터 이슈를 주요 플랫폼의 엔터테인먼트 신호로 추적합니다.",
+    feedTitle: "실시간 엔터테인먼트",
     empty: "현재 조건에 맞는 화제가 없습니다",
     degraded:
-      "일부 플랫폼을 일시적으로 사용할 수 없습니다. 나머지 출처의 최신 화제를 표시합니다.",
+      "일부 엔터테인먼트 출처를 일시적으로 사용할 수 없습니다. 나머지 출처의 최신 이슈를 표시합니다.",
     seoTitle: "화제 레이더 - 중국 주요 플랫폼 실시간 트렌드 | DailyHot",
     seoDescription:
       "중국 주요 플랫폼의 인기 주제를 묶어 여러 서비스에서 동시에 상승하는 사건을 추적합니다.",

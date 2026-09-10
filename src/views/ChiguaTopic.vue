@@ -72,19 +72,6 @@
         </div>
       </div>
 
-      <TrendIntelligenceStrip
-        v-if="intelligence"
-        :data="intelligence"
-        :locale="locale"
-        :source-label="getSourceLabel('weibo', locale, '微博')"
-      />
-
-      <CrossSourceResonanceStrip
-        v-if="resonance"
-        :data="resonance"
-        :locale="locale"
-      />
-
       <TopicLaneGrid
         v-if="featuredGroups.length"
         :lanes="featuredGroups"
@@ -152,9 +139,7 @@
               <span>{{ sourceLabel(item) }}</span>
               <em
                 v-if="isResonanceItem(item)"
-                :title="verifiedResonanceFor(item)
-                  ? verifiedResonanceTitle(verifiedResonanceFor(item))
-                  : confirmationTitle(item)"
+                :title="confirmationTitle(item)"
               >
                 {{ effectiveResonanceSourceCount(item) }} {{ ui.platformResonance }}
               </em>
@@ -178,21 +163,6 @@
                 :title="formatFullTime(item.timestamp)"
                 >{{ formatFreshness(item.timestamp) }}</time
               >
-              <span
-                v-if="verifiedResonanceFor(item)"
-                class="verified-resonance-pill"
-                :title="verifiedResonanceTitle(verifiedResonanceFor(item))"
-              >
-                {{ verifiedResonanceCopy.label }}
-              </span>
-              <span
-                v-for="signal in intelligenceSignalsFor(item).slice(0, 3)"
-                :key="`${item.id}-signal-${signal.key}`"
-                class="intelligence-pill"
-                :class="`is-${signal.key}`"
-              >
-                {{ signal.label }}
-              </span>
               <span
                 v-for="confirmation in visibleConfirmations(item)"
                 :key="`${item.id}-${confirmation.source}`"
@@ -236,13 +206,7 @@
 <script setup>
 import CompactFilter from "@/components/CompactFilter.vue";
 import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
-import TrendIntelligenceStrip from "@/components/TrendIntelligenceStrip.vue";
-import CrossSourceResonanceStrip from "@/components/CrossSourceResonanceStrip.vue";
-import {
-  getHotListsWithFallback,
-  getTrendIntelligence,
-  getTrendResonance,
-} from "@/api";
+import { getTopicFeed } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
@@ -252,8 +216,6 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 const result = ref(null);
-const intelligence = ref(null);
-const resonance = ref(null);
 const loading = ref(false);
 const loadError = ref("");
 const searchQuery = ref(
@@ -266,7 +228,7 @@ const activeSource = ref(
   typeof route.query.source === "string" ? route.query.source : "all",
 );
 const activeSort = ref(
-  ["smart", "resonance", "hot", "latest"].includes(route.query.sort)
+  ["smart", "resonance", "latest"].includes(route.query.sort)
     ? route.query.sort
     : "smart",
 );
@@ -286,9 +248,7 @@ const dashboard = computed(() => result.value?.dashboard || null);
 const failedSourceCount = computed(() =>
   Number(dashboard.value?.failedSourceCount || 0),
 );
-const showDegradedWarning = computed(() =>
-  failedSourceCount.value >= 3 || (data.value.length > 0 && data.value.length < 100),
-);
+const showDegradedWarning = computed(() => failedSourceCount.value > 0);
 
 const UI_COPY = {
   "zh-CN": {
@@ -299,34 +259,34 @@ const UI_COPY = {
     matches: "条结果",
     resonance: "多平台共振",
     refresh: "刷新",
-    filters: "热议事件筛选",
+    filters: "吃瓜事件筛选",
     perPage: "每页",
     category: "分类",
     source: "来源",
     sort: "排序",
-    smart: "综合热度",
+    smart: "吃瓜热度",
     resonanceFirst: "共振优先",
-    hotFirst: "原始热度",
     latest: "最新优先",
     reset: "清除筛选",
     all: "全部",
     platforms: "个平台",
     platformResonance: "平台共振",
-    open: "查看热议",
+    open: "查看事件",
     featured: {
-      resonance: "全网共振",
-      entertainment: "娱乐热议",
-      society: "社会焦点",
+      resonance: "多平台共振",
+      gossip: "明星八卦",
+      celebrity: "明星动态",
+      filmTv: "影视剧",
+      variety: "综艺",
     },
     categories: {
-      entertainment: "娱乐",
-      society: "社会",
-      tech: "科技",
-      finance: "财经",
-      sports: "体育",
-      world: "国际",
-      culture: "文化教育",
-      other: "其它",
+      gossip: "明星八卦",
+      celebrity: "明星艺人",
+      "film-tv": "影视剧",
+      variety: "综艺",
+      music: "音乐",
+      creator: "网红主播",
+      other: "其他娱乐",
     },
   },
   en: {
@@ -337,34 +297,34 @@ const UI_COPY = {
     matches: "results",
     resonance: "Cross-platform",
     refresh: "Refresh",
-    filters: "Hot event filters",
+    filters: "Entertainment filters",
     perPage: "Per page",
     category: "Category",
     source: "Source",
     sort: "Sort",
-    smart: "Smart",
+    smart: "Buzz score",
     resonanceFirst: "Resonance first",
-    hotFirst: "Popularity",
     latest: "Latest",
     reset: "Reset",
     all: "All",
     platforms: "platforms",
     platformResonance: "platforms",
-    open: "Open",
+    open: "View event",
     featured: {
       resonance: "Cross-platform",
-      entertainment: "Entertainment",
-      society: "Society",
+      gossip: "Celebrity Gossip",
+      celebrity: "Celebrities",
+      filmTv: "Film & TV",
+      variety: "Variety",
     },
     categories: {
-      entertainment: "Entertainment",
-      society: "Society",
-      tech: "Tech",
-      finance: "Finance",
-      sports: "Sports",
-      world: "World",
-      culture: "Culture",
-      other: "Other",
+      gossip: "Celebrity Gossip",
+      celebrity: "Celebrities",
+      "film-tv": "Film & TV",
+      variety: "Variety",
+      music: "Music",
+      creator: "Creators & Streamers",
+      other: "Other Entertainment",
     },
   },
   "zh-TW": {
@@ -375,34 +335,34 @@ const UI_COPY = {
     matches: "筆結果",
     resonance: "多平台共振",
     refresh: "重新整理",
-    filters: "熱議事件篩選",
+    filters: "吃瓜事件篩選",
     perPage: "每頁",
     category: "分類",
     source: "來源",
     sort: "排序",
-    smart: "綜合熱度",
+    smart: "吃瓜熱度",
     resonanceFirst: "共振優先",
-    hotFirst: "原始熱度",
     latest: "最新優先",
     reset: "清除篩選",
     all: "全部",
     platforms: "個平台",
     platformResonance: "平台共振",
-    open: "查看熱議",
+    open: "查看事件",
     featured: {
-      resonance: "全網共振",
-      entertainment: "娛樂熱議",
-      society: "社會焦點",
+      resonance: "多平台共振",
+      gossip: "明星八卦",
+      celebrity: "明星動態",
+      filmTv: "影視劇",
+      variety: "綜藝",
     },
     categories: {
-      entertainment: "娛樂",
-      society: "社會",
-      tech: "科技",
-      finance: "財經",
-      sports: "體育",
-      world: "國際",
-      culture: "文化教育",
-      other: "其他",
+      gossip: "明星八卦",
+      celebrity: "明星藝人",
+      "film-tv": "影視劇",
+      variety: "綜藝",
+      music: "音樂",
+      creator: "網紅主播",
+      other: "其他娛樂",
     },
   },
   ja: {
@@ -413,34 +373,34 @@ const UI_COPY = {
     matches: "件",
     resonance: "複数平台",
     refresh: "更新",
-    filters: "話題フィルター",
+    filters: "エンタメフィルター",
     perPage: "件数",
     category: "分類",
     source: "情報源",
     sort: "並び順",
-    smart: "総合",
+    smart: "話題度",
     resonanceFirst: "共振優先",
-    hotFirst: "人気順",
     latest: "新着順",
     reset: "解除",
     all: "すべて",
     platforms: "平台",
     platformResonance: "平台共振",
-    open: "話題を見る",
+    open: "イベントを見る",
     featured: {
-      resonance: "全体共振",
-      entertainment: "エンタメ",
-      society: "社会",
+      resonance: "複数プラットフォーム",
+      gossip: "芸能ゴシップ",
+      celebrity: "芸能人",
+      filmTv: "映画・ドラマ",
+      variety: "バラエティ",
     },
     categories: {
-      entertainment: "エンタメ",
-      society: "社会",
-      tech: "テック",
-      finance: "金融",
-      sports: "スポーツ",
-      world: "国際",
-      culture: "文化・教育",
-      other: "その他",
+      gossip: "芸能ゴシップ",
+      celebrity: "芸能人",
+      "film-tv": "映画・ドラマ",
+      variety: "バラエティ",
+      music: "音楽",
+      creator: "配信者・クリエイター",
+      other: "その他エンタメ",
     },
   },
   ko: {
@@ -451,136 +411,38 @@ const UI_COPY = {
     matches: "개 결과",
     resonance: "다중 플랫폼",
     refresh: "새로고침",
-    filters: "화제 필터",
+    filters: "엔터테인먼트 필터",
     perPage: "페이지당",
     category: "분류",
     source: "출처",
     sort: "정렬",
-    smart: "종합",
+    smart: "화제 점수",
     resonanceFirst: "공명 우선",
-    hotFirst: "인기순",
     latest: "최신순",
     reset: "초기화",
     all: "전체",
     platforms: "플랫폼",
     platformResonance: "플랫폼 공명",
-    open: "화제 보기",
+    open: "이벤트 보기",
     featured: {
-      resonance: "전망 공명",
-      entertainment: "엔터테인먼트",
-      society: "사회",
+      resonance: "다중 플랫폼",
+      gossip: "연예 가십",
+      celebrity: "연예인",
+      filmTv: "영화·드라마",
+      variety: "예능",
     },
     categories: {
-      entertainment: "엔터",
-      society: "사회",
-      tech: "기술",
-      finance: "경제",
-      sports: "스포츠",
-      world: "국제",
-      culture: "문화·교육",
-      other: "기타",
+      gossip: "연예 가십",
+      celebrity: "연예인",
+      "film-tv": "영화·드라마",
+      variety: "예능",
+      music: "음악",
+      creator: "크리에이터·스트리머",
+      other: "기타 엔터테인먼트",
     },
   },
 };
 const ui = computed(() => UI_COPY[locale.value] || UI_COPY["zh-CN"]);
-const INTELLIGENCE_SIGNAL_KEYS = [
-  "positiveMomentum",
-  "currentPeaks",
-  "negativeMomentum",
-  "reentries",
-];
-const INTELLIGENCE_SIGNAL_LABELS = {
-  "zh-CN": {
-    positiveMomentum: "正在升温",
-    currentPeaks: "冲到高位",
-    negativeMomentum: "正在降温",
-    reentries: "再次翻红",
-  },
-  en: {
-    positiveMomentum: "Heating up",
-    currentPeaks: "Near the top",
-    negativeMomentum: "Cooling down",
-    reentries: "Back again",
-  },
-  "zh-TW": {
-    positiveMomentum: "正在升溫",
-    currentPeaks: "衝到高位",
-    negativeMomentum: "正在降溫",
-    reentries: "再次翻紅",
-  },
-  ja: {
-    positiveMomentum: "上昇中",
-    currentPeaks: "上位到達",
-    negativeMomentum: "下降中",
-    reentries: "再浮上",
-  },
-  ko: {
-    positiveMomentum: "상승 중",
-    currentPeaks: "상위권",
-    negativeMomentum: "하락 중",
-    reentries: "재진입",
-  },
-};
-const intelligenceSignalLabels = computed(
-  () =>
-    INTELLIGENCE_SIGNAL_LABELS[locale.value] ||
-    INTELLIGENCE_SIGNAL_LABELS["zh-CN"],
-);
-const VERIFIED_RESONANCE_COPY = {
-  "zh-CN": {
-    label: "已核验共振",
-    platforms: "个平台",
-    first: "首发",
-    spread: "扩散",
-    best: "最佳",
-    minutes: (value) => value + " 分钟",
-    hours: (value) => value + " 小时",
-    instant: "几乎同步",
-  },
-  en: {
-    label: "Verified resonance",
-    platforms: "platforms",
-    first: "first",
-    spread: "spread",
-    best: "best",
-    minutes: (value) => value + "m",
-    hours: (value) => value + "h",
-    instant: "near-simultaneous",
-  },
-  "zh-TW": {
-    label: "已核驗共振",
-    platforms: "個平台",
-    first: "首發",
-    spread: "擴散",
-    best: "最佳",
-    minutes: (value) => value + " 分鐘",
-    hours: (value) => value + " 小時",
-    instant: "幾乎同步",
-  },
-  ja: {
-    label: "検証済み共振",
-    platforms: "プラットフォーム",
-    first: "最初",
-    spread: "拡散",
-    best: "最高",
-    minutes: (value) => value + "分",
-    hours: (value) => value + "時間",
-    instant: "ほぼ同時",
-  },
-  ko: {
-    label: "검증된 공명",
-    platforms: "개 플랫폼",
-    first: "최초",
-    spread: "확산",
-    best: "최고",
-    minutes: (value) => value + "분",
-    hours: (value) => value + "시간",
-    instant: "거의 동시",
-  },
-};
-const verifiedResonanceCopy = computed(
-  () => VERIFIED_RESONANCE_COPY[locale.value] || VERIFIED_RESONANCE_COPY["zh-CN"],
-);
 const viewAllLabel = computed(() =>
   ({
     "zh-CN": "查看全部",
@@ -591,13 +453,12 @@ const viewAllLabel = computed(() =>
   })[locale.value] || "查看全部",
 );
 const CATEGORY_ORDER = [
-  "entertainment",
-  "society",
-  "tech",
-  "finance",
-  "sports",
-  "world",
-  "culture",
+  "gossip",
+  "celebrity",
+  "film-tv",
+  "variety",
+  "music",
+  "creator",
   "other",
 ];
 const eventMeta = (item) => item?.extra?.hotEvent || {};
@@ -613,7 +474,7 @@ const confirmations = (item) =>
     ? eventMeta(item).confirmations
     : [];
 const primarySource = (item) =>
-  confirmations(item)[0]?.source || eventSources(item)[0] || "weibo";
+  confirmations(item)[0]?.source || eventSources(item)[0] || "douyin";
 const sourceLabel = (item) =>
   getSourceLabel(
     primarySource(item),
@@ -621,7 +482,7 @@ const sourceLabel = (item) =>
     confirmations(item)[0]?.sourceLabel || primarySource(item),
   );
 const categoryLabel = (category) => ui.value.categories[category] || category;
-const visibleConfirmations = (item) => confirmations(item).slice(0, 3);
+const visibleConfirmations = (item) => confirmations(item).slice(0, 4);
 const confirmationTitle = (item) =>
   confirmations(item)
     .map((entry) =>
@@ -634,98 +495,11 @@ const confirmationTitle = (item) =>
     .join(" + ");
 const textFor = (item) =>
   `${item.title || ""} ${item.desc || ""} ${confirmationTitle(item)}`.toLowerCase();
-const normalizeIntelligenceTitle = (value) =>
-  String(value || "")
-    .normalize("NFKC")
-    .trim()
-    .toLowerCase()
-    .replace(/^(?:视频|图集|组图|直播)\s*[丨|｜:：\-—]\s*/u, "")
-    .replace(/[#＃【】（）()“”‘’"'《》<>·•|丨｜—–_~～:：;；,，。.!！?？\s]/gu, "")
-    .replace(/\[|\]/gu, "");
-
-const intelligenceSignalIndex = computed(() => {
-  const index = new Map();
-  const signals = intelligence.value?.signals || {};
-  for (const key of INTELLIGENCE_SIGNAL_KEYS) {
-    const rows = Array.isArray(signals[key]) ? signals[key] : [];
-    for (const row of rows) {
-      const normalized = normalizeIntelligenceTitle(row?.title);
-      if (!normalized) continue;
-      const current = index.get(normalized) || [];
-      if (!current.some((signal) => signal.key === key)) {
-        current.push({
-          key,
-          label: intelligenceSignalLabels.value[key] || key,
-        });
-      }
-      index.set(normalized, current);
-    }
-  }
-  return index;
-});
-const intelligenceSignalsFor = (item) =>
-  intelligenceSignalIndex.value.get(normalizeIntelligenceTitle(item?.title)) || [];
-
-const verifiedResonanceIndex = computed(() => {
-  const index = new Map();
-  const events = Array.isArray(resonance.value?.events) ? resonance.value.events : [];
-  for (const event of events) {
-    const normalized = normalizeIntelligenceTitle(event?.title);
-    if (!normalized || Number(event?.sourceCount || 0) < 2) continue;
-    index.set(normalized, event);
-  }
-  return index;
-});
-const verifiedResonanceFor = (item) =>
-  verifiedResonanceIndex.value.get(normalizeIntelligenceTitle(item?.title)) || null;
-
-const hasCentralResonance = computed(
-  () =>
-    resonance.value?.schema === "cross-source-resonance-v1" &&
-    resonance.value?.algorithm === "normalized-title-exact-v1",
-);
-const isResonanceItem = (item) =>
-  hasCentralResonance.value
-    ? Boolean(verifiedResonanceFor(item))
-    : eventSourceCount(item) > 1;
-const effectiveResonanceSourceCount = (item) =>
-  hasCentralResonance.value
-    ? Number(verifiedResonanceFor(item)?.sourceCount || 1)
-    : eventSourceCount(item);
+const isResonanceItem = (item) => eventSourceCount(item) > 1;
+const effectiveResonanceSourceCount = (item) => eventSourceCount(item);
 const resonanceMatchCount = computed(
   () => data.value.filter((item) => isResonanceItem(item)).length,
 );
-
-const formatResonanceSpan = (seconds) => {
-  const value = Number(seconds || 0);
-  if (value <= 60) return verifiedResonanceCopy.value.instant;
-  if (value < 3600) {
-    return verifiedResonanceCopy.value.minutes(Math.max(1, Math.round(value / 60)));
-  }
-  return verifiedResonanceCopy.value.hours(
-    Math.max(1, Math.round((value / 3600) * 10) / 10),
-  );
-};
-const verifiedResonanceTitle = (event) => {
-  if (!event) return "";
-  const parts = [
-    Number(event.sourceCount || 0) + " " + verifiedResonanceCopy.value.platforms,
-  ];
-  if (event.firstSourceName) {
-    parts.push(verifiedResonanceCopy.value.first + " " + event.firstSourceName);
-  }
-  if (event.propagationEvidenceComplete) {
-    parts.push(
-      verifiedResonanceCopy.value.spread +
-        " " +
-        formatResonanceSpan(event.propagationSpanSeconds),
-    );
-  }
-  if (event.bestRank) {
-    parts.push(verifiedResonanceCopy.value.best + " #" + event.bestRank);
-  }
-  return parts.join(" · ");
-};
 
 const categoryOptions = computed(() => [
   { value: "all", label: ui.value.all, count: data.value.length },
@@ -762,14 +536,13 @@ const sourceOptions = computed(() => {
         detail:
           feed.status === "failed"
             ? feed.message || copy.value.degraded
-            : formatUpdated(feed.updateTime),
+            : (feed.variants || []).join(" · "),
       })),
   ];
 });
 const sortOptions = computed(() => [
   { value: "smart", label: ui.value.smart },
   { value: "resonance", label: ui.value.resonanceFirst },
-  { value: "hot", label: ui.value.hotFirst },
   { value: "latest", label: ui.value.latest },
 ]);
 const pageSizeOptions = computed(() =>
@@ -798,10 +571,6 @@ const filteredData = computed(() => {
       return (
         effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a) ||
         eventScore(b) - eventScore(a)
-      );
-    if (activeSort.value === "hot")
-      return (
-        Number(b.hot || 0) - Number(a.hot || 0) || eventScore(b) - eventScore(a)
       );
     if (activeSort.value === "latest")
       return (
@@ -837,51 +606,36 @@ const handlePageChange = () => {
 const FEATURED_LANE_LIMIT = 5;
 const featuredGroups = computed(() => {
   const byScore = (items) =>
-    items
-      .slice()
-      .sort(
-        (a, b) =>
-          effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a) ||
-          eventScore(b) - eventScore(a),
-      );
-  const resonanceItems = byScore(
-    data.value.filter((item) => isResonanceItem(item)),
-  );
-  const entertainmentItems = byScore(
-    data.value.filter((item) => eventCategory(item) === "entertainment"),
-  );
-  const societyItems = byScore(
-    data.value.filter((item) => eventCategory(item) === "society"),
-  );
+    items.slice().sort(
+      (a, b) =>
+        effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a) ||
+        eventScore(b) - eventScore(a),
+    );
+  const lane = (key, category) => {
+    const items = byScore(data.value.filter((item) => eventCategory(item) === category));
+    return {
+      key,
+      label: ui.value.featured[key],
+      count: items.length,
+      items: items.slice(0, FEATURED_LANE_LIMIT),
+      actionLabel: `${viewAllLabel.value} ${items.length}`,
+      filter: { category },
+    };
+  };
+  const resonanceItems = byScore(data.value.filter((item) => isResonanceItem(item)));
   return [
-    ...(hasCentralResonance.value
-      ? []
-      : [
-          {
-            key: "resonance",
-            label: ui.value.featured.resonance,
-            count: resonanceItems.length,
-            items: resonanceItems.slice(0, FEATURED_LANE_LIMIT),
-            actionLabel: `${viewAllLabel.value} ${resonanceItems.length}`,
-            filter: { confirmed: true },
-          },
-        ]),
     {
-      key: "entertainment",
-      label: ui.value.featured.entertainment,
-      count: entertainmentItems.length,
-      items: entertainmentItems.slice(0, FEATURED_LANE_LIMIT),
-      actionLabel: `${viewAllLabel.value} ${entertainmentItems.length}`,
-      filter: { category: "entertainment" },
+      key: "resonance",
+      label: ui.value.featured.resonance,
+      count: resonanceItems.length,
+      items: resonanceItems.slice(0, FEATURED_LANE_LIMIT),
+      actionLabel: `${viewAllLabel.value} ${resonanceItems.length}`,
+      filter: { confirmed: true },
     },
-    {
-      key: "society",
-      label: ui.value.featured.society,
-      count: societyItems.length,
-      items: societyItems.slice(0, FEATURED_LANE_LIMIT),
-      actionLabel: `${viewAllLabel.value} ${societyItems.length}`,
-      filter: { category: "society" },
-    },
+    lane("gossip", "gossip"),
+    lane("celebrity", "celebrity"),
+    lane("filmTv", "film-tv"),
+    lane("variety", "variety"),
   ].filter((group) => group.items.length);
 });
 const selectFeaturedLane = (lane) => {
@@ -1011,77 +765,100 @@ watch(sourceOptions, (options) => {
     activeSource.value = "all";
 });
 
+const normalizeTopicFeed = (feed) => {
+  const targets = Array.isArray(feed?.coverage?.targets) ? feed.coverage.targets : [];
+  const events = Array.isArray(feed?.events) ? feed.events : [];
+  const groupedFeeds = new Map();
+  for (const target of targets) {
+    const key = String(target?.sourceKey || "").trim();
+    if (!key) continue;
+    const current = groupedFeeds.get(key) || {
+      source: key,
+      label: target.sourceName || key,
+      status: "ok",
+      count: 0,
+      variants: [],
+    };
+    current.count += Number(target.itemCount || 0);
+    if (target.variantLabel && !current.variants.includes(target.variantLabel)) current.variants.push(target.variantLabel);
+    if (target.status !== "active") current.status = target.status || "empty";
+    groupedFeeds.set(key, current);
+  }
+  const data = events.map((event, index) => {
+    const sources = Array.isArray(event.sources) ? event.sources : [];
+    const primary = sources[0] || {};
+    const sourceKeys = [...new Set(sources.map((source) => source.sourceKey).filter(Boolean))];
+    const confirmations = sources.map((source) => ({
+      source: source.sourceKey,
+      sourceLabel: source.sourceName || source.sourceKey,
+      variant: source.variant,
+      variantLabel: source.variantLabel,
+      rank: source.rank,
+      url: source.url,
+    }));
+    return {
+      id: event.eventKey || `chigua-${index + 1}`,
+      title: event.title,
+      url: primary.url || "#",
+      mobileUrl: primary.mobileUrl || primary.url || "#",
+      cover: primary.cover || "",
+      hot: primary.hot,
+      timestamp: Date.parse(event.lastSeenAt || feed.generatedAt || "") || Date.now(),
+      badges: primary.badges || [],
+      extra: {
+        hotEvent: {
+          category: event.subtype || "other",
+          score: Number(event.score || 0),
+          sourceCount: Number(event.sourceCount || sourceKeys.length || 1),
+          sources: sourceKeys,
+          confirmations,
+          bestRank: event.bestRank,
+          currentWaveStartedAt: event.currentWaveStartedAt,
+        },
+      },
+    };
+  });
+  return {
+    code: 200,
+    name: "chigua-topic",
+    title: feed?.topic?.label || "吃瓜",
+    type: "娱乐热点追踪",
+    description: feed?.topic?.description || "",
+    total: data.length,
+    updateTime: feed?.generatedAt || new Date().toISOString(),
+    data,
+    dashboard: {
+      sourceCount: [...new Set(targets.filter((target) => target.status === "active").map((target) => target.sourceKey))].length,
+      failedSourceCount: targets.filter((target) => target.status === "failed").length,
+      total: data.length,
+      multiSourceCount: Number(feed?.coverage?.multiSourceEventCount || 0),
+      feeds: [...groupedFeeds.values()],
+    },
+  };
+};
+
 const loadTopic = async (force = false) => {
   loading.value = true;
   loadError.value = "";
   try {
-    const response = await getHotListsWithFallback(
-      "chigua-topic",
-      force,
-      { locale: locale.value, translate_limit: 80 },
-      { forceNoCache: force, timeout: 20000 },
-    );
-    if (response?.result?.code !== 200)
-      throw new Error(response?.result?.message || "request failed");
-    result.value = response.result;
+    const feed = await getTopicFeed("chigua", { limit: 160, maxRank: 80, minSources: 1, force });
+    result.value = normalizeTopicFeed(feed);
   } catch (error) {
     loadError.value = error?.message || "Failed to load";
   } finally {
     loading.value = false;
   }
 };
-const loadTrendIntelligence = async () => {
-  try {
-    const response = await getTrendIntelligence("weibo", {
-      window: "24h",
-      limit: 100,
-      breakthroughRank: 10,
-    });
-    if (
-      response?.data?.schema === "trend-intelligence-v1" &&
-      response?.data?.algorithm === "deterministic-ranking-signals-v2"
-    ) {
-      intelligence.value = response.data;
-    }
-  } catch {
-    // Intelligence is an enhancement layer. Keep the topic feed usable when
-    // the licensed server-side proxy is unavailable or not configured.
-  }
-};
-const loadTrendResonance = async () => {
-  try {
-    const response = await getTrendResonance({
-      minSources: 2,
-      limit: 100,
-      maxRank: 100,
-    });
-    if (
-      response?.data?.schema === "cross-source-resonance-v1" &&
-      response?.data?.algorithm === "normalized-title-exact-v1"
-    ) {
-      resonance.value = response.data;
-    }
-  } catch {
-    // Cross-source evidence is an enhancement layer and must fail independently
-    // from the main topic feed and single-source trend dynamics.
-  }
-};
 const handleGlobalDataRefresh = (event) => {
   void loadTopic(Boolean(event?.detail?.force));
-  void loadTrendIntelligence();
-  void loadTrendResonance();
 };
 onMounted(() => {
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   void loadTopic(false);
-  void loadTrendIntelligence();
-  void loadTrendResonance();
 });
 onActivated(() => {
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
-  void loadTrendIntelligence();
-  void loadTrendResonance();
 });
 onDeactivated(() =>
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh),
