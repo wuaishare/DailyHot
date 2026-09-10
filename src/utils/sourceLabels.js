@@ -3785,6 +3785,20 @@ const COMMON_SUBTYPE_LABEL_OVERRIDES = {
     ja: "エンタメ注目ランキング",
     ko: "엔터테인먼트 핫이슈",
   },
+  文娱榜: {
+    "zh-CN": "文娱榜",
+    "zh-TW": "文娛榜",
+    en: "Entertainment",
+    ja: "エンタメ",
+    ko: "엔터테인먼트",
+  },
+  生活榜: {
+    "zh-CN": "生活榜",
+    "zh-TW": "生活榜",
+    en: "Lifestyle",
+    ja: "ライフスタイル",
+    ko: "라이프스타일",
+  },
   体育热点榜: {
     "zh-CN": "体育热点榜",
     "zh-TW": "體育熱點榜",
