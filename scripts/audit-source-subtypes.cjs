@@ -12,6 +12,7 @@ const verify = process.env.VERIFY || process.env.VITE_BUILD_NUMBER || "subtype-a
 const timeoutMs = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const concurrency = Number(process.env.SUBTYPE_AUDIT_CONCURRENCY || 4);
 const dataSourceEnv = process.env.SUBTYPE_DATA_SOURCES || "";
+const trendsPublicApi = (process.env.TRENDS_PUBLIC_API || "https://api.wpbetter.cn/trends/public/v1").replace(/\/+$/, "");
 
 const DEFAULT_DATA_SOURCES = [
   "bilibili",
@@ -29,6 +30,7 @@ const DEFAULT_DATA_SOURCES = [
   "tianya",
 ];
 const DEFAULT_SOURCE_CASES = ["sspai"];
+const TRENDS_NATIVE_SUBTYPE_SOURCES = new Set(["douyin"]);
 const METADATA_OPTIONAL_SOURCES = new Set([
   "arena-ai",
   "artificialanalysis",
@@ -194,9 +196,51 @@ const getDataSources = (groups) => {
   return new Set(DEFAULT_DATA_SOURCES);
 };
 
+const checkTrendsNativeMetadata = async (frontendParams, sourceName) => {
+  const catalogResult = await fetchJson(`${trendsPublicApi}/catalog`, 3);
+  if (catalogResult.status !== 200) {
+    return [`${sourceName}: Trends catalog returned HTTP ${catalogResult.status}`];
+  }
+  const source = (catalogResult.json?.sources || []).find((item) => item?.key === sourceName);
+  if (!source) return [`${sourceName}: missing from Trends public catalog`];
+
+  const configuredValues = new Set(
+    [...frontendParams.values()].flatMap((values) => [...values]),
+  );
+  const catalogValues = new Set(
+    (source.variantGroups || []).flatMap((group) =>
+      (group.options || []).map((option) => String(option.key)),
+    ),
+  );
+  const missingInFrontend = [...catalogValues].filter((value) => !configuredValues.has(value));
+  const staleFrontend = [...configuredValues].filter((value) => !catalogValues.has(value));
+  const issues = [];
+  if (missingInFrontend.length || staleFrontend.length) {
+    issues.push(
+      `${sourceName}/Trends: missingFrontend=${missingInFrontend.join(",") || "-"} staleFrontend=${staleFrontend.join(",") || "-"}`,
+    );
+  }
+
+  const variantResults = await runLimited([...configuredValues], async (variant) => {
+    const url = new URL(`${trendsPublicApi}/rankings/${encodeURIComponent(sourceName)}`);
+    url.searchParams.set("variant", variant);
+    url.searchParams.set("limit", "1");
+    const result = await fetchJson(url.toString(), 3);
+    const itemCount = Array.isArray(result.json?.data?.items) ? result.json.data.items.length : 0;
+    return result.status === 200 && itemCount > 0
+      ? null
+      : `${sourceName}/${variant}: Trends ranking HTTP ${result.status} items=${itemCount}`;
+  });
+  variantResults.filter(Boolean).forEach((issue) => issues.push(issue));
+  return issues;
+};
+
 const checkMetadata = async (groups, sourceName) => {
   const frontendParams = buildFrontendParamMap(groups, sourceName);
   if (!frontendParams.size) return [];
+  if (TRENDS_NATIVE_SUBTYPE_SOURCES.has(sourceName)) {
+    return checkTrendsNativeMetadata(frontendParams, sourceName);
+  }
 
   const url = withVerify(`/api/${sourceName}`);
   url.searchParams.set("cache", "false");

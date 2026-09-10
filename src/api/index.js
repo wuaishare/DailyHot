@@ -122,6 +122,11 @@ const TRENDS_READ_SOURCES = new Set(
     .filter(Boolean),
 );
 const TRENDS_SHADOW_DEFAULT_VARIANTS = {
+  douyin: {
+    param: "type",
+    legacyDefault: "hot",
+    passthroughVariants: ["hot", "seeding", "entertainment", "society", "challenge"],
+  },
   ithome: ["day", "day"],
   baidu: ["realtime", "realtime"],
   github: ["daily", "day"],
@@ -164,6 +169,11 @@ const getTrendsShadowVariant = (source, params = {}) => {
     const [legacyDefault, trendsVariant] = mapping;
     const legacyVariant = String(params?.type || legacyDefault);
     return legacyVariant === legacyDefault ? trendsVariant : null;
+  }
+  if (mapping.passthroughVariants) {
+    const { param = "type", legacyDefault, passthroughVariants } = mapping;
+    const requestedVariant = String(params?.[param] ?? legacyDefault);
+    return passthroughVariants.includes(requestedVariant) ? requestedVariant : null;
   }
   if (mapping.legacyParams) {
     const matchesDefaultParams = Object.entries(mapping.legacyParams).every(

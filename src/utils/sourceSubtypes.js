@@ -1,6 +1,19 @@
 const STORAGE_PREFIX = "dailyhot:source-subtype:";
 
 const SOURCE_SUBTYPE_GROUPS = {
+  douyin: [
+    {
+      key: "rank",
+      label: "榜单",
+      items: [
+        { label: "热点榜", value: "hot" },
+        { label: "种草榜", value: "seeding" },
+        { label: "娱乐榜", value: "entertainment" },
+        { label: "社会榜", value: "society" },
+        { label: "挑战榜", value: "challenge" },
+      ],
+    },
+  ],
   baidu: [
     {
       key: "default",
