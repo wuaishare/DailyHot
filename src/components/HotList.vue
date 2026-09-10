@@ -1862,16 +1862,34 @@ onBeforeUnmount(() => {
         }
 
         .ranking-badge.is-explosive {
+          position: relative;
+          isolation: isolate;
           min-width: 20px;
           height: 20px;
           padding: 0 4px;
-          border-radius: 3px;
-          background: linear-gradient(135deg, #f04438, #c81e1e);
-          box-shadow: 0 2px 8px color-mix(in srgb, #c81e1e 36%, transparent);
+          border: 1px solid rgba(164, 16, 10, 0.48);
+          border-radius: 4px;
+          background: linear-gradient(180deg, #d52a1f 0%, #b8150d 100%);
+          box-shadow:
+            0 1px 2px rgba(111, 8, 4, 0.28),
+            0 3px 9px rgba(211, 36, 27, 0.32),
+            0 0 13px rgba(255, 74, 58, 0.18);
           font-size: 12px;
-          font-weight: 800;
-          line-height: 20px;
+          font-weight: 850;
+          line-height: 18px;
+          text-shadow: 0 1px 1px rgba(96, 5, 0, 0.28);
           transform: translateY(-1px);
+        }
+
+        .ranking-badge.is-explosive::before {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          inset: -4px;
+          border-radius: 7px;
+          background: rgba(245, 52, 39, 0.18);
+          filter: blur(5px);
+          pointer-events: none;
         }
 
         .ranking-badge.is-interpretation,
