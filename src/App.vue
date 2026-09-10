@@ -10,12 +10,9 @@
         headerExpanded ? 'header-expanded' : 'header-collapsed',
       ]"
     >
-      <FloatingActions @update:back-top-show="backTopChange" />
+      <FloatingActions />
       <Header
         :class="[{ expanded: headerExpanded, collapsed: !headerExpanded }]"
-        @mouseenter="handleHeaderEnter"
-        @mouseleave="handleHeaderLeave"
-        @click="handleHeaderClick"
         @open-settings="settingsOpen = true"
       />
       <main>
@@ -117,8 +114,7 @@ const showSpeedInsights =
     (window.location.hostname !== "127.0.0.1" &&
       window.location.hostname !== "localhost"));
 
-const headerExpanded = ref(!store.headerCollapsed);
-const collapseTimer = ref(null);
+const headerExpanded = computed(() => !store.compactMode);
 const autoRefreshTimer = ref(null);
 const autoRefreshPausedByRoute = ref(false);
 const routePausedRemainingMs = ref(null);
@@ -162,56 +158,6 @@ const isAutoRefreshRoute = computed(() => {
     /\/(category|rank|topic)(\/|$)/.test(path)
   );
 });
-
-// 回顶按钮显隐
-const backTopChange = (val) => {
-  if (!store.headerCollapsed) return;
-  if (!val) {
-    headerExpanded.value = false;
-  }
-};
-
-const handleHeaderEnter = () => {
-  clearTimeout(collapseTimer.value);
-};
-
-const handleHeaderLeave = () => {
-  clearTimeout(collapseTimer.value);
-};
-
-const handleHeaderClick = (event) => {
-  const path = event?.composedPath?.() || [];
-  const interactiveTrigger = path.some(
-    (element) =>
-      element?.classList &&
-      (element.classList.contains("control-hit-area") ||
-        element.classList.contains("category-hit-area") ||
-        element.classList.contains("mobile-trigger")),
-  );
-  if (interactiveTrigger) return;
-  if (!headerExpanded.value) {
-    headerExpanded.value = true;
-  }
-};
-
-// 点击页眉外区域时折叠
-const handleOutsideClick = (e) => {
-  if (!store.headerCollapsed) return;
-  const path = e.composedPath ? e.composedPath() : [];
-  const clickInsideHeader = path.some(
-    (el) => el?.classList && el.classList.contains("app-header"),
-  );
-  const clickOverlay = path.some(
-    (el) =>
-      el?.classList &&
-      (el.classList.contains("n-popover") ||
-        el.classList.contains("n-dropdown") ||
-        el.classList.contains("n-popconfirm")),
-  );
-  if (!clickInsideHeader && !clickOverlay) {
-    headerExpanded.value = false;
-  }
-};
 
 const getAutoRefreshIntervalMs = () => {
   const seconds = Number(store.autoRefreshInterval);
@@ -459,14 +405,6 @@ const handleFreezeAutoRefreshRoute = () => {
   }
 };
 
-// 默认折叠设置变化时同步状态
-watch(
-  () => store.headerCollapsed,
-  (val) => {
-    headerExpanded.value = !val;
-  },
-);
-
 const handleDataRefreshRequest = (event) => {
   if (event?.detail?.reason !== "manual") return;
   const intervalMs = getAutoRefreshIntervalMs();
@@ -502,7 +440,6 @@ onMounted(() => {
   store.checkNewsUpdate();
   scheduleSettingsWarmup();
   if (typeof document !== "undefined") {
-    document.addEventListener("click", handleOutsideClick);
     document.addEventListener(
       "visibilitychange",
       reconcileAutoRefreshAfterVisibilityChange,
@@ -534,14 +471,12 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  clearTimeout(collapseTimer.value);
   cancelSettingsWarmup();
   if (removeAutoRefreshRouteGuard) {
     removeAutoRefreshRouteGuard();
     removeAutoRefreshRouteGuard = null;
   }
   if (typeof document !== "undefined") {
-    document.removeEventListener("click", handleOutsideClick);
     document.removeEventListener(
       "visibilitychange",
       reconcileAutoRefreshAfterVisibilityChange,

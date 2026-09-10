@@ -2,7 +2,7 @@
   <nav
     v-if="visible"
     class="context-toolbar"
-    :class="`is-${store.siteTheme}`"
+    :class="[`is-${store.siteTheme}`, { 'is-compact': store.compactMode }]"
     :aria-label="copy.context"
   >
     <div class="context-toolbar__left">
@@ -794,6 +794,65 @@ watchEffect(() => {
   box-shadow:
     0 1px 2px oklch(0.18 0.008 285 / 5%),
     0 8px 28px oklch(0.18 0.008 285 / 6%);
+}
+
+.context-toolbar.is-compact {
+  min-height: 38px;
+  margin-bottom: 10px;
+  padding: 3px 6px 3px 8px;
+  gap: 12px;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px oklch(0.18 0.008 285 / 4%);
+}
+
+.context-toolbar.is-compact .context-breadcrumb__home,
+.context-toolbar.is-compact .context-breadcrumb__item {
+  min-height: 30px;
+  font-size: 12px;
+}
+
+.context-toolbar.is-compact .context-breadcrumb__home {
+  padding-inline: 6px;
+}
+
+.context-toolbar.is-compact .context-breadcrumb__item {
+  padding-inline: 6px;
+}
+
+.context-toolbar.is-compact .context-search,
+.context-toolbar.is-compact .context-view-switch,
+.context-toolbar.is-compact .context-toolbar__manager {
+  height: 32px;
+  border-radius: 8px;
+}
+
+.context-toolbar.is-compact .context-search {
+  padding-left: 9px;
+}
+
+.context-toolbar.is-compact .context-view-switch {
+  padding: 2px;
+}
+
+.context-toolbar.is-compact .context-view-switch button {
+  width: 27px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.context-toolbar.is-compact .context-toolbar__manager {
+  padding-inline: 8px;
+}
+
+.context-toolbar.is-compact .context-search__icon,
+.context-toolbar.is-compact .context-view-switch svg {
+  width: 15px;
+  height: 15px;
+}
+
+.context-toolbar.is-compact .context-toolbar__manager svg {
+  width: 16px;
+  height: 16px;
 }
 
 .context-toolbar.is-dark {

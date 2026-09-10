@@ -1251,9 +1251,7 @@ export const mainStore = defineStore("mainData", {
       linkOpenType: "open",
       // 页头固定
       headerFixed: true,
-      // 页头默认折叠
-      headerCollapsed: true,
-      // 紧凑模式
+      // 紧凑模式：统一控制站点导航、上下文工具栏和页面密度
       compactMode: true,
       // 是否显示榜单置顶条目
       showPinnedRankings: true,
@@ -1782,7 +1780,6 @@ export const mainStore = defineStore("mainData", {
         "newsArr",
         "linkOpenType",
         "headerFixed",
-        "headerCollapsed",
         "compactMode",
         "showPinnedRankings",
         "autoRefreshEnabled",

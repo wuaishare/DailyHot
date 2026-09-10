@@ -57,17 +57,6 @@
     <n-card v-if="showsDisplay" class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">{{ t("settings.headerCollapsed") }}</n-text>
-          <n-text class="tip" :depth="3">
-            {{ t("settings.headerCollapsedTip") }}
-          </n-text>
-        </div>
-        <n-switch v-model:value="headerCollapsed" :round="false" />
-      </div>
-    </n-card>
-    <n-card v-if="showsDisplay" class="set-item">
-      <div class="top">
-        <div class="name">
           <n-text class="text">{{ t("settings.compactMode") }}</n-text>
           <n-text class="tip" :depth="3">
             {{ t("settings.compactModeTip") }}
@@ -394,7 +383,6 @@ const {
   siteThemeAuto,
   linkOpenType,
   headerFixed,
-  headerCollapsed,
   compactMode,
   showPinnedRankings,
   categoryViewMode,
@@ -422,7 +410,6 @@ const persistedKeys = [
   "newsArr",
   "linkOpenType",
   "headerFixed",
-  "headerCollapsed",
   "compactMode",
   "showPinnedRankings",
   "categoryViewMode",

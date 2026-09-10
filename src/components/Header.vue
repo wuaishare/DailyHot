@@ -130,18 +130,28 @@
               @mouseenter="openHeaderDropdown('header:locale')"
               @mouseleave="scheduleHeaderDropdownClose('header:locale')"
             >
-              <n-button class="header-control-btn" secondary strong round>
-                <template #icon>
+              <n-button
+                class="header-control-btn locale-control-btn"
+                secondary
+                strong
+                round
+                :aria-label="currentLocaleMeta.label"
+                :title="currentLocaleMeta.label"
+              >
+                <span class="header-control-content">
                   <img
                     class="locale-trigger-flag"
                     :src="currentLocaleMeta.flag"
                     :alt="currentLocaleMeta.label"
                     :style="localeFlagStyle"
                   />
-                </template>
-                <span v-if="!isSmallScreen" class="locale-trigger-label">{{
-                  currentLocaleMeta.shortLabel
-                }}</span>
+                  <span
+                    v-if="!store.compactMode && !isSmallScreen"
+                    class="locale-trigger-label"
+                  >
+                    {{ currentLocaleMeta.shortLabel }}
+                  </span>
+                </span>
               </n-button>
             </div>
           </n-dropdown>
@@ -151,27 +161,26 @@
             placement="bottom"
             :show-arrow="false"
             content-class="header-refresh-popover"
-            :content-style="{ padding: '12px' }"
-            style="max-width: 360px"
+            :content-style="{ padding: '5px' }"
+            style="max-width: 360px; padding: 0"
           >
             <template #trigger>
               <div class="control-hit-area" @click.stop>
                 <n-button
-                  class="header-control-btn"
+                  class="header-control-btn refresh-control-btn"
+                  :class="{ 'has-countdown': showHeaderCountdown }"
                   secondary
                   strong
                   round
                   :aria-label="refreshButtonLabel"
                   :title="refreshButtonLabel"
                 >
-                  <template #icon>
+                  <span class="header-control-content">
                     <n-icon class="header-glyph" :component="Refresh" />
-                  </template>
-                  <span
-                    v-if="countdownText && !isSmallScreen"
-                    class="countdown"
-                    >{{ countdownText }}</span
-                  >
+                    <span v-if="showHeaderCountdown" class="countdown">
+                      {{ countdownText }}
+                    </span>
+                  </span>
                 </n-button>
               </div>
             </template>
@@ -244,7 +253,11 @@
                       v-model:value="timeForm.hour"
                       :min="0"
                       :max="23"
-                      :show-button="false"
+                      :show-button="true"
+                      button-placement="right"
+                      :keyboard="{ ArrowUp: true, ArrowDown: true }"
+                      :input-props="{ 'aria-label': t('header.hour') }"
+                      @wheel.prevent="handleIntervalWheel('hour', $event)"
                       @update:value="applyAutoInterval"
                     />
                   </label>
@@ -255,7 +268,11 @@
                       v-model:value="timeForm.minute"
                       :min="0"
                       :max="59"
-                      :show-button="false"
+                      :show-button="true"
+                      button-placement="right"
+                      :keyboard="{ ArrowUp: true, ArrowDown: true }"
+                      :input-props="{ 'aria-label': t('header.minute') }"
+                      @wheel.prevent="handleIntervalWheel('minute', $event)"
                       @update:value="applyAutoInterval"
                     />
                   </label>
@@ -266,7 +283,11 @@
                       v-model:value="timeForm.second"
                       :min="0"
                       :max="59"
-                      :show-button="false"
+                      :show-button="true"
+                      button-placement="right"
+                      :keyboard="{ ArrowUp: true, ArrowDown: true }"
+                      :input-props="{ 'aria-label': t('header.second') }"
+                      @wheel.prevent="handleIntervalWheel('second', $event)"
                       @update:value="applyAutoInterval"
                     />
                   </label>
@@ -280,7 +301,8 @@
             :delay="80"
             :show-arrow="false"
             content-class="header-theme-popover"
-            :content-style="{ padding: '6px' }"
+            :content-style="{ padding: '3px' }"
+            style="padding: 0"
           >
             <template #trigger>
               <div class="control-hit-area" @click.stop>
@@ -466,6 +488,9 @@ const refreshButtonLabel = computed(() =>
     ? `${t("header.refreshPage")} ${countdownText.value}`
     : t("header.refreshPage"),
 );
+const showHeaderCountdown = computed(
+  () => store.autoRefreshEnabled && Boolean(countdownText.value),
+);
 const canManualRefresh = computed(
   () => showRefresh.value && !isSettingPage.value,
 );
@@ -562,6 +587,7 @@ const scheduleHeaderDropdownClose = (id) => {
   }, 160);
 };
 const headerMenuProps = (id) => ({
+  ...(id === "header:locale" ? { class: "header-locale-menu" } : {}),
   onMouseenter: cancelHeaderDropdownClose,
   onMouseleave: () => scheduleHeaderDropdownClose(id),
 });
@@ -754,14 +780,14 @@ const localeOptionLabelStyle = {
   lineHeight: "1.25",
 };
 const localeOptionActiveLabelStyle = {
-  color: "var(--n-primary-color)",
+  color: "var(--n-option-text-color-active, currentColor)",
   fontWeight: "700",
 };
 const localeOptionCheckStyle = {
   display: "grid",
   placeItems: "center",
   width: "18px",
-  color: "var(--n-primary-color)",
+  color: "var(--n-option-text-color-active, currentColor)",
   fontSize: "14px",
   fontWeight: "800",
   lineHeight: "1",
@@ -955,6 +981,19 @@ const syncTimeForm = () => {
   timeForm.second = s;
 };
 
+const handleIntervalWheel = (unit, event) => {
+  const limits = {
+    hour: [0, 23],
+    minute: [0, 59],
+    second: [0, 59],
+  };
+  const [min, max] = limits[unit] || [0, 0];
+  const current = Number(timeForm[unit]) || 0;
+  const delta = event.deltaY < 0 ? 1 : -1;
+  timeForm[unit] = Math.min(max, Math.max(min, current + delta));
+  applyAutoInterval();
+};
+
 const applyAutoInterval = () => {
   const seconds = timeToSeconds(timeForm);
   if (seconds < 60) {
@@ -1144,7 +1183,7 @@ onBeforeUnmount(() => {
   &.collapsed {
     padding: 0 5vw;
     min-height: 39px;
-    cursor: pointer;
+    cursor: default;
     box-shadow: none;
     section {
       column-gap: 8px;
@@ -1242,6 +1281,24 @@ onBeforeUnmount(() => {
     :deep(.header-control-btn) {
       height: 100%;
     }
+
+    :deep(.header-control-btn .n-button__content) {
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-control-content {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 0;
+      line-height: 1;
+    }
+
     .header-glyph {
       width: 19px;
       height: 19px;
@@ -1250,8 +1307,9 @@ onBeforeUnmount(() => {
     }
 
     .countdown {
-      margin-left: 5px;
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 650;
+      line-height: 1;
       font-variant-numeric: tabular-nums;
     }
     .refresh-panel {
@@ -1522,9 +1580,14 @@ onBeforeUnmount(() => {
         padding: 0;
       }
 
-      .locale-trigger-label,
-      .countdown {
+      .locale-trigger-label {
         display: none;
+      }
+
+      :deep(.header-control-btn.refresh-control-btn.has-countdown) {
+        width: auto;
+        min-width: 34px;
+        padding: 0 9px;
       }
 
       :deep(.header-control-btn .n-button__content),
@@ -1615,9 +1678,15 @@ onBeforeUnmount(() => {
         overflow: hidden;
       }
 
-      .locale-trigger-label,
-      .countdown {
+      .locale-trigger-label {
         display: none;
+      }
+
+      :deep(.header-control-btn.refresh-control-btn.has-countdown) {
+        width: auto;
+        min-width: 38px;
+        padding: 0 9px;
+        overflow: visible;
       }
 
       :deep(.header-control-btn .n-button__content),
@@ -1951,5 +2020,13 @@ onBeforeUnmount(() => {
   object-fit: cover;
   flex-shrink: 0;
   display: block;
+}
+
+:global(.header-locale-menu.n-dropdown-menu) {
+  --n-padding: 4px 0 !important;
+}
+
+:global(.header-locale-menu .n-dropdown-option-body) {
+  min-height: 36px;
 }
 </style>
