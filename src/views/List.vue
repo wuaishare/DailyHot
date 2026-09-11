@@ -283,6 +283,7 @@ import {
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
+import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
 import {
   getFundMetricView,
   getMarketEntityDisplayTitle,
@@ -600,9 +601,11 @@ const syncReadableTitleDom = (items = []) => {
 const handleLogoError = (event) => {
   event.target.src = getSourceLogoFallback();
 };
-const subtypeGroups = computed(() =>
-  localizeSubtypeGroups(getSourceSubtypeGroups(listType.value), locale.value),
-);
+const subtypeCatalogRevision = useTrendsCatalogRevision();
+const subtypeGroups = computed(() => {
+  subtypeCatalogRevision.value;
+  return localizeSubtypeGroups(getSourceSubtypeGroups(listType.value), locale.value);
+});
 const activeTypeOptions = computed(() =>
   subtypeGroups.value.flatMap((group) => group.items || []),
 );
@@ -952,6 +955,8 @@ watch(
     const nextSubtype = resolveSubType(router.currentRoute.value);
     if (nextSubtype === listSubType.value) return;
     listSubType.value = nextSubtype;
+    persistSourceSubtype(listType.value, listSubType.value);
+    if (listData.value) getHotListsData(listType.value);
   },
   { deep: true },
 );

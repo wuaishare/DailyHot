@@ -28,7 +28,8 @@
         @click.stop="toggleMenu"
       >
         <span class="trigger-label">{{ currentLabel }}</span>
-        <span class="trigger-chevron" aria-hidden="true"></span>
+        <span v-if="remainingOptionCount > 0" class="trigger-more-count" aria-hidden="true">+{{ remainingOptionCount }}</span>
+        <span class="trigger-chevron" :class="{ expanded: menuOpen }" aria-hidden="true"></span>
       </button>
     </div>
 
@@ -159,6 +160,7 @@ const activeItem = computed(() =>
   flatItems.value.find((item) => item.value === props.activeValue) || flatItems.value[0] || null
 );
 const currentLabel = computed(() => activeItem.value?.label || props.groups[0]?.label || t("hotList.rankOrder"));
+const remainingOptionCount = computed(() => Math.max(0, flatItems.value.length - 1));
 const isDarkTheme = computed(() => store.siteTheme === "dark");
 
 const getGroupKey = (group) => group.key || group.label || group.items?.[0]?.value || "group";
@@ -355,6 +357,20 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
+.trigger-more-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .trigger-chevron,
 .accordion-chevron {
   width: 6px;
@@ -364,6 +380,10 @@ onBeforeUnmount(() => {
   border-bottom: 1.5px solid currentColor;
   transform: rotate(45deg) translateY(-2px);
   transition: transform 0.16s ease;
+}
+
+.trigger-chevron.expanded {
+  transform: rotate(225deg) translate(-1px, -1px);
 }
 
 .subtype-menu {
