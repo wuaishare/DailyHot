@@ -1,8 +1,8 @@
 import { applyTrendsSourceCatalog } from "@/utils/sourceSubtypes";
 
 const CACHE_KEY = "dailyhot:trends-source-catalog:v1";
-const FRESH_MS = 60 * 60 * 1000;
 const STALE_MS = 24 * 60 * 60 * 1000;
+const REVALIDATE_MS = 5 * 60 * 1000;
 const DEFAULT_PUBLIC_API = import.meta.env.PROD
   ? "https://api.wpbetter.cn/trends/public/v1"
   : "";
@@ -53,20 +53,47 @@ const fetchCatalog = async () => {
   }
 };
 
-export const preloadTrendsSourceCatalog = async () => {
-  const cached = cachedCatalog();
-  const age = cached ? Date.now() - cached.storedAt : Number.POSITIVE_INFINITY;
-  if (cached?.catalog && age <= STALE_MS) applyTrendsSourceCatalog(cached.catalog);
-  if (cached?.catalog && age <= FRESH_MS) return cached.catalog;
+const revalidateCatalog = (fallbackCatalog = null) => {
   if (!loadingPromise) {
     loadingPromise = fetchCatalog()
       .catch((error) => {
-        if (!cached?.catalog) console.warn("Trends source catalog unavailable", error);
-        return cached?.catalog || null;
+        if (!fallbackCatalog) console.warn("Trends source catalog unavailable", error);
+        return fallbackCatalog;
       })
       .finally(() => {
         loadingPromise = null;
       });
   }
   return loadingPromise;
+};
+
+export const preloadTrendsSourceCatalog = async () => {
+  const cached = cachedCatalog();
+  const age = cached ? Date.now() - cached.storedAt : Number.POSITIVE_INFINITY;
+  const fallbackCatalog = cached?.catalog && age <= STALE_MS ? cached.catalog : null;
+  if (fallbackCatalog) {
+    applyTrendsSourceCatalog(fallbackCatalog);
+    void revalidateCatalog(fallbackCatalog);
+    return fallbackCatalog;
+  }
+  return revalidateCatalog(null);
+};
+
+export const startTrendsSourceCatalogRevalidation = () => {
+  if (typeof window === "undefined") return () => {};
+  const refresh = () => {
+    void revalidateCatalog(cachedCatalog()?.catalog || null);
+  };
+  const timer = window.setInterval(refresh, REVALIDATE_MS);
+  const onFocus = () => refresh();
+  const onVisibility = () => {
+    if (document.visibilityState === "visible") refresh();
+  };
+  window.addEventListener("focus", onFocus);
+  document.addEventListener("visibilitychange", onVisibility);
+  return () => {
+    window.clearInterval(timer);
+    window.removeEventListener("focus", onFocus);
+    document.removeEventListener("visibilitychange", onVisibility);
+  };
 };

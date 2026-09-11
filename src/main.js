@@ -9,7 +9,7 @@ import i18n from "@/i18n";
 import { ensureCacheVersion } from "@/utils/cache";
 import { resolveInitialLocale, savePreferredLocale, setDocumentLanguage } from "@/utils/locale";
 import { applyDynamicTranslation } from "@/utils/translateEngine";
-import { preloadTrendsSourceCatalog } from "@/api/trendsCatalog";
+import { preloadTrendsSourceCatalog, startTrendsSourceCatalogRevalidation } from "@/api/trendsCatalog";
 
 // 全局样式
 import "@/style/global.scss";
@@ -54,6 +54,7 @@ const registerAppServiceWorker = () => {
   app.use(router);
 
   app.mount("#app");
+  startTrendsSourceCatalogRevalidation();
   if (typeof window !== "undefined") {
     document.documentElement.dataset.dailyhotMounted = "1";
     try {

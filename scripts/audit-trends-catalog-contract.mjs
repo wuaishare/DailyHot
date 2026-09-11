@@ -5,6 +5,7 @@ import {
   getDefaultSourceSubtype,
   getSourceSubtypeGroups,
   resolveTrendsCatalogVariant,
+  subscribeTrendsSourceCatalog,
 } from "../src/utils/sourceSubtypes.js";
 
 const catalog = {
@@ -52,6 +53,25 @@ assert.equal(resolveTrendsCatalogVariant("weibo", { type: "life" }), "life");
 assert.equal(resolveTrendsCatalogVariant("weibo", { type: "invalid" }), null);
 assert.equal(canFallbackTrendsCatalogVariant("weibo", "hot"), true);
 assert.equal(canFallbackTrendsCatalogVariant("weibo", "entertainment"), false);
+
+let catalogChangeCount = 0;
+const unsubscribe = subscribeTrendsSourceCatalog(() => { catalogChangeCount += 1; });
+const expandedCatalog = structuredClone(catalog);
+const expandedWeibo = expandedCatalog.sources.find((source) => source.key === "weibo");
+expandedWeibo.variantGroups[0].options.push(
+  { key: "tech", label: "科技榜" },
+  { key: "sports", label: "体育榜" },
+  { key: "acg", label: "ACG榜" },
+);
+applyTrendsSourceCatalog(expandedCatalog);
+assert.equal(catalogChangeCount, 1, "catalog subscribers must observe backend variant expansion");
+assert.deepEqual(
+  getSourceSubtypeGroups("weibo").flatMap((group) => group.items.map((item) => item.value)),
+  ["hot", "entertainment", "life", "social", "tech", "sports", "acg"],
+);
+applyTrendsSourceCatalog(expandedCatalog);
+assert.equal(catalogChangeCount, 1, "re-applying the same catalog must not emit a false change");
+unsubscribe();
 assert.deepEqual(
   getSourceSubtypeGroups("google-trends").flatMap((group) => group.items.map((item) => item.value)),
   ["us", "jp", "gb", "kr", "in", "de", "fr", "br", "ca", "au"],
