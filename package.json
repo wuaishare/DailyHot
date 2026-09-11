@@ -17,7 +17,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "prebuild": "npm run audit:trends-catalog:contract && node scripts/generate-seo-files.js",
+    "prebuild": "npm run audit:trends-catalog:contract && npm run audit:category-integrity && node scripts/generate-seo-files.js",
     "build": "vite build",
     "postbuild": "node scripts/generate-route-shells.cjs && npm run audit:seo-shells",
     "preview": "vite preview",
@@ -32,7 +32,8 @@
     "audit:fallback": "node scripts/audit-api-fallback.mjs",
     "audit:trends-intelligence": "node scripts/audit-trends-intelligence-proxy.mjs",
     "deploy:prod": "node scripts/vercel-deploy-prod.cjs",
-    "submit:indexnow": "node scripts/submit-indexnow.cjs"
+    "submit:indexnow": "node scripts/submit-indexnow.cjs",
+    "audit:category-integrity": "node scripts/audit-category-integrity.mjs"
   },
   "dependencies": {
     "@icon-park/vue-next": "^1.4.2",
