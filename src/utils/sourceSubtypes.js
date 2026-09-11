@@ -950,9 +950,24 @@ const SOURCE_SUBTYPE_GROUPS = {
 const AGGREGATE_SUBTYPE_SOURCES = ["clawhub"];
 const REMOTE_SOURCE_SUBTYPE_GROUPS = new Map();
 const REMOTE_SOURCE_DEFAULT_SUBTYPES = new Map();
+const REMOTE_SOURCE_CATALOG_LISTENERS = new Set();
+let REMOTE_SOURCE_CATALOG_SIGNATURE = "";
+
+const projectionSignature = (projection) => JSON.stringify({
+  groups: [...projection.groupsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
+  defaults: [...projection.defaultsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
+});
+
+export const subscribeTrendsSourceCatalog = (listener) => {
+  if (typeof listener !== "function") return () => {};
+  REMOTE_SOURCE_CATALOG_LISTENERS.add(listener);
+  return () => REMOTE_SOURCE_CATALOG_LISTENERS.delete(listener);
+};
 
 export const applyTrendsSourceCatalog = (catalog = {}) => {
   const projection = projectTrendsCatalog(catalog, SOURCE_SUBTYPE_GROUPS);
+  const nextSignature = projectionSignature(projection);
+  const changed = nextSignature !== REMOTE_SOURCE_CATALOG_SIGNATURE;
   REMOTE_SOURCE_SUBTYPE_GROUPS.clear();
   REMOTE_SOURCE_DEFAULT_SUBTYPES.clear();
   for (const [sourceName, groups] of projection.groupsBySource) {
@@ -960,6 +975,10 @@ export const applyTrendsSourceCatalog = (catalog = {}) => {
   }
   for (const [sourceName, defaultSubtype] of projection.defaultsBySource) {
     REMOTE_SOURCE_DEFAULT_SUBTYPES.set(sourceName, defaultSubtype);
+  }
+  REMOTE_SOURCE_CATALOG_SIGNATURE = nextSignature;
+  if (changed) {
+    for (const listener of REMOTE_SOURCE_CATALOG_LISTENERS) listener();
   }
   return REMOTE_SOURCE_SUBTYPE_GROUPS.size;
 };
