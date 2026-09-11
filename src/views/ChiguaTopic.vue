@@ -54,7 +54,6 @@
             <CompactFilter v-model="activeCategory" :label="ui.category" :aria-label="ui.category" :options="categoryOptions" />
             <CompactFilter v-model="activeSource" :label="ui.source" :aria-label="ui.source" :options="sourceOptions" />
             <CompactFilter v-model="activeSort" :label="ui.sort" :aria-label="ui.sort" :options="sortOptions" :show-count="false" />
-            <CompactFilter v-model="pageSize" :label="ui.perPage" :aria-label="ui.perPage" :options="pageSizeOptions" :show-count="false" :default-value="30" />
             <button v-if="hasFilters" type="button" class="reset-filter" @click="resetFilters">{{ ui.reset }}</button>
           </div>
           <div class="toolbar-actions">
@@ -165,16 +164,10 @@
               >
               <span
                 v-for="confirmation in visibleConfirmations(item)"
-                :key="`${item.id}-${confirmation.source}`"
+                :key="`${item.id}-${confirmation.source}-${confirmation.variant || 'default'}`"
                 class="source-pill"
               >
-                {{
-                  getSourceLabel(
-                    confirmation.source,
-                    locale,
-                    confirmation.sourceLabel || confirmation.source,
-                  )
-                }}
+                {{ evidenceLabel(confirmation, { includeRole: true }) }}
               </span>
             </div>
           </div>
@@ -187,7 +180,17 @@
           >
         </article>
         <div class="event-pagination">
-          <span>{{ pageRangeText }}</span>
+          <div class="event-pagination__meta">
+            <span>{{ pageRangeText }}</span>
+            <CompactFilter
+              v-model="pageSize"
+              :label="ui.perPage"
+              :aria-label="ui.perPage"
+              :options="pageSizeOptions"
+              :show-count="false"
+              :default-value="30"
+            />
+          </div>
           <n-pagination
             v-if="pageCount > 1"
             v-model:page="currentPage"
@@ -253,7 +256,10 @@ const showDegradedWarning = computed(() => failedSourceCount.value > 0);
 const UI_COPY = {
   "zh-CN": {
     events: "条事件",
-    sources: "个平台",
+    sources: "个核心榜单",
+    source: "核心榜单",
+    corroboration: "佐证",
+    support: "支撑",
     search: "搜索事件",
     searchPlaceholder: "搜索人物、事件、关键词…",
     matches: "条结果",
@@ -262,7 +268,6 @@ const UI_COPY = {
     filters: "吃瓜事件筛选",
     perPage: "每页",
     category: "分类",
-    source: "来源",
     sort: "排序",
     smart: "吃瓜热度",
     resonanceFirst: "共振优先",
@@ -291,7 +296,10 @@ const UI_COPY = {
   },
   en: {
     events: "events",
-    sources: "sources",
+    sources: "core boards",
+    source: "Core board",
+    corroboration: "corroboration",
+    support: "support",
     search: "Search events",
     searchPlaceholder: "Search people, events or keywords…",
     matches: "results",
@@ -300,7 +308,6 @@ const UI_COPY = {
     filters: "Entertainment filters",
     perPage: "Per page",
     category: "Category",
-    source: "Source",
     sort: "Sort",
     smart: "Buzz score",
     resonanceFirst: "Resonance first",
@@ -329,7 +336,10 @@ const UI_COPY = {
   },
   "zh-TW": {
     events: "筆事件",
-    sources: "個平台",
+    sources: "個核心榜單",
+    source: "核心榜單",
+    corroboration: "佐證",
+    support: "支撐",
     search: "搜尋事件",
     searchPlaceholder: "搜尋人物、事件、關鍵字…",
     matches: "筆結果",
@@ -338,7 +348,6 @@ const UI_COPY = {
     filters: "吃瓜事件篩選",
     perPage: "每頁",
     category: "分類",
-    source: "來源",
     sort: "排序",
     smart: "吃瓜熱度",
     resonanceFirst: "共振優先",
@@ -367,7 +376,10 @@ const UI_COPY = {
   },
   ja: {
     events: "件",
-    sources: "情報源",
+    sources: "主要ランキング",
+    source: "主要ランキング",
+    corroboration: "補強",
+    support: "補助",
     search: "話題を検索",
     searchPlaceholder: "人物・出来事・キーワードを検索…",
     matches: "件",
@@ -376,7 +388,6 @@ const UI_COPY = {
     filters: "エンタメフィルター",
     perPage: "件数",
     category: "分類",
-    source: "情報源",
     sort: "並び順",
     smart: "話題度",
     resonanceFirst: "共振優先",
@@ -405,7 +416,10 @@ const UI_COPY = {
   },
   ko: {
     events: "개 이슈",
-    sources: "개 출처",
+    sources: "개 핵심 랭킹",
+    source: "핵심 랭킹",
+    corroboration: "보강",
+    support: "지원",
     search: "이슈 검색",
     searchPlaceholder: "인물, 사건, 키워드 검색…",
     matches: "개 결과",
@@ -414,7 +428,6 @@ const UI_COPY = {
     filters: "엔터테인먼트 필터",
     perPage: "페이지당",
     category: "분류",
-    source: "출처",
     sort: "정렬",
     smart: "화제 점수",
     resonanceFirst: "공명 우선",
@@ -473,26 +486,44 @@ const confirmations = (item) =>
   Array.isArray(eventMeta(item).confirmations)
     ? eventMeta(item).confirmations
     : [];
+const evidenceKey = (entry) =>
+  `${entry?.source || ""}::${entry?.variant || ""}`;
+const sourceNameForEvidence = (entry) => {
+  const canonical = String(entry?.sourceLabel || "").trim();
+  if (locale.value === "zh-CN" && canonical) return canonical;
+  return getSourceLabel(
+    entry?.source,
+    locale.value,
+    canonical || entry?.source || "",
+  );
+};
+const evidenceLabel = (entry, { includeRole = false } = {}) => {
+  const source = sourceNameForEvidence(entry);
+  const variant = String(entry?.variantLabel || "").trim();
+  const role =
+    entry?.role === "corroboration"
+      ? ui.value.corroboration
+      : entry?.role === "support"
+        ? ui.value.support
+        : "";
+  return [source, variant, includeRole ? role : ""].filter(Boolean).join(" · ");
+};
 const primarySource = (item) =>
   confirmations(item)[0]?.source || eventSources(item)[0] || "douyin";
 const sourceLabel = (item) =>
-  getSourceLabel(
-    primarySource(item),
-    locale.value,
-    confirmations(item)[0]?.sourceLabel || primarySource(item),
-  );
+  confirmations(item)[0]
+    ? evidenceLabel(confirmations(item)[0])
+    : getSourceLabel(primarySource(item), locale.value, primarySource(item));
 const categoryLabel = (category) => ui.value.categories[category] || category;
-const visibleConfirmations = (item) => confirmations(item).slice(0, 4);
+const visibleConfirmations = (item) => confirmations(item).slice(1, 5);
 const confirmationTitle = (item) =>
   confirmations(item)
-    .map((entry) =>
-      getSourceLabel(
-        entry.source,
-        locale.value,
-        entry.sourceLabel || entry.source,
-      ),
-    )
+    .map((entry) => evidenceLabel(entry, { includeRole: true }))
     .join(" + ");
+const coreEvidenceKeys = (item) =>
+  confirmations(item)
+    .filter((entry) => entry.role === "primary" || entry.role === "support")
+    .map(evidenceKey);
 const textFor = (item) =>
   `${item.title || ""} ${item.desc || ""} ${confirmationTitle(item)}`.toLowerCase();
 const isResonanceItem = (item) => eventSourceCount(item) > 1;
@@ -510,34 +541,38 @@ const categoryOptions = computed(() => [
   })).filter((item) => item.count > 0),
 ]);
 const sourceOptions = computed(() => {
-  const feeds = dashboard.value?.feeds || [];
-  const failed = feeds.filter((feed) => feed.status === "failed").length;
+  const evidence = new Map();
+  for (const item of data.value) {
+    const seen = new Set();
+    for (const entry of confirmations(item)) {
+      if (entry.role !== "primary" && entry.role !== "support") continue;
+      const key = evidenceKey(entry);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const current = evidence.get(key) || { entry, count: 0 };
+      current.count += 1;
+      evidence.set(key, current);
+    }
+  }
+  const options = [...evidence.entries()]
+    .map(([value, current]) => ({
+      value,
+      label: evidenceLabel(current.entry),
+      count: current.count,
+      status: "ok",
+      detail:
+        current.entry.role === "support" ? ui.value.support : current.entry.variantLabel || "",
+    }))
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
   return [
     {
       value: "all",
       label: ui.value.all,
       count: data.value.length,
-      status: failed ? "partial" : "ok",
-      detail: failed ? copy.value.degraded : formatUpdated(result.value?.updateTime),
+      status: failedSourceCount.value ? "partial" : "ok",
+      detail: failedSourceCount.value ? copy.value.degraded : formatUpdated(result.value?.updateTime),
     },
-    ...feeds
-      .filter((feed) => feed.count > 0)
-      .map((feed) => ({
-        value: feed.source,
-        label: getSourceLabel(
-          feed.source,
-          locale.value,
-          feed.label || feed.source,
-        ),
-        count: data.value.filter((item) =>
-          eventSources(item).includes(feed.source),
-        ).length,
-        status: feed.status === "failed" ? "failed" : "ok",
-        detail:
-          feed.status === "failed"
-            ? feed.message || copy.value.degraded
-            : (feed.variants || []).join(" · "),
-      })),
+    ...options,
   ];
 });
 const sortOptions = computed(() => [
@@ -560,7 +595,7 @@ const filteredData = computed(() => {
       return false;
     if (
       activeSource.value !== "all" &&
-      !eventSources(item).includes(activeSource.value)
+      !coreEvidenceKeys(item).includes(activeSource.value)
     )
       return false;
     if (activeConfirmed.value && !isResonanceItem(item)) return false;
@@ -603,7 +638,7 @@ const handlePageChange = () => {
   });
 };
 
-const FEATURED_LANE_LIMIT = 5;
+const FEATURED_LANE_LIMIT = 3;
 const featuredGroups = computed(() => {
   const byScore = (items) =>
     items.slice().sort(
@@ -622,16 +657,7 @@ const featuredGroups = computed(() => {
       filter: { category },
     };
   };
-  const resonanceItems = byScore(data.value.filter((item) => isResonanceItem(item)));
   return [
-    {
-      key: "resonance",
-      label: ui.value.featured.resonance,
-      count: resonanceItems.length,
-      items: resonanceItems.slice(0, FEATURED_LANE_LIMIT),
-      actionLabel: `${viewAllLabel.value} ${resonanceItems.length}`,
-      filter: { confirmed: true },
-    },
     lane("gossip", "gossip"),
     lane("celebrity", "celebrity"),
     lane("filmTv", "film-tv"),
@@ -793,6 +819,7 @@ const normalizeTopicFeed = (feed) => {
       sourceLabel: source.sourceName || source.sourceKey,
       variant: source.variant,
       variantLabel: source.variantLabel,
+      role: source.role,
       rank: source.rank,
       url: source.url,
     }));
@@ -828,7 +855,11 @@ const normalizeTopicFeed = (feed) => {
     updateTime: feed?.generatedAt || new Date().toISOString(),
     data,
     dashboard: {
-      sourceCount: [...new Set(targets.filter((target) => target.status === "active").map((target) => target.sourceKey))].length,
+      sourceCount: targets.filter(
+        (target) =>
+          target.status === "active" &&
+          (target.role === "primary" || target.role === "support"),
+      ).length,
       failedSourceCount: targets.filter((target) => target.status === "failed").length,
       total: data.length,
       multiSourceCount: Number(feed?.coverage?.multiSourceEventCount || 0),
@@ -1050,6 +1081,14 @@ watch(locale, () => void loadTopic(false));
     order: 3;
     flex-basis: 100%;
   }
+}
+.chigua-topic :deep(.topic-lane-grid) {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.chigua-topic :deep(.topic-lane) {
+  padding: 8px;
 }
 .event-lane-item {
   display: grid;
@@ -1279,6 +1318,19 @@ watch(locale, () => void loadTopic(false));
   border: 0;
 }
 
+.event-pagination__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.event-pagination__meta :deep(.compact-filter) {
+  max-width: 110px;
+}
+@media (max-width: 1100px) and (min-width: 721px) {
+  .chigua-topic :deep(.topic-lane-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media (max-width: 720px) {
   .chigua-topic {
     gap: 10px;
