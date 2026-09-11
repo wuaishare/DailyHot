@@ -102,6 +102,14 @@
         </template>
       </TopicLaneGrid>
 
+      <TrendIntelligenceStrip
+        v-if="trendItems.length"
+        :items="trendItems"
+        :total="trendMatchCount"
+        :window-seconds="result?.dynamics?.windowSeconds || 3600"
+        :locale="locale"
+      />
+
       <div v-if="loading && !result" class="topic-loading">
         <n-skeleton text :repeat="9" />
       </div>
@@ -209,6 +217,7 @@
 <script setup>
 import CompactFilter from "@/components/CompactFilter.vue";
 import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
+import TrendIntelligenceStrip from "@/components/TrendIntelligenceStrip.vue";
 import { getTopicFeed } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
@@ -531,6 +540,32 @@ const effectiveResonanceSourceCount = (item) => eventSourceCount(item);
 const resonanceMatchCount = computed(
   () => data.value.filter((item) => isResonanceItem(item)).length,
 );
+const TREND_SIGNAL_ORDER = ["reentry", "breakthrough", "rising", "falling", "new"];
+const trendMatchCount = computed(
+  () => data.value.filter((item) => Boolean(eventMeta(item).trend?.signal)).length,
+);
+const trendItems = computed(() => {
+  const buckets = new Map(TREND_SIGNAL_ORDER.map((signal) => [signal, []]));
+  for (const item of data.value) {
+    const trend = eventMeta(item).trend;
+    if (!trend?.signal || !buckets.has(trend.signal)) continue;
+    buckets.get(trend.signal).push({ ...item, trend });
+  }
+  for (const items of buckets.values()) {
+    items.sort((left, right) =>
+      Math.abs(Number(right.trend?.rankDelta || 0)) - Math.abs(Number(left.trend?.rankDelta || 0))
+      || eventScore(right) - eventScore(left));
+  }
+  const selected = [];
+  for (let round = 0; round < 2 && selected.length < 6; round += 1) {
+    for (const signal of TREND_SIGNAL_ORDER) {
+      const item = buckets.get(signal)?.[round];
+      if (item) selected.push(item);
+      if (selected.length >= 6) break;
+    }
+  }
+  return selected;
+});
 
 const categoryOptions = computed(() => [
   { value: "all", label: ui.value.all, count: data.value.length },
@@ -841,6 +876,7 @@ const normalizeTopicFeed = (feed) => {
           confirmations,
           bestRank: event.bestRank,
           currentWaveStartedAt: event.currentWaveStartedAt,
+          trend: event.trend || null,
         },
       },
     };
@@ -853,6 +889,7 @@ const normalizeTopicFeed = (feed) => {
     description: feed?.topic?.description || "",
     total: data.length,
     updateTime: feed?.generatedAt || new Date().toISOString(),
+    dynamics: feed?.dynamics || null,
     data,
     dashboard: {
       sourceCount: targets.filter(
