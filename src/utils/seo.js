@@ -1134,7 +1134,7 @@ const LIST_SEO_MAP = {
   sspai: {
     label: "少数派热榜",
     keywords: "少数派热榜,效率工具,数码生活",
-    description: "少数派热门文章榜，精选效率、工具与数码生活内容。",
+    description: "精选效率、工具与数码生活热门内容。",
   },
   thepaper: {
     label: "澎湃新闻热榜",
@@ -1144,7 +1144,7 @@ const LIST_SEO_MAP = {
   tieba: {
     label: "百度贴吧热议",
     keywords: "贴吧热议,贴吧热榜,百度贴吧",
-    description: "百度贴吧热议榜，汇总社区热门话题与讨论。",
+    description: "汇总社区热门话题与讨论。",
   },
   juejin: {
     label: "掘金热榜",
@@ -1217,9 +1217,9 @@ const LIST_SEO_MAP = {
     description: "英雄联盟热门榜单，覆盖赛事资讯与社区讨论。",
   },
   "netease-news": {
-    label: "网易新闻热榜",
-    keywords: "网易新闻热榜,新闻热点,资讯排行",
-    description: "网易新闻热点榜，聚合当下高关注度新闻。",
+    label: "网易新闻",
+    keywords: "网易新闻,新闻热点,热点资讯,新闻排行",
+    description: "聚合当下高关注度新闻、热点资讯与官方热榜数据。",
   },
   "openrouter-rankings": {
     label: "OpenRouter",
