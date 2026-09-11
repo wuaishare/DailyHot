@@ -284,6 +284,7 @@ import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { normalizeRankingBadges, resolveRankingBadgeIconUrl } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
+import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },
@@ -294,6 +295,7 @@ const route = useRoute();
 const router = useRouter();
 const store = mainStore();
 const rankingBadgeImageErrors = reactive({});
+const subtypeCatalogRevision = useTrendsCatalogRevision();
 const { locale: i18nLocale } = useI18n({ useScope: "global" });
 const locale = computed(() =>
   normalizeLocale(getLocaleFromRoute(route) || i18nLocale.value),
@@ -541,6 +543,7 @@ const stripText = (value = "") =>
     .trim();
 
 const sourceSubtypeFor = (sourceName) => {
+  subtypeCatalogRevision.value;
   const routeSubtype =
     sourcePageMode.value && sourceName === props.sourcePageSource
       ? route.params?.subtypeSlug || route.query?.subtype
@@ -657,6 +660,20 @@ watch(
     if (!sourcePageMode.value || !props.sourcePageSource) return;
     delete sourceResults[props.sourcePageSource];
     sourceStates[props.sourcePageSource] = "idle";
+    void loadActiveSources();
+  },
+);
+
+watch(
+  () => subtypeCatalogRevision.value,
+  () => {
+    const targets = sourcePageMode.value && props.sourcePageSource
+      ? [props.sourcePageSource]
+      : activeSources.value.map((source) => source.name);
+    for (const sourceName of targets) {
+      delete sourceResults[sourceName];
+      sourceStates[sourceName] = "idle";
+    }
     void loadActiveSources();
   },
 );

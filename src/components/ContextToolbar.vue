@@ -269,6 +269,7 @@ import {
   getSourceDisplayLabel,
   getSubtypeLabel,
 } from "@/utils/sourceLabels";
+import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
 import {
   TOPIC_REGISTRY,
   buildTopicPath,
@@ -568,9 +569,11 @@ const currentSourceLabel = computed(() => {
     item?.label || currentSourceName.value,
   );
 });
-const variantOptions = computed(() =>
-  getSourceSubtypeOptions(currentSourceName.value),
-);
+const subtypeCatalogRevision = useTrendsCatalogRevision();
+const variantOptions = computed(() => {
+  subtypeCatalogRevision.value;
+  return getSourceSubtypeOptions(currentSourceName.value);
+});
 const currentVariant = computed(() =>
   resolveSourceSubtype(
     variantOptions.value,

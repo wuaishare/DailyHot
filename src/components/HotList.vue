@@ -467,9 +467,9 @@ import {
   persistSourceSubtype,
   readSourceSubtype,
   resolveSourceSubtype,
-  subscribeTrendsSourceCatalog,
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo } from "@/utils/sourceLogos";
+import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
 import { getPublicAssetUrl } from "@/utils/publicAssets";
 import {
   getFundMetricView,
@@ -790,8 +790,7 @@ const syncReadableTitleDom = (items = []) => {
     });
   });
 };
-const subtypeCatalogRevision = ref(0);
-let unsubscribeTrendsSourceCatalog = null;
+const subtypeCatalogRevision = useTrendsCatalogRevision();
 const subtypeGroups = computed(() => {
   subtypeCatalogRevision.value;
   return localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value);
@@ -1472,9 +1471,6 @@ watch(
 );
 
 onMounted(() => {
-  unsubscribeTrendsSourceCatalog = subscribeTrendsSourceCatalog(() => {
-    subtypeCatalogRevision.value += 1;
-  });
   updateIsDesktop();
   if (isClient) {
     window.addEventListener("resize", updateIsDesktop);
@@ -1505,8 +1501,6 @@ onDeactivated(() => {
 });
 
 onBeforeUnmount(() => {
-  unsubscribeTrendsSourceCatalog?.();
-  unsubscribeTrendsSourceCatalog = null;
   if (isClient) {
     window.removeEventListener("resize", updateIsDesktop);
     window.removeEventListener("dailyhot:hide-item-preview", handleGlobalPreviewClose);
