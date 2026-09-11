@@ -1288,10 +1288,28 @@ export const mainStore = defineStore("mainData", {
       const current = normalizeCategoryTree(
         Array.isArray(this.categories) ? this.categories : [],
       );
-      const mergedBuiltin = BUILTIN_CATEGORIES.map((builtin) => {
-        const existing = current.find(
-          (item) => item?.id === builtin.id || item?.name === builtin.name,
+      const refAliases = new Map();
+      const nameAliases = new Map();
+      const registerAlias = (item, canonical) => {
+        if (!item || !canonical) return;
+        [item.id, item.name, item.slug].filter(Boolean).forEach((ref) => {
+          refAliases.set(String(ref), canonical.id);
+        });
+        if (item.name && item.name !== canonical.name) {
+          nameAliases.set(String(item.name), canonical.name);
+        }
+      };
+      const builtinMatch = (item) =>
+        BUILTIN_CATEGORIES.find(
+          (builtin) =>
+            builtin.id === item?.id ||
+            builtin.name === item?.name ||
+            (item?.slug && builtin.slug === item.slug),
         );
+      current.forEach((item) => registerAlias(item, builtinMatch(item)));
+      const mergedBuiltin = BUILTIN_CATEGORIES.map((builtin) => {
+        const existing = current.find((item) => builtinMatch(item)?.id === builtin.id);
+        registerAlias(existing, builtin);
         return {
           ...builtin,
           ...existing,
@@ -1305,22 +1323,53 @@ export const mainStore = defineStore("mainData", {
           builtin: true,
         };
       });
-      const custom = current
-        .filter(
-          (item) =>
-            item &&
-            !BUILTIN_CATEGORIES.some(
-              (builtin) => builtin.id === item.id || builtin.name === item.name,
-            ),
-        )
-        .map((item, index) => ({
+      const custom = [];
+      const customIdentity = new Map();
+      current
+        .filter((item) => item && !builtinMatch(item))
+        .forEach((item) => {
+          const keys = [item.id, item.name, item.slug].filter(Boolean).map(String);
+          const duplicateId = keys.map((key) => customIdentity.get(key)).find(Boolean);
+          if (duplicateId) {
+            const canonical = custom.find((candidate) => candidate.id === duplicateId);
+            registerAlias(item, canonical);
+            return;
+          }
+          const canonical = {
+            ...item,
+            order: Number.isFinite(Number(item.order))
+              ? Number(item.order)
+              : BUILTIN_CATEGORIES.length + custom.length,
+            builtin: false,
+          };
+          custom.push(canonical);
+          keys.forEach((key) => customIdentity.set(key, canonical.id));
+          registerAlias(item, canonical);
+        });
+      const resolveRef = (ref) => refAliases.get(String(ref || "")) || String(ref || "");
+      const remapCategoryRefs = (list = []) =>
+        list.map((item) => {
+          if (!Array.isArray(item?.categoryIds)) return item;
+          const categoryIds = [...new Set(item.categoryIds.map(resolveRef).filter(Boolean))];
+          return { ...item, categoryIds };
+        });
+      this.categories = mergedBuiltin.concat(
+        custom.map((item) => ({
           ...item,
-          order: Number.isFinite(Number(item.order))
-            ? Number(item.order)
-            : BUILTIN_CATEGORIES.length + index,
-          builtin: false,
-        }));
-      this.categories = mergedBuiltin.concat(custom);
+          parentId: item.parentId ? resolveRef(item.parentId) : null,
+        })),
+      );
+      this.defaultNewsArr = remapCategoryRefs(this.defaultNewsArr);
+      this.newsArr = remapCategoryRefs(this.newsArr);
+      this.categoryViewModes = Object.fromEntries(
+        Object.entries(this.categoryViewModes || {}).map(([ref, mode]) => [
+          resolveRef(ref),
+          mode,
+        ]),
+      );
+      if (nameAliases.has(this.activeCategory)) {
+        this.activeCategory = nameAliases.get(this.activeCategory);
+      }
       if (
         this.activeCategory !== "全部" &&
         !this.categories.some((item) => item.name === this.activeCategory)
@@ -1558,13 +1607,21 @@ export const mainStore = defineStore("mainData", {
     },
     renameCategory(id, newName) {
       const cleanName = String(newName || "").trim();
-      if (!cleanName) return;
+      if (!cleanName) return false;
       const cat = getCategoryByRef(this.categories, id);
-      if (!cat || cat.builtin) return;
+      if (!cat || cat.builtin) return false;
+      if (
+        this.categories.some(
+          (item) => item.id !== cat.id && item.name === cleanName,
+        )
+      ) {
+        return false;
+      }
       cat.name = cleanName;
       this.newsArr = this.newsArr.map((item) =>
         syncLegacyPrimaryCategory(item, this.categories),
       );
+      return true;
     },
     moveCategory(id, parentId = null) {
       const cat = getCategoryByRef(this.categories, id);
