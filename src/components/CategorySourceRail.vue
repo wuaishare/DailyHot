@@ -63,12 +63,14 @@
               </button>
             </div>
             <div class="category-source-section__tools">
-              <span class="category-source-section__time">{{ sourceUpdateTime(source.name) || copy.updateFailed }}</span>
+              <div class="category-source-section__freshness">
+                <span class="category-source-section__time">{{ sourceUpdateTime(source.name) || copy.updateFailed }}</span>
+                <button type="button" class="category-source-section__tool" :class="{ loading: sourceStates[source.name] === 'loading' }" :title="copy.refreshLatest" :aria-label="copy.refreshLatest" @click.stop="loadSource(source, true)">
+                  <Refresh />
+                </button>
+              </div>
               <button type="button" class="category-source-section__tool category-source-section__drag" :title="copy.dragSort" :aria-label="copy.dragSort">
                 <Drag />
-              </button>
-              <button type="button" class="category-source-section__tool" :class="{ loading: sourceStates[source.name] === 'loading' }" :title="copy.refreshLatest" :aria-label="copy.refreshLatest" @click.stop="loadSource(source, true)">
-                <Refresh />
               </button>
               <router-link class="category-source-section__more" :to="sourcePath(source)">
                 {{ copy.viewRanking }} <span aria-hidden="true">→</span>
@@ -105,10 +107,12 @@
                 @error="hideBrokenCover"
               />
               <div class="category-story-card__scrim"></div>
-              <span class="category-story-card__rank">#{{ entry.rank }}</span>
-              <div v-if="entry.suffixBadges.length" class="category-story-card__badges" aria-label="标签">
-                <span v-for="(badge, badgeIndex) in entry.suffixBadges" :key="`${badge.kind}-${badge.label}-${badgeIndex}`" :class="`is-${badge.kind}`" :title="badge.label">{{ badge.label }}</span>
-              </div>
+              <span class="category-story-card__rank">{{ entry.rank }}</span>
+              <RankingBadgeGroup
+                v-if="entry.suffixBadges.length"
+                class="category-story-card__badges"
+                :badges="entry.suffixBadges"
+              />
               <div class="category-story-card__content">
                 <div class="category-story-card__title">{{ entry.title }}</div>
                 <p v-if="entry.description">{{ entry.description }}</p>
@@ -131,6 +135,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import draggable from 'vuedraggable';
 import { Drag, Refresh } from '@icon-park/vue-next';
+import RankingBadgeGroup from '@/components/RankingBadgeGroup.vue';
 import { mainStore } from '@/store';
 import { getSharedRanking } from '@/utils/rankingCollection';
 import {
@@ -522,6 +527,7 @@ onBeforeUnmount(() => {
 .category-source-section__subtype:hover { background: var(--csr-panel-soft); color: var(--csr-text); }
 .category-source-section__subtype.active { background: color-mix(in srgb, var(--csr-primary) 11%, var(--csr-panel-soft)); color: var(--csr-primary); font-weight: 730; }
 .category-source-section__tools { display: flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 0; }
+.category-source-section__freshness { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
 .category-source-section__time { max-width: 92px; overflow: hidden; color: var(--csr-text-3); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .category-source-section__tool { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--csr-text-3); cursor: pointer; }
 .category-source-section__tool:hover { background: var(--csr-panel-soft); color: var(--csr-text); }
@@ -591,26 +597,25 @@ onBeforeUnmount(() => {
   left: 10px;
   padding: 3px 7px;
   border-radius: 999px;
-  background: rgba(12,14,18,.58);
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(12,14,18,.48);
+  box-shadow: 0 3px 10px rgba(0,0,0,.16);
   color: #fff;
   font-size: 10px;
   font-weight: 800;
-  backdrop-filter: blur(8px) saturate(1.15);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
 }
 .category-story-card:not(.has-cover) {
   background:
     radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--csr-primary) 9%, transparent), transparent 34%),
     linear-gradient(145deg, var(--csr-panel), var(--csr-panel-soft));
 }
-.category-story-card:not(.has-cover) .category-story-card__rank { background: color-mix(in srgb, var(--csr-primary) 10%, var(--csr-panel)); color: var(--csr-primary); }
-.category-story-card.is-one .category-story-card__rank { background: #ea444d; color: #fff; }
-.category-story-card.is-two .category-story-card__rank { background: #ed702d; color: #fff; }
-.category-story-card.is-three .category-story-card__rank { background: #eead3f; color: #fff; }
-.category-story-card__badges { position: absolute; top: 10px; right: 10px; z-index: 2; display: flex; gap: 4px; max-width: calc(100% - 68px); }
-.category-story-card__badges span { display: inline-flex; align-items: center; min-height: 20px; padding: 2px 6px; border-radius: 999px; background: rgba(12,14,18,.58); color: #fff; font-size: 9px; font-weight: 760; line-height: 1; backdrop-filter: blur(6px); }
-.category-story-card:not(.has-cover) .category-story-card__badges span { background: color-mix(in srgb, var(--csr-primary) 9%, var(--csr-panel)); color: var(--csr-primary); }
-.category-story-card__badges .is-new { background: rgba(24,160,88,.86); }
-.category-story-card__badges .is-hot, .category-story-card__badges .is-explosive, .category-story-card__badges .is-boiling { background: rgba(234,68,77,.88); }
+.category-story-card:not(.has-cover) .category-story-card__rank { border-color: color-mix(in srgb, var(--csr-primary) 22%, transparent); background: color-mix(in srgb, var(--csr-primary) 12%, transparent); color: var(--csr-primary); }
+.category-story-card.is-one .category-story-card__rank { background: rgba(234,68,77,.84); color: #fff; }
+.category-story-card.is-two .category-story-card__rank { background: rgba(237,112,45,.84); color: #fff; }
+.category-story-card.is-three .category-story-card__rank { background: rgba(238,173,63,.84); color: #fff; }
+.category-story-card__badges { position: absolute; top: 10px; right: 10px; z-index: 2; max-width: calc(100% - 68px); }
 .category-story-card__content {
   position: absolute;
   inset: auto 0 0;
