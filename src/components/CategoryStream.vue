@@ -10,24 +10,6 @@
     }"
     :style="streamStyle"
   >
-    <div class="category-stream__status">
-      <div>
-        <span class="category-stream__status-dot" :class="{ loading: pendingCount }"></span>
-        <span>{{ statusText }}</span>
-      </div>
-      <n-popover v-if="failedCount" trigger="hover" placement="top-end" :show-arrow="false">
-        <template #trigger>
-          <button type="button" class="category-stream__retry" @click="retryFailed">
-            {{ copy.retryFailed.replace("{count}", String(failedCount)) }}
-          </button>
-        </template>
-        <div class="category-stream__failed-popover">
-          <strong>{{ copy.failedSources }}</strong>
-          <span v-for="label in failedSourceLabels" :key="label">{{ label }}</span>
-        </div>
-      </n-popover>
-    </div>
-
     <div v-if="!props.sources.length" class="category-stream__empty">
       {{ copy.noSources }}
     </div>
@@ -36,86 +18,93 @@
       <aside class="category-stream__rail category-stream__source-rail" :aria-label="copy.sourceNavigation">
         <div class="category-stream__rail-card">
           <div class="category-stream__rail-title">
-            <div>
-              <strong>{{ copy.sourceNavigation }}</strong>
-              <span>{{ props.sources.length }}</span>
-            </div>
+            <strong>{{ copy.sourceNavigation }}</strong>
+            <span>{{ props.sources.length }}</span>
           </div>
-
           <nav class="category-stream__toc" :aria-label="copy.sourceNavigation">
-            <div
+            <router-link
               v-for="source in props.sources"
               :key="source.name"
-              class="category-stream__toc-source"
+              class="category-stream__toc-source-link"
               :class="{ active: isActiveTocSource(source.name) }"
+              :to="sourceNavigationPathFor(source)"
+              :aria-current="isActiveTocSource(source.name) ? 'page' : undefined"
             >
-              <router-link
-                class="category-stream__toc-source-link"
-                :to="sourceNavigationPathFor(source)"
-                :aria-current="isActiveTocSource(source.name) ? 'page' : undefined"
-              >
-                <img
-                  :src="getSourceLogo(source.name)"
-                  :alt="sourceLabelFor(source)"
-                  @error="handleLogoError"
-                />
-                <span>{{ sourceLabelFor(source) }}</span>
-                <i
-                  v-if="isActiveTocSource(source.name) && sourceTocItemCount(source.name) > 1"
-                  class="category-stream__toc-caret"
-                  aria-hidden="true"
-                >⌄</i>
-              </router-link>
-
-              <div
-                v-if="isActiveTocSource(source.name) && sourceTocItemCount(source.name) > 1"
-                class="category-stream__toc-children"
-              >
-                <section
-                  v-for="group in sourceTocGroups(source.name)"
-                  :key="group.key || group.label"
-                  class="category-stream__toc-group"
-                >
-                  <span
-                    v-if="sourceTocGroups(source.name).length > 1 && group.label"
-                    class="category-stream__toc-group-label"
-                  >{{ group.label }}</span>
-                  <router-link
-                    v-for="item in group.items || []"
-                    :key="item.value"
-                    class="category-stream__toc-child"
-                    :class="{ active: isActiveTocVariant(source.name, item.value) }"
-                    :to="sourceVariantPathFor(source.name, item.value)"
-                    :aria-current="isActiveTocVariant(source.name, item.value) ? 'page' : undefined"
-                  >
-                    <span class="category-stream__toc-marker" aria-hidden="true"></span>
-                    <span>{{ item.label }}</span>
-                  </router-link>
-                </section>
-              </div>
-            </div>
+              <img :src="getSourceLogo(source.name)" :alt="sourceLabelFor(source)" @error="handleLogoError" />
+              <span>{{ sourceLabelFor(source) }}</span>
+            </router-link>
           </nav>
         </div>
       </aside>
 
-      <div class="category-stream__main">
+      <main class="category-stream__main">
+        <header v-if="sourcePageMode && currentPageSource" class="category-stream__context">
+          <div class="category-stream__context-top">
+            <div class="category-stream__context-identity">
+              <img :src="getSourceLogo(currentPageSource.name)" :alt="sourceLabelFor(currentPageSource)" @error="handleLogoError" />
+              <div>
+                <span>{{ sourceLabelFor(currentPageSource) }}</span>
+                <h1>{{ currentVariantLabel }}</h1>
+              </div>
+            </div>
+            <div class="category-stream__context-status">
+              <span class="category-stream__status-dot" :class="{ loading: pendingCount }"></span>
+              <span>{{ statusText }}</span>
+              <n-popover v-if="failedCount" trigger="hover" placement="top-end" :show-arrow="false">
+                <template #trigger>
+                  <button type="button" class="category-stream__retry" @click="retryFailed">
+                    {{ copy.retryFailed.replace("{count}", String(failedCount)) }}
+                  </button>
+                </template>
+                <div class="category-stream__failed-popover">
+                  <strong>{{ copy.failedSources }}</strong>
+                  <span v-for="label in failedSourceLabels" :key="label">{{ label }}</span>
+                </div>
+              </n-popover>
+            </div>
+          </div>
+
+          <nav v-if="sourceTocItemCount(currentPageSource.name) > 1" class="category-stream__variant-nav" aria-label="榜单分类">
+            <section
+              v-for="group in sourceTocGroups(currentPageSource.name)"
+              :key="group.key || group.label"
+              class="category-stream__variant-group"
+            >
+              <span v-if="sourceTocGroups(currentPageSource.name).length > 1 && group.label" class="category-stream__variant-group-label">
+                {{ group.label }}
+              </span>
+              <div class="category-stream__variant-tabs">
+                <router-link
+                  v-for="item in group.items || []"
+                  :key="item.value"
+                  class="category-stream__variant-tab"
+                  :class="{ active: isActiveTocVariant(currentPageSource.name, item.value) }"
+                  :to="sourceVariantPathFor(currentPageSource.name, item.value)"
+                  :aria-current="isActiveTocVariant(currentPageSource.name, item.value) ? 'page' : undefined"
+                >
+                  {{ item.label }}
+                </router-link>
+              </div>
+            </section>
+          </nav>
+        </header>
+
         <div v-if="!visibleEntries.length && pendingCount" class="category-stream__skeleton">
           <div v-for="index in 8" :key="index"></div>
         </div>
-
         <div v-else-if="!visibleEntries.length" class="category-stream__empty">
           {{ queryText ? copy.noSearchResults : copy.noEntries }}
         </div>
-
         <div v-else class="category-stream__list">
-          <article v-for="entry in pagedEntries" :key="entry.key" class="category-stream__row">
-            <div
-              class="category-stream__rank"
-              :class="rankTone(entry.rank, entry.isPinned)"
-              :title="entry.isPinned ? '置顶' : undefined"
-            >
+          <article
+            v-for="entry in pagedEntries"
+            :key="entry.key"
+            class="category-stream__row"
+            :class="{ 'has-media': !minimalMode && showImages && Boolean(entry.cover) }"
+          >
+            <div class="category-stream__rank" :class="rankTone(entry.rank, entry.isPinned)" :title="entry.isPinned ? '置顶' : undefined">
               <UiGlyph v-if="entry.isPinned" class="category-stream__pin-icon" name="pin" aria-hidden="true" />
-              <template v-else><span>#</span>{{ entry.rank }}</template>
+              <template v-else>{{ entry.rank }}</template>
             </div>
 
             <a
@@ -127,60 +116,21 @@
             >
               <img :src="coverSrc(entry.cover)" alt="" loading="lazy" @error="hideBrokenMedia" />
             </a>
-            <router-link
-              v-else-if="!minimalMode"
-              class="category-stream__media is-logo"
-              :to="entry.sourcePath"
-              :title="entry.sourceLabel"
-            >
-              <img :src="entry.sourceLogo" :alt="entry.sourceLabel" @error="handleLogoError" />
-            </router-link>
 
             <div class="category-stream__content-wrap">
-              <router-link
-                v-if="!sourcePageMode && !minimalMode"
-                class="category-stream__source-line"
-                :to="entry.sourcePath"
-              >
-                {{ entry.sourceLabel }}
-              </router-link>
-              <a
-                class="category-stream__content"
-                :href="entry.href"
-                :target="linkTarget"
-                rel="noopener noreferrer nofollow"
-              >
+              <a class="category-stream__content" :href="entry.href" :target="linkTarget" rel="noopener noreferrer nofollow">
                 <div class="category-stream__title-row">
-                  <span v-if="minimalMode && !sourcePageMode" class="category-stream__source-inline">
-                    {{ entry.sourceLabel }}
-                  </span>
-                  <span
-                    v-if="entry.inlinePrefixBadges.length"
-                    class="category-stream__badges is-prefix notranslate"
-                    translate="no"
-                  >
+                  <span v-if="entry.inlinePrefixBadges.length" class="category-stream__badges is-prefix notranslate" translate="no">
                     <span
                       v-for="(badge, badgeIndex) in entry.inlinePrefixBadges"
                       :key="`prefix-${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
                       class="category-stream__badge"
-                      :class="[
-                        `is-${badge.kind}`,
-                        {
-                          'is-strong': badge.prominence === 'strong',
-                          'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)),
-                        },
-                      ]"
+                      :class="[`is-${badge.kind}`, { 'is-strong': badge.prominence === 'strong', 'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)) }]"
                       role="img"
                       :title="badge.label"
                       :aria-label="badge.label"
                     >
-                      <img
-                        v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
-                        :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
-                        alt=""
-                        loading="lazy"
-                        @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))"
-                      />
+                      <img v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)" :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)" alt="" loading="lazy" @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))" />
                       <span v-else aria-hidden="true">{{ badge.label }}</span>
                     </span>
                   </span>
@@ -190,103 +140,51 @@
                       v-for="(badge, badgeIndex) in entry.suffixBadges"
                       :key="`${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
                       class="category-stream__badge"
-                      :class="[
-                        `is-${badge.kind}`,
-                        {
-                          'is-strong': badge.prominence === 'strong',
-                          'is-animated': badge.animated,
-                          'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)),
-                        },
-                      ]"
+                      :class="[`is-${badge.kind}`, { 'is-strong': badge.prominence === 'strong', 'is-animated': badge.animated, 'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)) }]"
                       role="img"
                       :title="badge.label"
                       :aria-label="badge.label"
                     >
-                      <img
-                        v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
-                        :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
-                        alt=""
-                        loading="lazy"
-                        @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))"
-                      />
+                      <img v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)" :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)" alt="" loading="lazy" @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))" />
                       <span v-else aria-hidden="true">{{ badge.label }}</span>
                     </span>
                   </span>
                 </div>
-                <p v-if="showDescriptions && entry.description" class="category-stream__desc">
-                  {{ entry.description }}
-                </p>
-                <div v-if="showDescriptions && entry.hot" class="category-stream__meta">
-                  <span>{{ copy.heat }} {{ entry.hot }}</span>
+                <p v-if="showDescriptions && entry.description" class="category-stream__desc">{{ entry.description }}</p>
+                <div v-if="showDescriptions && (entry.hot || entry.author)" class="category-stream__meta">
+                  <span v-if="entry.hot">{{ copy.heat }} {{ entry.hot }}</span>
+                  <span v-if="entry.author">{{ entry.author }}</span>
                 </div>
               </a>
             </div>
           </article>
         </div>
-      </div>
+      </main>
 
       <aside class="category-stream__controls" :aria-label="copy.browseSettings">
         <div class="category-stream__controls-card">
-          <strong class="category-stream__controls-title">{{ copy.browseSettings }}</strong>
-
-          <div v-if="!sourcePageMode" class="category-stream__source-scope">
-            <span>{{ copy.sourceScope }}</span>
-            <n-select
-              size="tiny"
-              multiple
-              clearable
-              :max-tag-count="1"
-              :value="sourceFilterValue"
-              :options="sourceFilterOptions"
-              :placeholder="copy.allSources"
-              @update:value="updateSourceFilter"
-            />
+          <div class="category-stream__controls-heading">
+            <strong>{{ copy.browseSettings }}</strong>
+            <span>{{ currentPage }}/{{ pageCount }}</span>
           </div>
-
-          <label class="category-stream__control-row">
-            <span>{{ copy.perPage }}</span>
-            <n-select
-              size="tiny"
-              :show-checkmark="false"
-              :value="pageSize"
-              :options="pageSizeOptions"
-              @update:value="updatePageSize"
-            />
-          </label>
-
-          <div v-if="pageCount > 1" class="category-stream__pagination-block">
-            <span>{{ copy.pagination }}</span>
-            <n-pagination
-              size="small"
-              :page="currentPage"
-              :page-count="pageCount"
-              :page-slot="3"
-              @update:page="updatePage"
-            />
-          </div>
-
-          <label v-if="!sourcePageMode" class="category-stream__control-row">
-            <span>{{ copy.rankRange }}</span>
-            <n-select
-              size="tiny"
-              :show-checkmark="false"
-              :value="rankTo"
-              :options="rankOptions"
-              @update:value="updateRankTo"
-            />
-          </label>
-
-          <div class="category-stream__display-options">
-            <span>{{ copy.display }}</span>
-            <n-checkbox :checked="showDescriptions" @update:checked="setShowDescriptions">
-              {{ copy.summary }}
-            </n-checkbox>
-            <n-checkbox :checked="showImages" @update:checked="setShowImages">
-              {{ copy.images }}
-            </n-checkbox>
-          </div>
-
-          <p v-if="minimalMode" class="category-stream__minimal-hint">{{ copy.minimalHint }}</p>
+          <section class="category-stream__control-section">
+            <span class="category-stream__control-label">{{ copy.display }}</span>
+            <div class="category-stream__display-options">
+              <n-checkbox :checked="showDescriptions" @update:checked="setShowDescriptions">{{ copy.summary }}</n-checkbox>
+              <n-checkbox :checked="showImages" @update:checked="setShowImages">{{ copy.images }}</n-checkbox>
+            </div>
+            <p v-if="minimalMode" class="category-stream__minimal-hint">{{ copy.minimalHint }}</p>
+          </section>
+          <section class="category-stream__control-section">
+            <label class="category-stream__control-row">
+              <span>{{ copy.perPage }}</span>
+              <n-select size="tiny" :show-checkmark="false" :value="pageSize" :options="pageSizeOptions" @update:value="updatePageSize" />
+            </label>
+          </section>
+          <section v-if="pageCount > 1" class="category-stream__control-section category-stream__pagination-block">
+            <span class="category-stream__control-label">{{ copy.pagination }}</span>
+            <n-pagination size="small" :page="currentPage" :page-count="pageCount" :page-slot="3" @update:page="updatePage" />
+          </section>
         </div>
       </aside>
     </div>
@@ -721,6 +619,18 @@ const sourceLabelFor = (source) =>
     locale.value,
     source.label || source.name,
   );
+const currentPageSource = computed(() =>
+  props.sources.find((source) => source.name === props.sourcePageSource) || null,
+);
+const currentVariantLabel = computed(() => {
+  const source = currentPageSource.value;
+  if (!source) return "";
+  const current = currentTocSubtype.value;
+  const option = sourceTocGroups(source.name)
+    .flatMap((group) => group.items || [])
+    .find((item) => item.value === current);
+  return option?.label || sourceLabelFor(source);
+});
 const sourcePathFor = (source) =>
   buildRankPath(locale.value, source.name, sourceSubtypeFor(source.name) || "");
 
@@ -992,10 +902,9 @@ const handleLogoError = (event) => {
 const coverSrc = (cover) => getCoverDisplaySrc(cover);
 const hideBrokenMedia = (event) => {
   const media = event.target?.closest?.(".category-stream__media");
-  if (!media) return;
-  media.classList.remove("is-cover");
-  media.classList.add("is-logo");
-  event.target.src = getSourceLogoFallback();
+  const row = event.target?.closest?.(".category-stream__row");
+  media?.remove?.();
+  row?.classList.remove?.("has-media");
 };
 </script>
 
@@ -1805,6 +1714,489 @@ const hideBrokenMedia = (event) => {
 
   .category-stream__source-line {
     margin-bottom: 2px;
+  }
+}
+
+/* Ranking workbench: predictable scan path, quiet side rails, compact context. */
+.category-stream.is-source-page {
+  gap: 0;
+}
+
+.category-stream.is-source-page .category-stream__body {
+  display: grid;
+  grid-template-columns: 272px 720px 272px;
+  justify-content: center;
+  align-items: start;
+  gap: 24px;
+  box-sizing: border-box;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.category-stream.is-source-page .category-stream__rail,
+.category-stream.is-source-page .category-stream__controls {
+  position: sticky;
+  top: 82px;
+  min-width: 0;
+}
+
+.category-stream.is-source-page .category-stream__rail-card,
+.category-stream.is-source-page .category-stream__controls-card {
+  max-height: calc(100vh - 108px);
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.category-stream.is-source-page .category-stream__rail-card {
+  padding: 4px 8px 4px 0;
+}
+
+.category-stream.is-source-page .category-stream__rail-title {
+  padding: 4px 8px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--category-stream-border) 70%, transparent);
+  color: var(--category-stream-text-3);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .02em;
+}
+
+.category-stream.is-source-page .category-stream__toc {
+  gap: 1px;
+  padding-top: 7px;
+}
+
+.category-stream.is-source-page .category-stream__toc-source-link {
+  grid-template-columns: 24px minmax(0, 1fr);
+  min-height: 38px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: var(--category-stream-text-2);
+  font-weight: 580;
+}
+
+.category-stream.is-source-page .category-stream__toc-source-link.active {
+  background: color-mix(in srgb, var(--category-stream-primary) 9%, var(--category-stream-action));
+  color: var(--category-stream-primary);
+  box-shadow: inset 2px 0 0 var(--category-stream-primary);
+  font-weight: 700;
+}
+
+.category-stream.is-source-page .category-stream__toc-source-link img {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.category-stream.is-source-page .category-stream__main {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.category-stream__context {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--category-stream-border);
+  border-radius: 14px;
+  background: var(--category-stream-panel);
+}
+
+.category-stream__context-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.category-stream__context-identity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.category-stream__context-identity > img {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  object-fit: contain;
+}
+
+.category-stream__context-identity > div {
+  min-width: 0;
+}
+
+.category-stream__context-identity span {
+  display: block;
+  margin-bottom: 1px;
+  overflow: hidden;
+  color: var(--category-stream-text-3);
+  font-size: 10px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-stream__context-identity h1 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--category-stream-text);
+  font-size: 18px;
+  font-weight: 760;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-stream__context-status {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  color: var(--category-stream-text-3);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.category-stream__variant-nav {
+  display: grid;
+  gap: 7px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--category-stream-border) 70%, transparent);
+}
+
+.category-stream__variant-group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.category-stream__variant-group-label {
+  flex: 0 0 auto;
+  color: var(--category-stream-text-3);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.category-stream__variant-tabs {
+  display: flex;
+  min-width: 0;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.category-stream__variant-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.category-stream__variant-tab {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 7px;
+  color: var(--category-stream-text-2);
+  font-size: 11px;
+  font-weight: 620;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.category-stream__variant-tab:hover {
+  background: var(--category-stream-action);
+  color: var(--category-stream-text);
+}
+
+.category-stream__variant-tab.active {
+  background: color-mix(in srgb, var(--category-stream-primary) 11%, var(--category-stream-action));
+  color: var(--category-stream-primary);
+  font-weight: 730;
+}
+
+.category-stream.is-source-page .category-stream__list {
+  border-radius: 14px;
+}
+
+.category-stream.is-source-page .category-stream__row,
+.category-stream.is-source-page.shows-images .category-stream__row,
+.category-stream.is-source-page.is-compact .category-stream__row,
+.category-stream.is-source-page.is-compact.shows-images .category-stream__row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 68px;
+  padding: 9px 14px 9px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--category-stream-border) 72%, transparent);
+}
+
+.category-stream.is-source-page .category-stream__row.has-media,
+.category-stream.is-source-page.shows-images .category-stream__row.has-media {
+  grid-template-columns: 42px 84px minmax(0, 1fr);
+}
+
+.category-stream.is-source-page.is-compact .category-stream__row,
+.category-stream.is-source-page.is-compact.shows-images .category-stream__row {
+  min-height: 58px;
+  padding-block: 6px;
+}
+
+.category-stream.is-source-page.is-minimal .category-stream__row,
+.category-stream.is-source-page.is-minimal.is-compact .category-stream__row {
+  grid-template-columns: 42px minmax(0, 1fr);
+  height: 42px;
+  min-height: 42px;
+  padding-block: 3px;
+}
+
+.category-stream.is-source-page .category-stream__rank {
+  align-self: start;
+  padding-top: 2px;
+  color: var(--category-stream-text-3);
+  font-size: 16px;
+  font-weight: 720;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.category-stream.is-source-page .category-stream__rank.is-top {
+  color: var(--category-stream-primary);
+  font-size: 18px;
+  font-weight: 820;
+}
+
+.category-stream.is-source-page .category-stream__media {
+  width: 84px;
+  height: 52px;
+  border-radius: 8px;
+  background: var(--category-stream-action);
+}
+
+.category-stream.is-source-page .category-stream__title {
+  font-size: var(--category-stream-font-size, 15px);
+  font-weight: 650;
+  line-height: 1.38;
+}
+
+.category-stream.is-source-page .category-stream__desc {
+  margin-top: 3px;
+  line-height: 1.42;
+  -webkit-line-clamp: 2;
+}
+
+.category-stream.is-source-page .category-stream__meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 3px;
+  font-size: 10px;
+}
+
+.category-stream.is-source-page .category-stream__controls-card {
+  display: grid;
+  gap: 0;
+  padding: 4px 0 4px 8px;
+}
+
+.category-stream__controls-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--category-stream-border) 70%, transparent);
+}
+
+.category-stream__controls-heading strong {
+  color: var(--category-stream-text-2);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.category-stream__controls-heading span {
+  color: var(--category-stream-text-3);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.category-stream__control-section {
+  display: grid;
+  gap: 8px;
+  padding: 11px 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--category-stream-border) 58%, transparent);
+}
+
+.category-stream__control-section:last-child {
+  border-bottom: 0;
+}
+
+.category-stream__control-label {
+  color: var(--category-stream-text-3);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.category-stream.is-source-page .category-stream__display-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 0;
+  border: 0;
+}
+
+.category-stream.is-source-page .category-stream__control-row {
+  grid-template-columns: minmax(0, 1fr) 86px;
+  gap: 10px;
+}
+
+.category-stream.is-source-page .category-stream__pagination-block {
+  padding: 11px 8px;
+  border-bottom: 0;
+}
+
+@media (max-width: 1320px) {
+  .category-stream.is-source-page .category-stream__body {
+    grid-template-columns: 220px minmax(0, 720px) 220px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 1120px) {
+  .category-stream.is-source-page .category-stream__body {
+    grid-template-columns: 190px minmax(0, 720px);
+    gap: 14px;
+  }
+  .category-stream.is-source-page .category-stream__source-rail {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .category-stream.is-source-page .category-stream__main {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .category-stream.is-source-page .category-stream__controls {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .category-stream.is-source-page .category-stream__controls-card {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding-left: 0;
+  }
+  .category-stream.is-source-page .category-stream__controls-heading {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 820px) {
+  .category-stream.is-source-page .category-stream__body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .category-stream.is-source-page .category-stream__source-rail {
+    position: sticky;
+    z-index: 5;
+    top: 0;
+    grid-column: 1;
+    grid-row: auto;
+    order: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    border-bottom: 1px solid var(--category-stream-border);
+    background: var(--category-stream-panel);
+  }
+  .category-stream.is-source-page .category-stream__source-rail::-webkit-scrollbar { display: none; }
+  .category-stream.is-source-page .category-stream__rail-card {
+    max-height: none;
+    overflow: visible;
+    padding: 5px 0;
+  }
+  .category-stream.is-source-page .category-stream__rail-title {
+    display: none;
+  }
+  .category-stream.is-source-page .category-stream__toc {
+    display: flex;
+    gap: 4px;
+    width: max-content;
+    padding: 0;
+  }
+  .category-stream.is-source-page .category-stream__toc-source-link {
+    grid-template-columns: 20px max-content;
+    min-height: 32px;
+    padding: 4px 8px;
+  }
+  .category-stream.is-source-page .category-stream__toc-source-link img {
+    width: 20px;
+    height: 20px;
+  }
+  .category-stream.is-source-page .category-stream__main {
+    grid-column: 1;
+    grid-row: auto;
+    order: 2;
+  }
+  .category-stream.is-source-page .category-stream__controls {
+    grid-column: 1;
+    grid-row: auto;
+    order: 3;
+  }
+  .category-stream.is-source-page .category-stream__controls-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .category-stream__context {
+    padding: 12px;
+    border-radius: 12px;
+  }
+  .category-stream__context-top {
+    align-items: flex-start;
+  }
+  .category-stream__context-status {
+    display: none;
+  }
+  .category-stream__variant-group {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .category-stream.is-source-page .category-stream__row,
+  .category-stream.is-source-page.shows-images .category-stream__row,
+  .category-stream.is-source-page.is-compact .category-stream__row,
+  .category-stream.is-source-page.is-compact.shows-images .category-stream__row {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    min-height: 62px;
+    padding: 8px 9px 8px 6px;
+  }
+  .category-stream.is-source-page .category-stream__row.has-media,
+  .category-stream.is-source-page.shows-images .category-stream__row.has-media {
+    grid-template-columns: 34px 68px minmax(0, 1fr);
+  }
+  .category-stream.is-source-page .category-stream__media {
+    width: 68px;
+    height: 44px;
+  }
+  .category-stream.is-source-page .category-stream__rank {
+    font-size: 14px;
+  }
+  .category-stream.is-source-page .category-stream__rank.is-top {
+    font-size: 16px;
+  }
+  .category-stream.is-source-page .category-stream__controls-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .category-stream.is-source-page.is-minimal .category-stream__row,
+  .category-stream.is-source-page.is-minimal.is-compact .category-stream__row {
+    grid-template-columns: 34px minmax(0, 1fr);
+    height: 40px;
+    min-height: 40px;
   }
 }
 </style>
