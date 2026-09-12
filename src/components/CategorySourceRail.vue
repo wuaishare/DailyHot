@@ -8,7 +8,7 @@
         </div>
         <nav>
           <button
-            v-for="source in props.sources"
+            v-for="source in orderedSources"
             :key="source.name"
             type="button"
             class="category-source-rail__toc-item"
@@ -24,70 +24,104 @@
       </div>
     </aside>
 
-    <div class="category-source-rail__main">
-      <section
-        v-for="source in props.sources"
-        :id="sectionId(source.name)"
-        :key="source.name"
-        :ref="(el) => setSectionRef(source.name, el)"
-        class="category-source-section"
-        :data-source="source.name"
-      >
-        <header class="category-source-section__header">
-          <div class="category-source-section__identity">
-            <img :src="getSourceLogo(source.name)" alt="" @error="handleLogoError" />
-            <div>
-              <strong>{{ sourceLabel(source) }}</strong>
-              <span v-if="sourceSubtitle(source.name)">{{ sourceSubtitle(source.name) }}</span>
-            </div>
-          </div>
-          <router-link class="category-source-section__more" :to="sourcePath(source)">
-            {{ copy.viewRanking }} <span aria-hidden="true">→</span>
-          </router-link>
-        </header>
-
-        <div v-if="!sourceStates[source.name] || sourceStates[source.name] === 'idle' || sourceStates[source.name] === 'loading'" class="category-source-section__rail is-loading">
-          <div v-for="index in 4" :key="index" class="category-story-card skeleton"></div>
-        </div>
-        <div v-else-if="sourceStates[source.name] === 'failed'" class="category-source-section__error">
-          <span>{{ copy.loadFailed }}</span>
-          <button type="button" @click="loadSource(source, true)">{{ copy.retry }}</button>
-        </div>
-        <div v-else-if="!sourceEntries(source.name).length" class="category-source-section__error">
-          <span>{{ queryText ? copy.noSearchResults : copy.noContent }}</span>
-        </div>
-        <div v-else class="category-source-section__rail" tabindex="0">
-          <a
-            v-for="entry in sourceEntries(source.name)"
-            :key="entry.key"
-            class="category-story-card"
-            :class="{ 'has-cover': Boolean(entry.cover) }"
-            :href="entry.href"
-            :target="linkTarget"
-            rel="noopener noreferrer nofollow"
+    <draggable
+      v-model="orderedSources"
+      class="category-source-rail__main"
+      item-key="name"
+      handle=".category-source-section__drag"
+      :animation="180"
+      ghost-class="category-source-section--ghost"
+      chosen-class="category-source-section--chosen"
+      @end="handleSourceDragEnd"
+    >
+      <template #item="{ element: source }">
+          <section
+            :id="sectionId(source.name)"
+            :ref="(el) => setSectionRef(source.name, el)"
+            class="category-source-section"
+            :data-source="source.name"
           >
-            <img
-              v-if="entry.cover"
-              class="category-story-card__cover"
-              :src="coverSrc(entry.cover)"
-              alt=""
-              loading="lazy"
-              @error="hideBrokenCover"
-            />
-            <div class="category-story-card__scrim"></div>
-            <span class="category-story-card__rank">#{{ entry.rank }}</span>
-            <div class="category-story-card__content">
-              <div class="category-story-card__title">{{ entry.title }}</div>
-              <p v-if="entry.description">{{ entry.description }}</p>
-              <div class="category-story-card__meta">
-                <span>{{ entry.hot ? `${copy.heat} ${entry.hot}` : entry.sourceLabel }}</span>
-                <span v-if="entry.author">{{ entry.author }}</span>
+          <header class="category-source-section__header">
+            <div class="category-source-section__identity">
+              <img :src="getSourceLogo(source.name)" alt="" @error="handleLogoError" />
+              <div>
+                <strong>{{ sourceLabel(source) }}</strong>
+                <span v-if="sourceSubtitle(source.name)">{{ sourceSubtitle(source.name) }}</span>
               </div>
             </div>
-          </a>
-        </div>
-      </section>
-    </div>
+            <div v-if="sourceSubtypeOptions(source.name).length > 1" class="category-source-section__subtypes" :aria-label="sourceLabel(source)">
+              <button
+                v-for="item in sourceSubtypeOptions(source.name)"
+                :key="item.value"
+                type="button"
+                class="category-source-section__subtype"
+                :class="{ active: sourceSubtype(source.name) === item.value }"
+                :aria-pressed="sourceSubtype(source.name) === item.value"
+                @click.stop="changeSourceSubtype(source, item.value)"
+              >
+                {{ item.label }}
+              </button>
+            </div>
+            <div class="category-source-section__tools">
+              <span class="category-source-section__time">{{ sourceUpdateTime(source.name) || copy.updateFailed }}</span>
+              <button type="button" class="category-source-section__tool category-source-section__drag" :title="copy.dragSort" :aria-label="copy.dragSort">
+                <Drag />
+              </button>
+              <button type="button" class="category-source-section__tool" :class="{ loading: sourceStates[source.name] === 'loading' }" :title="copy.refreshLatest" :aria-label="copy.refreshLatest" @click.stop="loadSource(source, true)">
+                <Refresh />
+              </button>
+              <router-link class="category-source-section__more" :to="sourcePath(source)">
+                {{ copy.viewRanking }} <span aria-hidden="true">→</span>
+              </router-link>
+            </div>
+          </header>
+
+          <div v-if="!sourceStates[source.name] || sourceStates[source.name] === 'idle' || sourceStates[source.name] === 'loading'" class="category-source-section__rail is-loading">
+            <div v-for="index in 4" :key="index" class="category-story-card skeleton"></div>
+          </div>
+          <div v-else-if="sourceStates[source.name] === 'failed'" class="category-source-section__error">
+            <span>{{ copy.loadFailed }}</span>
+            <button type="button" @click="loadSource(source, true)">{{ copy.retry }}</button>
+          </div>
+          <div v-else-if="!sourceEntries(source.name).length" class="category-source-section__error">
+            <span>{{ queryText ? copy.noSearchResults : copy.noContent }}</span>
+          </div>
+          <div v-else class="category-source-section__rail" tabindex="0">
+            <a
+              v-for="entry in sourceEntries(source.name)"
+              :key="entry.key"
+              class="category-story-card"
+              :class="[{ 'has-cover': Boolean(entry.cover) }, rankClass(entry.rank)]"
+              :href="entry.href"
+              :target="linkTarget"
+              rel="noopener noreferrer nofollow"
+            >
+              <img
+                v-if="entry.cover"
+                class="category-story-card__cover"
+                :src="coverSrc(entry.cover)"
+                alt=""
+                loading="lazy"
+                @error="hideBrokenCover"
+              />
+              <div class="category-story-card__scrim"></div>
+              <span class="category-story-card__rank">#{{ entry.rank }}</span>
+              <div v-if="entry.suffixBadges.length" class="category-story-card__badges" aria-label="标签">
+                <span v-for="(badge, badgeIndex) in entry.suffixBadges" :key="`${badge.kind}-${badge.label}-${badgeIndex}`" :class="`is-${badge.kind}`" :title="badge.label">{{ badge.label }}</span>
+              </div>
+              <div class="category-story-card__content">
+                <div class="category-story-card__title">{{ entry.title }}</div>
+                <p v-if="entry.description">{{ entry.description }}</p>
+                <div class="category-story-card__meta">
+                  <span>{{ entry.hot ? `${copy.heat} ${formatCompactMetric(entry.hot, locale)}` : entry.sourceLabel }}</span>
+                  <span v-if="entry.author">{{ entry.author }}</span>
+                </div>
+              </div>
+            </a>
+          </div>
+        </section>
+      </template>
+    </draggable>
   </section>
 </template>
 
@@ -95,25 +129,33 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import draggable from 'vuedraggable';
+import { Drag, Refresh } from '@icon-park/vue-next';
 import { mainStore } from '@/store';
 import { getSharedRanking } from '@/utils/rankingCollection';
 import {
   buildSourceSubtypeParams,
   getDefaultSourceSubtype,
+  getSourceSubtypeGroups,
   getSourceSubtypeOptions,
+  persistSourceSubtype,
+  readSourceSubtype,
   resolveSourceSubtype,
 } from '@/utils/sourceSubtypes';
-import { getSourceDisplayLabel, getSourceSubtitleLabel } from '@/utils/sourceLabels';
+import { getSourceDisplayLabel, getSourceSubtitleLabel, localizeSubtypeGroups } from '@/utils/sourceLabels';
 import { buildRankPath, getLocaleFromRoute, normalizeLocale } from '@/utils/locale';
 import { getSourceLogo, getSourceLogoFallback } from '@/utils/sourceLogos';
 import { getCoverDisplaySrc } from '@/utils/imageProxy';
 import { normalizeRankingBadges } from '@/utils/rankingBadges';
 import { useTrendsCatalogRevision } from '@/composables/useTrendsCatalogRevision';
 import { DATA_REFRESH_EVENT } from '@/utils/dataRefresh';
+import { formatTime } from '@/utils/getTime';
+import { formatCompactMetric } from '@/utils/compactMetric';
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },
 });
+const emit = defineEmits(['reorder']);
 
 const route = useRoute();
 const store = mainStore();
@@ -121,14 +163,16 @@ const { locale: i18nLocale } = useI18n({ useScope: 'global' });
 const catalogRevision = useTrendsCatalogRevision();
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route) || i18nLocale.value));
 const COPY = {
-  'zh-CN': { sourceDirectory: '来源目录', viewRanking: '查看榜单', loadFailed: '该来源暂时加载失败', retry: '重试', noSearchResults: '没有匹配当前搜索的条目', noContent: '暂无内容', heat: '热度' },
-  en: { sourceDirectory: 'Sources', viewRanking: 'View ranking', loadFailed: 'This source is temporarily unavailable', retry: 'Retry', noSearchResults: 'No items match the current search', noContent: 'No content', heat: 'Heat' },
-  'zh-TW': { sourceDirectory: '來源目錄', viewRanking: '查看榜單', loadFailed: '此來源暫時載入失敗', retry: '重試', noSearchResults: '沒有符合目前搜尋的項目', noContent: '暫無內容', heat: '熱度' },
-  ja: { sourceDirectory: 'ソース目次', viewRanking: 'ランキングを見る', loadFailed: 'このソースは一時的に読み込めません', retry: '再試行', noSearchResults: '検索に一致する項目がありません', noContent: 'コンテンツがありません', heat: '注目度' },
-  ko: { sourceDirectory: '출처 목차', viewRanking: '랭킹 보기', loadFailed: '이 출처를 일시적으로 불러올 수 없습니다', retry: '다시 시도', noSearchResults: '검색과 일치하는 항목이 없습니다', noContent: '콘텐츠 없음', heat: '인기도' },
+  'zh-CN': { sourceDirectory: '来源目录', viewRanking: '查看榜单', loadFailed: '该来源暂时加载失败', retry: '重试', noSearchResults: '没有匹配当前搜索的条目', noContent: '暂无内容', heat: '热度', dragSort: '拖拽排序', refreshLatest: '更新', updateFailed: '更新时间未知' },
+  en: { sourceDirectory: 'Sources', viewRanking: 'View ranking', loadFailed: 'This source is temporarily unavailable', retry: 'Retry', noSearchResults: 'No items match the current search', noContent: 'No content', heat: 'Heat', dragSort: 'Drag to reorder', refreshLatest: 'Refresh', updateFailed: 'Update time unavailable' },
+  'zh-TW': { sourceDirectory: '來源目錄', viewRanking: '查看榜單', loadFailed: '此來源暫時載入失敗', retry: '重試', noSearchResults: '沒有符合目前搜尋的項目', noContent: '暫無內容', heat: '熱度', dragSort: '拖曳排序', refreshLatest: '更新', updateFailed: '更新時間未知' },
+  ja: { sourceDirectory: 'ソース目次', viewRanking: 'ランキングを見る', loadFailed: 'このソースは一時的に読み込めません', retry: '再試行', noSearchResults: '検索に一致する項目がありません', noContent: 'コンテンツがありません', heat: '注目度', dragSort: 'ドラッグで並べ替え', refreshLatest: '更新', updateFailed: '更新時刻不明' },
+  ko: { sourceDirectory: '출처 목차', viewRanking: '랭킹 보기', loadFailed: '이 출처를 일시적으로 불러올 수 없습니다', retry: '다시 시도', noSearchResults: '검색과 일치하는 항목이 없습니다', noContent: '콘텐츠 없음', heat: '인기도', dragSort: '드래그하여 정렬', refreshLatest: '새로고침', updateFailed: '업데이트 시간 없음' },
 };
 const copy = computed(() => COPY[locale.value] || COPY['zh-CN']);
 const sourceResults = reactive({});
+const sourceSubtypes = reactive({});
+const orderedSources = ref(props.sources.slice());
 const sourceStates = reactive({});
 const sectionRefs = new Map();
 const activeSource = ref(props.sources[0]?.name || '');
@@ -156,9 +200,34 @@ const sourceLabel = (source) => getSourceDisplayLabel(
 );
 const sourceSubtype = (sourceName) => resolveSourceSubtype(
   getSourceSubtypeOptions(sourceName),
-  getDefaultSourceSubtype(sourceName),
+  sourceSubtypes[sourceName] || readSourceSubtype(sourceName) || getDefaultSourceSubtype(sourceName),
 );
+const sourceSubtypeGroups = (sourceName) =>
+  localizeSubtypeGroups(getSourceSubtypeGroups(sourceName), locale.value);
+const sourceSubtypeOptions = (sourceName) =>
+  sourceSubtypeGroups(sourceName).flatMap((group) => group.items || []);
 const sourcePath = (source) => buildRankPath(locale.value, source.name, sourceSubtype(source.name) || '');
+const sourceUpdateTime = (sourceName) => {
+  void store.timeData;
+  const value = sourceResults[sourceName]?.updateTime;
+  return value ? formatTime(value, locale.value) : '';
+};
+const rankClass = (rank) => ({
+  'is-one': rank === 1,
+  'is-two': rank === 2,
+  'is-three': rank === 3,
+});
+const changeSourceSubtype = async (source, subtype) => {
+  if (!source?.name || !subtype || sourceSubtype(source.name) === subtype) return;
+  sourceSubtypes[source.name] = subtype;
+  persistSourceSubtype(source.name, subtype);
+  delete sourceResults[source.name];
+  sourceStates[source.name] = 'idle';
+  await loadSource(source, true);
+};
+const handleSourceDragEnd = () => {
+  emit('reorder', orderedSources.value.map((source) => source.name));
+};
 const sourceSubtitle = (sourceName) => getSourceSubtitleLabel(
   sourceResults[sourceName]?.subtitle || sourceResults[sourceName]?.type || '',
   locale.value,
@@ -241,6 +310,7 @@ const sourceEntries = (sourceName) => {
         author: stripText(item?.author || ''),
         cover: item?.cover || '',
         href: item?.url || item?.mobileUrl || '',
+        suffixBadges: normalizeRankingBadges(item?.badges, 3).filter((badge) => badge.placement !== 'prefix'),
         sourceLabel: getSourceDisplayLabel(sourceName, locale.value, result?.title || sourceName),
       };
       return entry;
@@ -252,11 +322,11 @@ const sourceEntries = (sourceName) => {
 
 const syncActiveSource = () => {
   scrollFrame = 0;
-  if (!props.sources.length) return;
+  if (!orderedSources.value.length) return;
   const anchor = Math.max(120, Math.min(window.innerHeight * 0.28, 240));
-  let candidate = props.sources[0]?.name || '';
+  let candidate = orderedSources.value[0]?.name || '';
   let bestDistance = Number.POSITIVE_INFINITY;
-  for (const source of props.sources) {
+  for (const source of orderedSources.value) {
     const el = sectionRefs.get(source.name);
     if (!el) continue;
     const rect = el.getBoundingClientRect();
@@ -289,7 +359,10 @@ const scrollToSource = (sourceName) => {
 };
 
 watch(() => props.sources.map((source) => source.name).join('|'), () => {
-  activeSource.value = props.sources[0]?.name || '';
+  orderedSources.value = props.sources.slice();
+  if (!props.sources.some((source) => source.name === activeSource.value)) {
+    activeSource.value = props.sources[0]?.name || '';
+  }
   for (const source of props.sources) {
     if (!sourceStates[source.name]) sourceStates[source.name] = 'idle';
   }
@@ -421,6 +494,8 @@ onBeforeUnmount(() => {
 .category-source-rail__toc-item i.loading { background: #f0a020; }
 .category-source-rail__toc-item i.failed { background: #d03050; }
 .category-source-rail__main { min-width: 0; display: grid; gap: 16px; }
+.category-source-section--ghost { opacity: .45; }
+.category-source-section--chosen { cursor: grabbing; }
 .category-source-section {
   min-width: 0;
   scroll-margin-top: 92px;
@@ -430,10 +505,10 @@ onBeforeUnmount(() => {
   background: var(--csr-panel);
 }
 .category-source-section__header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(130px, auto) minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
   margin-bottom: 9px;
 }
 .category-source-section__identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -441,6 +516,19 @@ onBeforeUnmount(() => {
 .category-source-section__identity div { display: grid; min-width: 0; }
 .category-source-section__identity strong { color: var(--csr-text); font-size: 15px; }
 .category-source-section__identity span { color: var(--csr-text-3); font-size: 11px; }
+.category-source-section__subtypes { display: flex; min-width: 0; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.category-source-section__subtypes::-webkit-scrollbar { display: none; }
+.category-source-section__subtype { flex: 0 0 auto; padding: 5px 8px; border: 0; border-radius: 7px; background: transparent; color: var(--csr-text-2); cursor: pointer; font: inherit; font-size: 11px; font-weight: 620; line-height: 1.1; }
+.category-source-section__subtype:hover { background: var(--csr-panel-soft); color: var(--csr-text); }
+.category-source-section__subtype.active { background: color-mix(in srgb, var(--csr-primary) 11%, var(--csr-panel-soft)); color: var(--csr-primary); font-weight: 730; }
+.category-source-section__tools { display: flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 0; }
+.category-source-section__time { max-width: 92px; overflow: hidden; color: var(--csr-text-3); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.category-source-section__tool { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--csr-text-3); cursor: pointer; }
+.category-source-section__tool:hover { background: var(--csr-panel-soft); color: var(--csr-text); }
+.category-source-section__tool svg { width: 15px; height: 15px; }
+.category-source-section__drag { cursor: grab; }
+.category-source-section__drag:active { cursor: grabbing; }
+.category-source-section__tool.loading svg { animation: csr-spin .8s linear infinite; }
 .category-source-section__more { color: var(--csr-primary); font-size: 11px; font-weight: 650; text-decoration: none; white-space: nowrap; }
 .category-source-section__rail {
   display: grid;
@@ -451,12 +539,23 @@ onBeforeUnmount(() => {
   overflow-y: hidden;
   padding: 1px 1px 9px;
   scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--csr-text-3) 46%, transparent) transparent;
   scroll-behavior: smooth;
   overscroll-behavior-inline: contain;
 }
-.category-source-section__rail::-webkit-scrollbar { display: none; }
+.category-source-section__rail::-webkit-scrollbar { height: 7px; }
+.category-source-section__rail::-webkit-scrollbar-track { background: transparent; }
+.category-source-section__rail::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--csr-text-3) 46%, transparent);
+  background-clip: padding-box;
+}
+.category-source-section__rail::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--csr-text-2) 66%, transparent);
+  background-clip: padding-box;
+}
 .category-source-section__rail.is-loading { min-height: 174px; }
 .category-story-card {
   position: relative;
@@ -504,6 +603,14 @@ onBeforeUnmount(() => {
     linear-gradient(145deg, var(--csr-panel), var(--csr-panel-soft));
 }
 .category-story-card:not(.has-cover) .category-story-card__rank { background: color-mix(in srgb, var(--csr-primary) 10%, var(--csr-panel)); color: var(--csr-primary); }
+.category-story-card.is-one .category-story-card__rank { background: #ea444d; color: #fff; }
+.category-story-card.is-two .category-story-card__rank { background: #ed702d; color: #fff; }
+.category-story-card.is-three .category-story-card__rank { background: #eead3f; color: #fff; }
+.category-story-card__badges { position: absolute; top: 10px; right: 10px; z-index: 2; display: flex; gap: 4px; max-width: calc(100% - 68px); }
+.category-story-card__badges span { display: inline-flex; align-items: center; min-height: 20px; padding: 2px 6px; border-radius: 999px; background: rgba(12,14,18,.58); color: #fff; font-size: 9px; font-weight: 760; line-height: 1; backdrop-filter: blur(6px); }
+.category-story-card:not(.has-cover) .category-story-card__badges span { background: color-mix(in srgb, var(--csr-primary) 9%, var(--csr-panel)); color: var(--csr-primary); }
+.category-story-card__badges .is-new { background: rgba(24,160,88,.86); }
+.category-story-card__badges .is-hot, .category-story-card__badges .is-explosive, .category-story-card__badges .is-boiling { background: rgba(234,68,77,.88); }
 .category-story-card__content {
   position: absolute;
   inset: auto 0 0;
@@ -554,6 +661,7 @@ onBeforeUnmount(() => {
 .category-source-section__error { display: flex; align-items: center; justify-content: space-between; min-height: 92px; padding: 14px; border-radius: 12px; background: var(--csr-panel-soft); color: var(--csr-text-3); font-size: 12px; }
 .category-source-section__error button { border: 0; background: transparent; color: var(--csr-primary); cursor: pointer; font-weight: 650; }
 @keyframes csr-shimmer { to { background-position: -200% 0; } }
+@keyframes csr-spin { to { transform: rotate(360deg); } }
 @media (max-width: 900px) {
   .category-source-rail { grid-template-columns: 180px minmax(0,1fr); gap: 14px; }
   .category-source-section__rail { grid-auto-columns: min(78vw, 290px); }
@@ -569,6 +677,10 @@ onBeforeUnmount(() => {
   .category-source-rail__toc-item img { width: 20px; height: 20px; }
   .category-source-rail__toc-item i { display: none; }
   .category-source-section { padding: 10px; border-radius: 12px; }
+  .category-source-section__header { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .category-source-section__subtypes { grid-column: 1 / -1; grid-row: 2; }
+  .category-source-section__time { display: none; }
+  .category-source-section__more { display: none; }
   .category-source-section__rail { grid-auto-columns: min(82vw, 286px); }
 }
 </style>
