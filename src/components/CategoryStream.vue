@@ -650,11 +650,31 @@ const setShowImages = (value) => {
 const setShowDescriptions = (value) => {
   store.showStreamDescriptions = Boolean(value);
 };
-const streamStyle = computed(() => ({
-  "--category-stream-font-size": String(store.listFontSize) + "px",
-  "--category-stream-compact-font-size":
-    String(Math.max(12, Number(store.listFontSize || 16) - 2)) + "px",
-}));
+const streamStyle = computed(() => {
+  const dark = store.siteTheme === "dark";
+  return {
+    "--category-stream-font-size": String(store.listFontSize) + "px",
+    "--category-stream-compact-font-size":
+      String(Math.max(12, Number(store.listFontSize || 16) - 2)) + "px",
+    "--category-stream-primary": dark ? "#ff737a" : "#ea444d",
+    "--category-stream-panel": dark ? "#18181c" : "#ffffff",
+    "--category-stream-action": dark
+      ? "rgba(255, 255, 255, 0.065)"
+      : "rgba(31, 34, 37, 0.045)",
+    "--category-stream-border": dark
+      ? "rgba(255, 255, 255, 0.13)"
+      : "rgba(31, 34, 37, 0.12)",
+    "--category-stream-text": dark
+      ? "rgba(255, 255, 255, 0.92)"
+      : "rgba(31, 34, 37, 0.92)",
+    "--category-stream-text-2": dark
+      ? "rgba(255, 255, 255, 0.72)"
+      : "rgba(31, 34, 37, 0.72)",
+    "--category-stream-text-3": dark
+      ? "rgba(255, 255, 255, 0.54)"
+      : "rgba(31, 34, 37, 0.56)",
+  };
+});
 const normalizeSearchText = (value = "") =>
   String(value || "")
     .replace(/<[^>]*>/g, " ")
@@ -988,7 +1008,7 @@ const hideBrokenMedia = (event) => {
 .category-stream__retry {
   border: 0;
   background: transparent;
-  color: var(--n-primary-color);
+  color: var(--category-stream-primary);
   cursor: pointer;
   font-size: 12px;
   font-weight: 650;
@@ -1008,14 +1028,14 @@ const hideBrokenMedia = (event) => {
 
 .category-stream__failed-popover strong {
   margin-bottom: 2px;
-  color: var(--n-text-color);
+  color: var(--category-stream-text);
   font-size: 12px;
   font-weight: 650;
 }
 
 .category-stream__failed-popover span {
   overflow: hidden;
-  color: var(--n-text-color-2);
+  color: var(--category-stream-text-2);
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1027,10 +1047,10 @@ const hideBrokenMedia = (event) => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  width: min(100%, 1360px);
+  width: 100%;
   margin-inline: auto;
   padding: 0 4px;
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 12px;
 }
 
@@ -1059,9 +1079,9 @@ const hideBrokenMedia = (event) => {
 .category-stream__list {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--n-border-color);
+  border: 1px solid var(--category-stream-border);
   border-radius: 12px;
-  background: var(--n-color);
+  background: var(--category-stream-panel);
 }
 
 .category-stream__rail-title {
@@ -1070,7 +1090,7 @@ const hideBrokenMedia = (event) => {
   justify-content: space-between;
   gap: 8px;
   padding: 2px 5px 8px;
-  color: var(--n-text-color);
+  color: var(--category-stream-text);
   font-size: 12px;
 }
 
@@ -1081,7 +1101,7 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream__rail-title span {
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1090,11 +1110,11 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream__row:hover {
-  background: color-mix(in srgb, var(--n-action-color) 70%, transparent);
+  background: color-mix(in srgb, var(--category-stream-action) 70%, transparent);
 }
 
 .category-stream__rank {
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1107,11 +1127,11 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream__rank.is-top {
-  color: var(--n-primary-color, #d03050);
+  color: var(--category-stream-primary, #ea444d);
 }
 
 .category-stream__rank.is-top10 {
-  color: var(--n-text-color-2);
+  color: var(--category-stream-text-2);
 }
 
 .category-stream__rank.is-pinned {
@@ -1123,14 +1143,14 @@ const hideBrokenMedia = (event) => {
   display: block;
   width: 20px;
   height: 20px;
-  color: var(--n-primary-color);
+  color: var(--category-stream-primary);
   stroke-width: 1.9;
 }
 
 .category-stream__content {
   min-width: 0;
   display: block;
-  color: var(--n-text-color);
+  color: var(--category-stream-text);
   text-decoration: none;
 }
 
@@ -1229,7 +1249,7 @@ const hideBrokenMedia = (event) => {
 
 .category-stream__badge.is-category,
 .category-stream__badge.is-source {
-  background: color-mix(in srgb, var(--n-text-color) 68%, transparent);
+  background: color-mix(in srgb, var(--category-stream-text) 68%, transparent);
 }
 
 .category-stream__badge.has-icon {
@@ -1262,7 +1282,7 @@ const hideBrokenMedia = (event) => {
   display: -webkit-box;
   margin: 4px 0 0;
   overflow: hidden;
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 12px;
   line-height: 1.45;
   -webkit-box-orient: vertical;
@@ -1271,7 +1291,7 @@ const hideBrokenMedia = (event) => {
 
 .category-stream__meta {
   margin-top: 3px;
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 11px;
 }
 
@@ -1284,9 +1304,9 @@ const hideBrokenMedia = (event) => {
   display: grid;
   place-items: center;
   min-height: 220px;
-  border: 1px dashed var(--n-border-color);
+  border: 1px dashed var(--category-stream-border);
   border-radius: 12px;
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 13px;
 }
 
@@ -1294,7 +1314,7 @@ const hideBrokenMedia = (event) => {
   display: grid;
   gap: 1px;
   overflow: hidden;
-  border: 1px solid var(--n-border-color);
+  border: 1px solid var(--category-stream-border);
   border-radius: 12px;
 }
 
@@ -1302,9 +1322,9 @@ const hideBrokenMedia = (event) => {
   height: 72px;
   background: linear-gradient(
     100deg,
-    var(--n-action-color) 20%,
-    color-mix(in srgb, var(--n-action-color) 35%, var(--n-color)) 45%,
-    var(--n-action-color) 70%
+    var(--category-stream-action) 20%,
+    color-mix(in srgb, var(--category-stream-action) 35%, var(--category-stream-panel)) 45%,
+    var(--category-stream-action) 70%
   );
   background-size: 200% 100%;
   animation: category-stream-shimmer 1.4s linear infinite;
@@ -1357,7 +1377,7 @@ const hideBrokenMedia = (event) => {
   min-height: 36px;
   padding: 5px 7px;
   border-radius: 8px;
-  color: var(--n-text-color-2);
+  color: var(--category-stream-text-2);
   font-size: 12px;
   font-weight: 620;
   text-decoration: none;
@@ -1365,14 +1385,14 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream__toc-source-link:hover {
-  background: var(--n-action-color);
-  color: var(--n-text-color);
+  background: var(--category-stream-action);
+  color: var(--category-stream-text);
 }
 
 .category-stream__toc-source.active > .category-stream__toc-source-link {
-  background: color-mix(in srgb, var(--n-primary-color) 11%, var(--n-action-color));
-  color: var(--n-primary-color);
-  box-shadow: inset 2px 0 0 var(--n-primary-color);
+  background: color-mix(in srgb, var(--category-stream-primary) 11%, var(--category-stream-action));
+  color: var(--category-stream-primary);
+  box-shadow: inset 2px 0 0 var(--category-stream-primary);
 }
 
 .category-stream__toc-source-link img {
@@ -1390,7 +1410,7 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream__toc-caret {
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 11px;
   font-style: normal;
   text-align: center;
@@ -1401,7 +1421,7 @@ const hideBrokenMedia = (event) => {
   gap: 2px;
   margin: 3px 4px 6px 17px;
   padding: 2px 0 2px 12px;
-  border-left: 1px solid color-mix(in srgb, var(--n-border-color) 82%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--category-stream-border) 82%, transparent);
 }
 
 .category-stream__toc-group {
@@ -1415,7 +1435,7 @@ const hideBrokenMedia = (event) => {
 
 .category-stream__toc-group-label {
   padding: 3px 7px 2px;
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1430,20 +1450,20 @@ const hideBrokenMedia = (event) => {
   min-height: 28px;
   padding: 3px 7px;
   border-radius: 6px;
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 11px;
   font-weight: 560;
   text-decoration: none;
 }
 
 .category-stream__toc-child:hover {
-  background: var(--n-action-color);
-  color: var(--n-text-color);
+  background: var(--category-stream-action);
+  color: var(--category-stream-text);
 }
 
 .category-stream__toc-child.active {
-  background: color-mix(in srgb, var(--n-primary-color) 9%, transparent);
-  color: var(--n-primary-color);
+  background: color-mix(in srgb, var(--category-stream-primary) 9%, transparent);
+  color: var(--category-stream-primary);
   font-weight: 700;
 }
 
@@ -1451,26 +1471,29 @@ const hideBrokenMedia = (event) => {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--n-text-color-3) 48%, transparent);
+  background: color-mix(in srgb, var(--category-stream-text-3) 48%, transparent);
 }
 
 .category-stream__toc-child.active .category-stream__toc-marker {
-  background: var(--n-primary-color);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--n-primary-color) 12%, transparent);
+  background: var(--category-stream-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--category-stream-primary) 12%, transparent);
 }
 
 .category-stream__source-scope {
   display: grid;
   gap: 7px;
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 11px;
 }
 
 /* Three-column stream layout: sources / content / browsing controls. */
 .category-stream__body {
-  grid-template-columns: 210px minmax(0, 860px) 220px;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr) 220px;
+  align-items: start;
   gap: 16px;
-  width: min(100%, 1360px);
+  box-sizing: border-box;
+  width: 100%;
   margin-inline: auto;
 }
 
@@ -1485,9 +1508,9 @@ const hideBrokenMedia = (event) => {
 .category-stream__controls-card {
   max-height: calc(100vh - 110px);
   overflow: auto;
-  border: 1px solid var(--n-border-color);
+  border: 1px solid var(--category-stream-border);
   border-radius: 12px;
-  background: var(--n-color);
+  background: var(--category-stream-panel);
 }
 
 .category-stream__rail-card {
@@ -1501,7 +1524,7 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream__controls-title {
-  color: var(--n-text-color);
+  color: var(--category-stream-text);
   font-size: 12px;
   font-weight: 700;
 }
@@ -1511,7 +1534,7 @@ const hideBrokenMedia = (event) => {
 .category-stream__display-options {
   display: grid;
   gap: 7px;
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 11px;
 }
 
@@ -1522,7 +1545,7 @@ const hideBrokenMedia = (event) => {
 
 .category-stream__pagination-block {
   padding-block: 2px 4px;
-  border-bottom: 1px solid color-mix(in srgb, var(--n-border-color) 72%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--category-stream-border) 72%, transparent);
 }
 
 .category-stream__pagination-block :deep(.n-pagination) {
@@ -1532,7 +1555,7 @@ const hideBrokenMedia = (event) => {
 
 .category-stream__display-options {
   padding-top: 2px;
-  border-top: 1px solid color-mix(in srgb, var(--n-border-color) 72%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--category-stream-border) 72%, transparent);
 }
 
 .category-stream__display-options :deep(.n-checkbox) {
@@ -1541,7 +1564,7 @@ const hideBrokenMedia = (event) => {
 
 .category-stream__minimal-hint {
   margin: 0;
-  color: var(--n-primary-color);
+  color: var(--category-stream-primary);
   font-size: 10px;
   line-height: 1.45;
 }
@@ -1579,7 +1602,7 @@ const hideBrokenMedia = (event) => {
   height: 56px;
   overflow: hidden;
   border-radius: 8px;
-  background: var(--n-action-color);
+  background: var(--category-stream-action);
   text-decoration: none;
 }
 
@@ -1611,7 +1634,7 @@ const hideBrokenMedia = (event) => {
   max-width: 100%;
   margin-bottom: 3px;
   overflow: hidden;
-  color: var(--n-text-color-3);
+  color: var(--category-stream-text-3);
   font-size: 10px;
   font-weight: 650;
   text-decoration: none;
@@ -1620,7 +1643,7 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream__source-line:hover {
-  color: var(--n-primary-color);
+  color: var(--category-stream-primary);
 }
 
 .category-stream__source-inline {
@@ -1629,8 +1652,8 @@ const hideBrokenMedia = (event) => {
   overflow: hidden;
   padding: 1px 5px;
   border-radius: 5px;
-  background: var(--n-action-color);
-  color: var(--n-text-color-3);
+  background: var(--category-stream-action);
+  color: var(--category-stream-text-3);
   font-size: 10px;
   font-weight: 650;
   text-overflow: ellipsis;
