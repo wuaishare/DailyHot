@@ -1,28 +1,23 @@
 <template>
   <section
     class="category-stream"
-    :class="{ 'is-compact': store.compactMode, 'shows-images': showImages }"
+    :class="{
+      'is-compact': store.compactMode,
+      'shows-images': showImages,
+      'shows-descriptions': showDescriptions,
+      'is-minimal': minimalMode,
+      'is-source-page': sourcePageMode,
+    }"
     :style="streamStyle"
   >
     <div class="category-stream__status">
       <div>
         <span class="category-stream__status-dot" :class="{ loading: pendingCount }"></span>
-        <span>
-          {{ statusText }}
-        </span>
+        <span>{{ statusText }}</span>
       </div>
-      <n-popover
-        v-if="failedCount"
-        trigger="hover"
-        placement="top-end"
-        :show-arrow="false"
-      >
+      <n-popover v-if="failedCount" trigger="hover" placement="top-end" :show-arrow="false">
         <template #trigger>
-          <button
-            type="button"
-            class="category-stream__retry"
-            @click="retryFailed"
-          >
+          <button type="button" class="category-stream__retry" @click="retryFailed">
             {{ copy.retryFailed.replace("{count}", String(failedCount)) }}
           </button>
         </template>
@@ -38,11 +33,73 @@
     </div>
 
     <div v-else class="category-stream__body">
+      <aside class="category-stream__rail category-stream__source-rail" :aria-label="copy.sourceNavigation">
+        <div class="category-stream__rail-card">
+          <div class="category-stream__rail-title">
+            <div>
+              <strong>{{ copy.sourceNavigation }}</strong>
+              <span>{{ props.sources.length }}</span>
+            </div>
+          </div>
+
+          <nav class="category-stream__toc" :aria-label="copy.sourceNavigation">
+            <div
+              v-for="source in props.sources"
+              :key="source.name"
+              class="category-stream__toc-source"
+              :class="{ active: isActiveTocSource(source.name) }"
+            >
+              <router-link
+                class="category-stream__toc-source-link"
+                :to="sourceNavigationPathFor(source)"
+                :aria-current="isActiveTocSource(source.name) ? 'page' : undefined"
+              >
+                <img
+                  :src="getSourceLogo(source.name)"
+                  :alt="sourceLabelFor(source)"
+                  @error="handleLogoError"
+                />
+                <span>{{ sourceLabelFor(source) }}</span>
+                <i
+                  v-if="isActiveTocSource(source.name) && sourceTocItemCount(source.name) > 1"
+                  class="category-stream__toc-caret"
+                  aria-hidden="true"
+                >⌄</i>
+              </router-link>
+
+              <div
+                v-if="isActiveTocSource(source.name) && sourceTocItemCount(source.name) > 1"
+                class="category-stream__toc-children"
+              >
+                <section
+                  v-for="group in sourceTocGroups(source.name)"
+                  :key="group.key || group.label"
+                  class="category-stream__toc-group"
+                >
+                  <span
+                    v-if="sourceTocGroups(source.name).length > 1 && group.label"
+                    class="category-stream__toc-group-label"
+                  >{{ group.label }}</span>
+                  <router-link
+                    v-for="item in group.items || []"
+                    :key="item.value"
+                    class="category-stream__toc-child"
+                    :class="{ active: isActiveTocVariant(source.name, item.value) }"
+                    :to="sourceVariantPathFor(source.name, item.value)"
+                    :aria-current="isActiveTocVariant(source.name, item.value) ? 'page' : undefined"
+                  >
+                    <span class="category-stream__toc-marker" aria-hidden="true"></span>
+                    <span>{{ item.label }}</span>
+                  </router-link>
+                </section>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </aside>
+
       <div class="category-stream__main">
-        <div
-          v-if="!visibleEntries.length && pendingCount"
-          class="category-stream__skeleton"
-        >
+        <div v-if="!visibleEntries.length && pendingCount" class="category-stream__skeleton">
           <div v-for="index in 8" :key="index"></div>
         </div>
 
@@ -51,152 +108,164 @@
         </div>
 
         <div v-else class="category-stream__list">
-          <article
-            v-for="entry in visibleEntries"
-            :key="entry.key"
-            class="category-stream__row"
-          >
+          <article v-for="entry in pagedEntries" :key="entry.key" class="category-stream__row">
             <div
               class="category-stream__rank"
               :class="rankTone(entry.rank, entry.isPinned)"
               :title="entry.isPinned ? '置顶' : undefined"
             >
-              <UiGlyph
-                v-if="entry.isPinned"
-                class="category-stream__pin-icon"
-                name="pin"
-                aria-hidden="true"
-              />
+              <UiGlyph v-if="entry.isPinned" class="category-stream__pin-icon" name="pin" aria-hidden="true" />
               <template v-else><span>#</span>{{ entry.rank }}</template>
             </div>
 
+            <a
+              v-if="!minimalMode && showImages && entry.cover"
+              class="category-stream__media is-cover"
+              :href="entry.href"
+              :target="linkTarget"
+              rel="noopener noreferrer nofollow"
+            >
+              <img :src="coverSrc(entry.cover)" alt="" loading="lazy" @error="hideBrokenMedia" />
+            </a>
             <router-link
-              class="category-stream__source"
+              v-else-if="!minimalMode"
+              class="category-stream__media is-logo"
               :to="entry.sourcePath"
               :title="entry.sourceLabel"
             >
-              <img
-                :src="entry.sourceLogo"
-                :alt="entry.sourceLabel"
-                @error="handleLogoError"
-              />
-              <span>{{ entry.sourceLabel }}</span>
+              <img :src="entry.sourceLogo" :alt="entry.sourceLabel" @error="handleLogoError" />
             </router-link>
 
-            <a
-              class="category-stream__content"
-              :href="entry.href"
-              :target="linkTarget"
-              rel="noopener noreferrer nofollow"
-            >
-              <div class="category-stream__title-row">
-                <span
-                  v-if="entry.inlinePrefixBadges.length"
-                  class="category-stream__badges is-prefix notranslate"
-                  translate="no"
-                >
-                  <span
-                    v-for="(badge, badgeIndex) in entry.inlinePrefixBadges"
-                    :key="`prefix-${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
-                    class="category-stream__badge"
-                    :class="[
-                      `is-${badge.kind}`,
-                      {
-                        'is-strong': badge.prominence === 'strong',
-                        'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)),
-                      },
-                    ]"
-                    role="img"
-                    :title="badge.label"
-                    :aria-label="badge.label"
-                  >
-                    <img
-                      v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
-                      :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
-                      alt=""
-                      loading="lazy"
-                      @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))"
-                    />
-                    <span v-else aria-hidden="true">{{ badge.label }}</span>
+            <div class="category-stream__content-wrap">
+              <router-link
+                v-if="!sourcePageMode && !minimalMode"
+                class="category-stream__source-line"
+                :to="entry.sourcePath"
+              >
+                {{ entry.sourceLabel }}
+              </router-link>
+              <a
+                class="category-stream__content"
+                :href="entry.href"
+                :target="linkTarget"
+                rel="noopener noreferrer nofollow"
+              >
+                <div class="category-stream__title-row">
+                  <span v-if="minimalMode && !sourcePageMode" class="category-stream__source-inline">
+                    {{ entry.sourceLabel }}
                   </span>
-                </span>
-                <div class="category-stream__title">{{ entry.title }}</div>
-                <span
-                  v-if="entry.suffixBadges.length"
-                  class="category-stream__badges notranslate"
-                  translate="no"
-                >
                   <span
-                    v-for="(badge, badgeIndex) in entry.suffixBadges"
-                    :key="`${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
-                    class="category-stream__badge"
-                    :class="[
-                      `is-${badge.kind}`,
-                      {
-                        'is-strong': badge.prominence === 'strong',
-                        'is-animated': badge.animated,
-                        'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)),
-                      },
-                    ]"
-                    role="img"
-                    :title="badge.label"
-                    :aria-label="badge.label"
+                    v-if="entry.inlinePrefixBadges.length"
+                    class="category-stream__badges is-prefix notranslate"
+                    translate="no"
                   >
-                    <img
-                      v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
-                      :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
-                      alt=""
-                      loading="lazy"
-                      @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))"
-                    />
-                    <span v-else aria-hidden="true">{{ badge.label }}</span>
+                    <span
+                      v-for="(badge, badgeIndex) in entry.inlinePrefixBadges"
+                      :key="`prefix-${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
+                      class="category-stream__badge"
+                      :class="[
+                        `is-${badge.kind}`,
+                        {
+                          'is-strong': badge.prominence === 'strong',
+                          'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)),
+                        },
+                      ]"
+                      role="img"
+                      :title="badge.label"
+                      :aria-label="badge.label"
+                    >
+                      <img
+                        v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
+                        :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
+                        alt=""
+                        loading="lazy"
+                        @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))"
+                      />
+                      <span v-else aria-hidden="true">{{ badge.label }}</span>
+                    </span>
                   </span>
-                </span>
-              </div>
-              <p v-if="entry.description" class="category-stream__desc">
-                {{ entry.description }}
-              </p>
-              <div v-if="entry.hot" class="category-stream__meta">
-                <span>{{ copy.heat }} {{ entry.hot }}</span>
-              </div>
-            </a>
-
-            <a
-              v-if="showImages && entry.cover"
-              class="category-stream__cover"
-              :href="entry.href"
-              :target="linkTarget"
-              rel="noopener noreferrer nofollow"
-            >
-              <img
-                :src="coverSrc(entry.cover)"
-                alt=""
-                loading="lazy"
-                @error="hideBrokenCover"
-              />
-            </a>
+                  <div class="category-stream__title">{{ entry.title }}</div>
+                  <span v-if="entry.suffixBadges.length" class="category-stream__badges notranslate" translate="no">
+                    <span
+                      v-for="(badge, badgeIndex) in entry.suffixBadges"
+                      :key="`${badge.kind}-${badge.sourceCode || badge.label}-${badgeIndex}`"
+                      class="category-stream__badge"
+                      :class="[
+                        `is-${badge.kind}`,
+                        {
+                          'is-strong': badge.prominence === 'strong',
+                          'is-animated': badge.animated,
+                          'has-icon': Boolean(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)),
+                        },
+                      ]"
+                      role="img"
+                      :title="badge.label"
+                      :aria-label="badge.label"
+                    >
+                      <img
+                        v-if="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
+                        :src="resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors)"
+                        alt=""
+                        loading="lazy"
+                        @error="handleRankingBadgeImageError(resolveRankingBadgeIconUrl(badge, rankingBadgeImageErrors))"
+                      />
+                      <span v-else aria-hidden="true">{{ badge.label }}</span>
+                    </span>
+                  </span>
+                </div>
+                <p v-if="showDescriptions && entry.description" class="category-stream__desc">
+                  {{ entry.description }}
+                </p>
+                <div v-if="showDescriptions && entry.hot" class="category-stream__meta">
+                  <span>{{ copy.heat }} {{ entry.hot }}</span>
+                </div>
+              </a>
+            </div>
           </article>
         </div>
       </div>
 
-      <aside class="category-stream__rail" :aria-label="copy.sources">
-        <div class="category-stream__rail-card">
-          <div class="category-stream__rail-title">
-            <div>
-              <strong>{{ copy.sources }}</strong>
-              <span>{{ activeSources.length }}/{{ props.sources.length }}</span>
-            </div>
-            <button
-              v-if="hasRailFilters"
-              type="button"
-              class="category-stream__rail-reset"
-              @click="resetRailFilters"
-            >
-              {{ copy.reset }}
-            </button>
+      <aside class="category-stream__controls" :aria-label="copy.browseSettings">
+        <div class="category-stream__controls-card">
+          <strong class="category-stream__controls-title">{{ copy.browseSettings }}</strong>
+
+          <div v-if="!sourcePageMode" class="category-stream__source-scope">
+            <span>{{ copy.sourceScope }}</span>
+            <n-select
+              size="tiny"
+              multiple
+              clearable
+              :max-tag-count="1"
+              :value="sourceFilterValue"
+              :options="sourceFilterOptions"
+              :placeholder="copy.allSources"
+              @update:value="updateSourceFilter"
+            />
           </div>
 
-          <div class="category-stream__rail-rank">
+          <label class="category-stream__control-row">
+            <span>{{ copy.perPage }}</span>
+            <n-select
+              size="tiny"
+              :show-checkmark="false"
+              :value="pageSize"
+              :options="pageSizeOptions"
+              @update:value="updatePageSize"
+            />
+          </label>
+
+          <div v-if="pageCount > 1" class="category-stream__pagination-block">
+            <span>{{ copy.pagination }}</span>
+            <n-pagination
+              size="small"
+              :page="currentPage"
+              :page-count="pageCount"
+              :page-slot="3"
+              @update:page="updatePage"
+            />
+          </div>
+
+          <label v-if="!sourcePageMode" class="category-stream__control-row">
             <span>{{ copy.rankRange }}</span>
             <n-select
               size="tiny"
@@ -205,44 +274,19 @@
               :options="rankOptions"
               @update:value="updateRankTo"
             />
+          </label>
+
+          <div class="category-stream__display-options">
+            <span>{{ copy.display }}</span>
+            <n-checkbox :checked="showDescriptions" @update:checked="setShowDescriptions">
+              {{ copy.summary }}
+            </n-checkbox>
+            <n-checkbox :checked="showImages" @update:checked="setShowImages">
+              {{ copy.images }}
+            </n-checkbox>
           </div>
 
-          <button
-            type="button"
-            class="category-stream__rail-source is-all"
-            :class="{ active: showingAllSources }"
-            @click="showAllSources"
-          >
-            <span class="category-stream__rail-check" aria-hidden="true">
-              {{ showingAllSources ? "✓" : "" }}
-            </span>
-            <span>{{ copy.allSources }}</span>
-            <i class="category-stream__rail-count">{{ props.sources.length }}</i>
-          </button>
-
-          <button
-            v-for="source in props.sources"
-            :key="source.name"
-            type="button"
-            class="category-stream__rail-source"
-            :class="{ active: isSourceSelected(source.name) }"
-            @click="selectRailSource(source)"
-          >
-            <span class="category-stream__rail-check" aria-hidden="true">
-              {{ isSourceSelected(source.name) ? "✓" : "" }}
-            </span>
-            <img
-              :src="getSourceLogo(source.name)"
-              :alt="sourceLabelFor(source)"
-              @error="handleLogoError"
-            />
-            <span>{{ sourceLabelFor(source) }}</span>
-            <i
-              class="category-stream__rail-state"
-              :class="sourceStates[source.name] || 'idle'"
-              aria-hidden="true"
-            ></i>
-          </button>
+          <p v-if="minimalMode" class="category-stream__minimal-hint">{{ copy.minimalHint }}</p>
         </div>
       </aside>
     </div>
@@ -263,12 +307,15 @@ import { mainStore } from "@/store";
 import { getSharedRanking } from "@/utils/rankingCollection";
 import {
   buildSourceSubtypeParams,
+  getDefaultSourceSubtype,
+  getSourceSubtypeGroups,
   getSourceSubtypeOptions,
   readSourceSubtype,
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
 import {
   getSourceDisplayLabel,
+  localizeSubtypeGroups,
 } from "@/utils/sourceLabels";
 import {
   buildRankPath,
@@ -304,6 +351,15 @@ const locale = computed(() =>
 const COPY = {
   "zh-CN": {
     sources: "来源",
+    sourceNavigation: "榜单来源",
+    browseSettings: "浏览设置",
+    sourceScope: "来源范围",
+    perPage: "每页数量",
+    pagination: "页码",
+    display: "显示内容",
+    summary: "摘要",
+    images: "图片",
+    minimalHint: "已进入单行快速浏览模式",
     allSources: "全部来源",
     selectedSources: "{selected}/{total}",
     rankRange: "每榜名次",
@@ -319,6 +375,15 @@ const COPY = {
   },
   en: {
     sources: "Sources",
+    sourceNavigation: "Ranking sources",
+    browseSettings: "Browse settings",
+    sourceScope: "Source scope",
+    perPage: "Per page",
+    pagination: "Pages",
+    display: "Display",
+    summary: "Summary",
+    images: "Images",
+    minimalHint: "Single-line quick scan mode",
     allSources: "All sources",
     selectedSources: "{selected}/{total}",
     rankRange: "Per-source rank",
@@ -334,6 +399,15 @@ const COPY = {
   },
   "zh-TW": {
     sources: "來源",
+    sourceNavigation: "榜單來源",
+    browseSettings: "瀏覽設定",
+    sourceScope: "來源範圍",
+    perPage: "每頁數量",
+    pagination: "頁碼",
+    display: "顯示內容",
+    summary: "摘要",
+    images: "圖片",
+    minimalHint: "已進入單行快速瀏覽模式",
     allSources: "全部來源",
     selectedSources: "{selected}/{total}",
     rankRange: "每榜名次",
@@ -349,6 +423,15 @@ const COPY = {
   },
   ja: {
     sources: "ソース",
+    sourceNavigation: "ランキングソース",
+    browseSettings: "表示設定",
+    sourceScope: "ソース範囲",
+    perPage: "1ページ",
+    pagination: "ページ",
+    display: "表示内容",
+    summary: "概要",
+    images: "画像",
+    minimalHint: "1行クイックスキャンモード",
     allSources: "すべてのソース",
     selectedSources: "{selected}/{total}",
     rankRange: "各ソース順位",
@@ -364,6 +447,15 @@ const COPY = {
   },
   ko: {
     sources: "출처",
+    sourceNavigation: "랭킹 출처",
+    browseSettings: "보기 설정",
+    sourceScope: "출처 범위",
+    perPage: "페이지당",
+    pagination: "페이지",
+    display: "표시 내용",
+    summary: "요약",
+    images: "이미지",
+    minimalHint: "한 줄 빠른 탐색 모드",
     allSources: "전체 출처",
     selectedSources: "{selected}/{total}",
     rankRange: "출처별 순위",
@@ -400,29 +492,30 @@ const allowedSourceNames = computed(
   () => new Set(props.sources.map((item) => item.name)),
 );
 const selectedSourceNames = computed(() => {
+  if (sourcePageMode.value) {
+    return allowedSourceNames.value.has(props.sourcePageSource)
+      ? [props.sourcePageSource]
+      : [];
+  }
   const raw = sourceQuery.value;
   if (raw && raw !== "all") {
     return [
       ...new Set(raw.split(",").map((item) => item.trim()).filter(Boolean)),
     ].filter((name) => allowedSourceNames.value.has(name));
   }
-  if (
-    !raw &&
-    sourcePageMode.value &&
-    allowedSourceNames.value.has(props.sourcePageSource)
-  ) {
-    return [props.sourcePageSource];
-  }
   return [];
 });
 
 const showingAllSources = computed(
   () =>
-    sourceQuery.value === "all" ||
-    (!sourcePageMode.value && selectedSourceNames.value.length === 0),
+    !sourcePageMode.value &&
+    (sourceQuery.value === "all" || selectedSourceNames.value.length === 0),
 );
 
 const activeSources = computed(() => {
+  if (sourcePageMode.value) {
+    return props.sources.filter((item) => item.name === props.sourcePageSource);
+  }
   if (showingAllSources.value) return props.sources;
   if (!selectedSourceNames.value.length) return props.sources;
   const allowed = new Set(selectedSourceNames.value);
@@ -446,6 +539,17 @@ const rankOptions = computed(() =>
     label: `TOP ${count}`,
   })),
 );
+const PAGE_SIZE_VALUES = [20, 30, 50, 100];
+const pageSize = computed(() => {
+  const value = Number(queryString(route.query.size));
+  return PAGE_SIZE_VALUES.includes(value) ? value : 30;
+});
+const pageSizeOptions = computed(() =>
+  PAGE_SIZE_VALUES.map((value) => ({ value, label: String(value) })),
+);
+const currentPage = computed(() =>
+  Math.max(1, Math.round(Number(queryString(route.query.page)) || 1)),
+);
 const replaceFilterQuery = (patch = {}) => {
   const query = { ...route.query };
   Object.entries(patch).forEach(([key, value]) => {
@@ -466,58 +570,86 @@ const updateRankTo = (value) => {
     order: null,
   });
 };
-const isSourceSelected = (name) =>
-  showingAllSources.value || selectedSourceNames.value.includes(name);
-const showAllSources = () => {
-  replaceFilterQuery({ sources: sourcePageMode.value ? "all" : null });
-};
-const selectRailSource = (source) => {
-  if (sourcePageMode.value) {
-    const query = { ...route.query };
-    delete query.sources;
-    delete query.page;
-    router.push({
-      path: sourcePathFor(source),
-      query,
-      hash: route.hash,
-    });
-    return;
-  }
-
-  if (showingAllSources.value) {
-    replaceFilterQuery({ sources: source.name });
-    return;
-  }
-  const next = new Set(selectedSourceNames.value);
-  if (next.has(source.name)) next.delete(source.name);
-  else next.add(source.name);
-  replaceFilterQuery({
-    sources:
-      next.size > 0 && next.size < props.sources.length
-        ? [...next].join(",")
-        : null,
-  });
-};
-const hasRailFilters = computed(
-  () =>
-    (sourcePageMode.value
-      ? Boolean(sourceQuery.value)
-      : !showingAllSources.value) ||
-    rankFrom.value !== 1 ||
-    rankTo.value !== 10,
+const sourceFilterOptions = computed(() =>
+  props.sources.map((source) => ({
+    value: source.name,
+    label: sourceLabelFor(source),
+  })),
 );
-const resetRailFilters = () =>
+const sourceFilterValue = computed(() =>
+  sourcePageMode.value || showingAllSources.value ? [] : selectedSourceNames.value,
+);
+const updateSourceFilter = (value = []) => {
+  if (sourcePageMode.value) return;
+  const next = [...new Set((Array.isArray(value) ? value : []).map(String))]
+    .filter((name) => allowedSourceNames.value.has(name));
   replaceFilterQuery({
-    sources: sourcePageMode.value ? null : null,
-    from: null,
-    to: null,
-    order: null,
+    sources: next.length && next.length < props.sources.length ? next.join(",") : null,
   });
+};
+const currentTocSourceName = computed(() =>
+  sourcePageMode.value ? props.sourcePageSource : "",
+);
+const currentTocSubtype = computed(() => {
+  subtypeCatalogRevision.value;
+  const sourceName = currentTocSourceName.value;
+  if (!sourceName) return "";
+  const options = getSourceSubtypeOptions(sourceName);
+  const requested = route.params?.subtypeSlug || route.query?.subtype;
+  return (
+    resolveSourceSubtype(options, requested || getDefaultSourceSubtype(sourceName)) ||
+    getDefaultSourceSubtype(sourceName) ||
+    ""
+  );
+});
+const sourceTocGroups = (sourceName) => {
+  subtypeCatalogRevision.value;
+  return localizeSubtypeGroups(getSourceSubtypeGroups(sourceName), locale.value)
+    .map((group) => ({
+      ...group,
+      items: (group.items || []).filter((item) => item?.value),
+    }))
+    .filter((group) => group.items.length);
+};
+const sourceTocItemCount = (sourceName) =>
+  sourceTocGroups(sourceName).reduce((total, group) => total + group.items.length, 0);
+const isActiveTocSource = (sourceName) => currentTocSourceName.value === sourceName;
+const isActiveTocVariant = (sourceName, value) =>
+  isActiveTocSource(sourceName) && currentTocSubtype.value === value;
+const sourceNavigationPathFor = (source) => {
+  subtypeCatalogRevision.value;
+  return buildRankPath(
+    locale.value,
+    source.name,
+    getDefaultSourceSubtype(source.name) || "",
+  );
+};
+const sourceVariantPathFor = (sourceName, variant) =>
+  buildRankPath(locale.value, sourceName, variant || "");
+const updatePageSize = (value) => {
+  const next = PAGE_SIZE_VALUES.includes(Number(value)) ? Number(value) : 30;
+  replaceFilterQuery({ size: next === 30 ? null : next });
+};
+const updatePage = (value) => {
+  const next = Math.max(1, Math.round(Number(value) || 1));
+  const query = { ...route.query };
+  if (next > 1) query.page = String(next);
+  else delete query.page;
+  router.replace({ path: route.path, query, hash: route.hash });
+};
 const queryText = computed(() => queryString(route.query.q).toLowerCase());
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self",
 );
 const showImages = computed(() => store.showImages);
+const showDescriptions = computed(() => store.showStreamDescriptions !== false);
+const minimalMode = computed(() => !showImages.value && !showDescriptions.value);
+const setShowImages = (value) => {
+  store.showImages = Boolean(value);
+};
+const setShowDescriptions = (value) => {
+  store.showStreamDescriptions = Boolean(value);
+};
 const streamStyle = computed(() => ({
   "--category-stream-font-size": String(store.listFontSize) + "px",
   "--category-stream-compact-font-size":
@@ -717,8 +849,12 @@ const entries = computed(() => {
       if (isPinned && !store.showPinnedRankings) return;
       const inlinePrefixBadges = prefixBadges.filter((badge) => badge.kind !== "pinned");
       const rank = isPinned ? null : nextDisplayRank++;
-      if (!isPinned && (rank < rankFrom.value || rank > rankTo.value)) return;
-      if (isPinned && rankFrom.value > 1) return;
+      if (
+        !sourcePageMode.value &&
+        !isPinned &&
+        (rank < rankFrom.value || rank > rankTo.value)
+      ) return;
+      if (!sourcePageMode.value && isPinned && rankFrom.value > 1) return;
       const title = stripText(item?.title || item?.originalTitle || "");
       const description = stripText(item?.desc || item?.originalDesc || "");
       const hot = stripText(item?.hot || "");
@@ -770,6 +906,19 @@ const visibleEntries = computed(() => {
     ].some((value) => normalizeSearchText(value).includes(query)),
   );
 });
+const pageCount = computed(() =>
+  Math.max(1, Math.ceil(visibleEntries.value.length / pageSize.value)),
+);
+const pagedEntries = computed(() => {
+  const start = (Math.min(currentPage.value, pageCount.value) - 1) * pageSize.value;
+  return visibleEntries.value.slice(start, start + pageSize.value);
+});
+watch(
+  () => [currentPage.value, pageCount.value],
+  ([page, total]) => {
+    if (page > total) updatePage(total);
+  },
+);
 
 const loadedCount = computed(
   () =>
@@ -821,8 +970,12 @@ const handleLogoError = (event) => {
   if (event.target) event.target.src = getSourceLogoFallback();
 };
 const coverSrc = (cover) => getCoverDisplaySrc(cover);
-const hideBrokenCover = (event) => {
-  event.target?.closest?.(".category-stream__cover")?.remove();
+const hideBrokenMedia = (event) => {
+  const media = event.target?.closest?.(".category-stream__media");
+  if (!media) return;
+  media.classList.remove("is-cover");
+  media.classList.add("is-logo");
+  event.target.src = getSourceLogoFallback();
 };
 </script>
 
@@ -874,7 +1027,7 @@ const hideBrokenCover = (event) => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  width: min(100%, 1178px);
+  width: min(100%, 1360px);
   margin-inline: auto;
   padding: 0 4px;
   color: var(--n-text-color-3);
@@ -899,15 +1052,6 @@ const hideBrokenCover = (event) => {
   animation: category-stream-pulse 1s ease-in-out infinite alternate;
 }
 
-.category-stream__body {
-  display: grid;
-  grid-template-columns: minmax(0, 920px) 240px;
-  justify-content: center;
-  align-items: start;
-  gap: 18px;
-  width: 100%;
-}
-
 .category-stream__main {
   min-width: 0;
 }
@@ -915,23 +1059,6 @@ const hideBrokenCover = (event) => {
 .category-stream__list {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--n-border-color);
-  border-radius: 12px;
-  background: var(--n-color);
-}
-
-.category-stream__rail {
-  position: sticky;
-  top: 82px;
-  min-width: 0;
-}
-
-.category-stream__rail-card {
-  display: grid;
-  gap: 3px;
-  max-height: calc(100vh - 110px);
-  overflow: auto;
-  padding: 10px;
   border: 1px solid var(--n-border-color);
   border-radius: 12px;
   background: var(--n-color);
@@ -956,140 +1083,6 @@ const hideBrokenCover = (event) => {
 .category-stream__rail-title span {
   color: var(--n-text-color-3);
   font-variant-numeric: tabular-nums;
-}
-
-.category-stream__rail-reset {
-  border: 0;
-  background: transparent;
-  color: var(--n-text-color-3);
-  font: inherit;
-  cursor: pointer;
-}
-
-.category-stream__rail-reset:hover {
-  color: var(--n-primary-color);
-}
-
-.category-stream__rail-rank {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 88px;
-  align-items: center;
-  gap: 8px;
-  margin: 0 2px 6px;
-  padding: 7px 5px;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--n-border-color) 72%, transparent);
-  color: var(--n-text-color-3);
-  font-size: 11px;
-}
-
-.category-stream__rail-source {
-  appearance: none;
-  display: grid;
-  grid-template-columns: 18px 20px minmax(0, 1fr) 8px;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 36px;
-  padding: 0 7px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--n-text-color-2);
-  text-align: left;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.category-stream__rail-source.is-all {
-  grid-template-columns: 18px minmax(0, 1fr) auto;
-  margin-bottom: 3px;
-}
-
-.category-stream__rail-source:hover,
-.category-stream__rail-source.active {
-  background: var(--n-action-color);
-  color: var(--n-text-color);
-}
-
-.category-stream__rail-source.active {
-  box-shadow: inset 2px 0 0 var(--n-primary-color);
-}
-
-.category-stream__rail-check {
-  display: grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--n-border-color);
-  border-radius: 4px;
-  color: #fff;
-  font-size: 10px;
-  line-height: 1;
-}
-
-.category-stream__rail-source.active .category-stream__rail-check {
-  border-color: var(--n-primary-color);
-  background: var(--n-primary-color);
-}
-
-.category-stream__rail-count {
-  color: var(--n-text-color-3);
-  font-size: 10px;
-  font-style: normal;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-
-.category-stream__rail-source img {
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
-  object-fit: contain;
-}
-
-.category-stream__rail-source span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.category-stream__rail-state {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--n-border-color);
-}
-
-.category-stream__rail-state.loaded {
-  background: #18a058;
-}
-
-.category-stream__rail-state.loading {
-  background: #f0a020;
-}
-
-.category-stream__rail-state.failed {
-  background: #d03050;
-}
-
-
-.category-stream__row {
-  display: grid;
-  grid-template-columns: 44px 132px minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-  min-height: 84px;
-  padding: 10px 14px;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--n-border-color) 75%, transparent);
-}
-
-.category-stream.shows-images .category-stream__row {
-  grid-template-columns: 44px 132px minmax(0, 1fr) 108px;
 }
 
 .category-stream__row:last-child {
@@ -1132,32 +1125,6 @@ const hideBrokenCover = (event) => {
   height: 20px;
   color: var(--n-primary-color);
   stroke-width: 1.9;
-}
-
-.category-stream__source {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--n-text-color-2);
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.category-stream__source img {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-  border-radius: 5px;
-  object-fit: contain;
-}
-
-.category-stream__source span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .category-stream__content {
@@ -1308,44 +1275,9 @@ const hideBrokenCover = (event) => {
   font-size: 11px;
 }
 
-.category-stream__cover {
-  width: 108px;
-  height: 64px;
-  overflow: hidden;
-  border-radius: 8px;
-  background: var(--n-action-color);
-}
-
-.category-stream__cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.category-stream.is-compact .category-stream__row {
-  grid-template-columns: 42px 124px minmax(0, 1fr);
-  min-height: 64px;
-  padding-block: 7px;
-}
-
-.category-stream.is-compact.shows-images .category-stream__row {
-  grid-template-columns: 42px 124px minmax(0, 1fr) 82px;
-}
-
-.category-stream.is-compact .category-stream__cover {
-  width: 82px;
-  height: 50px;
-}
-
 .category-stream.is-compact .category-stream__title {
   font-size: var(--category-stream-compact-font-size, 13px);
   font-weight: 570;
-}
-
-.category-stream.is-compact .category-stream__source img {
-  width: 18px;
-  height: 18px;
-  flex-basis: 18px;
 }
 
 .category-stream__empty {
@@ -1390,66 +1322,6 @@ const hideBrokenCover = (event) => {
   }
 }
 
-@media (max-width: 1199px) {
-  .category-stream__body {
-    grid-template-columns: minmax(0, 940px);
-  }
-
-  .category-stream__rail {
-    position: static;
-    order: -1;
-  }
-
-  .category-stream__rail-card {
-    max-height: 240px;
-  }
-}
-
-@media (max-width: 1100px) {
-  .category-stream.shows-images .category-stream__row {
-    grid-template-columns: 42px 110px minmax(0, 1fr) 96px;
-  }
-
-  .category-stream__cover {
-    width: 96px;
-    height: 58px;
-  }
-
-  .category-stream.is-compact.shows-images .category-stream__row {
-    grid-template-columns: 42px 110px minmax(0, 1fr) 82px;
-  }
-
-  .category-stream.is-compact .category-stream__cover {
-    width: 82px;
-    height: 50px;
-  }
-}
-
-@media (max-width: 680px) {
-  .category-stream__row,
-  .category-stream.shows-images .category-stream__row,
-  .category-stream.is-compact .category-stream__row,
-  .category-stream.is-compact.shows-images .category-stream__row {
-    grid-template-columns: 38px minmax(0, 1fr);
-    gap: 8px;
-  }
-
-  .category-stream__source {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: start;
-    width: fit-content;
-  }
-
-  .category-stream__content {
-    grid-column: 2;
-  }
-
-  .category-stream__cover {
-    display: none;
-  }
-}
-
 @keyframes category-ranking-badge-live {
   0%,
   100% {
@@ -1463,6 +1335,452 @@ const hideBrokenCover = (event) => {
 @media (prefers-reduced-motion: reduce) {
   .category-stream__badge.is-animated img {
     animation: none !important;
+  }
+}
+
+
+.category-stream__toc {
+  display: grid;
+  gap: 2px;
+}
+
+.category-stream__toc-source {
+  min-width: 0;
+  border-radius: 8px;
+}
+
+.category-stream__toc-source-link {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 5px 7px;
+  border-radius: 8px;
+  color: var(--n-text-color-2);
+  font-size: 12px;
+  font-weight: 620;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.category-stream__toc-source-link:hover {
+  background: var(--n-action-color);
+  color: var(--n-text-color);
+}
+
+.category-stream__toc-source.active > .category-stream__toc-source-link {
+  background: color-mix(in srgb, var(--n-primary-color) 11%, var(--n-action-color));
+  color: var(--n-primary-color);
+  box-shadow: inset 2px 0 0 var(--n-primary-color);
+}
+
+.category-stream__toc-source-link img {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  object-fit: contain;
+}
+
+.category-stream__toc-source-link > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-stream__toc-caret {
+  color: var(--n-text-color-3);
+  font-size: 11px;
+  font-style: normal;
+  text-align: center;
+}
+
+.category-stream__toc-children {
+  display: grid;
+  gap: 2px;
+  margin: 3px 4px 6px 17px;
+  padding: 2px 0 2px 12px;
+  border-left: 1px solid color-mix(in srgb, var(--n-border-color) 82%, transparent);
+}
+
+.category-stream__toc-group {
+  display: grid;
+  gap: 1px;
+}
+
+.category-stream__toc-group + .category-stream__toc-group {
+  margin-top: 5px;
+}
+
+.category-stream__toc-group-label {
+  padding: 3px 7px 2px;
+  color: var(--n-text-color-3);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.category-stream__toc-child {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  color: var(--n-text-color-3);
+  font-size: 11px;
+  font-weight: 560;
+  text-decoration: none;
+}
+
+.category-stream__toc-child:hover {
+  background: var(--n-action-color);
+  color: var(--n-text-color);
+}
+
+.category-stream__toc-child.active {
+  background: color-mix(in srgb, var(--n-primary-color) 9%, transparent);
+  color: var(--n-primary-color);
+  font-weight: 700;
+}
+
+.category-stream__toc-marker {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--n-text-color-3) 48%, transparent);
+}
+
+.category-stream__toc-child.active .category-stream__toc-marker {
+  background: var(--n-primary-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--n-primary-color) 12%, transparent);
+}
+
+.category-stream__source-scope {
+  display: grid;
+  gap: 7px;
+  color: var(--n-text-color-3);
+  font-size: 11px;
+}
+
+/* Three-column stream layout: sources / content / browsing controls. */
+.category-stream__body {
+  grid-template-columns: 210px minmax(0, 860px) 220px;
+  gap: 16px;
+  width: min(100%, 1360px);
+  margin-inline: auto;
+}
+
+.category-stream__rail,
+.category-stream__controls {
+  position: sticky;
+  top: 82px;
+  min-width: 0;
+}
+
+.category-stream__rail-card,
+.category-stream__controls-card {
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+  border: 1px solid var(--n-border-color);
+  border-radius: 12px;
+  background: var(--n-color);
+}
+
+.category-stream__rail-card {
+  padding: 10px;
+}
+
+.category-stream__controls-card {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.category-stream__controls-title {
+  color: var(--n-text-color);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.category-stream__control-row,
+.category-stream__pagination-block,
+.category-stream__display-options {
+  display: grid;
+  gap: 7px;
+  color: var(--n-text-color-3);
+  font-size: 11px;
+}
+
+.category-stream__control-row {
+  grid-template-columns: minmax(0, 1fr) 92px;
+  align-items: center;
+}
+
+.category-stream__pagination-block {
+  padding-block: 2px 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--n-border-color) 72%, transparent);
+}
+
+.category-stream__pagination-block :deep(.n-pagination) {
+  flex-wrap: wrap;
+  row-gap: 5px;
+}
+
+.category-stream__display-options {
+  padding-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--n-border-color) 72%, transparent);
+}
+
+.category-stream__display-options :deep(.n-checkbox) {
+  margin: 0;
+}
+
+.category-stream__minimal-hint {
+  margin: 0;
+  color: var(--n-primary-color);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.category-stream__row,
+.category-stream.shows-images .category-stream__row,
+.category-stream.is-compact .category-stream__row,
+.category-stream.is-compact.shows-images .category-stream__row {
+  grid-template-columns: 42px 92px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 78px;
+  padding: 9px 12px;
+}
+
+.category-stream.is-compact .category-stream__row,
+.category-stream.is-compact.shows-images .category-stream__row {
+  min-height: 62px;
+  padding-block: 6px;
+}
+
+.category-stream.is-minimal .category-stream__row,
+.category-stream.is-minimal.is-compact .category-stream__row {
+  box-sizing: border-box;
+  grid-template-columns: 42px minmax(0, 1fr);
+  height: 42px;
+  min-height: 42px;
+  overflow: hidden;
+  padding-block: 3px;
+}
+
+.category-stream__media {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--n-action-color);
+  text-decoration: none;
+}
+
+.category-stream__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.category-stream__media.is-cover img {
+  object-fit: cover;
+}
+
+.category-stream__media.is-logo img {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  object-fit: contain;
+}
+
+.category-stream__content-wrap {
+  min-width: 0;
+  align-self: center;
+}
+
+.category-stream__source-line {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 3px;
+  overflow: hidden;
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  font-weight: 650;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-stream__source-line:hover {
+  color: var(--n-primary-color);
+}
+
+.category-stream__source-inline {
+  flex: 0 0 auto;
+  max-width: 92px;
+  overflow: hidden;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--n-action-color);
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-stream.is-minimal .category-stream__content-wrap,
+.category-stream.is-minimal .category-stream__content,
+.category-stream.is-minimal .category-stream__title-row {
+  min-width: 0;
+}
+
+.category-stream.is-minimal .category-stream__title-row {
+  flex-wrap: nowrap;
+}
+
+.category-stream.is-minimal .category-stream__title {
+  line-height: 1.3;
+}
+
+@media (max-width: 1280px) {
+  .category-stream__body {
+    grid-template-columns: 190px minmax(0, 1fr) 210px;
+    gap: 12px;
+  }
+
+  .category-stream__row,
+  .category-stream.shows-images .category-stream__row,
+  .category-stream.is-compact .category-stream__row,
+  .category-stream.is-compact.shows-images .category-stream__row {
+    grid-template-columns: 40px 82px minmax(0, 1fr);
+  }
+
+  .category-stream__media {
+    width: 82px;
+    height: 50px;
+  }
+
+  .category-stream.is-minimal .category-stream__row,
+  .category-stream.is-minimal.is-compact .category-stream__row {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1120px) {
+  .category-stream__body {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+
+  .category-stream__source-rail {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .category-stream__main {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .category-stream__controls {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .category-stream__controls-card {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+    max-height: none;
+  }
+
+  .category-stream__display-options {
+    border-top: 0;
+  }
+
+  .category-stream__minimal-hint {
+    align-self: center;
+  }
+}
+
+@media (max-width: 820px) {
+  .category-stream__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .category-stream__source-rail,
+  .category-stream__main,
+  .category-stream__controls {
+    position: static;
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .category-stream__source-rail {
+    order: 1;
+  }
+
+  .category-stream__controls {
+    order: 2;
+  }
+
+  .category-stream__main {
+    order: 3;
+  }
+
+  .category-stream__rail-card {
+    max-height: 220px;
+  }
+
+  .category-stream__controls-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .category-stream__row,
+  .category-stream.shows-images .category-stream__row,
+  .category-stream.is-compact .category-stream__row,
+  .category-stream.is-compact.shows-images .category-stream__row {
+    grid-template-columns: 34px 68px minmax(0, 1fr);
+    gap: 8px;
+    min-height: 66px;
+    padding-inline: 9px;
+  }
+
+  .category-stream__media {
+    display: grid;
+    width: 68px;
+    height: 44px;
+  }
+
+  .category-stream__media.is-logo img {
+    width: 26px;
+    height: 26px;
+  }
+
+  .category-stream.is-minimal .category-stream__row,
+  .category-stream.is-minimal.is-compact .category-stream__row {
+    grid-template-columns: 34px minmax(0, 1fr);
+    height: 40px;
+    min-height: 40px;
+    padding-block: 2px;
+  }
+
+  .category-stream__controls-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .category-stream__source-line {
+    margin-bottom: 2px;
   }
 }
 </style>
