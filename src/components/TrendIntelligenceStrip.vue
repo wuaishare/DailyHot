@@ -42,37 +42,36 @@ const props = defineProps({
 
 const COPY = {
   "zh-CN": {
-    title: "热度变化",
-    subtitle: "同一榜单内比较，不跨平台硬比热度",
-    changed: "条有明显变化",
+    title: "榜位趋势",
+    subtitle: "仅比较同一榜单约 1 小时前后的名次，不跨平台混算",
+    changed: "条显著榜位变化",
     signals: {
-      reentry: ["↺", "再次翻红"], breakthrough: ["↑", "冲到高位"],
-      rising: ["↗", "正在升温"], falling: ["↘", "正在降温"], new: ["+", "新上榜"],
+      reentry: ["↺", "重新上榜"], breakthrough: ["↑", "进入前十"],
+      rising: ["↗", "榜位上升"], falling: ["↘", "榜位下降"], new: ["+", "新上榜"],
     },
-    up: (n, rank) => `升 ${n} 位 · #${rank}`,
-    down: (n, rank) => `降 ${n} 位 · #${rank}`,
+    support: (n) => `${n}个平台同向`,
     rank: (rank) => `当前 #${rank}`,
   },
   en: {
-    title: "Heat movement", subtitle: "Compared within each board, never across platforms",
-    changed: "notable changes",
-    signals: { reentry: ["↺", "Back again"], breakthrough: ["↑", "Top breakthrough"], rising: ["↗", "Heating up"], falling: ["↘", "Cooling down"], new: ["+", "New entry"] },
-    up: (n, rank) => `up ${n} · #${rank}`, down: (n, rank) => `down ${n} · #${rank}`, rank: (rank) => `now #${rank}`,
+    title: "Ranking movement", subtitle: "Same-board ranks about 1h apart; no cross-platform heat mixing",
+    changed: "material rank changes",
+    signals: { reentry: ["↺", "Re-entered"], breakthrough: ["↑", "Entered top 10"], rising: ["↗", "Rank up"], falling: ["↘", "Rank down"], new: ["+", "New entry"] },
+    support: (n) => `${n} sources aligned`, rank: (rank) => `now #${rank}`,
   },
   "zh-TW": {
-    title: "熱度變化", subtitle: "只比較同一榜單內變化，不跨平台硬比熱度", changed: "筆明顯變化",
-    signals: { reentry: ["↺", "再次翻紅"], breakthrough: ["↑", "衝到高位"], rising: ["↗", "正在升溫"], falling: ["↘", "正在降溫"], new: ["+", "新上榜"] },
-    up: (n, rank) => `升 ${n} 位 · #${rank}`, down: (n, rank) => `降 ${n} 位 · #${rank}`, rank: (rank) => `目前 #${rank}`,
+    title: "榜位趨勢", subtitle: "僅比較同一榜單約 1 小時前後的名次，不跨平台混算", changed: "筆顯著榜位變化",
+    signals: { reentry: ["↺", "重新上榜"], breakthrough: ["↑", "進入前十"], rising: ["↗", "榜位上升"], falling: ["↘", "榜位下降"], new: ["+", "新上榜"] },
+    support: (n) => `${n}個平台同向`, rank: (rank) => `目前 #${rank}`,
   },
   ja: {
-    title: "注目度の変化", subtitle: "各ランキング内だけで比較し、平台間の熱度は直接比較しません", changed: "件の変化",
-    signals: { reentry: ["↺", "再浮上"], breakthrough: ["↑", "上位到達"], rising: ["↗", "上昇中"], falling: ["↘", "下降中"], new: ["+", "新登場"] },
-    up: (n, rank) => `${n}位上昇 · #${rank}`, down: (n, rank) => `${n}位下降 · #${rank}`, rank: (rank) => `現在 #${rank}`,
+    title: "順位トレンド", subtitle: "同じランキングの約1時間前後だけを比較し、プラットフォーム間の熱度は混在させません", changed: "件の有意な順位変動",
+    signals: { reentry: ["↺", "再ランクイン"], breakthrough: ["↑", "トップ10入り"], rising: ["↗", "順位上昇"], falling: ["↘", "順位下降"], new: ["+", "新規ランクイン"] },
+    support: (n) => `${n}プラットフォーム同方向`, rank: (rank) => `現在 #${rank}`,
   },
   ko: {
-    title: "열기 변화", subtitle: "각 랭킹 안에서만 비교하며 플랫폼 간 열기는 직접 비교하지 않습니다", changed: "건 변화",
-    signals: { reentry: ["↺", "재진입"], breakthrough: ["↑", "상위권 진입"], rising: ["↗", "상승 중"], falling: ["↘", "하락 중"], new: ["+", "신규 진입"] },
-    up: (n, rank) => `${n}계단 상승 · #${rank}`, down: (n, rank) => `${n}계단 하락 · #${rank}`, rank: (rank) => `현재 #${rank}`,
+    title: "순위 추세", subtitle: "같은 랭킹의 약 1시간 전후 순위만 비교하며 플랫폼 간 열기는 혼합하지 않습니다", changed: "건의 유의미한 순위 변화",
+    signals: { reentry: ["↺", "재진입"], breakthrough: ["↑", "TOP 10 진입"], rising: ["↗", "순위 상승"], falling: ["↘", "순위 하락"], new: ["+", "신규 진입"] },
+    support: (n) => `${n}개 플랫폼 동일 방향`, rank: (rank) => `현재 #${rank}`,
   },
 };
 
@@ -80,7 +79,7 @@ const copy = computed(() => COPY[props.locale] || COPY["zh-CN"]);
 const visibleItems = computed(() => props.items.slice(0, 6));
 const windowLabel = computed(() => {
   const seconds = Number(props.windowSeconds || 3600);
-  if (seconds === 3600) return props.locale === "en" ? "1h" : props.locale === "ja" ? "1時間" : props.locale === "ko" ? "1시간" : "近 1 小时";
+  if (seconds === 3600) return props.locale === "en" ? "~1h" : props.locale === "ja" ? "約1時間" : props.locale === "ko" ? "약 1시간" : props.locale === "zh-TW" ? "約 1 小時" : "约 1 小时";
   return `${Math.max(1, Math.round(seconds / 60))}m`;
 });
 const signalFor = (signal) => {
@@ -91,13 +90,18 @@ const sourceFor = (trend) => {
   const source = String(props.locale || "").startsWith("zh")
     ? trend?.sourceName || trend?.sourceKey || ""
     : getSourceLabel(trend?.sourceKey, props.locale, trend?.sourceName || trend?.sourceKey || "");
-  return [source, trend?.variantLabel].filter(Boolean).join(" · ");
+  const supportCount = Number(trend?.supportingSourceCount || 0);
+  const support = supportCount > 1 ? copy.value.support(supportCount) : "";
+  return [source, trend?.variantLabel, support].filter(Boolean).join(" · ");
 };
 const metricFor = (trend) => {
-  const delta = Number(trend?.rankDelta);
   const rank = Number(trend?.currentRank || 0);
-  if (Number.isFinite(delta) && delta > 0) return copy.value.up(delta, rank);
-  if (Number.isFinite(delta) && delta < 0) return copy.value.down(Math.abs(delta), rank);
+  const baselineRank = Number(trend?.baselineRank || 0);
+  if (
+    !["reentry", "new"].includes(trend?.signal) &&
+    Number.isFinite(baselineRank) && baselineRank > 0 &&
+    Number.isFinite(rank) && rank > 0
+  ) return `#${baselineRank} → #${rank}`;
   return copy.value.rank(rank);
 };
 </script>

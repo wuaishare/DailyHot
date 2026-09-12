@@ -7,6 +7,8 @@ const home = fs.readFileSync("src/views/Home.vue", "utf8");
 const categoryRail = fs.readFileSync("src/components/CategorySourceRail.vue", "utf8");
 const hotList = fs.readFileSync("src/components/HotList.vue", "utf8");
 const sharedBadges = fs.readFileSync("src/components/RankingBadgeGroup.vue", "utf8");
+const subtypeBar = fs.readFileSync("src/components/SubtypeBar.vue", "utf8");
+const trendStrip = fs.readFileSync("src/components/TrendIntelligenceStrip.vue", "utf8");
 const template = component.split("<script setup>")[0];
 
 assert.match(template, /category-stream__source-rail/);
@@ -85,5 +87,19 @@ assert.match(hotList, /<RankingBadgeGroup[\s\S]{0,160}:badges="item\.inlinePrefi
 assert.match(sharedBadges, /resolveRankingBadgeIconUrl/);
 assert.match(sharedBadges, /ranking-badge\.is-explosive/);
 assert.match(sharedBadges, /ranking-badge\.is-animated \.ranking-badge-icon/);
+
+assert.doesNotMatch(subtypeBar, /trigger-more-count|remainingOptionCount/);
+assert.match(subtypeBar, /\.subtype-trigger \{[\s\S]{0,260}padding: 4px 9px/);
+assert.match(subtypeBar, /\.subtype-trigger\.active \{[\s\S]{0,120}color-mix/);
+assert.doesNotMatch(subtypeBar, /\.subtype-trigger\.active \{[^}]*#ea444d/s);
+assert.match(hotList, /\.header-subtype:deep\(\.subtype-chip\) \{[\s\S]{0,120}padding: 4px 9px/);
+
+assert.match(trendStrip, /title: "榜位趋势"/);
+assert.match(trendStrip, /重新上榜/);
+assert.match(trendStrip, /进入前十/);
+assert.match(trendStrip, /榜位上升/);
+assert.match(trendStrip, /榜位下降/);
+assert.match(trendStrip, /supportingSourceCount/);
+assert.doesNotMatch(trendStrip, /热度变化|再次翻红|正在升温|正在降温/);
 
 console.log("[stream-layout-contract] ranking workbench, source variants, source actions and category rail scrolling verified");

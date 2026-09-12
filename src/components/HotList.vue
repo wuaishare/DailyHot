@@ -1512,7 +1512,7 @@ onBeforeUnmount(() => {
 
     .header-subtype:deep(.subtype-chip) {
       font-size: 12px;
-      padding: 5px 11px;
+      padding: 4px 9px;
     }
 
     .subtitle {
