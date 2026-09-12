@@ -26,7 +26,7 @@
     <!-- <n-alert type="info" :show-icon="false" style="margin-bottom: 20px">
       站点未完工
     </n-alert> -->
-    <CategoryStream
+    <CategorySourceRail
       v-if="supportsViewMode && categoryView === 'stream'"
       :sources="scopedNews"
     />
@@ -86,7 +86,7 @@
 <script setup>
 import { mainStore } from "@/store";
 import HotList from "@/components/HotList.vue";
-import CategoryStream from "@/components/CategoryStream.vue";
+import CategorySourceRail from "@/components/CategorySourceRail.vue";
 import draggable from "vuedraggable";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";

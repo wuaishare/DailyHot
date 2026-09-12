@@ -1489,7 +1489,8 @@ const hideBrokenMedia = (event) => {
 /* Three-column stream layout: sources / content / browsing controls. */
 .category-stream__body {
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr) 220px;
+  grid-template-columns: 280px minmax(520px, 720px) 280px;
+  justify-content: center;
   align-items: start;
   gap: 16px;
   box-sizing: border-box;
@@ -1676,7 +1677,7 @@ const hideBrokenMedia = (event) => {
 
 @media (max-width: 1280px) {
   .category-stream__body {
-    grid-template-columns: 190px minmax(0, 1fr) 210px;
+    grid-template-columns: 220px minmax(0, 1fr) 220px;
     gap: 12px;
   }
 
