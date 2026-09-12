@@ -28,7 +28,6 @@
         @click.stop="toggleMenu"
       >
         <span class="trigger-label">{{ currentLabel }}</span>
-        <span v-if="remainingOptionCount > 0" class="trigger-more-count" aria-hidden="true">+{{ remainingOptionCount }}</span>
         <span class="trigger-chevron" :class="{ expanded: menuOpen }" aria-hidden="true"></span>
       </button>
     </div>
@@ -160,7 +159,6 @@ const activeItem = computed(() =>
   flatItems.value.find((item) => item.value === props.activeValue) || flatItems.value[0] || null
 );
 const currentLabel = computed(() => activeItem.value?.label || props.groups[0]?.label || t("hotList.rankOrder"));
-const remainingOptionCount = computed(() => Math.max(0, flatItems.value.length - 1));
 const isDarkTheme = computed(() => store.siteTheme === "dark");
 
 const getGroupKey = (group) => group.key || group.label || group.items?.[0]?.value || "group";
@@ -320,9 +318,9 @@ onBeforeUnmount(() => {
 
 .subtype-chip,
 .subtype-trigger {
-  border: 1px solid var(--n-border-color);
-  background: var(--n-color);
-  color: var(--n-text-color);
+  border: 1px solid color-mix(in srgb, var(--n-text-color) 14%, transparent);
+  background: color-mix(in srgb, var(--n-color) 92%, transparent);
+  color: color-mix(in srgb, var(--n-text-color) 82%, transparent);
   border-radius: 999px;
   font-size: 12px;
   line-height: 1.2;
@@ -333,21 +331,21 @@ onBeforeUnmount(() => {
 .subtype-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 5px 11px;
+  padding: 4px 9px;
 }
 
-.subtype-trigger:hover,
-.subtype-trigger.active {
-  border-color: #ea444d;
+.subtype-trigger:hover {
+  border-color: color-mix(in srgb, var(--n-text-color) 24%, transparent);
+  background: color-mix(in srgb, var(--n-color) 82%, var(--n-text-color) 3%);
+  color: var(--n-text-color);
 }
 
 .subtype-trigger.active {
-  background: #ea444d;
-  color: #fff;
+  border-color: color-mix(in srgb, var(--n-text-color) 18%, transparent);
 }
 
 .trigger-label {
@@ -357,19 +355,6 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.trigger-more-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: color-mix(in srgb, currentColor 14%, transparent);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-}
 
 .trigger-chevron,
 .accordion-chevron {
