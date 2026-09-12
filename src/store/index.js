@@ -1263,6 +1263,8 @@ export const mainStore = defineStore("mainData", {
       autoRefreshInterval: 1800,
       // 是否显示封面图片
       showImages: true,
+      // 信息流是否显示摘要/热度等辅助信息
+      showStreamDescriptions: true,
       // 分类页视图偏好：内容组织方式与显示偏好分离
       categoryViewMode: "card",
       categoryViewPerCategory: true,
@@ -1843,6 +1845,7 @@ export const mainStore = defineStore("mainData", {
         "autoRefreshPaused",
         "autoRefreshInterval",
         "showImages",
+        "showStreamDescriptions",
         "categoryViewMode",
         "categoryViewPerCategory",
         "categoryViewModes",
