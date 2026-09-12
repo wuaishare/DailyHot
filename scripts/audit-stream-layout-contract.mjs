@@ -6,6 +6,7 @@ const store = fs.readFileSync("src/store/index.js", "utf8");
 const home = fs.readFileSync("src/views/Home.vue", "utf8");
 const categoryRail = fs.readFileSync("src/components/CategorySourceRail.vue", "utf8");
 const hotList = fs.readFileSync("src/components/HotList.vue", "utf8");
+const sharedBadges = fs.readFileSync("src/components/RankingBadgeGroup.vue", "utf8");
 const template = component.split("<script setup>")[0];
 
 assert.match(template, /category-stream__source-rail/);
@@ -71,5 +72,18 @@ assert.match(hotList, /import { formatCompactMetric } from "@\/utils\/compactMet
 assert.match(hotList, /const formatPreviewHot = \(value\) => formatCompactMetric\(value, locale\.value\)/);
 assert.match(store, /showStreamDescriptions: true/);
 assert.match(store, /"showStreamDescriptions"/);
+
+assert.doesNotMatch(categoryRail, /#\{\{ entry\.rank \}\}/);
+assert.match(categoryRail, /<span class="category-story-card__rank">\{\{ entry\.rank \}\}<\/span>/);
+assert.match(categoryRail, /category-source-section__freshness[\s\S]{0,500}sourceUpdateTime[\s\S]{0,500}Refresh/);
+assert.match(categoryRail, /<RankingBadgeGroup[\s\S]{0,180}category-story-card__badges[\s\S]{0,180}:badges="entry\.suffixBadges"/);
+assert.doesNotMatch(categoryRail, /category-story-card__badges span/);
+assert.match(categoryRail, /backdrop-filter: blur\(10px\) saturate\(1\.2\)/);
+assert.match(categoryRail, /is-one \.category-story-card__rank \{ background: rgba\(234,68,77,\.84\)/);
+assert.match(hotList, /<RankingBadgeGroup[\s\S]{0,160}:badges="item\.suffixBadges"/);
+assert.match(hotList, /<RankingBadgeGroup[\s\S]{0,160}:badges="item\.inlinePrefixBadges"/);
+assert.match(sharedBadges, /resolveRankingBadgeIconUrl/);
+assert.match(sharedBadges, /ranking-badge\.is-explosive/);
+assert.match(sharedBadges, /ranking-badge\.is-animated \.ranking-badge-icon/);
 
 console.log("[stream-layout-contract] ranking workbench, source variants, source actions and category rail scrolling verified");
