@@ -25,7 +25,14 @@ assert.match(component, /const PAGE_SIZE_VALUES = \[20, 30, 50, 100\]/);
 assert.match(component, /getSourceSubtypeGroups/);
 assert.match(component, /sourceFilterValue/);
 assert.match(component, /sourcePageMode\.value \? props\.sourcePageSource : ""/);
+assert.match(component, /\.category-stream__body \{[\s\S]{0,180}display: grid;/);
+assert.match(component, /grid-template-columns: 210px minmax\(0, 1fr\) 220px;/);
+assert.match(component, /\.category-stream__body \{[\s\S]{0,240}width: 100%;/);
+assert.doesNotMatch(component, /\.category-stream__body \{[\s\S]{0,240}width: min\(100%, 1360px\)/);
+assert.match(component, /--category-stream-primary/);
+assert.match(component, /\.category-stream__toc-source\.active[\s\S]{0,220}var\(--category-stream-primary\)/);
+assert.match(component, /\.category-stream__toc-child\.active[\s\S]{0,160}var\(--category-stream-primary\)/);
 assert.match(store, /showStreamDescriptions: true/);
 assert.match(store, /"showStreamDescriptions"/);
 
-console.log("[stream-layout-contract] three-column layout, source-page rank independence, pagination and minimal mode verified");
+console.log("[stream-layout-contract] three-column grid geometry, active TOC state, source-page rank independence, pagination and minimal mode verified");
