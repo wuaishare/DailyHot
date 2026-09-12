@@ -21,11 +21,11 @@ import {
 } from "@/utils/sourceLabels";
 
 const DEFAULT_SEO = {
-  title: "吾爱热榜 - 全网热点排行榜聚合与实时趋势追踪",
+  title: "吾爱热榜 - 今日热榜、全网热搜与实时热点聚合",
   description:
-    "吾爱热榜聚合微博、知乎、抖音、B站、头条、新闻站与垂直社区热榜，支持分类浏览、榜单切换、自动刷新与多语言阅读，帮助你一站式掌握全网热点。",
+    "吾爱热榜聚合微博、百度、知乎、抖音、B站、头条等平台今日热榜与实时热搜，支持分类浏览、榜单切换和自动刷新，一站掌握全网热点。",
   keywords:
-    "吾爱热榜,今日热榜,全网热点,热榜聚合,微博热搜,知乎热榜,抖音热榜,B站热榜,头条热榜,实时热点,榜单排行",
+    "吾爱热榜,今日热榜,全网热搜,全网热点,实时热点,热榜聚合,微博热搜,百度热搜,知乎热榜,抖音热榜,B站热榜,头条热榜",
   ogImage: "/ico/favicon.png",
   siteName: "吾爱热榜",
   locale: "zh_CN",
@@ -1532,6 +1532,7 @@ const getHomeJsonLd = (siteUrl, title, description, locale) => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: i18n.global.t("common.siteName", {}, { locale }) || DEFAULT_SEO.siteName,
+  ...(locale === "zh-CN" ? { alternateName: "今日热榜" } : {}),
   url: siteUrl || "/",
   description,
   inLanguage: getLocaleMeta(locale)?.htmlLang || "zh-CN",
@@ -1865,5 +1866,5 @@ export const applySeoMeta = (route) => {
     (typeof meta.jsonLd === "function"
       ? meta.jsonLd({ siteUrl, canonical, title, description, route })
       : meta.jsonLd);
-  setJsonLd("page-schema", jsonLd);
+  setJsonLd("dailyhot-route-jsonld", jsonLd);
 };

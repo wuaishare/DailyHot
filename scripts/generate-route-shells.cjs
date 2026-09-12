@@ -610,14 +610,22 @@ const buildCollectionJsonLd = ({ title, description, canonical, htmlLang, listNa
   },
 });
 
-const buildWebsiteJsonLd = ({ siteName, title, description, canonical, htmlLang }) => ({
+const buildWebsiteJsonLd = ({
+  siteName,
+  alternateName,
+  title,
+  description,
+  canonical,
+  htmlLang,
+}) => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: siteName || brandNameZh,
-  alternateName: title,
+  ...(alternateName ? { alternateName } : {}),
   url: canonical || undefined,
   description,
   inLanguage: htmlLang || "zh-CN",
+  headline: title,
 });
 
 const buildWebPageJsonLd = ({ title, description, canonical, htmlLang }) => ({
@@ -736,6 +744,7 @@ async function main() {
       alternateLinks: buildAlternateLinks("/", supportedLocales),
       jsonLd: buildWebsiteJsonLd({
         siteName,
+        alternateName: locale === "zh-CN" ? "今日热榜" : undefined,
         title,
         description,
         canonical,

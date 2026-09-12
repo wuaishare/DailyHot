@@ -14,15 +14,16 @@ const routes = [
     name: "home",
     meta: {
       title: "首页",
-      seoTitle: "今日热榜 - 全网热点聚合与多平台热榜实时更新_吾爱分享网",
+      seoTitle: "吾爱热榜 - 今日热榜、全网热搜与实时热点聚合",
       description:
-        "今日热榜聚合微博、知乎、抖音、B站、头条等多平台热榜，一站式浏览全网热点。支持榜单筛选与排序、自动刷新和简洁高效的阅读体验。",
+        "吾爱热榜聚合微博、百度、知乎、抖音、B站、头条等平台今日热榜与实时热搜，支持分类浏览、榜单切换和自动刷新，一站掌握全网热点。",
       keywords:
-        "今日热榜,全网热点,热榜聚合,微博热搜,知乎热榜,抖音热榜,B站热榜,头条热榜,实时热点,榜单排行",
+        "吾爱热榜,今日热榜,全网热搜,全网热点,实时热点,热榜聚合,微博热搜,百度热搜,知乎热榜,抖音热榜,B站热榜,头条热榜",
       jsonLd: ({ siteUrl, description }) => ({
         "@context": "https://schema.org",
         "@type": "WebSite",
-        name: "今日热榜",
+        name: "吾爱热榜",
+        alternateName: "今日热榜",
         url: siteUrl || "/",
         description,
         inLanguage: "zh-CN",
@@ -35,15 +36,16 @@ const routes = [
     name: "home-locale",
     meta: {
       title: "首页",
-      seoTitle: "今日热榜 - 全网热点聚合与多平台热榜实时更新_吾爱分享网",
+      seoTitle: "吾爱热榜 - 今日热榜、全网热搜与实时热点聚合",
       description:
-        "今日热榜聚合微博、知乎、抖音、B站、头条等多平台热榜，一站式浏览全网热点。支持榜单筛选与排序、自动刷新和简洁高效的阅读体验。",
+        "吾爱热榜聚合微博、百度、知乎、抖音、B站、头条等平台今日热榜与实时热搜，支持分类浏览、榜单切换和自动刷新，一站掌握全网热点。",
       keywords:
-        "今日热榜,全网热点,热榜聚合,微博热搜,知乎热榜,抖音热榜,B站热榜,头条热榜,实时热点,榜单排行",
+        "吾爱热榜,今日热榜,全网热搜,全网热点,实时热点,热榜聚合,微博热搜,百度热搜,知乎热榜,抖音热榜,B站热榜,头条热榜",
       jsonLd: ({ siteUrl, description }) => ({
         "@context": "https://schema.org",
         "@type": "WebSite",
-        name: "今日热榜",
+        name: "吾爱热榜",
+        alternateName: "今日热榜",
         url: siteUrl || "/",
         description,
         inLanguage: "zh-CN",
