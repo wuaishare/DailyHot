@@ -479,6 +479,7 @@ import {
 } from "@/utils/marketQuote";
 import { trackEvent } from "@/utils/track";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
+import { formatCompactMetric } from "@/utils/compactMetric";
 import {
   getSourceDisplayLabel,
   getSourceSubtitleLabel,
@@ -573,7 +574,6 @@ const previewMediaPresets = {
     mediaOnly: { width: 240, height: 144 },
   },
 };
-const previewCompactFormatterCache = new Map();
 const previewTooltipId = computed(() => `hot-item-preview-${props.hotData.name}`);
 const showImages = computed(() => store.showImages);
 const previewHasCover = computed(
@@ -642,32 +642,7 @@ const isDuplicateDesc = (desc = "", ...titles) => {
     return normalizedTitle && normalizedDesc === normalizedTitle;
   });
 };
-const getPreviewCompactFormatter = (maximumFractionDigits) => {
-  const targetLocale = locale.value || "zh-CN";
-  const cacheKey = `${targetLocale}:${maximumFractionDigits}`;
-  if (!previewCompactFormatterCache.has(cacheKey)) {
-    previewCompactFormatterCache.set(
-      cacheKey,
-      new Intl.NumberFormat(targetLocale, {
-        notation: "compact",
-        maximumFractionDigits,
-      })
-    );
-  }
-  return previewCompactFormatterCache.get(cacheKey);
-};
-const formatPreviewHot = (value) => {
-  const rawValue = String(value ?? "").trim();
-  if (!rawValue || !/^\d+(?:\.\d+)?$/.test(rawValue)) return rawValue;
-  const numericValue = Number(rawValue);
-  if (!Number.isFinite(numericValue)) return rawValue;
-  const maximumFractionDigits = numericValue >= 10_000_000 ? 0 : 1;
-  try {
-    return getPreviewCompactFormatter(maximumFractionDigits).format(numericValue);
-  } catch {
-    return rawValue;
-  }
-};
+const formatPreviewHot = (value) => formatCompactMetric(value, locale.value);
 const handleRankingBadgeImageError = (iconUrl) => {
   if (iconUrl) rankingBadgeImageErrors[iconUrl] = true;
 };

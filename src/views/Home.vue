@@ -26,38 +26,10 @@
     <!-- <n-alert type="info" :show-icon="false" style="margin-bottom: 20px">
       站点未完工
     </n-alert> -->
-    <div
-      v-if="supportsViewMode && categoryView === 'stream' && categoryNavigation"
-      class="category-context-nav"
-      :class="{ 'is-dark': store.siteTheme === 'dark' }"
-    >
-      <div v-if="categoryNavigation.breadcrumbs.length > 1" class="category-context-nav__crumbs">
-        <template v-for="(item, index) in categoryNavigation.breadcrumbs" :key="item.id">
-          <router-link :to="categoryPath(item)">{{ categoryLabelFor(item) }}</router-link>
-          <span v-if="index < categoryNavigation.breadcrumbs.length - 1" aria-hidden="true">/</span>
-        </template>
-      </div>
-      <nav
-        v-if="categoryNavigation.options.length > 1"
-        class="category-context-nav__tabs"
-        :aria-label="categoryLabelFor(categoryNavigation.scopeRoot)"
-      >
-        <router-link
-          v-for="(item, index) in categoryNavigation.options"
-          :key="item.id"
-          :to="categoryPath(item)"
-          class="category-context-nav__tab"
-          :class="{ active: item.id === categoryNavigation.current.id }"
-          :aria-current="item.id === categoryNavigation.current.id ? 'page' : undefined"
-        >
-          <span v-if="categoryNavigation.showScopeAll && item.id === categoryNavigation.scopeRoot.id">{{ t('categories.all') }}</span>
-          <span v-else>{{ categoryLabelFor(item) }}</span>
-        </router-link>
-      </nav>
-    </div>
     <CategorySourceRail
       v-if="supportsViewMode && categoryView === 'stream'"
       :sources="scopedNews"
+      @reorder="saveStreamOrder"
     />
     <draggable
       v-else-if="sortableNews[0]"
@@ -120,9 +92,7 @@ import draggable from "vuedraggable";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import {
-  buildCategoryPath,
   buildFixedLocalePath,
-  getCategoryLabel,
   getCategoryNameBySlug,
   getLocaleFromRoute,
   normalizeLocale,
@@ -164,43 +134,6 @@ const categoryView = computed(() =>
   ),
 );
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
-const currentCategory = computed(() =>
-  store.categories.find((item) => item.name === forcedCategoryName.value) || null,
-);
-const categoryChildren = (categoryId) =>
-  store.categories
-    .filter((item) => String(item.parentId || "") === String(categoryId || ""))
-    .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
-const categoryNavigation = computed(() => {
-  if (!isCategoryRoute.value || !currentCategory.value) return null;
-  const current = currentCategory.value;
-  const ownChildren = categoryChildren(current.id);
-  const parent = current.parentId
-    ? store.categories.find((item) => String(item.id) === String(current.parentId)) || null
-    : null;
-  const scopeRoot = ownChildren.length ? current : parent || current;
-  const topLevel = store.categories
-    .filter((item) => !item.parentId)
-    .sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
-  const options = ownChildren.length || parent
-    ? [scopeRoot, ...categoryChildren(scopeRoot.id)]
-    : topLevel;
-  const showScopeAll = Boolean(ownChildren.length || parent);
-  const breadcrumbs = [];
-  let cursor = current;
-  const seen = new Set();
-  while (cursor && !seen.has(cursor.id)) {
-    breadcrumbs.unshift(cursor);
-    seen.add(cursor.id);
-    cursor = cursor.parentId
-      ? store.categories.find((item) => String(item.id) === String(cursor.parentId)) || null
-      : null;
-  }
-  return { current, scopeRoot, options, breadcrumbs, showScopeAll };
-});
-const categoryLabelFor = (item) =>
-  item?.labels?.[locale.value] || getCategoryLabel(item?.name || "", locale.value) || item?.name || "";
-const categoryPath = (item) => buildCategoryPath(locale.value, item?.slug || "");
 const queryValue = (value) =>
   String(Array.isArray(value) ? value[0] || "" : value || "").trim();
 const searchQuery = computed(() => queryValue(route.query.q).toLowerCase());
@@ -322,6 +255,11 @@ const saveCardOrder = () => {
   syncSortableNews();
 };
 
+const saveStreamOrder = (orderedNames = []) => {
+  const scopedNames = scopedNews.value.map((item) => item.name);
+  store.reorderVisibleNews(orderedNames, scopedNames);
+};
+
 // 重置
 const reset = () => {
   $dialog.warning({
@@ -343,72 +281,6 @@ const reset = () => {
 
 <style lang="scss" scoped>
 .home {
-  .category-context-nav {
-    --ccn-panel: #fff;
-    --ccn-action: rgba(31, 34, 37, .045);
-    --ccn-border: rgba(31, 34, 37, .12);
-    --ccn-text: rgba(31, 34, 37, .92);
-    --ccn-text-2: rgba(31, 34, 37, .72);
-    --ccn-text-3: rgba(31, 34, 37, .56);
-    display: grid;
-    gap: 8px;
-    margin-bottom: 14px;
-    padding: 10px 12px;
-    border: 1px solid var(--ccn-border);
-    border-radius: 12px;
-    background: var(--ccn-panel);
-  }
-  .category-context-nav.is-dark {
-    --ccn-panel: #18181c;
-    --ccn-action: rgba(255, 255, 255, .065);
-    --ccn-border: rgba(255, 255, 255, .13);
-    --ccn-text: rgba(255, 255, 255, .92);
-    --ccn-text-2: rgba(255, 255, 255, .72);
-    --ccn-text-3: rgba(255, 255, 255, .54);
-  }
-  .category-context-nav__crumbs {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-    color: var(--ccn-text-3);
-    font-size: 11px;
-  }
-  .category-context-nav__crumbs a {
-    color: inherit;
-    text-decoration: none;
-  }
-  .category-context-nav__crumbs a:last-of-type {
-    color: var(--ccn-text);
-    font-weight: 650;
-  }
-  .category-context-nav__tabs {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .category-context-nav__tabs::-webkit-scrollbar { display: none; }
-  .category-context-nav__tab {
-    flex: 0 0 auto;
-    padding: 6px 10px;
-    border-radius: 999px;
-    color: var(--ccn-text-2);
-    font-size: 12px;
-    font-weight: 620;
-    line-height: 1;
-    text-decoration: none;
-    transition: background-color .15s ease, color .15s ease;
-  }
-  .category-context-nav__tab:hover {
-    background: var(--ccn-action);
-    color: var(--ccn-text);
-  }
-  .category-context-nav__tab.active {
-    background: color-mix(in srgb, #ea444d 12%, var(--ccn-action));
-    color: #ea444d;
-  }
-
   .wool-topic-entry {
     display: flex;
     align-items: center;

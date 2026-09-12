@@ -26,6 +26,7 @@
               v-for="source in props.sources"
               :key="source.name"
               class="category-stream__toc-source-link"
+              :ref="(el) => setTocSourceRef(source.name, el)"
               :class="{ active: isActiveTocSource(source.name) }"
               :to="sourceNavigationPathFor(source)"
               :aria-current="isActiveTocSource(source.name) ? 'page' : undefined"
@@ -48,8 +49,20 @@
               </div>
             </div>
             <div class="category-stream__context-status">
-              <span class="category-stream__status-dot" :class="{ loading: pendingCount }"></span>
+              <span class="category-stream__status-dot" :class="{ loading: currentSourceLoading }"></span>
               <span>{{ statusText }}</span>
+              <span v-if="currentUpdateTime" class="category-stream__context-time">{{ currentUpdateTime }}</span>
+              <button
+                type="button"
+                class="category-stream__context-refresh"
+                :class="{ loading: currentSourceLoading }"
+                :disabled="currentSourceLoading"
+                :title="copy.refreshLatest"
+                :aria-label="copy.refreshLatest"
+                @click="refreshCurrentSource"
+              >
+                <Refresh aria-hidden="true" />
+              </button>
               <n-popover v-if="failedCount" trigger="hover" placement="top-end" :show-arrow="false">
                 <template #trigger>
                   <button type="button" class="category-stream__retry" @click="retryFailed">
@@ -152,7 +165,7 @@
                 </div>
                 <p v-if="showDescriptions && entry.description" class="category-stream__desc">{{ entry.description }}</p>
                 <div v-if="showDescriptions && (entry.hot || entry.author)" class="category-stream__meta">
-                  <span v-if="entry.hot">{{ copy.heat }} {{ entry.hot }}</span>
+                  <span v-if="entry.hot">{{ copy.heat }} {{ formatCompactMetric(entry.hot, locale) }}</span>
                   <span v-if="entry.author">{{ entry.author }}</span>
                 </div>
               </a>
@@ -194,6 +207,7 @@
 <script setup>
 import {
   computed,
+  nextTick,
   onBeforeUnmount,
   onMounted,
   reactive,
@@ -228,6 +242,9 @@ import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { normalizeRankingBadges, resolveRankingBadgeIconUrl } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
+import { Refresh } from "@icon-park/vue-next";
+import { formatTime } from "@/utils/getTime";
+import { formatCompactMetric } from "@/utils/compactMetric";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
 
@@ -270,6 +287,7 @@ const COPY = {
     noEntries: "当前名次区间没有条目",
     noSearchResults: "没有匹配当前搜索的条目",
     heat: "热度",
+    refreshLatest: "刷新最新数据",
   },
   en: {
     sources: "Sources",
@@ -294,6 +312,7 @@ const COPY = {
     noEntries: "No items in this rank range",
     noSearchResults: "No items match the current search",
     heat: "Heat",
+    refreshLatest: "Refresh latest data",
   },
   "zh-TW": {
     sources: "來源",
@@ -318,6 +337,7 @@ const COPY = {
     noEntries: "目前名次區間沒有條目",
     noSearchResults: "沒有符合目前搜尋的條目",
     heat: "熱度",
+    refreshLatest: "重新整理最新資料",
   },
   ja: {
     sources: "ソース",
@@ -342,6 +362,7 @@ const COPY = {
     noEntries: "この順位範囲に項目がありません",
     noSearchResults: "検索条件に一致する項目がありません",
     heat: "注目度",
+    refreshLatest: "最新データを更新",
   },
   ko: {
     sources: "출처",
@@ -366,6 +387,7 @@ const COPY = {
     noEntries: "현재 순위 범위에 항목이 없습니다",
     noSearchResults: "현재 검색과 일치하는 항목이 없습니다",
     heat: "인기도",
+    refreshLatest: "최신 데이터 새로고침",
   },
 };
 const copy = computed(() => COPY[locale.value] || COPY["zh-CN"]);
@@ -511,6 +533,26 @@ const sourceTocGroups = (sourceName) => {
 };
 const sourceTocItemCount = (sourceName) =>
   sourceTocGroups(sourceName).reduce((total, group) => total + group.items.length, 0);
+const tocSourceRefs = new Map();
+const setTocSourceRef = (sourceName, el) => {
+  if (el) tocSourceRefs.set(sourceName, el.$el || el);
+  else tocSourceRefs.delete(sourceName);
+};
+const ensureActiveSourceVisible = () => {
+  if (!sourcePageMode.value || !currentTocSourceName.value) return;
+  const el = tocSourceRefs.get(currentTocSourceName.value);
+  const container = el?.closest?.('.category-stream__rail-card');
+  if (!el || !container) return;
+  const itemRect = el.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  const headerOffset = 46;
+  const visibleTop = containerRect.top + headerOffset;
+  const visibleBottom = containerRect.bottom;
+  if (itemRect.top >= visibleTop && itemRect.bottom <= visibleBottom) return;
+  const delta = itemRect.top - visibleTop - Math.max(0, (containerRect.height - headerOffset - itemRect.height) / 2);
+  container.scrollTop += delta;
+};
+
 const isActiveTocSource = (sourceName) => currentTocSourceName.value === sourceName;
 const isActiveTocVariant = (sourceName, value) =>
   isActiveTocSource(sourceName) && currentTocSubtype.value === value;
@@ -592,6 +634,7 @@ const stripText = (value = "") =>
     .replace(/\s+/g, " ")
     .trim();
 
+
 const sourceSubtypeFor = (sourceName) => {
   subtypeCatalogRevision.value;
   const routeSubtype =
@@ -622,6 +665,15 @@ const sourceLabelFor = (source) =>
 const currentPageSource = computed(() =>
   props.sources.find((source) => source.name === props.sourcePageSource) || null,
 );
+const currentSourceLoading = computed(() =>
+  Boolean(currentPageSource.value && sourceStates[currentPageSource.value.name] === "loading"),
+);
+const currentUpdateTime = computed(() => {
+  void store.timeData;
+  const source = currentPageSource.value;
+  const value = source ? sourceResults[source.name]?.updateTime : null;
+  return value ? formatTime(value, locale.value) : "";
+});
 const currentVariantLabel = computed(() => {
   const source = currentPageSource.value;
   if (!source) return "";
@@ -680,6 +732,12 @@ const loadSource = async (source, force = false) => {
   }
 };
 
+const refreshCurrentSource = () => {
+  const source = currentPageSource.value;
+  if (!source || currentSourceLoading.value) return;
+  void loadSource(source, true);
+};
+
 const loadActiveSources = async ({ forceFailed = false } = {}) => {
   const queue = activeSources.value.filter((source) => {
     if (forceFailed) return sourceStates[source.name] === "failed";
@@ -713,6 +771,12 @@ watch(
 );
 
 watch(
+  () => currentTocSourceName.value,
+  () => nextTick(ensureActiveSourceVisible),
+  { immediate: true },
+);
+
+watch(
   () => [
     props.sourcePageSource,
     route.params?.subtypeSlug || "",
@@ -723,6 +787,7 @@ watch(
     delete sourceResults[props.sourcePageSource];
     sourceStates[props.sourcePageSource] = "idle";
     void loadActiveSources();
+    ensureActiveSourceVisible();
   },
 );
 
@@ -748,6 +813,7 @@ onMounted(() => {
   if (typeof window !== "undefined") {
     window.addEventListener(DATA_REFRESH_EVENT, handleDataRefresh);
   }
+  nextTick(ensureActiveSourceVisible);
 });
 
 onBeforeUnmount(() => {
@@ -891,6 +957,9 @@ const retryFailed = () => {
 const rankTone = (rank, isPinned = false) => ({
   "is-pinned": isPinned,
   "is-top": !isPinned && rank <= 3,
+  "is-one": !isPinned && rank === 1,
+  "is-two": !isPinned && rank === 2,
+  "is-three": !isPinned && rank === 3,
   "is-top10": !isPinned && rank > 3 && rank <= 10,
 });
 const handleRankingBadgeImageError = (iconUrl) => {
@@ -1863,6 +1932,45 @@ const hideBrokenMedia = (event) => {
   white-space: nowrap;
 }
 
+.category-stream__context-time {
+  padding-left: 6px;
+  border-left: 1px solid color-mix(in srgb, var(--category-stream-border) 78%, transparent);
+  color: var(--category-stream-text-3);
+}
+
+.category-stream__context-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--category-stream-text-3);
+  cursor: pointer;
+}
+
+.category-stream__context-refresh:hover:not(:disabled) {
+  background: var(--category-stream-action);
+  color: var(--category-stream-text);
+}
+
+.category-stream__context-refresh:disabled {
+  cursor: wait;
+  opacity: .62;
+}
+
+.category-stream__context-refresh svg {
+  width: 15px;
+  height: 15px;
+}
+
+.category-stream__context-refresh.loading svg {
+  animation: category-stream-spin .8s linear infinite;
+}
+
 .category-stream__variant-nav {
   display: grid;
   gap: 7px;
@@ -1956,8 +2064,8 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream.is-source-page .category-stream__rank {
-  align-self: start;
-  padding-top: 2px;
+  align-self: center;
+  padding-top: 0;
   color: var(--category-stream-text-3);
   font-size: 16px;
   font-weight: 720;
@@ -1970,6 +2078,10 @@ const hideBrokenMedia = (event) => {
   font-size: 18px;
   font-weight: 820;
 }
+
+.category-stream.is-source-page .category-stream__rank.is-one { color: #ea444d; }
+.category-stream.is-source-page .category-stream__rank.is-two { color: #ed702d; }
+.category-stream.is-source-page .category-stream__rank.is-three { color: #eead3f; }
 
 .category-stream.is-source-page .category-stream__media {
   width: 84px;
@@ -2199,4 +2311,6 @@ const hideBrokenMedia = (event) => {
     min-height: 40px;
   }
 }
+
+@keyframes category-stream-spin { to { transform: rotate(360deg); } }
 </style>
