@@ -19,7 +19,7 @@
     "dev": "vite",
     "prebuild": "npm run audit:trends-catalog:contract && npm run audit:category-integrity && node scripts/generate-seo-files.js",
     "build": "vite build",
-    "postbuild": "node scripts/generate-route-shells.cjs && npm run audit:seo-shells",
+    "postbuild": "node scripts/generate-route-shells.cjs && npm run audit:seo-shells && npm run audit:home-seo",
     "preview": "vite preview",
     "print:build-number": "node scripts/resolve-code-build-date.cjs",
     "audit:live": "node scripts/audit-live-site.cjs",
@@ -33,7 +33,8 @@
     "audit:trends-intelligence": "node scripts/audit-trends-intelligence-proxy.mjs",
     "deploy:prod": "node scripts/vercel-deploy-prod.cjs",
     "submit:indexnow": "node scripts/submit-indexnow.cjs",
-    "audit:category-integrity": "node scripts/audit-category-integrity.mjs"
+    "audit:category-integrity": "node scripts/audit-category-integrity.mjs",
+    "audit:home-seo": "node scripts/audit-home-seo.cjs"
   },
   "dependencies": {
     "@icon-park/vue-next": "^1.4.2",
