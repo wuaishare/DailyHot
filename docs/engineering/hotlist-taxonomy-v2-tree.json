@@ -1,0 +1,621 @@
+{
+  "version": 2,
+  "status": "planning-draft",
+  "maxDepth": 3,
+  "uiViews": [
+    "all",
+    "realtime",
+    "today",
+    "week",
+    "month"
+  ],
+  "rankingKinds": [
+    "hot_search",
+    "hot_topic",
+    "popular",
+    "trending",
+    "sales",
+    "box_office",
+    "playback",
+    "reading",
+    "rating",
+    "new_release",
+    "free",
+    "discount",
+    "flash",
+    "feed",
+    "official_release",
+    "market_quote",
+    "index",
+    "schedule"
+  ],
+  "periods": [
+    "realtime",
+    "day",
+    "week",
+    "month",
+    "all_time"
+  ],
+  "nodes": [
+    {
+      "id": "hotspot",
+      "name": "热点",
+      "parentId": null
+    },
+    {
+      "id": "hotspot-social",
+      "name": "社交热点",
+      "parentId": "hotspot"
+    },
+    {
+      "id": "hotspot-social-search",
+      "name": "热搜词",
+      "parentId": "hotspot-social"
+    },
+    {
+      "id": "hotspot-social-topic",
+      "name": "热门话题",
+      "parentId": "hotspot-social"
+    },
+    {
+      "id": "hotspot-social-video",
+      "name": "短视频热点",
+      "parentId": "hotspot-social"
+    },
+    {
+      "id": "hotspot-search",
+      "name": "搜索趋势",
+      "parentId": "hotspot"
+    },
+    {
+      "id": "hotspot-search-trending",
+      "name": "搜索热度",
+      "parentId": "hotspot-search"
+    },
+    {
+      "id": "hotspot-search-global",
+      "name": "全网趋势",
+      "parentId": "hotspot-search"
+    },
+    {
+      "id": "news",
+      "name": "新闻",
+      "parentId": null
+    },
+    {
+      "id": "news-general",
+      "name": "综合新闻",
+      "parentId": "news"
+    },
+    {
+      "id": "news-general-domestic",
+      "name": "国内新闻",
+      "parentId": "news-general"
+    },
+    {
+      "id": "news-general-world",
+      "name": "国际新闻",
+      "parentId": "news-general"
+    },
+    {
+      "id": "news-current",
+      "name": "时事社会",
+      "parentId": "news"
+    },
+    {
+      "id": "news-current-society",
+      "name": "社会民生",
+      "parentId": "news-current"
+    },
+    {
+      "id": "news-current-public",
+      "name": "政策公共事务",
+      "parentId": "news-current"
+    },
+    {
+      "id": "news-depth",
+      "name": "深度媒体",
+      "parentId": "news"
+    },
+    {
+      "id": "news-depth-reporting",
+      "name": "调查/深度",
+      "parentId": "news-depth"
+    },
+    {
+      "id": "news-depth-opinion",
+      "name": "评论/观点",
+      "parentId": "news-depth"
+    },
+    {
+      "id": "tech",
+      "name": "科技",
+      "parentId": null
+    },
+    {
+      "id": "tech-digital",
+      "name": "数码科技",
+      "parentId": "tech"
+    },
+    {
+      "id": "tech-digital-hardware",
+      "name": "硬件设备",
+      "parentId": "tech-digital"
+    },
+    {
+      "id": "tech-digital-software",
+      "name": "软件应用",
+      "parentId": "tech-digital"
+    },
+    {
+      "id": "tech-industry",
+      "name": "互联网产业",
+      "parentId": "tech"
+    },
+    {
+      "id": "tech-industry-startup",
+      "name": "创业商业",
+      "parentId": "tech-industry"
+    },
+    {
+      "id": "tech-industry-product",
+      "name": "产品互联网",
+      "parentId": "tech-industry"
+    },
+    {
+      "id": "tech-developer",
+      "name": "开发者",
+      "parentId": "tech"
+    },
+    {
+      "id": "tech-developer-programming",
+      "name": "编程开发",
+      "parentId": "tech-developer"
+    },
+    {
+      "id": "tech-developer-opensource",
+      "name": "开源项目",
+      "parentId": "tech-developer"
+    },
+    {
+      "id": "tech-developer-security",
+      "name": "网络安全",
+      "parentId": "tech-developer"
+    },
+    {
+      "id": "tech-science",
+      "name": "科学",
+      "parentId": "tech"
+    },
+    {
+      "id": "tech-science-general",
+      "name": "前沿科学",
+      "parentId": "tech-science"
+    },
+    {
+      "id": "tech-science-space",
+      "name": "航空航天",
+      "parentId": "tech-science"
+    },
+    {
+      "id": "tech-design",
+      "name": "设计",
+      "parentId": "tech"
+    },
+    {
+      "id": "tech-design-product",
+      "name": "产品设计",
+      "parentId": "tech-design"
+    },
+    {
+      "id": "tech-design-visual",
+      "name": "视觉建筑",
+      "parentId": "tech-design"
+    },
+    {
+      "id": "ai",
+      "name": "AI",
+      "parentId": null
+    },
+    {
+      "id": "ai-models",
+      "name": "模型评测",
+      "parentId": "ai"
+    },
+    {
+      "id": "ai-products",
+      "name": "产品生态",
+      "parentId": "ai"
+    },
+    {
+      "id": "ai-official",
+      "name": "官方动态",
+      "parentId": "ai"
+    },
+    {
+      "id": "ai-research-community",
+      "name": "研究社区",
+      "parentId": "ai"
+    },
+    {
+      "id": "ai-chinese-news",
+      "name": "中文AI资讯",
+      "parentId": "ai"
+    },
+    {
+      "id": "finance",
+      "name": "财经",
+      "parentId": null
+    },
+    {
+      "id": "finance-flash",
+      "name": "实时资讯",
+      "parentId": "finance"
+    },
+    {
+      "id": "finance-flash-live",
+      "name": "7×24快讯",
+      "parentId": "finance-flash"
+    },
+    {
+      "id": "finance-flash-news",
+      "name": "财经新闻",
+      "parentId": "finance-flash"
+    },
+    {
+      "id": "finance-market",
+      "name": "市场",
+      "parentId": "finance"
+    },
+    {
+      "id": "finance-market-stocks",
+      "name": "股票热度",
+      "parentId": "finance-market"
+    },
+    {
+      "id": "finance-market-funds",
+      "name": "基金/理财",
+      "parentId": "finance-market"
+    },
+    {
+      "id": "finance-quotes",
+      "name": "行情",
+      "parentId": "finance"
+    },
+    {
+      "id": "finance-quotes-indexes",
+      "name": "全球股指",
+      "parentId": "finance-quotes"
+    },
+    {
+      "id": "finance-quotes-exchanges",
+      "name": "交易所行情",
+      "parentId": "finance-quotes"
+    },
+    {
+      "id": "finance-commodities",
+      "name": "大宗商品",
+      "parentId": "finance"
+    },
+    {
+      "id": "finance-commodities-futures",
+      "name": "期货",
+      "parentId": "finance-commodities"
+    },
+    {
+      "id": "finance-commodities-energy",
+      "name": "贵金属/能源",
+      "parentId": "finance-commodities"
+    },
+    {
+      "id": "entertainment",
+      "name": "文娱",
+      "parentId": null
+    },
+    {
+      "id": "entertainment-music",
+      "name": "音乐",
+      "parentId": "entertainment"
+    },
+    {
+      "id": "entertainment-music-songs",
+      "name": "歌曲",
+      "parentId": "entertainment-music"
+    },
+    {
+      "id": "entertainment-music-artists",
+      "name": "歌手/专辑",
+      "parentId": "entertainment-music"
+    },
+    {
+      "id": "entertainment-video",
+      "name": "影音",
+      "parentId": "entertainment"
+    },
+    {
+      "id": "entertainment-video-movie",
+      "name": "电影",
+      "parentId": "entertainment-video"
+    },
+    {
+      "id": "entertainment-video-tv",
+      "name": "电视剧",
+      "parentId": "entertainment-video"
+    },
+    {
+      "id": "entertainment-video-variety",
+      "name": "综艺",
+      "parentId": "entertainment-video"
+    },
+    {
+      "id": "entertainment-video-shortdrama",
+      "name": "短剧",
+      "parentId": "entertainment-video"
+    },
+    {
+      "id": "entertainment-video-animation",
+      "name": "动画",
+      "parentId": "entertainment-video"
+    },
+    {
+      "id": "entertainment-reading",
+      "name": "阅读",
+      "parentId": "entertainment"
+    },
+    {
+      "id": "entertainment-reading-books",
+      "name": "图书",
+      "parentId": "entertainment-reading"
+    },
+    {
+      "id": "entertainment-reading-novels",
+      "name": "网络小说",
+      "parentId": "entertainment-reading"
+    },
+    {
+      "id": "entertainment-reading-comics",
+      "name": "漫画",
+      "parentId": "entertainment-reading"
+    },
+    {
+      "id": "games",
+      "name": "游戏",
+      "parentId": null
+    },
+    {
+      "id": "games-ranking",
+      "name": "游戏榜单",
+      "parentId": "games"
+    },
+    {
+      "id": "games-ranking-pc-console",
+      "name": "PC/主机",
+      "parentId": "games-ranking"
+    },
+    {
+      "id": "games-ranking-mobile",
+      "name": "手游",
+      "parentId": "games-ranking"
+    },
+    {
+      "id": "games-content",
+      "name": "游戏内容",
+      "parentId": "games"
+    },
+    {
+      "id": "games-content-news",
+      "name": "资讯/评测",
+      "parentId": "games-content"
+    },
+    {
+      "id": "games-content-industry",
+      "name": "产业/开发",
+      "parentId": "games-content"
+    },
+    {
+      "id": "games-community",
+      "name": "游戏社区",
+      "parentId": "games"
+    },
+    {
+      "id": "games-community-player",
+      "name": "玩家社区",
+      "parentId": "games-community"
+    },
+    {
+      "id": "games-community-official",
+      "name": "厂商社区",
+      "parentId": "games-community"
+    },
+    {
+      "id": "games-esports",
+      "name": "电竞",
+      "parentId": "games"
+    },
+    {
+      "id": "games-esports-general",
+      "name": "综合电竞",
+      "parentId": "games-esports"
+    },
+    {
+      "id": "sports",
+      "name": "体育",
+      "parentId": null
+    },
+    {
+      "id": "sports-general",
+      "name": "综合体育",
+      "parentId": "sports"
+    },
+    {
+      "id": "sports-football",
+      "name": "足球",
+      "parentId": "sports"
+    },
+    {
+      "id": "sports-basketball",
+      "name": "篮球",
+      "parentId": "sports"
+    },
+    {
+      "id": "sports-events",
+      "name": "综合赛事",
+      "parentId": "sports"
+    },
+    {
+      "id": "sports-other",
+      "name": "其他运动",
+      "parentId": "sports"
+    },
+    {
+      "id": "life",
+      "name": "生活",
+      "parentId": null
+    },
+    {
+      "id": "life-health",
+      "name": "健康",
+      "parentId": "life"
+    },
+    {
+      "id": "life-health-medical",
+      "name": "医疗健康",
+      "parentId": "life-health"
+    },
+    {
+      "id": "life-health-fitness",
+      "name": "运动健身",
+      "parentId": "life-health"
+    },
+    {
+      "id": "life-education",
+      "name": "教育",
+      "parentId": "life"
+    },
+    {
+      "id": "life-education-study",
+      "name": "学习考试",
+      "parentId": "life-education"
+    },
+    {
+      "id": "life-education-knowledge",
+      "name": "知识科普",
+      "parentId": "life-education"
+    },
+    {
+      "id": "life-auto",
+      "name": "汽车",
+      "parentId": "life"
+    },
+    {
+      "id": "life-auto-news",
+      "name": "汽车资讯",
+      "parentId": "life-auto"
+    },
+    {
+      "id": "life-auto-product",
+      "name": "新车/用车",
+      "parentId": "life-auto"
+    },
+    {
+      "id": "life-travel",
+      "name": "出行旅行",
+      "parentId": "life"
+    },
+    {
+      "id": "life-travel-tourism",
+      "name": "旅行",
+      "parentId": "life-travel"
+    },
+    {
+      "id": "life-travel-transport",
+      "name": "交通出行",
+      "parentId": "life-travel"
+    },
+    {
+      "id": "life-consumer",
+      "name": "消费生活",
+      "parentId": "life"
+    },
+    {
+      "id": "life-consumer-food",
+      "name": "美食",
+      "parentId": "life-consumer"
+    },
+    {
+      "id": "life-consumer-home",
+      "name": "家居/消费",
+      "parentId": "life-consumer"
+    },
+    {
+      "id": "life-public",
+      "name": "公共生活",
+      "parentId": "life"
+    },
+    {
+      "id": "life-public-weather",
+      "name": "气象灾害",
+      "parentId": "life-public"
+    },
+    {
+      "id": "life-public-calendar",
+      "name": "历史日历",
+      "parentId": "life-public"
+    },
+    {
+      "id": "community",
+      "name": "社区",
+      "parentId": null
+    },
+    {
+      "id": "community-general",
+      "name": "综合社区",
+      "parentId": "community"
+    },
+    {
+      "id": "community-qa",
+      "name": "问答讨论",
+      "parentId": "community"
+    },
+    {
+      "id": "community-tech",
+      "name": "技术社区",
+      "parentId": "community"
+    },
+    {
+      "id": "community-interest",
+      "name": "兴趣社区",
+      "parentId": "community"
+    },
+    {
+      "id": "deals",
+      "name": "优惠",
+      "parentId": null
+    },
+    {
+      "id": "deals-general",
+      "name": "综合优惠",
+      "parentId": "deals"
+    },
+    {
+      "id": "deals-ecommerce",
+      "name": "电商优惠",
+      "parentId": "deals"
+    },
+    {
+      "id": "deals-digital",
+      "name": "数码软件",
+      "parentId": "deals"
+    },
+    {
+      "id": "deals-games",
+      "name": "游戏优惠",
+      "parentId": "deals"
+    },
+    {
+      "id": "deals-local",
+      "name": "本地生活",
+      "parentId": "deals"
+    }
+  ]
+}
