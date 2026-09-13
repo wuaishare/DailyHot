@@ -28,6 +28,7 @@ const SOURCE_LOGO_MAP = {
   nse: "https://www.nseindia.com/assets/images/favicon.ico",
   asx: "/logo/market/asx.png",
   "global-indexes": "/ico/favicon.png",
+  xiaohongshu: "/logo/xiaohongshu.ico",
   "openrouter-rankings": "/logo/ai/openrouter-rankings.svg",
   artificialanalysis: "/logo/ai/artificialanalysis.png",
   lmarena: "/logo/ai/arena-ai.png",
