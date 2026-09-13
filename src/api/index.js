@@ -90,9 +90,7 @@ const DIRECT_PUBLIC_API_SOURCES = new Set([
   "rnz-news",
   "wired",
 ]);
-const PUBLIC_API2_BASE =
-  import.meta.env.VITE_GLOBAL_API2 ||
-  (import.meta.env.PROD ? "https://hotapi2.wuaishare.cn" : "");
+const PUBLIC_API2_BASE = import.meta.env.VITE_GLOBAL_API2 || "/api";
 const appApiBase = import.meta.env.VITE_GLOBAL_API;
 const analyticsApiBases = import.meta.env.PROD
   ? ["/api", import.meta.env.VITE_GLOBAL_API].filter(Boolean)
