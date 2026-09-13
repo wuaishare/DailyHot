@@ -1,0 +1,449 @@
+{
+  "version": 2,
+  "status": "planning-draft",
+  "generatedAt": "2026-09-14",
+  "note": "Source-level primary category only. Variant-level overrides take precedence for cross-domain providers.",
+  "sources": {
+    "douyin": {
+      "primaryCategoryId": "hotspot-social-video"
+    },
+    "xiaohongshu": {
+      "primaryCategoryId": "hotspot-social-topic"
+    },
+    "baidu": {
+      "primaryCategoryId": "hotspot-search-trending"
+    },
+    "kuaishou": {
+      "primaryCategoryId": "hotspot-social-video"
+    },
+    "weibo": {
+      "primaryCategoryId": "hotspot-social-search"
+    },
+    "toutiao": {
+      "primaryCategoryId": "news-general-domestic"
+    },
+    "qq-news": {
+      "primaryCategoryId": "news-general-domestic"
+    },
+    "netease-news": {
+      "primaryCategoryId": "news-general-domestic"
+    },
+    "sina-news": {
+      "primaryCategoryId": "news-general-domestic"
+    },
+    "cls": {
+      "primaryCategoryId": "finance-flash-live"
+    },
+    "eastmoney-flash": {
+      "primaryCategoryId": "finance-flash-live"
+    },
+    "jin10": {
+      "primaryCategoryId": "finance-flash-live"
+    },
+    "tonghuashun": {
+      "primaryCategoryId": "finance-flash-live"
+    },
+    "wallstreetcn": {
+      "primaryCategoryId": "finance-flash-live"
+    },
+    "sina-finance-flash": {
+      "primaryCategoryId": "finance-flash-live"
+    },
+    "yicai-flash": {
+      "primaryCategoryId": "finance-flash-live"
+    },
+    "xueqiu": {
+      "primaryCategoryId": "finance-market-stocks"
+    },
+    "sse": {
+      "primaryCategoryId": "finance-quotes-exchanges"
+    },
+    "szse": {
+      "primaryCategoryId": "finance-quotes-exchanges"
+    },
+    "hkex": {
+      "primaryCategoryId": "finance-quotes-exchanges"
+    },
+    "nasdaq": {
+      "primaryCategoryId": "finance-quotes-exchanges"
+    },
+    "nyse": {
+      "primaryCategoryId": "finance-quotes-exchanges"
+    },
+    "twse": {
+      "primaryCategoryId": "finance-quotes-exchanges"
+    },
+    "nse": {
+      "primaryCategoryId": "finance-quotes-exchanges"
+    },
+    "asx": {
+      "primaryCategoryId": "finance-quotes-exchanges"
+    },
+    "global-indexes": {
+      "primaryCategoryId": "finance-quotes-indexes"
+    },
+    "bilibili": {
+      "primaryCategoryId": "entertainment-video"
+    },
+    "zhihu": {
+      "primaryCategoryId": "community-qa"
+    },
+    "tieba": {
+      "primaryCategoryId": "community-general"
+    },
+    "smzdm": {
+      "primaryCategoryId": "deals-general"
+    },
+    "thepaper": {
+      "primaryCategoryId": "news-depth-reporting"
+    },
+    "sina": {
+      "primaryCategoryId": "news-general-domestic"
+    },
+    "nytimes": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "douban-group": {
+      "primaryCategoryId": "community-interest"
+    },
+    "douban-movie": {
+      "primaryCategoryId": "entertainment-video-movie"
+    },
+    "weread": {
+      "primaryCategoryId": "entertainment-reading-books"
+    },
+    "csdn": {
+      "primaryCategoryId": "tech-developer-programming"
+    },
+    "36kr": {
+      "primaryCategoryId": "tech-industry-startup"
+    },
+    "ithome": {
+      "primaryCategoryId": "tech-digital-hardware"
+    },
+    "hupu": {
+      "primaryCategoryId": "sports-general"
+    },
+    "coolapk": {
+      "primaryCategoryId": "tech-digital-hardware"
+    },
+    "juejin": {
+      "primaryCategoryId": "tech-developer-programming"
+    },
+    "v2ex": {
+      "primaryCategoryId": "community-tech"
+    },
+    "github": {
+      "primaryCategoryId": "tech-developer-opensource"
+    },
+    "gameres": {
+      "primaryCategoryId": "games-content-news"
+    },
+    "yystv": {
+      "primaryCategoryId": "games-content-news"
+    },
+    "miyoushe": {
+      "primaryCategoryId": "games-community-official"
+    },
+    "genshin": {
+      "primaryCategoryId": "games-community-official"
+    },
+    "starrail": {
+      "primaryCategoryId": "games-community-official"
+    },
+    "honkai": {
+      "primaryCategoryId": "games-community-official"
+    },
+    "lol": {
+      "primaryCategoryId": "games-community-official"
+    },
+    "huxiu": {
+      "primaryCategoryId": "tech-industry-startup"
+    },
+    "sspai": {
+      "primaryCategoryId": "tech-industry-product"
+    },
+    "dgtle": {
+      "primaryCategoryId": "tech-digital-hardware"
+    },
+    "ifanr": {
+      "primaryCategoryId": "tech-industry-product"
+    },
+    "geekpark": {
+      "primaryCategoryId": "tech-industry-startup"
+    },
+    "guokr": {
+      "primaryCategoryId": "tech-science-general"
+    },
+    "zhihu-daily": {
+      "primaryCategoryId": "news-general-domestic"
+    },
+    "acfun": {
+      "primaryCategoryId": "entertainment-video"
+    },
+    "ngabbs": {
+      "primaryCategoryId": "games-community-player"
+    },
+    "52pojie": {
+      "primaryCategoryId": "community-tech"
+    },
+    "hostloc": {
+      "primaryCategoryId": "community-tech"
+    },
+    "tianya": {
+      "primaryCategoryId": "community-general"
+    },
+    "linuxdo": {
+      "primaryCategoryId": "community-tech"
+    },
+    "nodeseek": {
+      "primaryCategoryId": "community-tech"
+    },
+    "newsmth": {
+      "primaryCategoryId": "community-general"
+    },
+    "producthunt": {
+      "primaryCategoryId": "tech-industry-product"
+    },
+    "hackernews": {
+      "primaryCategoryId": "community-tech"
+    },
+    "hellogithub": {
+      "primaryCategoryId": "tech-developer-opensource"
+    },
+    "51cto": {
+      "primaryCategoryId": "tech-developer-programming"
+    },
+    "super-deals": {
+      "primaryCategoryId": "deals-general"
+    },
+    "0818tuan": {
+      "primaryCategoryId": "deals-general"
+    },
+    "nodeloc-deals": {
+      "primaryCategoryId": "deals-general"
+    },
+    "douban-wool": {
+      "primaryCategoryId": "deals-general"
+    },
+    "douban-pet-wool": {
+      "primaryCategoryId": "deals-general"
+    },
+    "ithome-xijiayi": {
+      "primaryCategoryId": "deals-games"
+    },
+    "steam-deals": {
+      "primaryCategoryId": "deals-games"
+    },
+    "epic-free-games": {
+      "primaryCategoryId": "deals-games"
+    },
+    "xiaoheihe-deals": {
+      "primaryCategoryId": "deals-games"
+    },
+    "ggdeals": {
+      "primaryCategoryId": "deals-games"
+    },
+    "gog-deals": {
+      "primaryCategoryId": "deals-games"
+    },
+    "jianshu": {
+      "primaryCategoryId": "community-interest"
+    },
+    "weatheralarm": {
+      "primaryCategoryId": "life-public-weather"
+    },
+    "history": {
+      "primaryCategoryId": "life-public-calendar"
+    },
+    "earthquake": {
+      "primaryCategoryId": "life-public-weather"
+    },
+    "openrouter-rankings": {
+      "primaryCategoryId": "ai-models"
+    },
+    "artificialanalysis": {
+      "primaryCategoryId": "ai-models"
+    },
+    "arena-ai": {
+      "primaryCategoryId": "ai-models"
+    },
+    "designarena": {
+      "primaryCategoryId": "ai-models"
+    },
+    "aicpb-rankings": {
+      "primaryCategoryId": "ai-products"
+    },
+    "llm-stats": {
+      "primaryCategoryId": "ai-models"
+    },
+    "skills-rank": {
+      "primaryCategoryId": "ai-products"
+    },
+    "clawhub": {
+      "primaryCategoryId": "ai-products"
+    },
+    "openai": {
+      "primaryCategoryId": "ai-official"
+    },
+    "anthropic-news": {
+      "primaryCategoryId": "ai-official"
+    },
+    "deepmind-blog": {
+      "primaryCategoryId": "ai-official"
+    },
+    "meta-ai-blog": {
+      "primaryCategoryId": "ai-official"
+    },
+    "mistral-news": {
+      "primaryCategoryId": "ai-official"
+    },
+    "cohere-blog": {
+      "primaryCategoryId": "ai-official"
+    },
+    "perplexity-blog": {
+      "primaryCategoryId": "ai-official"
+    },
+    "xai-news": {
+      "primaryCategoryId": "ai-official"
+    },
+    "huggingface": {
+      "primaryCategoryId": "ai-official"
+    },
+    "paperswithcode": {
+      "primaryCategoryId": "ai-research-community"
+    },
+    "producthunt-ai": {
+      "primaryCategoryId": "ai-products"
+    },
+    "hackernews-ai": {
+      "primaryCategoryId": "ai-research-community"
+    },
+    "reddit-localllama": {
+      "primaryCategoryId": "ai-research-community"
+    },
+    "reddit-machinelearning": {
+      "primaryCategoryId": "ai-research-community"
+    },
+    "reddit-artificial": {
+      "primaryCategoryId": "ai-research-community"
+    },
+    "sina-ai": {
+      "primaryCategoryId": "ai-chinese-news"
+    },
+    "qbitai-ai": {
+      "primaryCategoryId": "ai-chinese-news"
+    },
+    "bbc-world": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "guardian-world": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "nhk-news": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "google-trends": {
+      "primaryCategoryId": "hotspot-search-global"
+    },
+    "techcrunch": {
+      "primaryCategoryId": "tech-industry-startup"
+    },
+    "theverge": {
+      "primaryCategoryId": "tech-industry-product"
+    },
+    "arstechnica": {
+      "primaryCategoryId": "tech-digital-software"
+    },
+    "lobsters": {
+      "primaryCategoryId": "community-tech"
+    },
+    "devto": {
+      "primaryCategoryId": "community-tech"
+    },
+    "hatena-hot": {
+      "primaryCategoryId": "community-general"
+    },
+    "aljazeera": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "npr-news": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "dw-news": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "france24-fr": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "lemonde": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "elpais": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "yonhap": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "timesofindia": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "nasa-news": {
+      "primaryCategoryId": "tech-science-space"
+    },
+    "nature-news": {
+      "primaryCategoryId": "tech-science-general"
+    },
+    "arxiv-ai": {
+      "primaryCategoryId": "ai-research-community"
+    },
+    "marketwatch": {
+      "primaryCategoryId": "finance-flash-news"
+    },
+    "krebsonsecurity": {
+      "primaryCategoryId": "tech-developer-security"
+    },
+    "thehackernews": {
+      "primaryCategoryId": "tech-developer-security"
+    },
+    "google-security": {
+      "primaryCategoryId": "tech-developer-security"
+    },
+    "who-news": {
+      "primaryCategoryId": "life-health-medical"
+    },
+    "sciencenews": {
+      "primaryCategoryId": "tech-science-general"
+    },
+    "smashing": {
+      "primaryCategoryId": "tech-design-product"
+    },
+    "dezeen": {
+      "primaryCategoryId": "tech-design-visual"
+    },
+    "github-blog": {
+      "primaryCategoryId": "tech-developer-opensource"
+    },
+    "stackoverflow-blog": {
+      "primaryCategoryId": "tech-developer-programming"
+    },
+    "infoq": {
+      "primaryCategoryId": "tech-developer-programming"
+    },
+    "eurogamer": {
+      "primaryCategoryId": "games-content-news"
+    },
+    "cbc-news": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "abc-au-news": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "rnz-news": {
+      "primaryCategoryId": "news-general-world"
+    },
+    "wired": {
+      "primaryCategoryId": "tech-digital-software"
+    }
+  }
+}
