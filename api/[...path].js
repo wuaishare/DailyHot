@@ -25,9 +25,7 @@ const PROXY_LOCAL_QUERY_PARAMS = new Set([
 const IMAGE_PROXY_ALLOWED_HOST_SUFFIXES = ["doubanio.com", "gtimg.com", "hdslb.com"];
 const IMAGE_PROXY_MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_PROXY_TIMEOUT_MS = 15000;
-const PUBLIC_API_DEFAULT_FALLBACK_BASE_URL = "https://hotapi2.wuaishare.cn";
-const PUBLIC_API_FALLBACK_BASE_URL =
-  process.env.INTERNAL_API_FALLBACK_BASE_URL || PUBLIC_API_DEFAULT_FALLBACK_BASE_URL;
+const PUBLIC_API_FALLBACK_BASE_URL = process.env.INTERNAL_API_FALLBACK_BASE_URL || "";
 const PUBLIC_API_FALLBACK_PATHS = new Set([
   "readable-translate",
   "super-deals",
@@ -2098,7 +2096,8 @@ const handleDesignArena = async (req, res) => {
 };
 
 const ARTIFICIALANALYSIS_BASE_URL = "https://artificialanalysis.ai";
-const ARTIFICIALANALYSIS_PROXY_URL = `${PUBLIC_API_FALLBACK_BASE_URL}/artificialanalysis`;
+const ARTIFICIALANALYSIS_PROXY_BASE_URL =
+  process.env.INTERNAL_API_BASE_URL || PUBLIC_API_FALLBACK_BASE_URL;
 const ARTIFICIALANALYSIS_TIMEOUT_MS = 20000;
 const ARTIFICIALANALYSIS_PARAM_NAME_BY_LOCALE = {
   "zh-CN": "榜单",
@@ -2305,7 +2304,10 @@ const localizeArtificialAnalysisResult = (result, type, locale = "zh-CN") => {
 };
 
 const fetchArtificialAnalysisProxyResult = async (type, locale = "zh-CN") => {
-  const url = new URL(ARTIFICIALANALYSIS_PROXY_URL);
+  if (!ARTIFICIALANALYSIS_PROXY_BASE_URL) {
+    throw new Error("ArtificialAnalysis proxy is not configured");
+  }
+  const url = new URL(`${ARTIFICIALANALYSIS_PROXY_BASE_URL.replace(/\/+$/, "")}/artificialanalysis`);
   url.searchParams.set("type", type);
   url.searchParams.set("locale", locale);
   const response = await fetchWithTimeout(
@@ -2634,24 +2636,23 @@ const normalizeApiRoute = (pathValue = "", query = {}) => {
 };
 
 const redirectToPublicApiFallback = (pathValue, query, res) => {
+  if (!PUBLIC_API_FALLBACK_BASE_URL) return false;
   const redirectUrl = buildProxyTargetUrl(
-    PUBLIC_API_DEFAULT_FALLBACK_BASE_URL,
+    PUBLIC_API_FALLBACK_BASE_URL,
     pathValue,
     query
   );
   res.status(307);
   res.setHeader("location", redirectUrl.toString());
   res.send("");
+  return true;
 };
 
 const getProxyBaseUrlCandidates = (pathValue, baseUrl) => {
   const preferPublicApi = PUBLIC_API_FIRST_PATHS.has(pathValue);
-  const fallbackCandidates = preferPublicApi
-    ? [PUBLIC_API_DEFAULT_FALLBACK_BASE_URL, PUBLIC_API_FALLBACK_BASE_URL]
-    : [PUBLIC_API_FALLBACK_BASE_URL, PUBLIC_API_DEFAULT_FALLBACK_BASE_URL];
   const candidates = preferPublicApi
-    ? [...fallbackCandidates, baseUrl]
-    : [baseUrl, ...fallbackCandidates];
+    ? [PUBLIC_API_FALLBACK_BASE_URL, baseUrl]
+    : [baseUrl, PUBLIC_API_FALLBACK_BASE_URL];
   return [...new Set(candidates.map((url) => url?.replace(/\/+$/, "")).filter(Boolean))];
 };
 
@@ -2980,8 +2981,10 @@ export default async function handler(req, res) {
       sendLocalizedClawHubUnavailable(req, res, "ClawHub upstream unavailable");
       return;
     }
-    if (PUBLIC_API_FALLBACK_PATHS.has(pathValue)) {
-      redirectToPublicApiFallback(pathValue, req.query, res);
+    if (
+      PUBLIC_API_FALLBACK_PATHS.has(pathValue) &&
+      redirectToPublicApiFallback(pathValue, req.query, res)
+    ) {
       return;
     }
     res.status(502).json({
@@ -3001,8 +3004,10 @@ export default async function handler(req, res) {
       );
       return;
     }
-    if (PUBLIC_API_FALLBACK_PATHS.has(pathValue)) {
-      redirectToPublicApiFallback(pathValue, req.query, res);
+    if (
+      PUBLIC_API_FALLBACK_PATHS.has(pathValue) &&
+      redirectToPublicApiFallback(pathValue, req.query, res)
+    ) {
       return;
     }
     res.status(502).json({

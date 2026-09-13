@@ -319,9 +319,7 @@ const showDegradedWarning = computed(() => {
 const superDealNavigationById = ref({});
 const superDealInstructionOpen = ref({});
 const superDealResolvePromises = new Map();
-const publicApi2Base =
-  import.meta.env.VITE_GLOBAL_API2 ||
-  (import.meta.env.PROD ? "https://hotapi2.wuaishare.cn" : "/api");
+const publicApi2Base = import.meta.env.VITE_GLOBAL_API2 || "/api";
 
 const UI_COPY = {
   "zh-CN": {
