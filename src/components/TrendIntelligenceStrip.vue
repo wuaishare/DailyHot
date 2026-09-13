@@ -12,6 +12,7 @@
         v-for="item in visibleItems"
         :key="item.id"
         class="trend-card"
+        :class="`is-${item.trend.signal}`"
         :href="item.url || '#'"
         target="_blank"
         rel="noopener noreferrer"
@@ -123,5 +124,25 @@ const metricFor = (trend) => {
 .trend-card > small { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 4px; color: var(--n-text-color-3); font-size: 8px; }
 .trend-card > small span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trend-card > small em { flex: 0 0 auto; color: var(--n-text-color-2); font-style: normal; }
+
+.trend-card__signal {
+  padding: 2px 5px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.trend-card.is-breakthrough { --trend-tone: #e5484d; }
+.trend-card.is-rising { --trend-tone: #d97706; }
+.trend-card.is-reentry { --trend-tone: #7c5ce7; }
+.trend-card.is-new { --trend-tone: #18a058; }
+.trend-card.is-falling { --trend-tone: #5f7892; }
+.trend-card[class*="is-"] .trend-card__signal {
+  border-color: color-mix(in srgb, var(--trend-tone) 30%, transparent);
+  background: color-mix(in srgb, var(--trend-tone) 10%, transparent);
+  color: var(--trend-tone);
+}
+.trend-card[class*="is-"] > small em {
+  color: var(--trend-tone);
+  font-weight: 700;
+}
 @media (max-width: 720px) { .trend-strip { margin-right: -13px; border-right: 0; border-radius: 10px 0 0 10px; } .trend-strip__head { padding-right: 13px; } .trend-strip__head small { display: none; } .trend-strip__rail { padding-right: 13px; } .trend-card { flex-basis: 190px; } }
 </style>

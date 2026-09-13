@@ -32,32 +32,236 @@
         </div>
       </div>
 
-      <div class="event-toolbar">
-        <div class="toolbar-primary">
-          <div class="toolbar-title">
-            <h2>{{ copy.feedTitle }}</h2>
-            <span>{{ formatUpdated(result?.updateTime) }}</span>
+      <div class="topic-layout">
+        <aside class="topic-category-rail" :aria-label="ui.categoryNav">
+          <div class="topic-category-card">
+            <div class="topic-category-title">
+              <strong>{{ ui.categoryNav }}</strong>
+              <span>{{ data.length }}</span>
+            </div>
+            <nav>
+              <button
+                type="button"
+                class="topic-category-item"
+                :class="{ active: activeCategory === 'all' }"
+                :aria-current="activeCategory === 'all' ? 'true' : undefined"
+                @click="setCategory('all')"
+              >
+                <span>{{ ui.all }}</span>
+                <em>{{ data.length }}</em>
+              </button>
+              <button
+                v-for="option in categoryOptions.slice(1)"
+                :key="option.value"
+                type="button"
+                class="topic-category-item"
+                :class="[`is-${option.value}`, { active: activeCategory === option.value }]"
+                :aria-current="activeCategory === option.value ? 'true' : undefined"
+                @click="setCategory(option.value)"
+              >
+                <span>{{ option.label }}</span>
+                <em>{{ option.count }}</em>
+              </button>
+            </nav>
           </div>
-          <label class="topic-search">
-            <span class="sr-only">{{ ui.search }}</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
-            </svg>
-            <input
-              v-model.trim="searchQuery"
-              type="search"
-              :placeholder="ui.searchPlaceholder"
-              @keydown.esc="searchQuery = ''"
-            />
-          </label>
-          <div class="toolbar-filters" role="group" :aria-label="ui.filters">
-            <CompactFilter v-model="activeCategory" :label="ui.category" :aria-label="ui.category" :options="categoryOptions" />
-            <CompactFilter v-model="activeSource" :label="ui.source" :aria-label="ui.source" :options="sourceOptions" />
-            <CompactFilter v-model="activeSort" :label="ui.sort" :aria-label="ui.sort" :options="sortOptions" :show-count="false" />
-            <button v-if="hasFilters" type="button" class="reset-filter" @click="resetFilters">{{ ui.reset }}</button>
+        </aside>
+
+        <main class="topic-main">
+          <div class="event-toolbar">
+            <div class="toolbar-primary">
+              <div class="toolbar-title">
+                <h2>{{ copy.feedTitle }}</h2>
+                <span>{{ formatUpdated(result?.updateTime) }}</span>
+              </div>
+              <label class="topic-search">
+                <span class="sr-only">{{ ui.search }}</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
+                </svg>
+                <input
+                  v-model.trim="searchQuery"
+                  type="search"
+                  :placeholder="ui.searchPlaceholder"
+                  @keydown.esc="searchQuery = ''"
+                />
+              </label>
+            </div>
           </div>
-          <div class="toolbar-actions">
-            <div class="result-count"><strong>{{ filteredData.length }}</strong><span>{{ ui.matches }}</span></div>
+
+          <TopicLaneGrid
+            v-if="featuredGroups.length"
+            :lanes="featuredGroups"
+            :aria-label="copy.feedTitle"
+            @select="selectFeaturedLane"
+          >
+            <template #item="{ item }">
+              <a
+                class="event-lane-item"
+                :href="item.url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  :src="item.cover || getSourceLogo(primarySource(item))"
+                  :alt="item.title"
+                  loading="lazy"
+                  @error="onImageError($event, item)"
+                />
+                <div>
+                  <strong>{{ item.title }}</strong>
+                  <p>
+                    <span>{{ sourceLabel(item) }}</span>
+                    <b v-if="eventSourceCount(item) > 1">{{ eventSourceCount(item) }} {{ ui.platforms }}</b>
+                    <em v-else-if="item.hot">{{ formatHot(item.hot) }}</em>
+                  </p>
+                </div>
+              </a>
+            </template>
+          </TopicLaneGrid>
+
+          <TrendIntelligenceStrip
+            v-if="trendItems.length"
+            :items="trendItems"
+            :total="trendMatchCount"
+            :window-seconds="result?.dynamics?.windowSeconds || 3600"
+            :locale="locale"
+          />
+
+          <div v-if="loading && !result" class="topic-loading">
+            <n-skeleton text :repeat="9" />
+          </div>
+          <div v-else-if="filteredData.length" ref="eventListRef" class="event-list">
+            <article
+              v-for="(item, index) in pagedData"
+              :key="item.id"
+              class="event-item"
+            >
+              <span class="event-rank" :class="rankClass(pageStart + index + 1)">{{
+                String(pageStart + index + 1).padStart(2, "0")
+              }}</span>
+              <a
+                class="event-cover"
+                :href="item.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                tabindex="-1"
+              >
+                <img
+                  :src="item.cover || getSourceLogo(primarySource(item))"
+                  :alt="item.title"
+                  loading="lazy"
+                  @error="onImageError($event, item)"
+                />
+              </a>
+              <div class="event-main">
+                <div class="event-source-line">
+                  <img
+                    :src="getSourceLogo(primarySource(item))"
+                    :alt="sourceLabel(item)"
+                    @error="onLogoError"
+                  />
+                  <span>{{ sourceLabel(item) }}</span>
+                  <em
+                    v-if="isResonanceItem(item)"
+                    class="event-resonance"
+                    :title="confirmationTitle(item)"
+                  >
+                    {{ effectiveResonanceSourceCount(item) }} {{ ui.platformResonance }}
+                  </em>
+                </div>
+                <div class="event-title-row">
+                  <a
+                    class="event-title"
+                    :href="item.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <h3>{{ item.title }}</h3>
+                  </a>
+                  <RankingBadgeGroup
+                    v-if="visibleRankingBadges(item).length"
+                    :badges="visibleRankingBadges(item)"
+                  />
+                </div>
+                <p v-if="item.desc" class="event-desc">{{ item.desc }}</p>
+                <div class="event-meta">
+                  <span class="category-pill" :class="`is-${eventCategory(item)}`">{{
+                    categoryLabel(eventCategory(item))
+                  }}</span>
+                  <span
+                    v-if="eventTrend(item)"
+                    class="trend-pill"
+                    :class="`is-${eventTrend(item).signal}`"
+                  >
+                    {{ trendSignalLabel(eventTrend(item).signal) }}
+                    <b>{{ trendMetric(eventTrend(item)) }}</b>
+                  </span>
+                  <strong v-if="item.hot">{{ formatHot(item.hot) }}</strong>
+                  <time
+                    v-if="item.timestamp"
+                    :title="formatFullTime(item.timestamp)"
+                    >{{ formatFreshness(item.timestamp) }}</time
+                  >
+                  <span
+                    v-for="confirmation in visibleConfirmations(item)"
+                    :key="`${item.id}-${confirmation.source}-${confirmation.variant || 'default'}`"
+                    class="source-pill"
+                  >
+                    {{ evidenceLabel(confirmation, { includeRole: true }) }}
+                  </span>
+                </div>
+              </div>
+              <a
+                class="event-open"
+                :href="item.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ ui.open }}</a
+              >
+            </article>
+            <div class="event-pagination">
+              <div class="event-pagination__meta">
+                <span>{{ pageRangeText }}</span>
+                <CompactFilter
+                  v-model="pageSize"
+                  :label="ui.perPage"
+                  :aria-label="ui.perPage"
+                  :options="pageSizeOptions"
+                  :show-count="false"
+                  :default-value="30"
+                />
+              </div>
+              <n-pagination
+                v-if="pageCount > 1"
+                v-model:page="currentPage"
+                :page-count="pageCount"
+                :page-slot="7"
+                size="small"
+                @update:page="handlePageChange"
+              />
+            </div>
+          </div>
+          <n-empty v-else :description="copy.empty" class="topic-empty" />
+        </main>
+
+        <aside class="topic-controls" :aria-label="ui.browseSettings">
+          <div class="topic-controls-card">
+            <div class="topic-controls-title">
+              <strong>{{ ui.browseSettings }}</strong>
+              <span>{{ filteredData.length }}</span>
+            </div>
+            <section class="topic-control-section">
+              <span>{{ ui.focus }}</span>
+              <CompactFilter v-model="activeFocus" :label="ui.focus" :aria-label="ui.focus" :options="focusOptions" />
+            </section>
+            <section class="topic-control-section">
+              <span>{{ ui.source }}</span>
+              <CompactFilter v-model="activeSource" :label="ui.source" :aria-label="ui.source" :options="sourceOptions" />
+            </section>
+            <section class="topic-control-section">
+              <span>{{ ui.sort }}</span>
+              <CompactFilter v-model="activeSort" :label="ui.sort" :aria-label="ui.sort" :options="sortOptions" :show-count="false" />
+            </section>
             <button
               v-if="resonanceMatchCount"
               type="button"
@@ -66,150 +270,11 @@
               :aria-pressed="activeConfirmed"
               @click="activeConfirmed = !activeConfirmed"
             >{{ ui.resonance }} <span>{{ resonanceMatchCount }}</span></button>
+            <button v-if="hasFilters" type="button" class="reset-filter" @click="resetFilters">{{ ui.reset }}</button>
             <n-button size="small" tertiary :loading="loading" @click="loadTopic(true)">{{ ui.refresh }}</n-button>
           </div>
-        </div>
+        </aside>
       </div>
-
-      <TopicLaneGrid
-        v-if="featuredGroups.length"
-        :lanes="featuredGroups"
-        :aria-label="copy.feedTitle"
-        @select="selectFeaturedLane"
-      >
-        <template #item="{ item }">
-          <a
-            class="event-lane-item"
-            :href="item.url"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              :src="item.cover || getSourceLogo(primarySource(item))"
-              :alt="item.title"
-              loading="lazy"
-              @error="onImageError($event, item)"
-            />
-            <div>
-              <strong>{{ item.title }}</strong>
-              <p>
-                <span>{{ sourceLabel(item) }}</span>
-                <b v-if="eventSourceCount(item) > 1">{{ eventSourceCount(item) }} {{ ui.platforms }}</b>
-                <em v-else-if="item.hot">{{ formatHot(item.hot) }}</em>
-              </p>
-            </div>
-          </a>
-        </template>
-      </TopicLaneGrid>
-
-      <TrendIntelligenceStrip
-        v-if="trendItems.length"
-        :items="trendItems"
-        :total="trendMatchCount"
-        :window-seconds="result?.dynamics?.windowSeconds || 3600"
-        :locale="locale"
-      />
-
-      <div v-if="loading && !result" class="topic-loading">
-        <n-skeleton text :repeat="9" />
-      </div>
-      <div v-else-if="filteredData.length" ref="eventListRef" class="event-list">
-        <article
-          v-for="(item, index) in pagedData"
-          :key="item.id"
-          class="event-item"
-        >
-          <span class="event-rank">{{
-            String(pageStart + index + 1).padStart(2, "0")
-          }}</span>
-          <a
-            class="event-cover"
-            :href="item.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            tabindex="-1"
-          >
-            <img
-              :src="item.cover || getSourceLogo(primarySource(item))"
-              :alt="item.title"
-              loading="lazy"
-              @error="onImageError($event, item)"
-            />
-          </a>
-          <div class="event-main">
-            <div class="event-source-line">
-              <img
-                :src="getSourceLogo(primarySource(item))"
-                :alt="sourceLabel(item)"
-                @error="onLogoError"
-              />
-              <span>{{ sourceLabel(item) }}</span>
-              <em
-                v-if="isResonanceItem(item)"
-                :title="confirmationTitle(item)"
-              >
-                {{ effectiveResonanceSourceCount(item) }} {{ ui.platformResonance }}
-              </em>
-            </div>
-            <a
-              class="event-title"
-              :href="item.url"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <h3>{{ item.title }}</h3>
-            </a>
-            <p v-if="item.desc" class="event-desc">{{ item.desc }}</p>
-            <div class="event-meta">
-              <span class="category-pill">{{
-                categoryLabel(eventCategory(item))
-              }}</span>
-              <strong v-if="item.hot">{{ formatHot(item.hot) }}</strong>
-              <time
-                v-if="item.timestamp"
-                :title="formatFullTime(item.timestamp)"
-                >{{ formatFreshness(item.timestamp) }}</time
-              >
-              <span
-                v-for="confirmation in visibleConfirmations(item)"
-                :key="`${item.id}-${confirmation.source}-${confirmation.variant || 'default'}`"
-                class="source-pill"
-              >
-                {{ evidenceLabel(confirmation, { includeRole: true }) }}
-              </span>
-            </div>
-          </div>
-          <a
-            class="event-open"
-            :href="item.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            >{{ ui.open }}</a
-          >
-        </article>
-        <div class="event-pagination">
-          <div class="event-pagination__meta">
-            <span>{{ pageRangeText }}</span>
-            <CompactFilter
-              v-model="pageSize"
-              :label="ui.perPage"
-              :aria-label="ui.perPage"
-              :options="pageSizeOptions"
-              :show-count="false"
-              :default-value="30"
-            />
-          </div>
-          <n-pagination
-            v-if="pageCount > 1"
-            v-model:page="currentPage"
-            :page-count="pageCount"
-            :page-slot="7"
-            size="small"
-            @update:page="handlePageChange"
-          />
-        </div>
-      </div>
-      <n-empty v-else :description="copy.empty" class="topic-empty" />
     </section>
   </section>
 </template>
@@ -218,12 +283,14 @@
 import CompactFilter from "@/components/CompactFilter.vue";
 import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
 import TrendIntelligenceStrip from "@/components/TrendIntelligenceStrip.vue";
+import RankingBadgeGroup from "@/components/RankingBadgeGroup.vue";
 import { getTopicFeed } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
 import { getSourceLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
+import { normalizeRankingBadges } from "@/utils/rankingBadges";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
@@ -235,6 +302,11 @@ const searchQuery = ref(
 );
 const activeCategory = ref(
   typeof route.query.category === "string" ? route.query.category : "all",
+);
+const activeFocus = ref(
+  ["fresh", "rising", "resonance", "hot"].includes(route.query.focus)
+    ? route.query.focus
+    : "all",
 );
 const activeSource = ref(
   typeof route.query.source === "string" ? route.query.source : "all",
@@ -277,6 +349,10 @@ const UI_COPY = {
     filters: "吃瓜事件筛选",
     perPage: "每页",
     category: "分类",
+    categoryNav: "吃瓜分类",
+    browseSettings: "追瓜设置",
+    focus: "情报状态",
+    focusAll: "全部动态",
     sort: "排序",
     smart: "吃瓜热度",
     resonanceFirst: "共振优先",
@@ -287,12 +363,18 @@ const UI_COPY = {
     platformResonance: "平台共振",
     open: "查看事件",
     featured: {
+      fresh: "新瓜速递",
+      rising: "正在发酵",
       resonance: "多平台共振",
-      gossip: "明星八卦",
-      celebrity: "明星动态",
-      filmTv: "影视剧",
-      variety: "综艺",
+      hot: "高位热瓜",
     },
+    featuredSubtitles: {
+      fresh: "优先看刚进入这一轮热议的新事件",
+      rising: "榜位正在上升、重回榜单或进入前十",
+      resonance: "多个独立平台同时出现的娱乐事件",
+      hot: "已经进入核心榜单前十的高位事件",
+    },
+    trendSignals: { reentry: "重新上榜", breakthrough: "进入前十", rising: "榜位上升", falling: "榜位下降", new: "新上榜" },
     categories: {
       gossip: "明星八卦",
       celebrity: "明星艺人",
@@ -317,6 +399,10 @@ const UI_COPY = {
     filters: "Entertainment filters",
     perPage: "Per page",
     category: "Category",
+    categoryNav: "Entertainment topics",
+    browseSettings: "Tracking settings",
+    focus: "Signal",
+    focusAll: "All signals",
     sort: "Sort",
     smart: "Buzz score",
     resonanceFirst: "Resonance first",
@@ -327,12 +413,13 @@ const UI_COPY = {
     platformResonance: "platforms",
     open: "View event",
     featured: {
+      fresh: "Just in",
+      rising: "Gaining traction",
       resonance: "Cross-platform",
-      gossip: "Celebrity Gossip",
-      celebrity: "Celebrities",
-      filmTv: "Film & TV",
-      variety: "Variety",
+      hot: "Top-ranked",
     },
+    featuredSubtitles: { fresh: "New events entering the current buzz cycle", rising: "Moving up, re-entering or breaking into the top 10", resonance: "Entertainment events appearing across independent platforms", hot: "Events already ranked in the top 10 of a core board" },
+    trendSignals: { reentry: "Re-entered", breakthrough: "Top 10", rising: "Rank up", falling: "Rank down", new: "New entry" },
     categories: {
       gossip: "Celebrity Gossip",
       celebrity: "Celebrities",
@@ -357,6 +444,10 @@ const UI_COPY = {
     filters: "吃瓜事件篩選",
     perPage: "每頁",
     category: "分類",
+    categoryNav: "吃瓜分類",
+    browseSettings: "追瓜設定",
+    focus: "情報狀態",
+    focusAll: "全部動態",
     sort: "排序",
     smart: "吃瓜熱度",
     resonanceFirst: "共振優先",
@@ -367,12 +458,13 @@ const UI_COPY = {
     platformResonance: "平台共振",
     open: "查看事件",
     featured: {
+      fresh: "新瓜速遞",
+      rising: "正在發酵",
       resonance: "多平台共振",
-      gossip: "明星八卦",
-      celebrity: "明星動態",
-      filmTv: "影視劇",
-      variety: "綜藝",
+      hot: "高位熱瓜",
     },
+    featuredSubtitles: { fresh: "優先看剛進入這一輪熱議的新事件", rising: "榜位正在上升、重回榜單或進入前十", resonance: "多個獨立平台同時出現的娛樂事件", hot: "已經進入核心榜單前十的高位事件" },
+    trendSignals: { reentry: "重新上榜", breakthrough: "進入前十", rising: "榜位上升", falling: "榜位下降", new: "新上榜" },
     categories: {
       gossip: "明星八卦",
       celebrity: "明星藝人",
@@ -397,6 +489,10 @@ const UI_COPY = {
     filters: "エンタメフィルター",
     perPage: "件数",
     category: "分類",
+    categoryNav: "エンタメ分類",
+    browseSettings: "追跡設定",
+    focus: "シグナル",
+    focusAll: "すべて",
     sort: "並び順",
     smart: "話題度",
     resonanceFirst: "共振優先",
@@ -407,12 +503,13 @@ const UI_COPY = {
     platformResonance: "平台共振",
     open: "イベントを見る",
     featured: {
+      fresh: "新着速報",
+      rising: "上昇中",
       resonance: "複数プラットフォーム",
-      gossip: "芸能ゴシップ",
-      celebrity: "芸能人",
-      filmTv: "映画・ドラマ",
-      variety: "バラエティ",
+      hot: "上位トピック",
     },
+    featuredSubtitles: { fresh: "現在の話題サイクルに入った新しいイベント", rising: "順位上昇・再ランクイン・トップ10入り", resonance: "複数の独立プラットフォームで同時に出現", hot: "主要ランキングですでにトップ10入り" },
+    trendSignals: { reentry: "再ランクイン", breakthrough: "トップ10入り", rising: "順位上昇", falling: "順位下降", new: "新規ランクイン" },
     categories: {
       gossip: "芸能ゴシップ",
       celebrity: "芸能人",
@@ -437,6 +534,10 @@ const UI_COPY = {
     filters: "엔터테인먼트 필터",
     perPage: "페이지당",
     category: "분류",
+    categoryNav: "엔터테인먼트 분류",
+    browseSettings: "추적 설정",
+    focus: "신호",
+    focusAll: "전체",
     sort: "정렬",
     smart: "화제 점수",
     resonanceFirst: "공명 우선",
@@ -447,12 +548,13 @@ const UI_COPY = {
     platformResonance: "플랫폼 공명",
     open: "이벤트 보기",
     featured: {
+      fresh: "새 소식",
+      rising: "상승 중",
       resonance: "다중 플랫폼",
-      gossip: "연예 가십",
-      celebrity: "연예인",
-      filmTv: "영화·드라마",
-      variety: "예능",
+      hot: "상위 이슈",
     },
+    featuredSubtitles: { fresh: "현재 화제 흐름에 새로 진입한 이벤트", rising: "순위 상승·재진입·TOP 10 진입", resonance: "여러 독립 플랫폼에서 동시에 포착", hot: "핵심 랭킹 TOP 10에 이미 진입" },
+    trendSignals: { reentry: "재진입", breakthrough: "TOP 10 진입", rising: "순위 상승", falling: "순위 하락", new: "신규 진입" },
     categories: {
       gossip: "연예 가십",
       celebrity: "연예인",
@@ -487,6 +589,22 @@ const eventMeta = (item) => item?.extra?.hotEvent || {};
 const eventCategory = (item) => eventMeta(item).category || "other";
 const eventScore = (item) => Number(eventMeta(item).score || 0);
 const eventSourceCount = (item) => Number(eventMeta(item).sourceCount || 1);
+const eventBestRank = (item) => Number(eventMeta(item).bestRank || 0);
+const eventTrend = (item) => eventMeta(item).trend || null;
+const FRESH_WINDOW_MS = 2 * 60 * 60 * 1000;
+const RISING_TREND_SIGNALS = new Set(["reentry", "breakthrough", "rising"]);
+const eventWaveStartedAt = (item) => {
+  const value = Date.parse(eventMeta(item).currentWaveStartedAt || "");
+  return Number.isFinite(value) && value > 0 ? value : Number(item?.timestamp || 0);
+};
+const topicReferenceTime = () => Date.parse(result.value?.updateTime || "") || Date.now();
+const isFreshEvent = (item) => {
+  const startedAt = eventWaveStartedAt(item);
+  const age = topicReferenceTime() - startedAt;
+  return startedAt > 0 && age >= -120000 && age <= FRESH_WINDOW_MS;
+};
+const isRisingEvent = (item) => RISING_TREND_SIGNALS.has(eventTrend(item)?.signal);
+const isHotEvent = (item) => eventBestRank(item) > 0 && eventBestRank(item) <= 10;
 const eventSources = (item) =>
   Array.isArray(eventMeta(item).sources)
     ? eventMeta(item).sources
@@ -524,6 +642,25 @@ const sourceLabel = (item) =>
     ? evidenceLabel(confirmations(item)[0])
     : getSourceLabel(primarySource(item), locale.value, primarySource(item));
 const categoryLabel = (category) => ui.value.categories[category] || category;
+const visibleRankingBadges = (item) =>
+  normalizeRankingBadges(item?.badges, 2).filter((badge) => badge.placement !== "prefix");
+const trendSignalLabel = (signal) => ui.value.trendSignals?.[signal] || signal || "";
+const trendMetric = (trend) => {
+  const rank = Number(trend?.currentRank || 0);
+  const baselineRank = Number(trend?.baselineRank || 0);
+  if (
+    !["reentry", "new"].includes(trend?.signal) &&
+    baselineRank > 0 &&
+    rank > 0
+  ) return `#${baselineRank} → #${rank}`;
+  return rank > 0 ? `#${rank}` : "";
+};
+const rankClass = (rank) => ({
+  "is-one": rank === 1,
+  "is-two": rank === 2,
+  "is-three": rank === 3,
+  "is-top10": rank > 3 && rank <= 10,
+});
 const visibleConfirmations = (item) => confirmations(item).slice(1, 5);
 const confirmationTitle = (item) =>
   confirmations(item)
@@ -575,6 +712,13 @@ const categoryOptions = computed(() => [
     count: data.value.filter((item) => eventCategory(item) === category).length,
   })).filter((item) => item.count > 0),
 ]);
+const focusOptions = computed(() => [
+  { value: "all", label: ui.value.focusAll, count: data.value.length },
+  { value: "fresh", label: ui.value.featured.fresh, count: data.value.filter(isFreshEvent).length },
+  { value: "rising", label: ui.value.featured.rising, count: data.value.filter(isRisingEvent).length },
+  { value: "resonance", label: ui.value.featured.resonance, count: data.value.filter(isResonanceItem).length },
+  { value: "hot", label: ui.value.featured.hot, count: data.value.filter(isHotEvent).length },
+].filter((item) => item.value === "all" || item.count > 0));
 const sourceOptions = computed(() => {
   const evidence = new Map();
   for (const item of data.value) {
@@ -619,6 +763,18 @@ const pageSizeOptions = computed(() =>
   PAGE_SIZE_VALUES.map((value) => ({ value, label: String(value) })),
 );
 
+const matchesFocus = (item, focus = activeFocus.value) => {
+  if (focus === "fresh") return isFreshEvent(item);
+  if (focus === "rising") return isRisingEvent(item);
+  if (focus === "resonance") return isResonanceItem(item);
+  if (focus === "hot") return isHotEvent(item);
+  return true;
+};
+const setCategory = (category) => {
+  activeCategory.value = category || "all";
+  currentPage.value = 1;
+  nextTick(() => eventListRef.value?.scrollIntoView({ behavior: "smooth", block: "start" }));
+};
 const filteredData = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   const rows = data.value.filter((item) => {
@@ -628,6 +784,7 @@ const filteredData = computed(() => {
       eventCategory(item) !== activeCategory.value
     )
       return false;
+    if (!matchesFocus(item)) return false;
     if (
       activeSource.value !== "all" &&
       !coreEvidenceKeys(item).includes(activeSource.value)
@@ -675,35 +832,43 @@ const handlePageChange = () => {
 
 const FEATURED_LANE_LIMIT = 3;
 const featuredGroups = computed(() => {
-  const byScore = (items) =>
-    items.slice().sort(
-      (a, b) =>
-        effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a) ||
-        eventScore(b) - eventScore(a),
-    );
-  const lane = (key, category) => {
-    const items = byScore(data.value.filter((item) => eventCategory(item) === category));
+  const sortLaneItems = (key, items) =>
+    items.slice().sort((a, b) => {
+      if (key === "fresh")
+        return eventWaveStartedAt(b) - eventWaveStartedAt(a) || eventScore(b) - eventScore(a);
+      if (key === "rising")
+        return Math.abs(Number(eventTrend(b)?.rankDelta || 0)) - Math.abs(Number(eventTrend(a)?.rankDelta || 0)) || eventScore(b) - eventScore(a);
+      if (key === "resonance")
+        return effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a) || eventScore(b) - eventScore(a);
+      if (key === "hot")
+        return eventBestRank(a) - eventBestRank(b) || eventScore(b) - eventScore(a);
+      return eventScore(b) - eventScore(a);
+    });
+  const lane = (key, predicate) => {
+    const items = sortLaneItems(key, data.value.filter(predicate));
     return {
       key,
       label: ui.value.featured[key],
+      subtitle: ui.value.featuredSubtitles?.[key] || "",
       count: items.length,
       items: items.slice(0, FEATURED_LANE_LIMIT),
       actionLabel: `${viewAllLabel.value} ${items.length}`,
-      filter: { category },
+      filter: { focus: key },
     };
   };
   return [
-    lane("gossip", "gossip"),
-    lane("celebrity", "celebrity"),
-    lane("filmTv", "film-tv"),
-    lane("variety", "variety"),
+    lane("fresh", isFreshEvent),
+    lane("rising", isRisingEvent),
+    lane("resonance", isResonanceItem),
+    lane("hot", isHotEvent),
   ].filter((group) => group.items.length);
 });
 const selectFeaturedLane = (lane) => {
   activeSource.value = "all";
-  activeSort.value = "smart";
-  activeCategory.value = lane?.filter?.category || "all";
-  activeConfirmed.value = Boolean(lane?.filter?.confirmed);
+  activeSort.value = lane?.key === "resonance" ? "resonance" : "smart";
+  activeCategory.value = "all";
+  activeFocus.value = lane?.filter?.focus || "all";
+  activeConfirmed.value = false;
   currentPage.value = 1;
   nextTick(() =>
     eventListRef.value?.scrollIntoView({ behavior: "smooth", block: "start" }),
@@ -714,6 +879,7 @@ const hasFilters = computed(() =>
   Boolean(
     searchQuery.value ||
     activeCategory.value !== "all" ||
+    activeFocus.value !== "all" ||
     activeSource.value !== "all" ||
     activeSort.value !== "smart" ||
     activeConfirmed.value,
@@ -722,6 +888,7 @@ const hasFilters = computed(() =>
 const resetFilters = () => {
   searchQuery.value = "";
   activeCategory.value = "all";
+  activeFocus.value = "all";
   activeSource.value = "all";
   activeSort.value = "smart";
   activeConfirmed.value = false;
@@ -776,6 +943,7 @@ const syncQuery = () => {
     const query = {};
     if (searchQuery.value.trim()) query.q = searchQuery.value.trim();
     if (activeCategory.value !== "all") query.category = activeCategory.value;
+    if (activeFocus.value !== "all") query.focus = activeFocus.value;
     if (activeSource.value !== "all") query.source = activeSource.value;
     if (activeSort.value !== "smart") query.sort = activeSort.value;
     if (activeConfirmed.value) query.confirmed = "1";
@@ -794,6 +962,7 @@ watch(
   [
     searchQuery,
     activeCategory,
+    activeFocus,
     activeSource,
     activeSort,
     activeConfirmed,
@@ -803,7 +972,7 @@ watch(
   syncQuery,
 );
 watch(
-  [searchQuery, activeCategory, activeSource, activeSort, activeConfirmed, pageSize],
+  [searchQuery, activeCategory, activeFocus, activeSource, activeSort, activeConfirmed, pageSize],
   () => {
     currentPage.value = 1;
   },
@@ -817,6 +986,13 @@ watch(categoryOptions, (options) => {
     !options.some((item) => item.value === activeCategory.value)
   )
     activeCategory.value = "all";
+});
+watch(focusOptions, (options) => {
+  if (
+    activeFocus.value !== "all" &&
+    !options.some((item) => item.value === activeFocus.value)
+  )
+    activeFocus.value = "all";
 });
 watch(sourceOptions, (options) => {
   if (
@@ -1474,4 +1650,352 @@ watch(locale, () => void loadTopic(false));
     overflow-x: auto;
   }
 }
+
+/* Chigua intelligence workspace */
+.chigua-topic {
+  width: min(100%, 1504px);
+}
+.topic-section {
+  padding: 16px 18px 18px;
+}
+.topic-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 860px) 230px;
+  align-items: start;
+  justify-content: center;
+  gap: 18px;
+  min-width: 0;
+}
+.topic-main {
+  min-width: 0;
+}
+.topic-category-rail,
+.topic-controls {
+  position: sticky;
+  top: 82px;
+  min-width: 0;
+}
+.topic-category-card,
+.topic-controls-card {
+  overflow: hidden;
+  border: 1px solid var(--n-border-color);
+  border-radius: 12px;
+  background: var(--n-color);
+}
+.topic-category-title,
+.topic-controls-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--n-border-color);
+  font-size: 11px;
+}
+.topic-category-title span,
+.topic-controls-title span {
+  color: var(--n-text-color-3);
+  font-variant-numeric: tabular-nums;
+}
+.topic-category-card nav {
+  display: grid;
+  gap: 2px;
+  padding: 7px;
+}
+.topic-category-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--n-text-color-2);
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+.topic-category-item:hover {
+  background: var(--n-action-color);
+  color: var(--n-text-color);
+}
+.topic-category-item.active {
+  background: color-mix(in srgb, var(--n-primary-color) 9%, var(--n-action-color));
+  color: var(--n-primary-color);
+  box-shadow: inset 2px 0 0 var(--n-primary-color);
+  font-weight: 700;
+}
+.topic-category-item em {
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+.topic-category-item.active em { color: currentColor; }
+.topic-controls-card {
+  display: grid;
+  gap: 0;
+  padding-bottom: 8px;
+}
+.topic-control-section {
+  display: grid;
+  gap: 6px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--n-border-color);
+}
+.topic-control-section > span {
+  color: var(--n-text-color-3);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .02em;
+}
+.topic-control-section :deep(.compact-filter) {
+  width: 100%;
+  max-width: none;
+}
+.topic-controls-card > .resonance-toggle,
+.topic-controls-card > .reset-filter,
+.topic-controls-card > :deep(.n-button) {
+  width: calc(100% - 20px);
+  margin: 8px 10px 0;
+}
+.event-toolbar {
+  margin-bottom: 10px;
+}
+.toolbar-primary {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.topic-search {
+  justify-self: end;
+  width: min(100%, 320px);
+  max-width: 320px;
+}
+.chigua-topic :deep(.topic-lane-grid) {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.chigua-topic :deep(.topic-lane) {
+  position: relative;
+  overflow: hidden;
+  min-height: 182px;
+}
+.chigua-topic :deep(.topic-lane::before) {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--lane-tone, var(--n-primary-color));
+  opacity: .78;
+}
+.chigua-topic :deep(.topic-lane.is-fresh) { --lane-tone: #18a058; }
+.chigua-topic :deep(.topic-lane.is-rising) { --lane-tone: #d97706; }
+.chigua-topic :deep(.topic-lane.is-resonance) { --lane-tone: #7c5ce7; }
+.chigua-topic :deep(.topic-lane.is-hot) { --lane-tone: #e5484d; }
+.chigua-topic :deep(.topic-lane__head strong) {
+  color: var(--lane-tone, var(--n-text-color));
+}
+.event-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 7px;
+  background: var(--n-action-color);
+  color: var(--n-text-color-3);
+  font-weight: 750;
+}
+.event-rank.is-one { background: rgba(229,72,77,.14); color: #e5484d; }
+.event-rank.is-two { background: rgba(217,119,6,.14); color: #d97706; }
+.event-rank.is-three { background: rgba(222,162,33,.16); color: #b77905; }
+.event-rank.is-top10 { color: var(--n-text-color-2); font-weight: 700; }
+.event-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+  margin-top: 3px;
+}
+.event-title-row .event-title {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.event-title-row :deep(.ranking-badges) {
+  margin-top: 2px;
+}
+.event-title h3 {
+  margin-top: 0;
+}
+.event-resonance {
+  border-color: color-mix(in srgb, #18a058 30%, transparent) !important;
+  background: color-mix(in srgb, #18a058 9%, transparent);
+  color: #18a058 !important;
+  font-weight: 700;
+}
+.category-pill {
+  --category-tone: var(--n-primary-color);
+  border: 1px solid color-mix(in srgb, var(--category-tone) 22%, transparent);
+  background: color-mix(in srgb, var(--category-tone) 8%, transparent);
+  color: var(--category-tone);
+}
+.category-pill.is-gossip { --category-tone: #d14b72; }
+.category-pill.is-celebrity { --category-tone: #7c5ce7; }
+.category-pill.is-film-tv { --category-tone: #4f7fd8; }
+.category-pill.is-variety { --category-tone: #d97706; }
+.category-pill.is-music { --category-tone: #6268c7; }
+.category-pill.is-creator { --category-tone: #168a84; }
+.category-pill.is-other { --category-tone: #6b7280; }
+.trend-pill {
+  --trend-tone: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--trend-tone) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--trend-tone) 9%, transparent);
+  color: var(--trend-tone);
+  font-weight: 700;
+}
+.trend-pill b { font-size: 9px; font-weight: 750; }
+.trend-pill.is-breakthrough { --trend-tone: #e5484d; }
+.trend-pill.is-rising { --trend-tone: #d97706; }
+.trend-pill.is-reentry { --trend-tone: #7c5ce7; }
+.trend-pill.is-new { --trend-tone: #18a058; }
+.trend-pill.is-falling { --trend-tone: #5f7892; }
+
+@media (max-width: 1240px) and (min-width: 901px) {
+  .topic-layout {
+    grid-template-columns: 180px minmax(0, 1fr) 205px;
+    gap: 14px;
+  }
+  .chigua-topic :deep(.topic-lane-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) and (min-width: 721px) {
+  .topic-layout {
+    grid-template-columns: 176px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .topic-controls {
+    position: static;
+    grid-column: 2;
+  }
+  .topic-controls-card {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+    gap: 0;
+    padding-bottom: 0;
+  }
+  .topic-controls-title { grid-column: 1 / -1; }
+  .topic-controls-card > .resonance-toggle,
+  .topic-controls-card > .reset-filter,
+  .topic-controls-card > :deep(.n-button) {
+    width: auto;
+    margin: 8px;
+  }
+}
+@media (max-width: 720px) {
+  .topic-section { padding: 12px; }
+  .topic-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .topic-category-rail,
+  .topic-controls,
+  .topic-main { width: 100%; }
+  .topic-category-rail {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    order: 1;
+    margin: 0 -12px;
+    width: calc(100% + 24px);
+    border-bottom: 1px solid var(--n-border-color);
+    background: var(--n-color);
+  }
+  .topic-main { order: 3; }
+  .topic-controls { position: static; order: 2; }
+  .topic-category-card { border: 0; border-radius: 0; }
+  .topic-category-title { display: none; }
+  .topic-category-card nav {
+    display: flex;
+    gap: 4px;
+    padding: 7px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .topic-category-card nav::-webkit-scrollbar { display: none; }
+  .topic-category-item {
+    grid-template-columns: max-content auto;
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 30px;
+    padding: 4px 8px;
+    box-shadow: none !important;
+  }
+  .topic-category-item.active {
+    border: 1px solid color-mix(in srgb, var(--n-primary-color) 25%, transparent);
+  }
+  .topic-controls-card {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .topic-controls-card::-webkit-scrollbar { display: none; }
+  .topic-controls-title { display: none; }
+  .topic-control-section {
+    display: block;
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+  }
+  .topic-control-section > span { display: none; }
+  .topic-control-section :deep(.compact-filter) { width: auto; max-width: 160px; }
+  .topic-controls-card > .resonance-toggle,
+  .topic-controls-card > .reset-filter,
+  .topic-controls-card > :deep(.n-button) {
+    flex: 0 0 auto;
+    width: auto;
+    margin: 0;
+  }
+  .toolbar-primary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .toolbar-title { display: flex; }
+  .topic-search {
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
+  }
+  .chigua-topic :deep(.topic-lane-grid) {
+    display: flex;
+    margin-right: -12px;
+    padding-right: 12px;
+  }
+  .chigua-topic :deep(.topic-lane) {
+    flex-basis: min(82vw, 286px);
+  }
+  .event-title-row {
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .event-title-row :deep(.ranking-badges) { margin-top: 0; }
+  .trend-pill b { display: none; }
+}
+
 </style>

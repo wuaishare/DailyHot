@@ -1,6 +1,6 @@
 <template>
   <div class="topic-lane-grid" :aria-label="ariaLabel">
-    <section v-for="lane in lanes" :key="lane.key" class="topic-lane">
+    <section v-for="lane in lanes" :key="lane.key" class="topic-lane" :class="`is-${lane.key}`">
       <header class="topic-lane__head">
         <div>
           <strong>{{ lane.label }}</strong>
