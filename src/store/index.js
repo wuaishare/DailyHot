@@ -99,6 +99,13 @@ export const mainStore = defineStore("mainData", {
           category: "综合",
         },
         {
+          label: "小红书",
+          name: "xiaohongshu",
+          order: 0.5,
+          show: true,
+          category: "综合",
+        },
+        {
           label: "百度",
           name: "baidu",
           order: 1,

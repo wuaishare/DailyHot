@@ -1101,6 +1101,11 @@ const LIST_SEO_MAP = {
     keywords: "抖音热榜,抖音热搜,短视频热门",
     description: "抖音热榜追踪实时短视频热点，发现全网流行内容。",
   },
+  xiaohongshu: {
+    label: "小红书热点",
+    keywords: "小红书热点,小红书热搜,小红书热门话题,生活方式热点",
+    description: "小红书实时热点榜，追踪生活方式、消费趋势与社区热门话题。",
+  },
   bilibili: {
     label: "B站热榜",
     keywords: "B站热榜,哔哩哔哩热门,综合热门,每周必看,入站必刷,视频排行榜",

@@ -21,6 +21,7 @@ const SOURCE_LABEL_OVERRIDES = {
   "global-indexes": { en: "Global Stock Indexes" },
   zhihu: { en: "Zhihu Hot List" },
   douyin: { en: "Douyin Hot List" },
+  xiaohongshu: { en: "Xiaohongshu Trending" },
   bilibili: { en: "Bilibili Trending" },
   toutiao: { en: "Toutiao Hot List" },
   baidu: { en: "Baidu Hot Search" },
@@ -101,6 +102,13 @@ const SOURCE_LABEL_LOCALIZATIONS = {
     en: "Douyin Hot List",
     ja: "Douyin急上昇",
     ko: "Douyin 인기",
+  },
+  xiaohongshu: {
+    "zh-CN": "小红书热点",
+    "zh-TW": "小紅書熱點",
+    en: "Xiaohongshu Trending",
+    ja: "小紅書トレンド",
+    ko: "샤오홍슈 트렌드",
   },
   baidu: {
     "zh-CN": "百度热搜",
