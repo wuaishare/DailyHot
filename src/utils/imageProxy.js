@@ -1,4 +1,4 @@
-const PROXY_HOST_SUFFIXES = ["doubanio.com"];
+const PROXY_HOST_SUFFIXES = ["doubanio.com", "gtimg.com", "hdslb.com"];
 
 const shouldProxyCover = (cover = "") => {
   if (!import.meta.env.PROD || !cover) return false;

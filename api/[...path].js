@@ -22,7 +22,7 @@ const PROXY_LOCAL_QUERY_PARAMS = new Set([
   "verify",
   "browserVerify",
 ]);
-const IMAGE_PROXY_ALLOWED_HOST_SUFFIXES = ["doubanio.com"];
+const IMAGE_PROXY_ALLOWED_HOST_SUFFIXES = ["doubanio.com", "gtimg.com", "hdslb.com"];
 const IMAGE_PROXY_MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_PROXY_TIMEOUT_MS = 15000;
 const PUBLIC_API_DEFAULT_FALLBACK_BASE_URL = "https://hotapi2.wuaishare.cn";
