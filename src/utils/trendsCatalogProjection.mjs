@@ -36,6 +36,9 @@ const normalizeRemoteGroups = (sourceName, variantGroups = [], staticGroupsBySou
           ...(Number.isFinite(Number(option?.refreshIntervalSeconds))
             ? { recommendedRefreshIntervalSeconds: Number(option.refreshIntervalSeconds) }
             : {}),
+          ...(option?.dimensionValues && typeof option.dimensionValues === "object"
+            ? { dimensionValues: { ...option.dimensionValues } }
+            : {}),
         }))
         .filter((item) => item.value);
       if (!items.length) return null;
@@ -53,6 +56,7 @@ export const projectTrendsCatalog = (catalog = {}, staticGroupsBySource = {}) =>
   const groupsBySource = new Map();
   const defaultsBySource = new Map();
   const variantsBySource = new Map();
+  const dimensionsBySource = new Map();
   for (const source of Array.isArray(catalog?.sources) ? catalog.sources : []) {
     const sourceName = String(source?.key || "").trim();
     if (!sourceName) continue;
@@ -62,12 +66,25 @@ export const projectTrendsCatalog = (catalog = {}, staticGroupsBySource = {}) =>
     const selectorEnabled = source?.variantSelectorEnabled !== false && options.length > 1;
     groupsBySource.set(sourceName, selectorEnabled ? groups : []);
     variantsBySource.set(sourceName, options);
+    const dimensions = (source?.variantDimensions || [])
+      .map((dimension) => ({
+        key: String(dimension?.key || "").trim(),
+        label: String(dimension?.label || dimension?.key || "").trim(),
+        items: (dimension?.options || [])
+          .map((option) => ({
+            label: String(option?.label || option?.key || "").trim(),
+            value: String(option?.key || "").trim(),
+          }))
+          .filter((item) => item.value),
+      }))
+      .filter((dimension) => dimension.key && dimension.items.length);
+    if (dimensions.length) dimensionsBySource.set(sourceName, dimensions);
     const defaultVariant = String(source?.defaultVariant || "").trim();
     if (defaultVariant && options.some((item) => item.value === defaultVariant)) {
       defaultsBySource.set(sourceName, defaultVariant);
     }
   }
-  return { groupsBySource, defaultsBySource, variantsBySource };
+  return { groupsBySource, defaultsBySource, variantsBySource, dimensionsBySource };
 };
 
 export const mergeProjectedSubtypeGroups = (staticGroupsBySource = {}, groupsBySource = new Map()) => {

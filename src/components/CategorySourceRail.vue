@@ -50,18 +50,30 @@
               </div>
             </div>
             <div v-if="sourceSubtypeOptions(source.name).length > 1" class="category-source-section__subtypes" :aria-label="sourceLabel(source)">
-              <button
-                v-for="item in sourceSubtypeOptions(source.name)"
-                :key="item.value"
-                type="button"
-                class="category-source-section__subtype"
-                :class="[{ active: sourceSubtype(source.name) === item.value }, 'is-' + sourceVariantState(source.name, item.value)]"
-                :aria-pressed="sourceSubtype(source.name) === item.value"
-                @click.stop="changeSourceSubtype(source, item.value)"
+              <div
+                v-for="group in sourceSubtypeGroups(source.name)"
+                :key="group.key || group.label"
+                class="category-source-section__subtype-group"
               >
-                <span>{{ item.label }}</span>
-                <i class="category-source-section__subtype-state" aria-hidden="true"></i>
-              </button>
+                <span
+                  v-if="sourceSubtypeGroups(source.name).length > 1 && group.label"
+                  class="category-source-section__subtype-group-label"
+                >{{ group.label }}</span>
+                <div class="category-source-section__subtype-items">
+                  <button
+                    v-for="item in group.items || []"
+                    :key="item.value"
+                    type="button"
+                    class="category-source-section__subtype"
+                    :class="[{ active: sourceSubtype(source.name) === item.value }, 'is-' + sourceVariantState(source.name, item.value)]"
+                    :aria-pressed="sourceSubtype(source.name) === item.value"
+                    @click.stop="changeSourceSubtype(source, item.value)"
+                  >
+                    <span>{{ item.label }}</span>
+                    <i class="category-source-section__subtype-state" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="category-source-section__tools">
               <div class="category-source-section__freshness">
@@ -143,7 +155,7 @@ import { getSharedRanking } from '@/utils/rankingCollection';
 import {
   buildSourceSubtypeParams,
   getDefaultSourceSubtype,
-  getSourceSubtypeGroups,
+  getSourceSubtypeControlGroups,
   getSourceSubtypeOptions,
   getSourceVariantOption,
   persistSourceSubtype,
@@ -212,7 +224,7 @@ const sourceSubtype = (sourceName) => {
   return options.length ? resolveSourceSubtype(options, preferred) : getDefaultSourceSubtype(sourceName);
 };
 const sourceSubtypeGroups = (sourceName) =>
-  localizeSubtypeGroups(getSourceSubtypeGroups(sourceName), locale.value);
+  localizeSubtypeGroups(getSourceSubtypeControlGroups(sourceName, sourceSubtype(sourceName)), locale.value);
 const sourceSubtypeOptions = (sourceName) =>
   sourceSubtypeGroups(sourceName).flatMap((group) => group.items || []);
 const sourceRuntimeKey = (sourceName, subtype = sourceSubtype(sourceName)) =>
@@ -544,7 +556,10 @@ onBeforeUnmount(() => {
 .category-source-section__identity div { display: grid; min-width: 0; }
 .category-source-section__identity strong { color: var(--csr-text); font-size: 15px; }
 .category-source-section__identity span { color: var(--csr-text-3); font-size: 11px; }
-.category-source-section__subtypes { display: flex; min-width: 0; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.category-source-section__subtypes { display: flex; align-items: center; min-width: 0; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.category-source-section__subtype-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.category-source-section__subtype-group-label { color: var(--csr-text-3); font-size: 10px; font-weight: 600; white-space: nowrap; }
+.category-source-section__subtype-items { display: inline-flex; align-items: center; gap: 4px; }
 .category-source-section__subtypes::-webkit-scrollbar { display: none; }
 .category-source-section__subtype { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; padding: 5px 8px; border: 0; border-radius: 7px; background: transparent; color: var(--csr-text-2); cursor: pointer; font: inherit; font-size: 11px; font-weight: 620; line-height: 1.1; }
 .category-source-section__subtype:hover { background: var(--csr-panel-soft); color: var(--csr-text); }

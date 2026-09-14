@@ -40,7 +40,7 @@
             <SubtypeBar
               v-if="subtypeGroups.length"
               class="header-subtype"
-              :groups="subtypeGroupsWithRuntime"
+              :groups="subtypeGroups"
               :active-value="activeSubType"
               @change="changeSubType"
               @click.stop
@@ -429,8 +429,8 @@ import MarketListSortControl from "@/components/MarketListSortControl.vue";
 import {
   buildSourceSubtypeParams,
   getDefaultSourceSubtype,
-  getSourceSubtypeGroups,
-  getSourceVariantOption,
+  getSourceSubtypeControlGroups,
+  getSourceVariantOptions,
   persistSourceSubtype,
   readSourceSubtype,
   resolveSourceSubtype,
@@ -734,45 +734,26 @@ const syncReadableTitleDom = (items = []) => {
   });
 };
 const subtypeCatalogRevision = useTrendsCatalogRevision();
-const subtypeGroups = computed(() => {
+const subtypeOptions = computed(() => {
   subtypeCatalogRevision.value;
-  return localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value);
+  return getSourceVariantOptions(props.hotData.name);
 });
-const subtypeOptions = computed(() => subtypeGroups.value.flatMap((group) => group.items || []));
 const resolveActiveSubtype = (preferred = readSourceSubtype(props.hotData.name)) =>
   subtypeOptions.value.length
     ? resolveSourceSubtype(subtypeOptions.value, preferred)
     : getDefaultSourceSubtype(props.hotData.name);
 const activeSubType = ref(resolveActiveSubtype());
+const subtypeGroups = computed(() => {
+  subtypeCatalogRevision.value;
+  return localizeSubtypeGroups(
+    getSourceSubtypeControlGroups(props.hotData.name, activeSubType.value),
+    locale.value,
+  );
+});
 const variantRuntime = reactive({});
 const runtimeKey = (variant = activeSubType.value) => variant || "__default__";
 const variantRuntimeEntry = (variant = activeSubType.value) =>
   variantRuntime[runtimeKey(variant)] || null;
-const variantCadenceLabel = (variant) => {
-  const seconds = Number(
-    getSourceVariantOption(props.hotData.name, variant)?.recommendedRefreshIntervalSeconds
-  ) || 0;
-  if (!seconds) return "";
-  if (seconds % 3600 === 0) return `${seconds / 3600}h`;
-  if (seconds % 60 === 0) return `${seconds / 60}m`;
-  return `${seconds}s`;
-};
-const subtypeGroupsWithRuntime = computed(() =>
-  subtypeGroups.value.map((group) => ({
-    ...group,
-    items: (group.items || []).map((item) => {
-      const runtime = variantRuntimeEntry(item.value);
-      return {
-        ...item,
-        runtimeStatus: runtime?.status || "idle",
-        runtimeUpdateTime: runtime?.updateTime
-          ? formatTime(runtime.updateTime, locale.value)
-          : "",
-        cadenceLabel: variantCadenceLabel(item.value),
-      };
-    }),
-  }))
-);
 const showNativeOrderControl = computed(() =>
   isNativeMarketRanking(props.hotData.name, activeSubType.value)
 );
