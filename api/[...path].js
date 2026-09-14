@@ -1,5 +1,5 @@
 import { handleTrendsIntelligenceProxy } from "./_trends-intelligence.js";
-import { protectTranslationTerms } from "../src/utils/translationTerms.mjs";
+import { protectTranslationTerms } from "./_translation-terms.js";
 
 export const config = {
   runtime: "nodejs",
