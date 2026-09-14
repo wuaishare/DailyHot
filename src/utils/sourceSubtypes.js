@@ -950,12 +950,14 @@ const SOURCE_SUBTYPE_GROUPS = {
 const AGGREGATE_SUBTYPE_SOURCES = ["clawhub"];
 const REMOTE_SOURCE_SUBTYPE_GROUPS = new Map();
 const REMOTE_SOURCE_DEFAULT_SUBTYPES = new Map();
+const REMOTE_SOURCE_VARIANTS = new Map();
 const REMOTE_SOURCE_CATALOG_LISTENERS = new Set();
 let REMOTE_SOURCE_CATALOG_SIGNATURE = "";
 
 const projectionSignature = (projection) => JSON.stringify({
   groups: [...projection.groupsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
   defaults: [...projection.defaultsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
+  variants: [...projection.variantsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
 });
 
 export const subscribeTrendsSourceCatalog = (listener) => {
@@ -970,11 +972,15 @@ export const applyTrendsSourceCatalog = (catalog = {}) => {
   const changed = nextSignature !== REMOTE_SOURCE_CATALOG_SIGNATURE;
   REMOTE_SOURCE_SUBTYPE_GROUPS.clear();
   REMOTE_SOURCE_DEFAULT_SUBTYPES.clear();
+  REMOTE_SOURCE_VARIANTS.clear();
   for (const [sourceName, groups] of projection.groupsBySource) {
     REMOTE_SOURCE_SUBTYPE_GROUPS.set(sourceName, groups);
   }
   for (const [sourceName, defaultSubtype] of projection.defaultsBySource) {
     REMOTE_SOURCE_DEFAULT_SUBTYPES.set(sourceName, defaultSubtype);
+  }
+  for (const [sourceName, variants] of projection.variantsBySource) {
+    REMOTE_SOURCE_VARIANTS.set(sourceName, variants);
   }
   REMOTE_SOURCE_CATALOG_SIGNATURE = nextSignature;
   if (changed) {
@@ -1003,6 +1009,14 @@ export const getSourceSubtypeGroups = (sourceName) =>
 export const getSourceSubtypeOptions = (sourceName) =>
   flattenSubtypeOptions(getSourceSubtypeGroups(sourceName));
 
+export const getSourceVariantOptions = (sourceName) =>
+  REMOTE_SOURCE_VARIANTS.get(sourceName) || getSourceSubtypeOptions(sourceName);
+
+export const getSourceVariantOption = (sourceName, variant) => {
+  const requested = String(variant || getDefaultSourceSubtype(sourceName) || "").trim();
+  return getSourceVariantOptions(sourceName).find((item) => item.value === requested) || null;
+};
+
 export const getDefaultSourceSubtype = (sourceName) =>
   REMOTE_SOURCE_DEFAULT_SUBTYPES.get(sourceName) ||
   getSourceSubtypeOptions(sourceName)[0]?.value ||
@@ -1012,6 +1026,14 @@ export const resolveTrendsCatalogVariant = (sourceName, params = {}) => {
   const groups = REMOTE_SOURCE_SUBTYPE_GROUPS.get(sourceName);
   if (!groups) return undefined;
   const options = flattenSubtypeOptions(groups);
+  const remoteVariants = REMOTE_SOURCE_VARIANTS.get(sourceName) || options;
+  if (!groups.length) {
+    const requested = String(params?.variant ?? params?.type ?? "").trim();
+    if (requested) {
+      return remoteVariants.some((item) => item.value === requested) ? requested : null;
+    }
+    return getDefaultSourceSubtype(sourceName) || "";
+  }
   let sawVariantParam = false;
   for (const group of groups) {
     const param = group?.param || "type";

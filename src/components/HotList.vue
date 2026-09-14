@@ -40,7 +40,7 @@
             <SubtypeBar
               v-if="subtypeGroups.length"
               class="header-subtype"
-              :groups="subtypeGroups"
+              :groups="subtypeGroupsWithRuntime"
               :active-value="activeSubType"
               @change="changeSubType"
               @click.stop
@@ -428,7 +428,9 @@ import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
 import MarketListSortControl from "@/components/MarketListSortControl.vue";
 import {
   buildSourceSubtypeParams,
+  getDefaultSourceSubtype,
   getSourceSubtypeGroups,
+  getSourceVariantOption,
   persistSourceSubtype,
   readSourceSubtype,
   resolveSourceSubtype,
@@ -737,11 +739,39 @@ const subtypeGroups = computed(() => {
   return localizeSubtypeGroups(getSourceSubtypeGroups(props.hotData.name), locale.value);
 });
 const subtypeOptions = computed(() => subtypeGroups.value.flatMap((group) => group.items || []));
-const activeSubType = ref(
-  resolveSourceSubtype(
-    subtypeOptions.value,
-    readSourceSubtype(props.hotData.name)
-  )
+const resolveActiveSubtype = (preferred = readSourceSubtype(props.hotData.name)) =>
+  subtypeOptions.value.length
+    ? resolveSourceSubtype(subtypeOptions.value, preferred)
+    : getDefaultSourceSubtype(props.hotData.name);
+const activeSubType = ref(resolveActiveSubtype());
+const variantRuntime = reactive({});
+const runtimeKey = (variant = activeSubType.value) => variant || "__default__";
+const variantRuntimeEntry = (variant = activeSubType.value) =>
+  variantRuntime[runtimeKey(variant)] || null;
+const variantCadenceLabel = (variant) => {
+  const seconds = Number(
+    getSourceVariantOption(props.hotData.name, variant)?.recommendedRefreshIntervalSeconds
+  ) || 0;
+  if (!seconds) return "";
+  if (seconds % 3600 === 0) return `${seconds / 3600}h`;
+  if (seconds % 60 === 0) return `${seconds / 60}m`;
+  return `${seconds}s`;
+};
+const subtypeGroupsWithRuntime = computed(() =>
+  subtypeGroups.value.map((group) => ({
+    ...group,
+    items: (group.items || []).map((item) => {
+      const runtime = variantRuntimeEntry(item.value);
+      return {
+        ...item,
+        runtimeStatus: runtime?.status || "idle",
+        runtimeUpdateTime: runtime?.updateTime
+          ? formatTime(runtime.updateTime, locale.value)
+          : "",
+        cadenceLabel: variantCadenceLabel(item.value),
+      };
+    }),
+  }))
 );
 const showNativeOrderControl = computed(() =>
   isNativeMarketRanking(props.hotData.name, activeSubType.value)
@@ -752,24 +782,14 @@ const marketRankDirection = computed(() =>
 const showMarketSortControl = computed(
   () => isSortableMarketSource.value && !showNativeOrderControl.value
 );
-const shouldEnhanceReadableTitles = computed(() =>
-  shouldUseReadableTitleTranslation(
-    props.hotData.name,
-    locale.value,
-    activeSubType.value
-  )
-);
 const shouldProtectEntityTitles = computed(() =>
   shouldProtectEntityTitleTranslation(props.hotData.name, activeSubType.value)
 );
 
 watch(
   () => subtypeOptions.value,
-  (options) => {
-    activeSubType.value = resolveSourceSubtype(
-      options,
-      readSourceSubtype(props.hotData.name)
-    );
+  () => {
+    activeSubType.value = resolveActiveSubtype();
   },
   { immediate: true, deep: true }
 );
@@ -788,8 +808,8 @@ const updateIsDesktop = () => {
   if (previewItem.value) hidePreview();
 };
 
-const buildHotListRequestParams = (item, shouldTranslate) => {
-  const params = buildSourceSubtypeParams(item.name, activeSubType.value);
+const buildHotListRequestParams = (item, shouldTranslate, targetVariant = activeSubType.value) => {
+  const params = buildSourceSubtypeParams(item.name, targetVariant);
   if (API_LOCALIZED_SOURCE_NAMES.has(item.name)) {
     params.locale = locale.value;
   }
@@ -803,11 +823,11 @@ const buildHotListRequestParams = (item, shouldTranslate) => {
   };
 };
 
-const requestHotListResult = (item, isNew, shouldTranslate, useApi2) =>
+const requestHotListResult = (item, isNew, shouldTranslate, useApi2, targetVariant) =>
   getSharedRanking(
     item.name,
     isNew,
-    buildHotListRequestParams(item, shouldTranslate),
+    buildHotListRequestParams(item, shouldTranslate, targetVariant),
     {
       useApi2,
       forceNoCache: Boolean(isNew),
@@ -829,8 +849,8 @@ const getReadableTranslationPriority = () => {
   return Math.max(0, 700 - Math.max(0, distance));
 };
 
-const enhanceHotListResult = (result, targetLocale = locale.value) =>
-  shouldUseReadableTitleTranslation(props.hotData.name, targetLocale)
+const enhanceHotListResult = (result, targetLocale = locale.value, variant) =>
+  shouldUseReadableTitleTranslation(props.hotData.name, targetLocale, variant || activeSubType.value)
     ? enhanceReadableResultTitles(result, targetLocale, {
         includeDescriptions: false,
         limit: HOT_LIST_VISIBLE_LIMIT,
@@ -840,8 +860,17 @@ const enhanceHotListResult = (result, targetLocale = locale.value) =>
       })
     : Promise.resolve(result);
 
-const applyHotListResult = (result) => {
+const applyHotListResult = (result, variant) => {
+  variant = variant || activeSubType.value;
+  const key = runtimeKey(variant);
+  variantRuntime[key] = {
+    status: "loaded",
+    result,
+    updateTime: result?.updateTime || null,
+  };
+  if (variant !== activeSubType.value) return;
   listLoading.value = false;
+  loadingError.value = false;
   hotListData.value = result;
   updateTime.value = formatTime(result?.updateTime, locale.value);
   if (scrollbarRef.value) {
@@ -913,21 +942,27 @@ const consumePendingReadableTranslation = () => {
 };
 
 // 获取热榜数据
-const getHotListsData = async (name, isNew = false) => {
+const getHotListsData = async (name, isNew = false, variant = activeSubType.value) => {
   if (isPrerender) return;
+  variant = variant || getDefaultSourceSubtype(name);
   const item =
     store.newsArr.find((item) => item.name == name) ||
     store.defaultNewsArr.find((item) => item.name == name);
   if (!item) return;
   const requestId = ++hotListRequestId;
+  const key = runtimeKey(variant);
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";
-  const shouldTranslate = shouldEnhanceReadableTitles.value;
+  const shouldTranslate = shouldUseReadableTitleTranslation(item.name, locale.value, variant);
+  variantRuntime[key] = {
+    ...(variantRuntime[key] || {}),
+    status: "loading",
+  };
   try {
     loadingError.value = false;
-    let response = await requestHotListResult(item, isNew, shouldTranslate, useApi2);
+    let response = await requestHotListResult(item, isNew, shouldTranslate, useApi2, variant);
     if (response?.result?.code !== 200 && requestId === hotListRequestId) {
       await new Promise((resolve) => setTimeout(resolve, 800));
-      response = await requestHotListResult(item, true, shouldTranslate, useApi2);
+      response = await requestHotListResult(item, true, shouldTranslate, useApi2, variant);
     }
     const { result, usedFallback, fallbackSuccess } = response;
     if (usedFallback && fallbackSuccess && !useApi2) {
@@ -935,6 +970,11 @@ const getHotListsData = async (name, isNew = false) => {
     }
     if (requestId !== hotListRequestId) return;
     if (result.code === 200) {
+      variantRuntime[key] = {
+        status: "loaded",
+        result,
+        updateTime: result?.updateTime || null,
+      };
       await applyHotListResultWithReadableTranslation(
         result,
         requestId,
@@ -942,16 +982,25 @@ const getHotListsData = async (name, isNew = false) => {
       );
       store.markAvailable(item.name);
     } else {
+      variantRuntime[key] = {
+        ...(variantRuntime[key] || {}),
+        status: "failed",
+      };
       store.markUnavailable(item.name);
-      loadingError.value = true;
+      if (variant === activeSubType.value) loadingError.value = true;
       $message.error(result.title + result.message);
     }
   } catch (error) {
     if (item && requestId === hotListRequestId) {
       try {
-        const retryResponse = await requestHotListResult(item, true, shouldTranslate, useApi2);
+        const retryResponse = await requestHotListResult(item, true, shouldTranslate, useApi2, variant);
         if (requestId !== hotListRequestId) return;
         if (retryResponse?.result?.code === 200) {
+          variantRuntime[key] = {
+            status: "loaded",
+            result: retryResponse.result,
+            updateTime: retryResponse.result?.updateTime || null,
+          };
           await applyHotListResultWithReadableTranslation(
             retryResponse.result,
             requestId,
@@ -963,8 +1012,12 @@ const getHotListsData = async (name, isNew = false) => {
       } catch {}
     }
     if (requestId !== hotListRequestId) return;
+    variantRuntime[key] = {
+      ...(variantRuntime[key] || {}),
+      status: "failed",
+    };
     store.markUnavailable(name);
-    loadingError.value = true;
+    if (variant === activeSubType.value) loadingError.value = true;
     $message.error(t("hotList.loadFailedMessage"));
   }
 };
@@ -1242,6 +1295,15 @@ const changeMarketRankDirection = (direction) => {
 const changeSubType = (subtype) => {
   const nextSubtype = resolveSourceSubtype(subtypeOptions.value, subtype);
   if (!nextSubtype || nextSubtype === activeSubType.value) return;
+  const previousKey = runtimeKey(activeSubType.value);
+  if (variantRuntime[previousKey]?.status === "loading") {
+    variantRuntime[previousKey] = {
+      ...(variantRuntime[previousKey] || {}),
+      status: "idle",
+    };
+  }
+  hotListRequestId += 1;
+  pendingReadableTranslation = null;
   trackEvent({
     event: "home_subtype_change",
     source: props.hotData.name,
@@ -1251,8 +1313,18 @@ const changeSubType = (subtype) => {
   activeSubType.value = nextSubtype;
   persistSourceSubtype(props.hotData.name, nextSubtype);
   hidePreview();
-  listLoading.value = true;
-  getHotListsData(props.hotData.name);
+  const cached = variantRuntimeEntry(nextSubtype);
+  if (cached?.status === "loaded" && cached.result) {
+    applyHotListResult(cached.result, nextSubtype);
+    return;
+  }
+  hotListData.value = null;
+  updateTime.value = null;
+  loadingError.value = cached?.status === "failed";
+  listLoading.value = cached?.status !== "failed";
+  if (cached?.status !== "failed") {
+    void getHotListsData(props.hotData.name, false, nextSubtype);
+  }
 };
 
 // 前往全部列表

@@ -6,6 +6,7 @@ import {
   canFallbackTrendsCatalogVariant,
   getDefaultSourceSubtype,
   getSourceSubtypeGroups,
+  getSourceVariantOption,
   resolveTrendsCatalogVariant,
   subscribeTrendsSourceCatalog,
 } from "../src/utils/sourceSubtypes.js";
@@ -71,7 +72,10 @@ assert.equal(canFallbackTrendsCatalogVariant("weibo", "hot"), true);
 assert.equal(canFallbackTrendsCatalogVariant("weibo", "entertainment"), false);
 assert.deepEqual(getSourceSubtypeGroups("xiaohongshu"), []);
 assert.equal(getDefaultSourceSubtype("xiaohongshu"), "hot");
+assert.equal(getSourceVariantOption("xiaohongshu", "hot")?.recommendedRefreshIntervalSeconds, 180);
 assert.equal(resolveTrendsCatalogVariant("xiaohongshu", {}), "hot");
+assert.equal(resolveTrendsCatalogVariant("xiaohongshu", { type: "hot" }), "hot");
+assert.equal(resolveTrendsCatalogVariant("xiaohongshu", { type: "read-3d" }), null);
 assert.equal(canFallbackTrendsCatalogVariant("xiaohongshu", "hot"), true);
 assert.equal(canFallbackTrendsCatalogVariant("xiaohongshu", "read-3d"), false);
 

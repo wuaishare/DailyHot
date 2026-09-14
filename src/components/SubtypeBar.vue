@@ -28,6 +28,8 @@
         @click.stop="toggleMenu"
       >
         <span class="trigger-label">{{ currentLabel }}</span>
+        <span v-if="currentMeta" class="trigger-meta">{{ currentMeta }}</span>
+        <i class="runtime-dot" :class="runtimeClass(activeItem)" aria-hidden="true"></i>
         <span class="trigger-chevron" :class="{ expanded: menuOpen }" aria-hidden="true"></span>
       </button>
     </div>
@@ -81,7 +83,11 @@
                     :aria-checked="item.value === activeValue ? 'true' : 'false'"
                     @click="selectItem(item.value)"
                   >
-                    {{ item.label }}
+                    <span class="menu-item-main">
+                      <span>{{ item.label }}</span>
+                      <i class="runtime-dot" :class="runtimeClass(item)" aria-hidden="true"></i>
+                    </span>
+                    <span v-if="runtimeMeta(item)" class="menu-item-meta">{{ runtimeMeta(item) }}</span>
                   </button>
                 </div>
               </section>
@@ -117,7 +123,11 @@
                     :class="{ active: item.value === activeValue }"
                     @click="selectItem(item.value)"
                   >
-                    {{ item.label }}
+                    <span class="menu-item-main">
+                      <span>{{ item.label }}</span>
+                      <i class="runtime-dot" :class="runtimeClass(item)" aria-hidden="true"></i>
+                    </span>
+                    <span v-if="runtimeMeta(item)" class="menu-item-meta">{{ runtimeMeta(item) }}</span>
                   </button>
                 </div>
               </section>
@@ -159,6 +169,9 @@ const activeItem = computed(() =>
   flatItems.value.find((item) => item.value === props.activeValue) || flatItems.value[0] || null
 );
 const currentLabel = computed(() => activeItem.value?.label || props.groups[0]?.label || t("hotList.rankOrder"));
+const runtimeMeta = (item) => [item?.runtimeUpdateTime, item?.cadenceLabel].filter(Boolean).join(" · ");
+const currentMeta = computed(() => runtimeMeta(activeItem.value));
+const runtimeClass = (item) => `is-${item?.runtimeStatus || "idle"}`;
 const isDarkTheme = computed(() => store.siteTheme === "dark");
 
 const getGroupKey = (group) => group.key || group.label || group.items?.[0]?.value || "group";
@@ -355,6 +368,23 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
+.trigger-meta {
+  color: var(--n-text-color-3, #8a8f99);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.runtime-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--n-text-color) 20%, transparent);
+}
+.runtime-dot.is-loading { background: #f0a020; }
+.runtime-dot.is-loaded { background: #18a058; }
+.runtime-dot.is-failed { background: #d03050; }
 
 .trigger-chevron,
 .accordion-chevron {
@@ -430,12 +460,29 @@ onBeforeUnmount(() => {
 }
 
 .menu-item {
+  display: grid;
+  gap: 2px;
   width: 100%;
   padding: 8px 10px;
   border-radius: 8px;
   text-align: left;
   font-size: 12px;
   line-height: 1.35;
+}
+
+.menu-item-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.menu-item-meta {
+  color: var(--n-text-color-3, #8a8f99);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .menu-item:hover,

@@ -52,6 +52,7 @@ const normalizeRemoteGroups = (sourceName, variantGroups = [], staticGroupsBySou
 export const projectTrendsCatalog = (catalog = {}, staticGroupsBySource = {}) => {
   const groupsBySource = new Map();
   const defaultsBySource = new Map();
+  const variantsBySource = new Map();
   for (const source of Array.isArray(catalog?.sources) ? catalog.sources : []) {
     const sourceName = String(source?.key || "").trim();
     if (!sourceName) continue;
@@ -60,12 +61,13 @@ export const projectTrendsCatalog = (catalog = {}, staticGroupsBySource = {}) =>
     const options = flattenSubtypeOptions(groups);
     const selectorEnabled = source?.variantSelectorEnabled !== false && options.length > 1;
     groupsBySource.set(sourceName, selectorEnabled ? groups : []);
+    variantsBySource.set(sourceName, options);
     const defaultVariant = String(source?.defaultVariant || "").trim();
     if (defaultVariant && options.some((item) => item.value === defaultVariant)) {
       defaultsBySource.set(sourceName, defaultVariant);
     }
   }
-  return { groupsBySource, defaultsBySource };
+  return { groupsBySource, defaultsBySource, variantsBySource };
 };
 
 export const mergeProjectedSubtypeGroups = (staticGroupsBySource = {}, groupsBySource = new Map()) => {
