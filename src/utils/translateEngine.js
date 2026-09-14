@@ -1,4 +1,6 @@
 import { getLocaleMeta, normalizeLocale } from "@/utils/locale";
+import { protectTranslationTerms } from "@/utils/translationTerms.mjs";
+export { protectTranslationTerms } from "@/utils/translationTerms.mjs";
 
 const TRANSLATE_SCRIPT_ID = "dailyhot-translate-js";
 const TRANSLATE_REQUEST_TIMEOUT_MS = 8000;
@@ -11,9 +13,6 @@ const GOOGLE_TRANSLATE_LANGUAGE_BY_LOCALE = {
   ja: "ja",
   ko: "ko",
 };
-const PROTECTED_TERM_PATTERN =
-  /\b(?:GPT(?:-\d+(?:\.\d+)*)?|ChatGPT|Claude|Sonnet|Opus|Haiku|Fable|Mythos|Gemini|Gemma|DiffusionGemma|GLM|Llama|Grok|Qwen|DeepSeek|Mistral|Mixtral|Kimi|ERNIE|Hunyuan|Doubao|Yi|Phi|Command|Aya|Cohere|Anthropic|OpenAI|DeepMind|Hugging Face|OpenRouter|xAI|DALL[·-]E|Sora|Codex|Copilot|JDK)(?:\s+\d+(?:\.\d+)*)?|\b(?:AI|AGI|API|MCP|LLM)\b/g;
-
 let translateLoadPromise = null;
 
 const getTranslate = () =>
@@ -47,21 +46,6 @@ const parseGoogleTranslateResponse = (payload) => {
     .map((segment) => String(segment?.[0] || ""))
     .join("")
     .trim();
-};
-
-export const protectTranslationTerms = (text = "") => {
-  const terms = [];
-  const protectedText = String(text || "").replace(PROTECTED_TERM_PATTERN, (term) => {
-    const token = `DHTERM${terms.length}X`;
-    terms.push([token, term]);
-    return token;
-  });
-  const restore = (value = "") =>
-    terms.reduce(
-      (nextValue, [token, term]) => nextValue.replaceAll(token, term),
-      String(value || "")
-    );
-  return { protectedText, restore };
 };
 
 const fetchGoogleTranslation = async (text, locale) => {
