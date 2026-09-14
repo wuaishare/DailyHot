@@ -6,6 +6,7 @@ import {
   canFallbackTrendsCatalogVariant,
   getDefaultSourceSubtype,
   getSourceSubtypeGroups,
+  getSourceSubtypeControlGroups,
   getSourceVariantOption,
   resolveTrendsCatalogVariant,
   subscribeTrendsSourceCatalog,
@@ -78,6 +79,60 @@ assert.equal(resolveTrendsCatalogVariant("xiaohongshu", { type: "hot" }), "hot")
 assert.equal(resolveTrendsCatalogVariant("xiaohongshu", { type: "read-3d" }), null);
 assert.equal(canFallbackTrendsCatalogVariant("xiaohongshu", "hot"), true);
 assert.equal(canFallbackTrendsCatalogVariant("xiaohongshu", "read-3d"), false);
+
+const pgyCatalog = structuredClone(catalog);
+const pgyXiaohongshu = pgyCatalog.sources.find((source) => source.key === "xiaohongshu");
+pgyXiaohongshu.variantSelectorEnabled = true;
+pgyXiaohongshu.variantDimensions = [
+  {
+    key: "ranking",
+    label: "榜单",
+    options: [
+      { key: "hot", label: "实时热点" },
+      { key: "read", label: "阅读榜" },
+      { key: "like", label: "点赞榜" },
+      { key: "collect", label: "收藏榜" },
+    ],
+  },
+  {
+    key: "period",
+    label: "时间",
+    options: [
+      { key: "3d", label: "近3日" },
+      { key: "7d", label: "近7日" },
+      { key: "14d", label: "近14日" },
+      { key: "30d", label: "近30日" },
+    ],
+  },
+];
+pgyXiaohongshu.variantGroups[0].options = [
+  { key: "hot", label: "实时热点", dimensionValues: { ranking: "hot" } },
+  ...["read", "like", "collect"].flatMap((ranking) =>
+    ["3d", "7d", "14d", "30d"].map((period) => ({
+      key: `${ranking}-${period}`,
+      label: `${ranking}-${period}`,
+      dimensionValues: { ranking, period },
+    })),
+  ),
+];
+applyTrendsSourceCatalog(pgyCatalog);
+assert.deepEqual(
+  getSourceSubtypeControlGroups("xiaohongshu", "hot").map((group) => ({
+    key: group.key,
+    values: group.items.map((item) => item.value),
+  })),
+  [{ key: "ranking", values: ["hot", "read-3d", "like-3d", "collect-3d"] }],
+);
+assert.deepEqual(
+  getSourceSubtypeControlGroups("xiaohongshu", "read-7d").map((group) => ({
+    key: group.key,
+    values: group.items.map((item) => item.value),
+  })),
+  [
+    { key: "ranking", values: ["hot", "read-7d", "like-7d", "collect-7d"] },
+    { key: "period", values: ["read-3d", "read-7d", "read-14d", "read-30d"] },
+  ],
+);
 
 let catalogChangeCount = 0;
 const unsubscribe = subscribeTrendsSourceCatalog(() => { catalogChangeCount += 1; });

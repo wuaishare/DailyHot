@@ -951,6 +951,7 @@ const AGGREGATE_SUBTYPE_SOURCES = ["clawhub"];
 const REMOTE_SOURCE_SUBTYPE_GROUPS = new Map();
 const REMOTE_SOURCE_DEFAULT_SUBTYPES = new Map();
 const REMOTE_SOURCE_VARIANTS = new Map();
+const REMOTE_SOURCE_VARIANT_DIMENSIONS = new Map();
 const REMOTE_SOURCE_CATALOG_LISTENERS = new Set();
 let REMOTE_SOURCE_CATALOG_SIGNATURE = "";
 
@@ -958,6 +959,7 @@ const projectionSignature = (projection) => JSON.stringify({
   groups: [...projection.groupsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
   defaults: [...projection.defaultsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
   variants: [...projection.variantsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
+  dimensions: [...projection.dimensionsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
 });
 
 export const subscribeTrendsSourceCatalog = (listener) => {
@@ -973,6 +975,7 @@ export const applyTrendsSourceCatalog = (catalog = {}) => {
   REMOTE_SOURCE_SUBTYPE_GROUPS.clear();
   REMOTE_SOURCE_DEFAULT_SUBTYPES.clear();
   REMOTE_SOURCE_VARIANTS.clear();
+  REMOTE_SOURCE_VARIANT_DIMENSIONS.clear();
   for (const [sourceName, groups] of projection.groupsBySource) {
     REMOTE_SOURCE_SUBTYPE_GROUPS.set(sourceName, groups);
   }
@@ -981,6 +984,9 @@ export const applyTrendsSourceCatalog = (catalog = {}) => {
   }
   for (const [sourceName, variants] of projection.variantsBySource) {
     REMOTE_SOURCE_VARIANTS.set(sourceName, variants);
+  }
+  for (const [sourceName, dimensions] of projection.dimensionsBySource) {
+    REMOTE_SOURCE_VARIANT_DIMENSIONS.set(sourceName, dimensions);
   }
   REMOTE_SOURCE_CATALOG_SIGNATURE = nextSignature;
   if (changed) {
@@ -1012,9 +1018,40 @@ export const getSourceSubtypeOptions = (sourceName) =>
 export const getSourceVariantOptions = (sourceName) =>
   REMOTE_SOURCE_VARIANTS.get(sourceName) || getSourceSubtypeOptions(sourceName);
 
+export const getSourceVariantDimensions = (sourceName) =>
+  REMOTE_SOURCE_VARIANT_DIMENSIONS.get(sourceName) || [];
+
 export const getSourceVariantOption = (sourceName, variant) => {
   const requested = String(variant || getDefaultSourceSubtype(sourceName) || "").trim();
   return getSourceVariantOptions(sourceName).find((item) => item.value === requested) || null;
+};
+
+const isDimensionCompatible = (candidate = {}, desired = {}, changedKey = "") =>
+  Object.entries(desired).every(([key, value]) =>
+    key === changedKey || candidate[key] == null || candidate[key] === value
+  );
+
+export const getSourceSubtypeControlGroups = (sourceName, activeVariant) => {
+  const dimensions = getSourceVariantDimensions(sourceName);
+  if (!dimensions.length) return getSourceSubtypeGroups(sourceName);
+  const variants = getSourceVariantOptions(sourceName);
+  const activeOption = getSourceVariantOption(sourceName, activeVariant);
+  const activeValues = activeOption?.dimensionValues || {};
+  return dimensions
+    .map((dimension, index) => {
+      if (index > 0 && !Object.prototype.hasOwnProperty.call(activeValues, dimension.key)) return null;
+      const items = (dimension.items || []).map((dimensionItem) => {
+        const desired = { ...activeValues, [dimension.key]: dimensionItem.value };
+        const matched = variants.find((variant) => {
+          const values = variant?.dimensionValues || {};
+          return values[dimension.key] === dimensionItem.value &&
+            isDimensionCompatible(values, desired, dimension.key);
+        });
+        return matched ? { ...dimensionItem, value: matched.value } : null;
+      }).filter(Boolean);
+      return items.length > 1 ? { ...dimension, items } : null;
+    })
+    .filter(Boolean);
 };
 
 export const getDefaultSourceSubtype = (sourceName) =>

@@ -220,7 +220,7 @@ import { getSharedRanking } from "@/utils/rankingCollection";
 import {
   buildSourceSubtypeParams,
   getDefaultSourceSubtype,
-  getSourceSubtypeGroups,
+  getSourceSubtypeControlGroups,
   getSourceSubtypeOptions,
   readSourceSubtype,
   resolveSourceSubtype,
@@ -524,7 +524,10 @@ const currentTocSubtype = computed(() => {
 });
 const sourceTocGroups = (sourceName) => {
   subtypeCatalogRevision.value;
-  return localizeSubtypeGroups(getSourceSubtypeGroups(sourceName), locale.value)
+  const activeVariant = isActiveTocSource(sourceName)
+    ? currentTocSubtype.value
+    : getDefaultSourceSubtype(sourceName);
+  return localizeSubtypeGroups(getSourceSubtypeControlGroups(sourceName, activeVariant), locale.value)
     .map((group) => ({
       ...group,
       items: (group.items || []).filter((item) => item?.value),

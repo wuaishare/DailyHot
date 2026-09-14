@@ -291,8 +291,9 @@ import MarketRankDirectionControl from "@/components/MarketRankDirectionControl.
 import CategoryStream from "@/components/CategoryStream.vue";
 import {
   buildSourceSubtypeParams,
-  getSourceSubtypeGroups,
+  getSourceSubtypeControlGroups,
   getSourceSubtypeOptions,
+  getSourceVariantOptions,
   persistSourceSubtype,
   readSourceSubtype,
   resolveSourceSubtype,
@@ -621,11 +622,15 @@ const handleLogoError = (event) => {
 const subtypeCatalogRevision = useTrendsCatalogRevision();
 const subtypeGroups = computed(() => {
   subtypeCatalogRevision.value;
-  return localizeSubtypeGroups(getSourceSubtypeGroups(listType.value), locale.value);
+  return localizeSubtypeGroups(
+    getSourceSubtypeControlGroups(listType.value, listSubType.value),
+    locale.value,
+  );
 });
-const activeTypeOptions = computed(() =>
-  subtypeGroups.value.flatMap((group) => group.items || []),
-);
+const activeTypeOptions = computed(() => {
+  subtypeCatalogRevision.value;
+  return getSourceVariantOptions(listType.value);
+});
 
 const resolveSubType = (route) => {
   const options = activeTypeOptions.value;
