@@ -30,6 +30,12 @@ const normalizeRemoteGroups = (sourceName, variantGroups = [], staticGroupsBySou
         .map((option) => ({
           label: String(option?.label || option?.key || "").trim(),
           value: String(option?.key || "").trim(),
+          ...(Number.isFinite(Number(option?.recommendedRefreshIntervalSeconds))
+            ? { recommendedRefreshIntervalSeconds: Number(option.recommendedRefreshIntervalSeconds) }
+            : {}),
+          ...(Number.isFinite(Number(option?.refreshIntervalSeconds))
+            ? { recommendedRefreshIntervalSeconds: Number(option.refreshIntervalSeconds) }
+            : {}),
         }))
         .filter((item) => item.value);
       if (!items.length) return null;
@@ -51,9 +57,11 @@ export const projectTrendsCatalog = (catalog = {}, staticGroupsBySource = {}) =>
     if (!sourceName) continue;
     const groups = normalizeRemoteGroups(sourceName, source?.variantGroups || [], staticGroupsBySource);
     if (!groups.length || !canProjectSource(staticGroupsBySource[sourceName] || [], groups)) continue;
-    groupsBySource.set(sourceName, groups);
+    const options = flattenSubtypeOptions(groups);
+    const selectorEnabled = source?.variantSelectorEnabled !== false && options.length > 1;
+    groupsBySource.set(sourceName, selectorEnabled ? groups : []);
     const defaultVariant = String(source?.defaultVariant || "").trim();
-    if (defaultVariant && flattenSubtypeOptions(groups).some((item) => item.value === defaultVariant)) {
+    if (defaultVariant && options.some((item) => item.value === defaultVariant)) {
       defaultsBySource.set(sourceName, defaultVariant);
     }
   }
