@@ -28,7 +28,6 @@
         @click.stop="toggleMenu"
       >
         <span class="trigger-label">{{ currentLabel }}</span>
-        <i class="runtime-dot" :class="runtimeClass(activeItem)" aria-hidden="true"></i>
         <span class="trigger-chevron" :class="{ expanded: menuOpen }" aria-hidden="true"></span>
       </button>
     </div>
@@ -84,9 +83,7 @@
                   >
                     <span class="menu-item-main">
                       <span>{{ item.label }}</span>
-                      <i class="runtime-dot" :class="runtimeClass(item)" aria-hidden="true"></i>
                     </span>
-                    <span v-if="runtimeMeta(item)" class="menu-item-meta">{{ runtimeMeta(item) }}</span>
                   </button>
                 </div>
               </section>
@@ -124,9 +121,7 @@
                   >
                     <span class="menu-item-main">
                       <span>{{ item.label }}</span>
-                      <i class="runtime-dot" :class="runtimeClass(item)" aria-hidden="true"></i>
                     </span>
-                    <span v-if="runtimeMeta(item)" class="menu-item-meta">{{ runtimeMeta(item) }}</span>
                   </button>
                 </div>
               </section>
@@ -168,8 +163,6 @@ const activeItem = computed(() =>
   flatItems.value.find((item) => item.value === props.activeValue) || flatItems.value[0] || null
 );
 const currentLabel = computed(() => activeItem.value?.label || props.groups[0]?.label || t("hotList.rankOrder"));
-const runtimeMeta = (item) => [item?.runtimeUpdateTime, item?.cadenceLabel].filter(Boolean).join(" · ");
-const runtimeClass = (item) => `is-${item?.runtimeStatus || "idle"}`;
 const isDarkTheme = computed(() => store.siteTheme === "dark");
 
 const getGroupKey = (group) => group.key || group.label || group.items?.[0]?.value || "group";
@@ -329,9 +322,9 @@ onBeforeUnmount(() => {
 
 .subtype-chip,
 .subtype-trigger {
-  border: 1px solid color-mix(in srgb, var(--n-text-color) 14%, transparent);
-  background: color-mix(in srgb, var(--n-color) 92%, transparent);
-  color: color-mix(in srgb, var(--n-text-color) 82%, transparent);
+  border: 1px solid var(--n-border-color);
+  background: transparent;
+  color: var(--n-text-color-2, var(--n-text-color));
   border-radius: 999px;
   font-size: 12px;
   line-height: 1.2;
@@ -350,13 +343,13 @@ onBeforeUnmount(() => {
 }
 
 .subtype-trigger:hover {
-  border-color: color-mix(in srgb, var(--n-text-color) 24%, transparent);
-  background: color-mix(in srgb, var(--n-color) 82%, var(--n-text-color) 3%);
-  color: var(--n-text-color);
+  border-color: var(--n-border-color-hover, var(--n-border-color));
+  background: transparent;
+  color: var(--n-text-color-2, var(--n-text-color));
 }
 
 .subtype-trigger.active {
-  border-color: color-mix(in srgb, var(--n-text-color) 18%, transparent);
+  border-color: var(--n-border-color);
 }
 
 .trigger-label {
@@ -365,17 +358,6 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.runtime-dot {
-  width: 6px;
-  height: 6px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--n-text-color) 20%, transparent);
-}
-.runtime-dot.is-loading { background: #f0a020; }
-.runtime-dot.is-loaded { background: #18a058; }
-.runtime-dot.is-failed { background: #d03050; }
 
 .trigger-chevron,
 .accordion-chevron {
@@ -467,13 +449,6 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 12px;
   min-width: 0;
-}
-
-.menu-item-meta {
-  color: var(--n-text-color-3, #8a8f99);
-  font-size: 10px;
-  font-weight: 500;
-  white-space: nowrap;
 }
 
 .menu-item:hover,

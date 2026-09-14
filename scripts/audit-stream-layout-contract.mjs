@@ -91,9 +91,12 @@ assert.match(sharedBadges, /ranking-badge\.is-explosive/);
 assert.match(sharedBadges, /ranking-badge\.is-animated \.ranking-badge-icon/);
 
 assert.doesNotMatch(subtypeBar, /trigger-more-count|remainingOptionCount/);
-assert.doesNotMatch(subtypeBar, /trigger-meta|currentMeta/);
+assert.doesNotMatch(subtypeBar, /trigger-meta|currentMeta|runtime-dot|runtimeMeta|menu-item-meta/);
+assert.doesNotMatch(subtypeBar, /color-mix/);
 assert.match(subtypeBar, /\.subtype-trigger \{[\s\S]{0,260}padding: 4px 9px/);
-assert.match(subtypeBar, /\.subtype-trigger\.active \{[\s\S]{0,120}color-mix/);
+assert.match(subtypeBar, /border: 1px solid var\(--n-border-color\)/);
+assert.match(subtypeBar, /color: var\(--n-text-color-2, var\(--n-text-color\)\)/);
+assert.match(subtypeBar, /\.subtype-trigger\.active \{[\s\S]{0,120}var\(--n-border-color\)/);
 assert.doesNotMatch(subtypeBar, /\.subtype-trigger\.active \{[^}]*#ea444d/s);
 assert.match(hotList, /\.header-subtype:deep\(\.subtype-chip\) \{[\s\S]{0,120}padding: 4px 9px/);
 
