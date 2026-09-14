@@ -569,12 +569,17 @@ addCheck("api: AI ranking endpoints are available", async () => {
     if (source === "artificialanalysis" && type === "providers") {
       const firstTitle = String(payload.data[0]?.title || "");
       const firstDesc = String(payload.data[0]?.desc || "");
+      const titleParts = firstTitle
+        .split(" · ")
+        .map((part) => part.trim())
+        .filter(Boolean);
       assert(
-        firstTitle.includes("Anthropic") && firstTitle.includes("Claude Opus 4.8"),
+        titleParts.length >= 2,
         `${source}/${type}: first title should include provider and model, got ${firstTitle}`
       );
+      const modelLabel = titleParts.slice(1).join(" · ");
       assert(
-        !firstDesc.includes("Claude Opus 4.8"),
+        modelLabel && !firstDesc.includes(modelLabel),
         `${source}/${type}: first desc should not duplicate model, got ${firstDesc}`
       );
     }

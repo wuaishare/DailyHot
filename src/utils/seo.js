@@ -504,28 +504,28 @@ const CATEGORY_LOCALE_SEO_MAP = {
     en: {
       title: "AI Hot Rankings - AI model leaderboards, AI news, and tool trends | DailyHot",
       description:
-        "AI Hot Rankings aggregate model benchmarks, official updates, product ecosystems, research communities, and Chinese AI news from sources including OpenRouter, OpenAI, Anthropic, Hugging Face, Product Hunt, Hacker News, QbitAI, and Sina AI.",
+        "AI Hot Rankings aggregate model benchmarks, official updates, product ecosystems, research communities, and Chinese AI news from sources including OpenRouter, Artificial Analysis, OpenAI, Anthropic, Hugging Face, Product Hunt, Hacker News, QbitAI, and Sina AI.",
       keywords:
         "AI rankings,AI model leaderboard,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI news,AI tools,DailyHot",
     },
     "zh-TW": {
       title: "AI熱榜 - AI模型排行榜、AI資訊與熱門工具榜單聚合 | 吾愛熱榜",
       description:
-        "AI熱榜彙整模型評測、官方動態、產品生態、研究社群與中文AI資訊，來源涵蓋 OpenRouter、OpenAI、Anthropic、Hugging Face、Product Hunt、Hacker News、量子位與新浪AI。",
+        "AI熱榜彙整模型評測、官方動態、產品生態、研究社群與中文AI資訊，來源涵蓋 OpenRouter、Artificial Analysis、OpenAI、Anthropic、Hugging Face、Product Hunt、Hacker News、量子位與新浪AI。",
       keywords:
         "AI熱榜,AI模型排行榜,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI資訊,AI工具,吾愛熱榜",
     },
     ja: {
       title: "AIランキング - AIモデル評価、AIニュース、人気ツール動向の集約 | DailyHot",
       description:
-        "AIランキングはモデル評価、公式アップデート、製品エコシステム、研究コミュニティ、中国語AIニュースをまとめ、OpenRouter、OpenAI、Anthropic、Hugging Face、QbitAI などを追跡します。",
+        "AIランキングはモデル評価、公式アップデート、製品エコシステム、研究コミュニティ、中国語AIニュースをまとめ、OpenRouter、Artificial Analysis、OpenAI、Anthropic、Hugging Face、QbitAI などを追跡します。",
       keywords:
         "AIランキング,AIモデルランキング,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AIニュース,AIツール,DailyHot",
     },
     ko: {
       title: "AI 랭킹 - AI 모델 순위, AI 뉴스, 인기 도구 트렌드 | DailyHot",
       description:
-        "AI 랭킹은 모델 평가, 공식 업데이트, 제품 생태계, 연구 커뮤니티, 중국어 AI 뉴스를 함께 모아 OpenRouter, OpenAI, Anthropic, Hugging Face, QbitAI 등의 흐름을 추적합니다.",
+        "AI 랭킹은 모델 평가, 공식 업데이트, 제품 생태계, 연구 커뮤니티, 중국어 AI 뉴스를 함께 모아 OpenRouter, Artificial Analysis, OpenAI, Anthropic, Hugging Face, QbitAI 등의 흐름을 추적합니다.",
       keywords:
         "AI 랭킹,AI 모델 순위,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI 뉴스,AI 도구,DailyHot",
     },

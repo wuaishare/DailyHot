@@ -1,4 +1,5 @@
 import { handleTrendsIntelligenceProxy } from "./_trends-intelligence.js";
+import { protectTranslationTerms } from "../src/utils/translationTerms.mjs";
 
 export const config = {
   runtime: "nodejs",
@@ -15,6 +16,49 @@ const readBody = async (req) => {
     req.on("end", () => resolve(data || undefined));
     req.on("error", reject);
   });
+};
+
+const prepareReadableTranslationProxyBody = (body) => {
+  if (!body) return null;
+  try {
+    const payload = JSON.parse(body);
+    if (!Array.isArray(payload?.texts)) return null;
+    const protectedItems = payload.texts.map((text, index) =>
+      protectTranslationTerms(text, `DHTERM${index}N`)
+    );
+    return {
+      body: JSON.stringify({
+        ...payload,
+        texts: protectedItems.map((item) => item.protectedText),
+      }),
+      restoreResponse: (rawText) => {
+        try {
+          const responsePayload = JSON.parse(rawText);
+          const items = Array.isArray(responsePayload?.data)
+            ? responsePayload.data
+            : Array.isArray(responsePayload?.items)
+              ? responsePayload.items
+              : null;
+          if (!items) return rawText;
+          items.forEach((item, index) => {
+            const restore = protectedItems[index]?.restore;
+            if (!restore) return;
+            if (typeof item?.original === "string") {
+              item.original = restore(item.original);
+            }
+            if (typeof item?.translated === "string") {
+              item.translated = restore(item.translated);
+            }
+          });
+          return JSON.stringify(responsePayload);
+        } catch {
+          return rawText;
+        }
+      },
+    };
+  } catch {
+    return null;
+  }
 };
 
 const PROXY_LOCAL_QUERY_PARAMS = new Set([
@@ -2881,6 +2925,11 @@ export default async function handler(req, res) {
   if (await handleTrendsIntelligenceProxy({ req, res, pathValue })) return;
 
   const body = await readBody(req);
+  const readableTranslationProtection =
+    pathValue === "readable-translate"
+      ? prepareReadableTranslationProxyBody(body)
+      : null;
+  const proxyBody = readableTranslationProtection?.body ?? body;
 
   if (pathValue === "image-proxy") {
     await handleImageProxy(req, res);
@@ -2958,7 +3007,7 @@ export default async function handler(req, res) {
       const result = await fetchProxyTarget({
         targetUrl: buildProxyTargetUrl(candidateBaseUrl, pathValue, req.query),
         req,
-        body,
+        body: proxyBody,
         proxyToken,
       });
       const isJson = result.contentType.includes("application/json");
@@ -3047,5 +3096,11 @@ export default async function handler(req, res) {
       return;
     } catch {}
   }
-  res.send(text);
+  const responseText =
+    pathValue === "readable-translate" &&
+    response.ok &&
+    readableTranslationProtection
+      ? readableTranslationProtection.restoreResponse(text)
+      : text;
+  res.send(responseText);
 }
