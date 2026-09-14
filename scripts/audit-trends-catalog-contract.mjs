@@ -42,10 +42,24 @@ const catalog = {
         },
       ],
     },
+    {
+      key: "xiaohongshu",
+      defaultVariant: "hot",
+      variantSelectorEnabled: false,
+      variantGroups: [
+        {
+          key: "ranking",
+          label: "榜单",
+          options: [
+            { key: "hot", label: "实时热点", recommendedRefreshIntervalSeconds: 180 },
+          ],
+        },
+      ],
+    },
   ],
 };
 
-assert.equal(applyTrendsSourceCatalog(catalog), 2);
+assert.equal(applyTrendsSourceCatalog(catalog), 3);
 assert.deepEqual(
   getSourceSubtypeGroups("weibo").flatMap((group) => group.items.map((item) => item.value)),
   ["hot", "entertainment", "life", "social"],
@@ -55,6 +69,11 @@ assert.equal(resolveTrendsCatalogVariant("weibo", { type: "life" }), "life");
 assert.equal(resolveTrendsCatalogVariant("weibo", { type: "invalid" }), null);
 assert.equal(canFallbackTrendsCatalogVariant("weibo", "hot"), true);
 assert.equal(canFallbackTrendsCatalogVariant("weibo", "entertainment"), false);
+assert.deepEqual(getSourceSubtypeGroups("xiaohongshu"), []);
+assert.equal(getDefaultSourceSubtype("xiaohongshu"), "hot");
+assert.equal(resolveTrendsCatalogVariant("xiaohongshu", {}), "hot");
+assert.equal(canFallbackTrendsCatalogVariant("xiaohongshu", "hot"), true);
+assert.equal(canFallbackTrendsCatalogVariant("xiaohongshu", "read-3d"), false);
 
 let catalogChangeCount = 0;
 const unsubscribe = subscribeTrendsSourceCatalog(() => { catalogChangeCount += 1; });
@@ -81,7 +100,7 @@ assert.deepEqual(
 assert.equal(getDefaultSourceSubtype("google-trends"), "us");
 assert.equal(resolveTrendsCatalogVariant("google-trends", { type: "jp" }), "jp");
 assert.equal(canFallbackTrendsCatalogVariant("google-trends", "jp"), false);
-console.log("[trends-catalog-contract] dynamic projection and fail-closed fallback verified");
+console.log("[trends-catalog-contract] dynamic projection, selector gating and fail-closed fallback verified");
 
 const vueFiles = [];
 const walkVueFiles = (directory) => {
@@ -111,7 +130,7 @@ for (const file of subtypeConsumers) {
   );
 }
 const revisionComposable = fs.readFileSync(
-  new URL("../src/composables/useTrendsCatalogRevision.js", import.meta.url),
+  new URL("../src/composables/useTrendsCatalogRevision.js", import.meta.url).pathname,
   "utf8",
 );
 assert.match(revisionComposable, /subscribeTrendsSourceCatalog/, "catalog revision composable must subscribe to remote catalog changes");
