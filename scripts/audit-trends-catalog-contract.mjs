@@ -106,12 +106,13 @@ pgyXiaohongshu.variantDimensions = [
   },
 ];
 pgyXiaohongshu.variantGroups[0].options = [
-  { key: "hot", label: "实时热点", dimensionValues: { ranking: "hot" } },
+  { key: "hot", label: "实时热点", dimensionValues: { ranking: "hot" }, runtimeAvailability: "available" },
   ...["read", "like", "collect"].flatMap((ranking) =>
     ["3d", "7d", "14d", "30d"].map((period) => ({
       key: `${ranking}-${period}`,
       label: `${ranking}-${period}`,
       dimensionValues: { ranking, period },
+      runtimeAvailability: "available",
     })),
   ),
 ];
@@ -133,6 +134,19 @@ assert.deepEqual(
     { key: "period", values: ["read-3d", "read-7d", "read-14d", "read-30d"] },
   ],
 );
+
+const gatedPgyCatalog = structuredClone(pgyCatalog);
+const gatedPgyXiaohongshu = gatedPgyCatalog.sources.find((source) => source.key === "xiaohongshu");
+for (const option of gatedPgyXiaohongshu.variantGroups[0].options) {
+  if (option.key !== "hot") option.runtimeAvailability = "requires_authorization";
+}
+applyTrendsSourceCatalog(gatedPgyCatalog);
+assert.deepEqual(getSourceSubtypeGroups("xiaohongshu"), []);
+assert.equal(getDefaultSourceSubtype("xiaohongshu"), "hot");
+assert.equal(resolveTrendsCatalogVariant("xiaohongshu", { type: "read-3d" }), null);
+assert.deepEqual(getSourceSubtypeControlGroups("xiaohongshu", "hot"), []);
+
+applyTrendsSourceCatalog(pgyCatalog);
 
 let catalogChangeCount = 0;
 const unsubscribe = subscribeTrendsSourceCatalog(() => { catalogChangeCount += 1; });
