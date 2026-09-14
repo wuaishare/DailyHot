@@ -206,7 +206,22 @@
                           :depth="3"
                           v-html="item.displayDesc"
                         />
-                        <div class="message">
+                        <div v-if="item.rankingMeta?.context?.length" class="ranking-context">
+                          <span v-for="meta in item.rankingMeta.context" :key="meta.key">
+                            {{ meta.label }} {{ meta.value }}
+                          </span>
+                        </div>
+                        <div v-if="item.rankingMeta?.metrics?.length" class="ranking-metrics">
+                          <span
+                            v-for="metric in item.rankingMeta.metrics"
+                            :key="metric.key"
+                            class="ranking-metric"
+                          >
+                            <span>{{ metric.label }}</span>
+                            <strong>{{ metric.value }}</strong>
+                          </span>
+                        </div>
+                        <div v-else class="message">
                           <div class="hot" v-if="item.hot">
                             <n-icon :depth="3" :component="Fire" />
                             <n-text
@@ -284,6 +299,7 @@ import {
 } from "@/utils/sourceSubtypes";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
+import { getRankingItemMeta } from "@/utils/rankingItemMeta";
 import {
   getFundMetricView,
   getMarketEntityDisplayTitle,
@@ -552,6 +568,7 @@ const currentPageItems = computed(() =>
           ? getMarketQuoteView(item, locale.value)
           : null,
         fundMetric: getFundMetricView(item, locale.value),
+        rankingMeta: getRankingItemMeta(item, locale.value),
         hasReadableTranslation:
           shouldProtectEntityTitles.value ||
           Boolean(item?.noAutoTranslate) ||
@@ -1295,6 +1312,38 @@ onBeforeUnmount(() => {
               height: 112px;
             }
           }
+        }
+      }
+      .ranking-context {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px 10px;
+        margin-top: 6px;
+        color: var(--n-text-color-3);
+        font-size: 12px;
+        line-height: 18px;
+      }
+      .ranking-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 7px;
+      }
+      .ranking-metric {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        padding: 2px 7px;
+        border: 1px solid var(--n-border-color);
+        border-radius: 999px;
+        color: var(--n-text-color-3);
+        font-size: 11px;
+        line-height: 16px;
+        strong {
+          color: var(--n-text-color-2);
+          font-size: 12px;
+          font-weight: 600;
+          font-variant-numeric: tabular-nums;
         }
       }
       .message {

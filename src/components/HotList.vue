@@ -366,11 +366,29 @@
         :style="previewStyle"
         role="tooltip"
       >
-        <div v-if="previewItem.displayDesc" class="preview-copy">
-          <div class="preview-desc">
+        <div
+          v-if="previewItem.displayDesc || previewItem.rankingMeta?.hasContent"
+          class="preview-copy"
+        >
+          <div v-if="previewItem.displayDesc" class="preview-desc">
             {{ previewItem.displayDesc }}
           </div>
-          <div v-if="previewItem.hot" class="preview-meta">
+          <div v-if="previewItem.rankingMeta?.context?.length" class="preview-context">
+            <span v-for="meta in previewItem.rankingMeta.context" :key="meta.key">
+              {{ meta.label }} {{ meta.value }}
+            </span>
+          </div>
+          <div v-if="previewItem.rankingMeta?.metrics?.length" class="preview-metrics">
+            <span
+              v-for="metric in previewItem.rankingMeta.metrics"
+              :key="metric.key"
+              class="preview-metric"
+            >
+              <span>{{ metric.label }}</span>
+              <strong>{{ metric.value }}</strong>
+            </span>
+          </div>
+          <div v-else-if="previewItem.hot" class="preview-meta">
             <n-icon :component="Fire" />
             <span>{{ formatPreviewHot(previewItem.hot) }}</span>
           </div>
@@ -427,6 +445,7 @@ import {
 import { trackEvent } from "@/utils/track";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { formatCompactMetric } from "@/utils/compactMetric";
+import { getRankingItemMeta } from "@/utils/rankingItemMeta";
 import {
   getSourceDisplayLabel,
   getSourceSubtitleLabel,
@@ -529,7 +548,10 @@ const previewHasCover = computed(
     !coverErrorMap[previewItem.value.cover]
 );
 const previewIsMediaOnly = computed(
-  () => previewHasCover.value && !previewItem.value?.displayDesc
+  () =>
+    previewHasCover.value &&
+    !previewItem.value?.displayDesc &&
+    !previewItem.value?.rankingMeta?.hasContent
 );
 const HOT_LIST_VISIBLE_LIMIT = 15;
 const MARKET_LIST_VISIBLE_LIMIT = 20;
@@ -659,6 +681,7 @@ const visibleItems = computed(() => {
       displayRank,
       marketQuote,
       fundMetric: getFundMetricView(item, locale.value),
+      rankingMeta: getRankingItemMeta(item, locale.value),
       hasReadableTranslation:
         shouldProtectEntityTitles.value ||
         Boolean(item?.noAutoTranslate) ||
@@ -996,12 +1019,14 @@ const getPreviewMediaLayout = (cover) => {
 
 const hasPreviewContent = (item) =>
   Boolean(
-    item?.displayDesc || (showImages.value && item?.cover && !coverErrorMap[item.cover])
+    item?.displayDesc ||
+    item?.rankingMeta?.hasContent ||
+    (showImages.value && item?.cover && !coverErrorMap[item.cover])
   );
 
 const getPreviewDimensions = (item, mediaLayout) => {
   const hasDescription = Boolean(item?.displayDesc);
-  if (mediaLayout && !hasDescription) {
+  if (mediaLayout && !hasDescription && !item?.rankingMeta?.hasContent) {
     return {
       width: mediaLayout.mediaOnly.width,
       height: mediaLayout.mediaOnly.height,
@@ -1011,7 +1036,11 @@ const getPreviewDimensions = (item, mediaLayout) => {
   const descLength = String(item?.displayDesc || "").length;
   const descLines = descLength ? Math.min(3, Math.max(1, Math.ceil(descLength / 24))) : 0;
   let textHeight = descLines ? descLines * 20 : 0;
-  if (item?.hot) textHeight += (textHeight ? 8 : 0) + 18;
+  const metaRows =
+    (item?.rankingMeta?.context?.length ? 1 : 0) +
+    (item?.rankingMeta?.metrics?.length ? 1 : 0);
+  if (metaRows) textHeight += (textHeight ? 8 : 0) + metaRows * 22;
+  else if (item?.hot) textHeight += (textHeight ? 8 : 0) + 18;
   const detailMedia = mediaLayout?.detail;
   return {
     width: detailMedia?.previewWidth || previewTextOnlyWidth,
@@ -1085,7 +1114,9 @@ const positionPreview = (item, target, mediaLayout, preferredPlacement = null) =
   );
   if (overlapsText && (placement === "left" || placement === "right")) return false;
 
-  const isMediaOnly = Boolean(mediaLayout && !item?.displayDesc);
+  const isMediaOnly = Boolean(
+    mediaLayout && !item?.displayDesc && !item?.rankingMeta?.hasContent
+  );
   const activeMedia = mediaLayout
     ? isMediaOnly
       ? mediaLayout.mediaOnly
@@ -1982,6 +2013,41 @@ onBeforeUnmount(() => {
     line-height: 1.55;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+  }
+
+  .preview-context {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-top: 8px;
+    color: var(--preview-muted-color, var(--n-text-color-3, rgba(31, 34, 37, 0.56)));
+    font-size: 12px;
+  }
+
+  .preview-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .preview-metric {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 3px 7px;
+    border: 1px solid var(--preview-border, var(--n-border-color, rgba(127, 127, 127, 0.2)));
+    border-radius: 999px;
+    color: var(--preview-muted-color, var(--n-text-color-3, rgba(31, 34, 37, 0.56)));
+    font-size: 11px;
+    line-height: 16px;
+  }
+
+  .preview-metric strong {
+    color: var(--preview-title-color, var(--n-text-color, rgba(31, 34, 37, 0.92)));
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 
   .preview-meta {

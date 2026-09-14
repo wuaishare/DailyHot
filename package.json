@@ -17,7 +17,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "prebuild": "npm run audit:trends-catalog:contract && npm run audit:category-integrity && npm run audit:stream-layout && node scripts/generate-seo-files.js",
+    "prebuild": "npm run audit:trends-catalog:contract && npm run audit:ranking-item-meta && npm run audit:category-integrity && npm run audit:stream-layout && node scripts/generate-seo-files.js",
     "build": "vite build",
     "postbuild": "node scripts/generate-route-shells.cjs && npm run audit:seo-shells && npm run audit:home-seo",
     "preview": "vite preview",
@@ -28,6 +28,7 @@
     "audit:subtypes": "node scripts/audit-source-subtypes.cjs",
     "audit:trends-catalog": "node scripts/audit-trends-catalog-subtypes.mjs",
     "audit:trends-catalog:contract": "node scripts/audit-trends-catalog-contract.mjs",
+    "audit:ranking-item-meta": "node scripts/audit-ranking-item-meta.mjs",
     "audit:feedback": "node scripts/audit-feedback-config.mjs",
     "audit:fallback": "node scripts/audit-api-fallback.mjs",
     "audit:trends-intelligence": "node scripts/audit-trends-intelligence-proxy.mjs",
