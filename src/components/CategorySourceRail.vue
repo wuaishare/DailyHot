@@ -18,7 +18,7 @@
           >
             <img :src="getSourceLogo(source.name)" alt="" @error="handleLogoError" />
             <span>{{ sourceLabel(source) }}</span>
-            <i :class="sourceStates[source.name] || 'idle'" aria-hidden="true"></i>
+            <i :class="sourceState(source.name)" aria-hidden="true"></i>
           </button>
         </nav>
       </div>
@@ -55,17 +55,19 @@
                 :key="item.value"
                 type="button"
                 class="category-source-section__subtype"
-                :class="{ active: sourceSubtype(source.name) === item.value }"
+                :class="[{ active: sourceSubtype(source.name) === item.value }, 'is-' + sourceVariantState(source.name, item.value)]"
                 :aria-pressed="sourceSubtype(source.name) === item.value"
                 @click.stop="changeSourceSubtype(source, item.value)"
               >
-                {{ item.label }}
+                <span>{{ item.label }}</span>
+                <i class="category-source-section__subtype-state" aria-hidden="true"></i>
               </button>
             </div>
             <div class="category-source-section__tools">
               <div class="category-source-section__freshness">
                 <span class="category-source-section__time">{{ sourceUpdateTime(source.name) || copy.updateFailed }}</span>
-                <button type="button" class="category-source-section__tool" :class="{ loading: sourceStates[source.name] === 'loading' }" :title="copy.refreshLatest" :aria-label="copy.refreshLatest" @click.stop="loadSource(source, true)">
+                <span v-if="sourceCadenceLabel(source.name)" class="category-source-section__cadence">{{ sourceCadenceLabel(source.name) }}</span>
+                <button type="button" class="category-source-section__tool" :class="{ loading: sourceState(source.name) === 'loading' }" :title="copy.refreshLatest" :aria-label="copy.refreshLatest" @click.stop="loadSource(source, true)">
                   <Refresh />
                 </button>
               </div>
@@ -78,10 +80,10 @@
             </div>
           </header>
 
-          <div v-if="!sourceStates[source.name] || sourceStates[source.name] === 'idle' || sourceStates[source.name] === 'loading'" class="category-source-section__rail is-loading">
+          <div v-if="sourceState(source.name) === 'idle' || sourceState(source.name) === 'loading'" class="category-source-section__rail is-loading">
             <div v-for="index in 4" :key="index" class="category-story-card skeleton"></div>
           </div>
-          <div v-else-if="sourceStates[source.name] === 'failed'" class="category-source-section__error">
+          <div v-else-if="sourceState(source.name) === 'failed'" class="category-source-section__error">
             <span>{{ copy.loadFailed }}</span>
             <button type="button" @click="loadSource(source, true)">{{ copy.retry }}</button>
           </div>
@@ -143,6 +145,7 @@ import {
   getDefaultSourceSubtype,
   getSourceSubtypeGroups,
   getSourceSubtypeOptions,
+  getSourceVariantOption,
   persistSourceSubtype,
   readSourceSubtype,
   resolveSourceSubtype,
@@ -203,19 +206,36 @@ const sourceLabel = (source) => getSourceDisplayLabel(
   locale.value,
   source.label || source.name,
 );
-const sourceSubtype = (sourceName) => resolveSourceSubtype(
-  getSourceSubtypeOptions(sourceName),
-  sourceSubtypes[sourceName] || readSourceSubtype(sourceName) || getDefaultSourceSubtype(sourceName),
-);
+const sourceSubtype = (sourceName) => {
+  const options = getSourceSubtypeOptions(sourceName);
+  const preferred = sourceSubtypes[sourceName] || readSourceSubtype(sourceName) || getDefaultSourceSubtype(sourceName);
+  return options.length ? resolveSourceSubtype(options, preferred) : getDefaultSourceSubtype(sourceName);
+};
 const sourceSubtypeGroups = (sourceName) =>
   localizeSubtypeGroups(getSourceSubtypeGroups(sourceName), locale.value);
 const sourceSubtypeOptions = (sourceName) =>
   sourceSubtypeGroups(sourceName).flatMap((group) => group.items || []);
+const sourceRuntimeKey = (sourceName, subtype = sourceSubtype(sourceName)) =>
+  [sourceName, subtype || "__default__"].join("::");
+const sourceResult = (sourceName, subtype = sourceSubtype(sourceName)) =>
+  sourceResults[sourceRuntimeKey(sourceName, subtype)] || null;
+const sourceState = (sourceName, subtype = sourceSubtype(sourceName)) =>
+  sourceStates[sourceRuntimeKey(sourceName, subtype)] || "idle";
+const sourceVariantState = (sourceName, subtype) => sourceState(sourceName, subtype);
 const sourcePath = (source) => buildRankPath(locale.value, source.name, sourceSubtype(source.name) || '');
 const sourceUpdateTime = (sourceName) => {
   void store.timeData;
-  const value = sourceResults[sourceName]?.updateTime;
+  const value = sourceResult(sourceName)?.updateTime;
   return value ? formatTime(value, locale.value) : '';
+};
+const sourceCadenceSeconds = (sourceName) =>
+  Number(getSourceVariantOption(sourceName, sourceSubtype(sourceName))?.recommendedRefreshIntervalSeconds) || 0;
+const sourceCadenceLabel = (sourceName) => {
+  const seconds = sourceCadenceSeconds(sourceName);
+  if (!seconds) return '';
+  if (seconds % 3600 === 0) return `${seconds / 3600}h`;
+  if (seconds % 60 === 0) return `${seconds / 60}m`;
+  return `${seconds}s`;
 };
 const rankClass = (rank) => ({
   'is-one': rank === 1,
@@ -226,15 +246,13 @@ const changeSourceSubtype = async (source, subtype) => {
   if (!source?.name || !subtype || sourceSubtype(source.name) === subtype) return;
   sourceSubtypes[source.name] = subtype;
   persistSourceSubtype(source.name, subtype);
-  delete sourceResults[source.name];
-  sourceStates[source.name] = 'idle';
-  await loadSource(source, true);
+  await loadSource(source, false);
 };
 const handleSourceDragEnd = () => {
   emit('reorder', orderedSources.value.map((source) => source.name));
 };
 const sourceSubtitle = (sourceName) => getSourceSubtitleLabel(
-  sourceResults[sourceName]?.subtitle || sourceResults[sourceName]?.type || '',
+  sourceResult(sourceName)?.subtitle || sourceResult(sourceName)?.type || '',
   locale.value,
 );
 const sectionId = (sourceName) => `category-source-${sourceName}`;
@@ -258,13 +276,15 @@ const hideBrokenCover = (event) => {
   card?.classList.remove('has-cover');
 };
 
-const buildParams = (sourceName) => buildSourceSubtypeParams(sourceName, sourceSubtype(sourceName));
+const buildParams = (sourceName, subtype = sourceSubtype(sourceName)) => buildSourceSubtypeParams(sourceName, subtype);
 const loadSource = async (source, force = false) => {
-  if (!force && sourceResults[source.name]) return;
-  sourceStates[source.name] = 'loading';
+  const subtype = sourceSubtype(source.name);
+  const runtimeKey = sourceRuntimeKey(source.name, subtype);
+  if (!force && sourceResults[runtimeKey]) return;
+  sourceStates[runtimeKey] = 'loading';
   const useApi2 = source?.useApi2 || source?.api === 2 || source?.api === 'api2';
   try {
-    const response = await getSharedRanking(source.name, force, buildParams(source.name), {
+    const response = await getSharedRanking(source.name, force, buildParams(source.name, subtype), {
       useApi2,
       forceNoCache: force,
     });
@@ -272,17 +292,19 @@ const loadSource = async (source, force = false) => {
       store.setSourceApi2(source.name, true);
     }
     if (response?.result?.code !== 200) throw new Error('source failed');
-    sourceResults[source.name] = response.result;
-    sourceStates[source.name] = 'loaded';
+    sourceResults[runtimeKey] = response.result;
+    sourceStates[runtimeKey] = 'loaded';
     store.markAvailable(source.name);
   } catch {
-    sourceStates[source.name] = 'failed';
-    store.markUnavailable(source.name);
+    sourceStates[runtimeKey] = 'failed';
+    if (sourceSubtype(source.name) === subtype) {
+      store.markUnavailable(source.name);
+    }
   }
 };
 
 const loadSources = async (force = false, targets = props.sources) => {
-  const queue = targets.filter((source) => force || !sourceResults[source.name]);
+  const queue = targets.filter((source) => force || !sourceResult(source.name));
   let cursor = 0;
   const worker = async () => {
     while (cursor < queue.length) {
@@ -294,7 +316,7 @@ const loadSources = async (force = false, targets = props.sources) => {
 };
 
 const sourceEntries = (sourceName) => {
-  const result = sourceResults[sourceName];
+  const result = sourceResult(sourceName);
   const data = Array.isArray(result?.data) ? result.data : [];
   const query = queryText.value;
   let rank = 1;
@@ -369,7 +391,8 @@ watch(() => props.sources.map((source) => source.name).join('|'), () => {
     activeSource.value = props.sources[0]?.name || '';
   }
   for (const source of props.sources) {
-    if (!sourceStates[source.name]) sourceStates[source.name] = 'idle';
+    const runtimeKey = sourceRuntimeKey(source.name);
+    if (!sourceStates[runtimeKey]) sourceStates[runtimeKey] = 'idle';
   }
   void loadSources(false, props.sources.slice(0, INITIAL_SOURCE_LOAD_COUNT));
   nextTick(() => {
@@ -379,14 +402,14 @@ watch(() => props.sources.map((source) => source.name).join('|'), () => {
 }, { immediate: true });
 watch(() => catalogRevision.value, () => {
   for (const source of props.sources) {
-    delete sourceResults[source.name];
-    sourceStates[source.name] = 'idle';
+    const runtimeKey = sourceRuntimeKey(source.name);
+    if (!sourceStates[runtimeKey]) sourceStates[runtimeKey] = 'idle';
   }
   void loadSources(false, props.sources.slice(0, INITIAL_SOURCE_LOAD_COUNT));
 });
 
 const handleRefresh = () => {
-  const loaded = props.sources.filter((source) => sourceResults[source.name]);
+  const loaded = props.sources.filter((source) => sourceResult(source.name));
   void loadSources(true, loaded.length ? loaded : props.sources.slice(0, INITIAL_SOURCE_LOAD_COUNT));
 };
 onMounted(() => {
@@ -523,12 +546,17 @@ onBeforeUnmount(() => {
 .category-source-section__identity span { color: var(--csr-text-3); font-size: 11px; }
 .category-source-section__subtypes { display: flex; min-width: 0; gap: 4px; overflow-x: auto; scrollbar-width: none; }
 .category-source-section__subtypes::-webkit-scrollbar { display: none; }
-.category-source-section__subtype { flex: 0 0 auto; padding: 5px 8px; border: 0; border-radius: 7px; background: transparent; color: var(--csr-text-2); cursor: pointer; font: inherit; font-size: 11px; font-weight: 620; line-height: 1.1; }
+.category-source-section__subtype { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; padding: 5px 8px; border: 0; border-radius: 7px; background: transparent; color: var(--csr-text-2); cursor: pointer; font: inherit; font-size: 11px; font-weight: 620; line-height: 1.1; }
 .category-source-section__subtype:hover { background: var(--csr-panel-soft); color: var(--csr-text); }
 .category-source-section__subtype.active { background: color-mix(in srgb, var(--csr-primary) 11%, var(--csr-panel-soft)); color: var(--csr-primary); font-weight: 730; }
+.category-source-section__subtype-state { width: 5px; height: 5px; flex: 0 0 auto; border-radius: 50%; background: var(--csr-border); }
+.category-source-section__subtype.is-loaded .category-source-section__subtype-state { background: #18a058; }
+.category-source-section__subtype.is-loading .category-source-section__subtype-state { background: #f0a020; }
+.category-source-section__subtype.is-failed .category-source-section__subtype-state { background: #d03050; }
 .category-source-section__tools { display: flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 0; }
 .category-source-section__freshness { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
 .category-source-section__time { max-width: 92px; overflow: hidden; color: var(--csr-text-3); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.category-source-section__cadence { color: var(--csr-text-3); font-size: 9px; white-space: nowrap; }
 .category-source-section__tool { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--csr-text-3); cursor: pointer; }
 .category-source-section__tool:hover { background: var(--csr-panel-soft); color: var(--csr-text); }
 .category-source-section__tool svg { width: 15px; height: 15px; }
