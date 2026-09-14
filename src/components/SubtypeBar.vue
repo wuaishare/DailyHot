@@ -28,7 +28,6 @@
         @click.stop="toggleMenu"
       >
         <span class="trigger-label">{{ currentLabel }}</span>
-        <span v-if="currentMeta" class="trigger-meta">{{ currentMeta }}</span>
         <i class="runtime-dot" :class="runtimeClass(activeItem)" aria-hidden="true"></i>
         <span class="trigger-chevron" :class="{ expanded: menuOpen }" aria-hidden="true"></span>
       </button>
@@ -170,7 +169,6 @@ const activeItem = computed(() =>
 );
 const currentLabel = computed(() => activeItem.value?.label || props.groups[0]?.label || t("hotList.rankOrder"));
 const runtimeMeta = (item) => [item?.runtimeUpdateTime, item?.cadenceLabel].filter(Boolean).join(" · ");
-const currentMeta = computed(() => runtimeMeta(activeItem.value));
 const runtimeClass = (item) => `is-${item?.runtimeStatus || "idle"}`;
 const isDarkTheme = computed(() => store.siteTheme === "dark");
 
@@ -365,13 +363,6 @@ onBeforeUnmount(() => {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.trigger-meta {
-  color: var(--n-text-color-3, #8a8f99);
-  font-size: 10px;
-  font-weight: 500;
   white-space: nowrap;
 }
 
