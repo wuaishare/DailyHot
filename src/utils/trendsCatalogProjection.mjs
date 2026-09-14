@@ -27,6 +27,7 @@ const normalizeRemoteGroups = (sourceName, variantGroups = [], staticGroupsBySou
   variantGroups
     .map((group) => {
       const items = (group.options || [])
+        .filter((option) => !option?.runtimeAvailability || option.runtimeAvailability === "available")
         .map((option) => ({
           label: String(option?.label || option?.key || "").trim(),
           value: String(option?.key || "").trim(),
@@ -66,17 +67,28 @@ export const projectTrendsCatalog = (catalog = {}, staticGroupsBySource = {}) =>
     const selectorEnabled = source?.variantSelectorEnabled !== false && options.length > 1;
     groupsBySource.set(sourceName, selectorEnabled ? groups : []);
     variantsBySource.set(sourceName, options);
+    const activeDimensionValues = new Map();
+    for (const option of options) {
+      for (const [dimensionKey, dimensionValue] of Object.entries(option.dimensionValues || {})) {
+        if (!activeDimensionValues.has(dimensionKey)) activeDimensionValues.set(dimensionKey, new Set());
+        activeDimensionValues.get(dimensionKey).add(String(dimensionValue));
+      }
+    }
     const dimensions = (source?.variantDimensions || [])
-      .map((dimension) => ({
-        key: String(dimension?.key || "").trim(),
-        label: String(dimension?.label || dimension?.key || "").trim(),
-        items: (dimension?.options || [])
-          .map((option) => ({
-            label: String(option?.label || option?.key || "").trim(),
-            value: String(option?.key || "").trim(),
-          }))
-          .filter((item) => item.value),
-      }))
+      .map((dimension) => {
+        const key = String(dimension?.key || "").trim();
+        const activeValues = activeDimensionValues.get(key);
+        return {
+          key,
+          label: String(dimension?.label || dimension?.key || "").trim(),
+          items: (dimension?.options || [])
+            .map((option) => ({
+              label: String(option?.label || option?.key || "").trim(),
+              value: String(option?.key || "").trim(),
+            }))
+            .filter((item) => item.value && Boolean(activeValues?.has(item.value))),
+        };
+      })
       .filter((dimension) => dimension.key && dimension.items.length);
     if (dimensions.length) dimensionsBySource.set(sourceName, dimensions);
     const defaultVariant = String(source?.defaultVariant || "").trim();
