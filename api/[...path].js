@@ -1,4 +1,5 @@
 import { handleTrendsIntelligenceProxy } from "./_trends-intelligence.js";
+import { resolveProxiedImageContentType } from "./_image-content-type.js";
 import { protectTranslationTerms } from "./_translation-terms.js";
 
 export const config = {
@@ -2774,7 +2775,7 @@ const handleImageProxy = async (req, res) => {
       },
       signal: controller.signal,
     });
-    const contentType = response.headers.get("content-type") || "";
+    const upstreamContentType = response.headers.get("content-type") || "";
     const contentLength = Number(response.headers.get("content-length") || 0);
 
     if (!response.ok) {
@@ -2782,10 +2783,6 @@ const handleImageProxy = async (req, res) => {
         code: response.status,
         message: "Image upstream unavailable",
       });
-      return;
-    }
-    if (!contentType.toLowerCase().startsWith("image/")) {
-      res.status(415).json({ code: 415, message: "Unsupported image content" });
       return;
     }
     if (contentLength > IMAGE_PROXY_MAX_BYTES) {
@@ -2796,6 +2793,14 @@ const handleImageProxy = async (req, res) => {
     const imageBuffer = Buffer.from(await response.arrayBuffer());
     if (imageBuffer.length > IMAGE_PROXY_MAX_BYTES) {
       res.status(413).json({ code: 413, message: "Image is too large" });
+      return;
+    }
+    const contentType = resolveProxiedImageContentType(
+      upstreamContentType,
+      imageBuffer,
+    );
+    if (!contentType) {
+      res.status(415).json({ code: 415, message: "Unsupported image content" });
       return;
     }
 
