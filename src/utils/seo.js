@@ -518,14 +518,14 @@ const CATEGORY_LOCALE_SEO_MAP = {
     ja: {
       title: "AIランキング - AIモデル評価、AIニュース、人気ツール動向の集約 | DailyHot",
       description:
-        "AIランキングはモデル評価、公式アップデート、製品エコシステム、研究コミュニティ、中国語AIニュースをまとめ、OpenRouter、Artificial Analysis、OpenAI、Anthropic、Hugging Face、QbitAI などを追跡します。",
+        "AIランキングはモデル評価、公式アップデート、製品エコシステム、研究コミュニティ、中国語AIニュースをまとめ、OpenRouter、Artificial Analysis、OpenAI、Anthropic、Hugging Face、Hacker News、QbitAI などを追跡します。",
       keywords:
         "AIランキング,AIモデルランキング,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AIニュース,AIツール,DailyHot",
     },
     ko: {
       title: "AI 랭킹 - AI 모델 순위, AI 뉴스, 인기 도구 트렌드 | DailyHot",
       description:
-        "AI 랭킹은 모델 평가, 공식 업데이트, 제품 생태계, 연구 커뮤니티, 중국어 AI 뉴스를 함께 모아 OpenRouter, Artificial Analysis, OpenAI, Anthropic, Hugging Face, QbitAI 등의 흐름을 추적합니다.",
+        "AI 랭킹은 모델 평가, 공식 업데이트, 제품 생태계, 연구 커뮤니티, 중국어 AI 뉴스를 함께 모아 OpenRouter, Artificial Analysis, OpenAI, Anthropic, Hugging Face, Hacker News, QbitAI 등의 흐름을 추적합니다.",
       keywords:
         "AI 랭킹,AI 모델 순위,OpenRouter,Artificial Analysis,Arena AI,DesignArena,LLM Stats,OpenAI,Anthropic,Hugging Face,AI 뉴스,AI 도구,DailyHot",
     },
