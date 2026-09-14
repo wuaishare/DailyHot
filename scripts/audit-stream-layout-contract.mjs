@@ -91,6 +91,7 @@ assert.match(sharedBadges, /ranking-badge\.is-explosive/);
 assert.match(sharedBadges, /ranking-badge\.is-animated \.ranking-badge-icon/);
 
 assert.doesNotMatch(subtypeBar, /trigger-more-count|remainingOptionCount/);
+assert.doesNotMatch(subtypeBar, /trigger-meta|currentMeta/);
 assert.match(subtypeBar, /\.subtype-trigger \{[\s\S]{0,260}padding: 4px 9px/);
 assert.match(subtypeBar, /\.subtype-trigger\.active \{[\s\S]{0,120}color-mix/);
 assert.doesNotMatch(subtypeBar, /\.subtype-trigger\.active \{[^}]*#ea444d/s);
