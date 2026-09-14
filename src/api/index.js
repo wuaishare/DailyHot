@@ -1,6 +1,7 @@
 import axios from "@/api/request";
 import { raceWithDelayedFallback } from "@/api/fallbackRace.mjs";
 import { getAdminToken } from "@/utils/adminAuth";
+import { getRankingItemTimestamp } from "@/utils/rankingItemMeta";
 import {
   canFallbackTrendsCatalogVariant,
   resolveTrendsCatalogVariant,
@@ -215,7 +216,7 @@ const normalizeTrendsRankingResult = (payload) => {
       ...item,
       id: item?.id || item?.url || `${source?.key || "item"}-${index + 1}`,
       desc: item?.desc || item?.summary || "",
-      timestamp: item?.timestamp || Date.parse(updateTime) || Date.now(),
+      timestamp: getRankingItemTimestamp(item, updateTime),
     })),
   };
 };
