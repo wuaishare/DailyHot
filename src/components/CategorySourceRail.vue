@@ -141,7 +141,7 @@
                       :title="entry.rankingMeta.primaryMetric.label"
                       :aria-label="entry.rankingMeta.primaryMetric.label"
                     >
-                      <UiGlyph name="fire" />
+                      <n-icon :component="Fire" />
                     </span>
                     <span v-else>{{ entry.rankingMeta.primaryMetric.label }}</span>
                     <strong>{{ entry.rankingMeta.primaryMetric.value }}</strong>
@@ -186,7 +186,7 @@ import { useTrendsCatalogRevision } from '@/composables/useTrendsCatalogRevision
 import { DATA_REFRESH_EVENT } from '@/utils/dataRefresh';
 import { formatTime } from '@/utils/getTime';
 import { getRankingItemMeta } from '@/utils/rankingItemMeta';
-import UiGlyph from '@/components/ui/UiGlyph.vue';
+import { Fire } from '@icon-park/vue-next';
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },

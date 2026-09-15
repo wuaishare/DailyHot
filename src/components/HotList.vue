@@ -389,7 +389,7 @@
             </span>
           </div>
           <div v-else-if="previewItem.hot" class="preview-meta">
-            <UiGlyph class="preview-hot-icon" name="fire" />
+            <n-icon class="preview-hot-icon" :component="Fire" />
             <span>{{ formatPreviewHot(previewItem.hot) }}</span>
           </div>
         </div>
@@ -403,7 +403,7 @@
           />
         </div>
         <div v-if="previewIsMediaOnly && previewItem.hot" class="preview-meta preview-media-meta">
-          <UiGlyph class="preview-hot-icon" name="fire" />
+          <n-icon class="preview-hot-icon" :component="Fire" />
           <span>{{ formatPreviewHot(previewItem.hot) }}</span>
         </div>
       </div>
@@ -412,7 +412,7 @@
 </template>
 
 <script setup>
-import { Drag, Refresh, More } from "@icon-park/vue-next";
+import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
 import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
