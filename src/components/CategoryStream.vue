@@ -303,6 +303,7 @@ import {
   COVER_PRESENTATION_MODES,
   resolveCoverPresentationMode,
 } from "@/utils/coverPresentation";
+import { resolveCoverPreviewLayout } from "@/utils/coverPreviewGeometry";
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },
@@ -1103,15 +1104,36 @@ const syncCoverHoverGeometry = (image) => {
   const baseImageRight = isMixed
     ? Math.min(0, -Math.max(0, (baseImageWidth - baseViewportWidth) / 2))
     : 0;
+  const row = image.closest?.(".category-stream__row");
+  const mediaRect = media?.getBoundingClientRect?.();
+  const rowRect = row?.getBoundingClientRect?.();
+  const previewLayout = resolveCoverPreviewLayout(naturalWidth, naturalHeight);
+  const preferredHover = previewLayout?.mediaOnly;
+  const viewportPadding = 12;
+  const rowCenterY = rowRect ? rowRect.top + rowRect.height / 2 : 0;
+  const availableWidth = mediaRect
+    ? Math.max(baseViewportWidth, mediaRect.right - viewportPadding)
+    : Number(preferredHover?.width || baseViewportWidth);
+  const availableHeight = rowCenterY && typeof window !== "undefined"
+    ? Math.max(
+        baseViewportHeight,
+        2 * Math.max(0, Math.min(
+          rowCenterY - viewportPadding,
+          window.innerHeight - rowCenterY - viewportPadding,
+        )),
+      )
+    : Number(preferredHover?.height || baseViewportHeight);
+  const preferredScale = preferredHover
+    ? Math.min(preferredHover.width / fullWidth, preferredHover.height / fullHeight)
+    : COVER_HOVER_MIN_SCALE;
+  const availableScale = Math.min(availableWidth / fullWidth, availableHeight / fullHeight);
+  const baselineScale = Math.max(fillScale * COVER_HOVER_BOOST, COVER_HOVER_MIN_SCALE);
   const hoverScale = Math.min(
-    Math.max(fillScale * COVER_HOVER_BOOST, COVER_HOVER_MIN_SCALE),
+    Math.max(baselineScale, Math.min(preferredScale, availableScale)),
     COVER_HOVER_MAX_SCALE,
   );
   const hoverWidth = fullWidth * hoverScale;
   const hoverHeight = fullHeight * hoverScale;
-  const row = image.closest?.(".category-stream__row");
-  const mediaRect = media?.getBoundingClientRect?.();
-  const rowRect = row?.getBoundingClientRect?.();
   const centerShiftY = mediaRect && rowRect
     ? (rowRect.top + rowRect.height / 2) - (mediaRect.top + mediaRect.height / 2)
     : 0;
