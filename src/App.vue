@@ -4,6 +4,7 @@
       embedded
       :native-scrollbar="false"
       class="app-layout"
+      :style="layoutStyle"
       :class="[
         store.headerFixed ? 'fixed' : null,
         store.compactMode ? 'compact' : null,
@@ -115,6 +116,17 @@ const showSpeedInsights =
       window.location.hostname !== "localhost"));
 
 const headerExpanded = computed(() => !store.compactMode);
+const clampLayoutWidth = (value, fallback, min, max) => {
+  const numeric = Number(value);
+  return Math.min(max, Math.max(min, Number.isFinite(numeric) ? numeric : fallback));
+};
+const layoutStyle = computed(() => ({
+  "--site-container-width": `${clampLayoutWidth(store.siteContainerWidth, 1400, 1120, 1800)}px`,
+  "--site-focus-container-width": `${clampLayoutWidth(store.focusContainerWidth, 1360, 1080, 1600)}px`,
+  "--site-gutter": store.compactMode ? "3vw" : "5vw",
+  "--site-gutter-total": store.compactMode ? "6vw" : "10vw",
+}));
+
 const autoRefreshTimer = ref(null);
 const autoRefreshPausedByRoute = ref(false);
 const routePausedRemainingMs = ref(null);
@@ -519,13 +531,13 @@ onBeforeUnmount(() => {
 
     &.header-expanded {
       main {
-        padding: 116px 5vw 0 5vw;
+        padding-top: 116px;
       }
     }
 
     &.header-collapsed {
       main {
-        padding: 72px 5vw 0 5vw;
+        padding-top: 72px;
       }
     }
   }
@@ -538,11 +550,12 @@ onBeforeUnmount(() => {
   }
 
   main {
-    padding: 24px 5vw 0;
-    max-width: 1800px;
+    box-sizing: border-box;
+    width: min(calc(100% - var(--site-gutter-total)), var(--site-container-width));
+    padding: 24px 0 0;
     margin: 0 auto;
     min-height: calc(100vh - 238px);
-    transition: padding 0.25s ease;
+    transition: padding 0.25s ease, width 0.2s ease;
   }
 }
 
@@ -550,20 +563,19 @@ onBeforeUnmount(() => {
   &.fixed {
     &.header-expanded {
       main {
-        padding: 98px 3vw 0 3vw;
+        padding-top: 98px;
       }
     }
 
     &.header-collapsed {
       main {
-        padding: 56px 3vw 0 3vw;
+        padding-top: 56px;
       }
     }
   }
 
   main {
-    padding: 14px 3vw 0;
-    max-width: 1900px;
+    padding-top: 14px;
   }
 
   // 列表与卡片内容收紧
@@ -607,7 +619,7 @@ onBeforeUnmount(() => {
 
   // 页脚紧凑化
   :deep(footer) {
-    padding: 0 3vw;
+    padding: 0;
     margin-top: 12px;
     height: 80px;
   }

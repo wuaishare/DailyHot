@@ -1269,6 +1269,9 @@ export const mainStore = defineStore("mainData", {
       headerFixed: true,
       // 紧凑模式：统一控制站点导航、上下文工具栏和页面密度
       compactMode: true,
+      // 普通页面与聚焦页面的内容容器宽度
+      siteContainerWidth: 1400,
+      focusContainerWidth: 1360,
       // 是否显示榜单置顶条目
       showPinnedRankings: true,
       // 自动刷新
@@ -1856,6 +1859,8 @@ export const mainStore = defineStore("mainData", {
         "linkOpenType",
         "headerFixed",
         "compactMode",
+        "siteContainerWidth",
+        "focusContainerWidth",
         "showPinnedRankings",
         "autoRefreshEnabled",
         "autoRefreshPaused",

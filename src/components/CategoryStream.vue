@@ -2052,11 +2052,13 @@ const hideBrokenMedia = (event) => {
 /* Ranking workbench: predictable scan path, quiet side rails, compact context. */
 .category-stream.is-source-page {
   gap: 0;
+  width: min(100%, var(--site-focus-container-width, 1360px));
+  margin-inline: auto;
 }
 
 .category-stream.is-source-page .category-stream__body {
   display: grid;
-  grid-template-columns: 272px 720px 272px;
+  grid-template-columns: minmax(190px, 272px) minmax(0, 720px) minmax(190px, 272px);
   justify-content: center;
   align-items: start;
   gap: 24px;
@@ -2570,16 +2572,16 @@ const hideBrokenMedia = (event) => {
   border-bottom: 0;
 }
 
-@media (max-width: 1320px) {
+@media (max-width: 1360px) {
   .category-stream.is-source-page .category-stream__body {
-    grid-template-columns: 220px minmax(0, 720px) 220px;
+    grid-template-columns: minmax(180px, 220px) minmax(0, 720px) minmax(180px, 220px);
     gap: 16px;
   }
 }
 
 @media (max-width: 1120px) {
   .category-stream.is-source-page .category-stream__body {
-    grid-template-columns: 190px minmax(0, 720px);
+    grid-template-columns: minmax(170px, 190px) minmax(0, 720px);
     gap: 14px;
   }
   .category-stream.is-source-page .category-stream__source-rail {

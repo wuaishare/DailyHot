@@ -1198,7 +1198,7 @@ onBeforeUnmount(() => {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: 16px 5vw;
+  padding: 16px var(--site-gutter, 5vw);
   min-height: 72px;
   z-index: 1200;
   isolation: isolate;
@@ -1209,7 +1209,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
 
   &.collapsed {
-    padding: 0 5vw;
+    padding: 0 var(--site-gutter, 5vw);
     min-height: 39px;
     cursor: default;
     box-shadow: none;
@@ -1220,7 +1220,7 @@ onBeforeUnmount(() => {
 
   section {
     width: 100%;
-    max-width: 1800px;
+    max-width: var(--site-container-width, 1400px);
     margin: 0 auto;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);

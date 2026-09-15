@@ -110,8 +110,10 @@ const originRepo = computed(() => ({
 <style lang="scss" scoped>
 footer {
   height: 100px;
-  padding: 0 5vw;
-  max-width: 1800px;
+  box-sizing: border-box;
+  width: min(calc(100% - var(--site-gutter-total, 10vw)), var(--site-container-width, 1400px));
+  padding: 0;
+  max-width: none;
   margin: 20px auto 0;
   display: flex;
   flex-direction: column;
