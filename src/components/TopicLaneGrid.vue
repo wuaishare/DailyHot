@@ -2,16 +2,16 @@
   <div class="topic-lane-grid" :aria-label="ariaLabel">
     <section v-for="lane in lanes" :key="lane.key" class="topic-lane" :class="[`is-${lane.key}`, { 'is-scrollable': lane.scrollable }]">
       <header class="topic-lane__head">
-        <div>
+        <div :title="lane.subtitle || undefined">
           <strong>{{ lane.label }}</strong>
-          <span v-if="lane.subtitle">{{ lane.subtitle }}</span>
+          <span v-if="lane.subtitle && !lane.hideSubtitle">{{ lane.subtitle }}</span>
         </div>
         <em>{{ lane.count ?? lane.items?.length ?? 0 }}</em>
       </header>
 
       <div
         class="topic-lane__items"
-        :tabindex="lane.scrollable && lane.items?.length > 5 ? 0 : undefined"
+        :tabindex="lane.scrollable && lane.items?.length > Number(lane.visibleCount ?? 5) ? 0 : undefined"
         @scroll="handleItemsScroll($event, lane)"
       >
         <template v-for="(item, index) in lane.items || []" :key="item.id || `${lane.key}-${index}`">
