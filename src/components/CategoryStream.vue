@@ -117,7 +117,7 @@
             v-for="entry in pagedEntries"
             :key="entry.key"
             class="category-stream__row"
-            :class="{ 'has-media': !minimalMode && showImages && Boolean(entry.cover) }"
+            :class="{ 'has-media': !minimalMode && showImages && Boolean(entry.cover) && !coverImageErrors[entry.cover] }"
             @mouseenter="prepareRowCoverHover"
           >
             <div class="category-stream__rank" :class="rankTone(entry.rank, entry.isPinned)" :title="entry.isPinned ? '置顶' : undefined">
@@ -126,7 +126,7 @@
             </div>
 
             <div
-              v-if="sourcePageMode && !minimalMode && showImages && entry.cover"
+              v-if="sourcePageMode && !minimalMode && showImages && entry.cover && !coverImageErrors[entry.cover]"
               class="category-stream__media is-cover is-previewable"
             >
               <n-image
@@ -136,18 +136,18 @@
                 :alt="coverPreviewLabel(entry)"
                 lazy
                 :object-fit="currentCoverObjectFit"
-                :img-props="{ tabindex: 0, role: 'button', onKeydown: handleCoverPreviewKeydown, onLoad: handleCoverImageLoad }"
-                @error="hideBrokenMedia"
+                :img-props="{ tabindex: 0, role: 'button', 'data-cover-source': entry.cover, onKeydown: handleCoverPreviewKeydown, onLoad: handleCoverImageLoad, onError: (event) => hideBrokenMedia(event, entry.cover) }"
+                @error="hideBrokenMedia($event, entry.cover)"
               />
             </div>
             <a
-              v-else-if="!minimalMode && showImages && entry.cover"
+              v-else-if="!minimalMode && showImages && entry.cover && !coverImageErrors[entry.cover]"
               class="category-stream__media is-cover"
               :href="entry.href"
               :target="linkTarget"
               rel="noopener noreferrer nofollow"
             >
-              <img :src="coverSrc(entry.cover)" alt="" loading="lazy" @error="hideBrokenMedia" />
+              <img :src="coverSrc(entry.cover)" alt="" loading="lazy" @error="hideBrokenMedia($event, entry.cover)" />
             </a>
 
             <div class="category-stream__content-wrap">
@@ -315,6 +315,7 @@ const route = useRoute();
 const router = useRouter();
 const store = mainStore();
 const rankingBadgeImageErrors = reactive({});
+const coverImageErrors = reactive({});
 const subtypeCatalogRevision = useTrendsCatalogRevision();
 const { locale: i18nLocale } = useI18n({ useScope: "global" });
 const locale = computed(() =>
@@ -1167,11 +1168,20 @@ const prepareRowCoverHover = (event) => {
   if (image?.complete) syncCoverHoverGeometry(image);
 };
 const pendingCoverGeometryImages = new WeakSet();
+const markBrokenCoverImage = (image) => {
+  const cover = image?.dataset?.coverSource || "";
+  pendingCoverGeometryImages.delete(image);
+  if (cover) coverImageErrors[cover] = true;
+};
 const ensureCoverGeometry = (image) => {
   if (!image) return;
-  if (image.complete && image.naturalWidth > 0 && image.naturalHeight > 0) {
-    pendingCoverGeometryImages.delete(image);
-    syncCoverHoverGeometry(image);
+  if (image.complete) {
+    if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+      pendingCoverGeometryImages.delete(image);
+      syncCoverHoverGeometry(image);
+    } else {
+      markBrokenCoverImage(image);
+    }
     return;
   }
   if (pendingCoverGeometryImages.has(image)) return;
@@ -1182,6 +1192,11 @@ const ensureCoverGeometry = (image) => {
       pendingCoverGeometryImages.delete(image);
       syncCoverHoverGeometry(image);
     },
+    { once: true },
+  );
+  image.addEventListener?.(
+    "error",
+    () => markBrokenCoverImage(image),
     { once: true },
   );
 };
@@ -1213,11 +1228,9 @@ const handleCoverPreviewKeydown = (event) => {
   event.preventDefault();
   event.currentTarget?.click?.();
 };
-const hideBrokenMedia = (event) => {
-  const media = event.target?.closest?.(".category-stream__media");
-  const row = event.target?.closest?.(".category-stream__row");
-  media?.remove?.();
-  row?.classList.remove?.("has-media");
+const hideBrokenMedia = (event, cover = "") => {
+  if (cover) coverImageErrors[cover] = true;
+  event?.target?.closest?.(".category-stream__row")?.classList.remove?.("has-media");
 };
 </script>
 

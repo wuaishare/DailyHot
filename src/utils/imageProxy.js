@@ -2,6 +2,8 @@ const PROXY_HOST_SUFFIXES = [
   "doubanio.com",
   "gtimg.com",
   "hdslb.com",
+  "thepaper.cn",
+  "geekpark.net",
   "ci.xiaohongshu.com",
 ];
 

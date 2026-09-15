@@ -71,6 +71,8 @@ const IMAGE_PROXY_ALLOWED_HOST_SUFFIXES = [
   "doubanio.com",
   "gtimg.com",
   "hdslb.com",
+  "thepaper.cn",
+  "geekpark.net",
   "ci.xiaohongshu.com",
 ];
 const IMAGE_PROXY_MAX_BYTES = 8 * 1024 * 1024;
