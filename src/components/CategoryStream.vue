@@ -665,11 +665,19 @@ const queryText = computed(() => queryString(route.query.q).toLowerCase());
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self",
 );
-const showImages = computed(() => store.showImages);
+const showImages = computed(() => {
+  if (store.showImages === false) return false;
+  return sourcePageMode.value
+    ? store.showDetailImages !== false
+    : store.showStreamImages !== false;
+});
 const showDescriptions = computed(() => store.showStreamDescriptions !== false);
 const minimalMode = computed(() => !showImages.value && !showDescriptions.value);
 const setShowImages = (value) => {
-  store.showImages = Boolean(value);
+  const next = Boolean(value);
+  if (next) store.showImages = true;
+  if (sourcePageMode.value) store.showDetailImages = next;
+  else store.showStreamImages = next;
 };
 const setShowDescriptions = (value) => {
   store.showStreamDescriptions = Boolean(value);

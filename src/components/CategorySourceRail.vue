@@ -107,13 +107,13 @@
               v-for="entry in sourceEntries(source.name)"
               :key="entry.key"
               class="category-story-card"
-              :class="[{ 'has-cover': Boolean(entry.cover) }, rankClass(entry.rank)]"
+              :class="[{ 'has-cover': showStreamImages && Boolean(entry.cover) }, rankClass(entry.rank)]"
               :href="entry.href"
               :target="linkTarget"
               rel="noopener noreferrer nofollow"
             >
               <img
-                v-if="entry.cover"
+                v-if="showStreamImages && entry.cover"
                 class="category-story-card__cover"
                 :src="coverSrc(entry.cover)"
                 alt=""
@@ -195,6 +195,9 @@ const emit = defineEmits(['reorder']);
 
 const route = useRoute();
 const store = mainStore();
+const showStreamImages = computed(() =>
+  store.showImages !== false && store.showStreamImages !== false,
+);
 const { locale: i18nLocale } = useI18n({ useScope: 'global' });
 const catalogRevision = useTrendsCatalogRevision();
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route) || i18nLocale.value));

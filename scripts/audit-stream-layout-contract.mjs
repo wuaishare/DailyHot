@@ -14,6 +14,7 @@ const categoryRail = fs.readFileSync("src/components/CategorySourceRail.vue", "u
 const hotList = fs.readFileSync("src/components/HotList.vue", "utf8");
 const contextToolbar = fs.readFileSync("src/components/ContextToolbar.vue", "utf8");
 const listView = fs.readFileSync("src/views/List.vue", "utf8");
+const sourceLogos = fs.readFileSync("src/utils/sourceLogos.js", "utf8");
 const sharedBadges = fs.readFileSync("src/components/RankingBadgeGroup.vue", "utf8");
 const subtypeBar = fs.readFileSync("src/components/SubtypeBar.vue", "utf8");
 const trendStrip = fs.readFileSync("src/components/TrendIntelligenceStrip.vue", "utf8");
@@ -34,6 +35,36 @@ assert.match(generalSettings, /v-model:value="siteContainerWidth"/);
 assert.match(generalSettings, /v-model:value="focusContainerWidth"/);
 assert.match(component, /var\(--site-focus-container-width, 1360px\)/);
 assert.match(chigua, /var\(--site-focus-container-width, 1360px\)/);
+
+assert.match(store, /homeCardColumns: 4/);
+assert.match(store, /homeCompactColumns: 5/);
+assert.match(store, /showCardImages: true/);
+assert.match(store, /showStreamImages: true/);
+assert.match(store, /showDetailImages: true/);
+assert.match(store, /showPreviewImages: true/);
+for (const key of ["homeCardColumns", "homeCompactColumns", "showCardImages", "showStreamImages", "showDetailImages", "showPreviewImages"]) {
+  assert.match(store, new RegExp(`"${key}"`));
+}
+assert.match(home, /--home-grid-columns/);
+assert.match(home, /store\.compactMode[\s\S]{0,180}store\.homeCompactColumns[\s\S]{0,180}store\.homeCardColumns/);
+assert.match(home, /repeat\(var\(--home-grid-columns, 4\), minmax\(0, 1fr\)\)/);
+assert.doesNotMatch(home, /@media \(min-width: 1500px\)[\s\S]{0,120}repeat\(5/);
+assert.match(hotList, /showCardImages/);
+assert.match(hotList, /showPreviewImages/);
+assert.match(hotList, /class="hot-list"[\s\S]{0,120}'is-compact': store\.compactMode/);
+assert.match(component, /store\.showDetailImages/);
+assert.match(component, /store\.showStreamImages/);
+assert.match(listView, /store\.showDetailImages/);
+assert.match(generalSettings, /v-model:value="homeCardColumns"/);
+assert.match(generalSettings, /v-model:value="homeCompactColumns"/);
+assert.match(generalSettings, /class="set-item full cover-visibility-setting"/);
+assert.match(generalSettings, /v-model:value="showCardImages"/);
+assert.match(generalSettings, /v-model:value="showStreamImages"/);
+assert.match(generalSettings, /v-model:value="showDetailImages"/);
+assert.match(generalSettings, /v-model:value="showPreviewImages"/);
+assert.doesNotMatch(generalSettings, /v-if="showsMisc" class="set-item"[\s\S]{0,260}v-model:value="showImages"/);
+assert.match(sourceLogos, /xiaohongshu:\s*"\/logo\/xiaohongshu\.svg"/);
+assert.doesNotMatch(sourceLogos, /xiaohongshu\.ico/);
 
 assert.match(template, /category-stream__source-rail/);
 assert.match(template, /category-stream__main/);
@@ -208,6 +239,10 @@ assert.doesNotMatch(categoryRail, /#\{\{ entry\.rank \}\}/);
 assert.match(categoryRail, /<span class="category-story-card__rank">\{\{ entry\.rank \}\}<\/span>/);
 assert.match(categoryRail, /category-source-section__freshness[\s\S]{0,500}sourceUpdateTime[\s\S]{0,500}Refresh/);
 assert.match(categoryRail, /<RankingBadgeGroup[\s\S]{0,180}category-story-card__badges[\s\S]{0,180}:badges="entry\.suffixBadges"/);
+assert.match(categoryRail, /showStreamImages = computed/);
+assert.match(categoryRail, /store\.showImages !== false && store\.showStreamImages !== false/);
+assert.match(categoryRail, /v-if="showStreamImages && entry\.cover"/);
+assert.match(categoryRail, /'has-cover': showStreamImages && Boolean\(entry\.cover\)/);
 assert.doesNotMatch(categoryRail, /category-story-card__badges span/);
 assert.match(categoryRail, /backdrop-filter: blur\(10px\) saturate\(1\.2\)/);
 assert.match(categoryRail, /is-one \.category-story-card__rank \{ background: rgba\(234,68,77,\.84\)/);
