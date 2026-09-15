@@ -24,9 +24,48 @@ for (const [name, source] of Object.entries({ stream, rail, hotList, list })) {
   );
 }
 
-for (const [name, source] of Object.entries({ stream, hotList, list })) {
+for (const [name, source] of Object.entries({ stream, list })) {
   assert.match(source, /is-primary/, `${name} must render a semantic primary metric state`);
 }
+
+assert.match(
+  hotList,
+  /promotePrimary:\s*false/,
+  "HotList hover preview must preserve its neutral metadata contract",
+);
+assert.doesNotMatch(
+  hotList,
+  /\.preview-metric\.is-primary/,
+  "HotList hover preview must not inherit card-level primary metric emphasis",
+);
+
+const primaryStyleBlock = (name, source, selector) => {
+  const start = source.indexOf(`${selector} {`);
+  assert.notEqual(start, -1, `${name} must define ${selector}`);
+  const end = source.indexOf("}", start);
+  assert.notEqual(end, -1, `${name} must close ${selector}`);
+  return source.slice(start, end);
+};
+
+for (const [name, source, selector] of [
+  ["CategoryStream", stream, ".category-stream__metric.is-primary"],
+  ["CategorySourceRail", rail, ".category-story-card__primary-metric"],
+  ["List", list, "&.is-primary"],
+]) {
+  const block = primaryStyleBlock(name, source, selector);
+  assert.match(block, /\bcolor\s*:/, `${name} primary metric must keep theme color`);
+  assert.doesNotMatch(
+    block,
+    /\b(?:background(?:-color)?|border(?:-[\w-]+)?|padding(?:-[\w-]+)?|font-weight)\s*:/,
+    `${name} primary metric must use color as its only visual distinction`,
+  );
+}
+
+assert.doesNotMatch(
+  rail,
+  /\.category-story-card\.has-cover \.category-story-card__primary-metric\s*\{/,
+  "CategorySourceRail covered cards must not restore a primary metric badge",
+);
 
 assert.doesNotMatch(
   stream,

@@ -75,24 +75,30 @@ export const getRankingItemMeta = (item = {}, locale = "zh-CN", context = {}) =>
   const published = formatRankingPublishedAt(item?.publishedAt, normalized);
   if (published) metadataContext.push({ key: "published", label: labels.published, value: published });
   const metricOrder = ["views", "likes", "comments", "collects"];
-  const primaryMetricKey = getRankingPrimaryMetricKey(context?.variant);
-  const primaryNumeric = normalizeMetric(
-    primaryMetricKey === "hot" ? item?.hot : item?.metrics?.[primaryMetricKey],
-  );
-  const fallbackNumeric = primaryMetricKey === "hot" ? null : normalizeMetric(item?.hot);
-  const resolvedPrimaryNumeric = primaryNumeric ?? fallbackNumeric;
-  const primaryMetric = resolvedPrimaryNumeric === null
+  const promotePrimary = context?.promotePrimary !== false;
+  const primaryMetricKey = promotePrimary ? getRankingPrimaryMetricKey(context?.variant) : null;
+  const primaryNumeric = primaryMetricKey === null
     ? null
-    : buildMetric(primaryMetricKey, resolvedPrimaryNumeric, labels, normalized, true);
-  const metrics = [
-    ...(primaryMetric ? [primaryMetric] : []),
-    ...metricOrder
-      .filter((key) => key !== primaryMetricKey)
-      .flatMap((key) => {
+    : normalizeMetric(primaryMetricKey === "hot" ? item?.hot : item?.metrics?.[primaryMetricKey]);
+  const fallbackNumeric = primaryMetricKey && primaryMetricKey !== "hot" ? normalizeMetric(item?.hot) : null;
+  const resolvedPrimaryNumeric = primaryNumeric ?? fallbackNumeric;
+  const primaryMetric = primaryMetricKey && resolvedPrimaryNumeric !== null
+    ? buildMetric(primaryMetricKey, resolvedPrimaryNumeric, labels, normalized, true)
+    : null;
+  const metrics = promotePrimary
+    ? [
+        ...(primaryMetric ? [primaryMetric] : []),
+        ...metricOrder
+          .filter((key) => key !== primaryMetricKey)
+          .flatMap((key) => {
+            const numeric = normalizeMetric(item?.metrics?.[key]);
+            return numeric === null ? [] : [buildMetric(key, numeric, labels, normalized)];
+          }),
+      ]
+    : metricOrder.flatMap((key) => {
         const numeric = normalizeMetric(item?.metrics?.[key]);
         return numeric === null ? [] : [buildMetric(key, numeric, labels, normalized)];
-      }),
-  ];
+      });
 
   return {
     context: metadataContext,
