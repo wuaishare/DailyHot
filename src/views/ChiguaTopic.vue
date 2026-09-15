@@ -28,6 +28,11 @@
               <path class="radar-mark__beam" d="M32 32 52 18" />
               <circle class="radar-mark__ping" cx="45" cy="23" r="2.8" />
             </svg>
+            <svg class="radar-watermelon" viewBox="0 0 28 18">
+              <path class="radar-watermelon__rind" d="M2 3h24c-.7 7.6-5.3 12.5-12 12.5S2.7 10.6 2 3Z" />
+              <path class="radar-watermelon__flesh" d="M4.6 4.7h18.8C22.3 10 18.7 13.2 14 13.2S5.7 10 4.6 4.7Z" />
+              <circle cx="10" cy="7.6" r=".8" /><circle cx="14" cy="9.2" r=".8" /><circle cx="18" cy="7.6" r=".8" />
+            </svg>
           </div>
           <div class="topic-workspace-title">
             <span class="radar-eyebrow">{{ ui.radar }}</span>
@@ -52,32 +57,49 @@
       @load-more="loadMoreFeaturedLane"
     >
       <template #item="{ item }">
-        <a
+        <article
           class="event-lane-item"
-          :class="{ 'is-serious': isSeriousEvent(item) }"
-          :href="item.url"
-          target="_blank"
-          rel="noopener noreferrer"
+          :class="{ 'is-serious': isSeriousEvent(item), 'has-cover': hasUsableCover(item) }"
         >
-          <img
-            :src="coverSrc(item.cover) || getSourceLogo(primarySource(item))"
-            :alt="item.title"
-            loading="lazy"
-            @error="onImageError($event, item)"
-          />
-          <div>
+          <n-popover
+            v-if="hasUsableCover(item)"
+            trigger="hover"
+            placement="top"
+            :delay="90"
+            :show-arrow="false"
+          >
+            <template #trigger>
+              <n-image
+                class="event-lane-cover"
+                :src="coverSrc(item.cover)"
+                :preview-src="coverSrc(item.cover)"
+                :alt="item.title"
+                lazy
+                object-fit="cover"
+                :img-props="{ onError: () => markCoverError(item.cover) }"
+                @error="markCoverError(item.cover)"
+              />
+            </template>
+            <img
+              class="event-lane-hover-cover"
+              :src="coverSrc(item.cover)"
+              :alt="item.title"
+              @error="markCoverError(item.cover)"
+            />
+          </n-popover>
+          <div class="event-lane-copy">
             <span v-if="isSeriousEvent(item)" class="event-lane-serious" :title="ui.seriousTip">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c1.2 1.4 1.7 2.2 1.7 3.1A1.7 1.7 0 0 1 8 7 1.7 1.7 0 0 1 6.3 5.3C6.3 4.4 6.8 3.6 8 2.2Zm-2.2 6h4.4v5.2H5.8V8.2Zm-1.5 5.2h7.4" /></svg>
               {{ ui.serious }}
             </span>
-            <strong>{{ item.title }}</strong>
+            <a class="event-lane-title" :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
             <p>
-              <span>{{ sourceLabel(item) }}</span>
+              <a class="event-source-link" :href="primaryRankPath(item)">{{ sourceLabel(item) }}</a>
               <b v-if="eventSourceCount(item) > 1">{{ eventSourceCount(item) }} {{ ui.platforms }}</b>
               <em v-else-if="item.hot">{{ formatHot(item.hot) }}</em>
             </p>
           </div>
-        </a>
+        </article>
       </template>
     </TopicLaneGrid>
 
@@ -148,32 +170,35 @@
               v-for="(item, index) in pagedData"
               :key="item.id"
               class="event-item"
-              :class="{ 'is-serious': isSeriousEvent(item) }"
+              :class="{ 'is-serious': isSeriousEvent(item), 'has-media': hasUsableCover(item) || !item.cover }"
             >
               <span class="event-rank" :class="rankClass(pageStart + index + 1)">{{
                 String(pageStart + index + 1).padStart(2, "0")
               }}</span>
               <n-image
-                v-if="item.cover"
+                v-if="hasUsableCover(item)"
                 class="event-cover"
                 :src="coverSrc(item.cover)"
                 :preview-src="coverSrc(item.cover)"
                 :alt="item.title"
                 lazy
                 object-fit="cover"
-                @error="onImageError($event, item)"
+                :img-props="{ onError: () => markCoverError(item.cover) }"
+                @error="markCoverError(item.cover)"
               />
-              <div v-else class="event-cover is-logo" aria-hidden="true">
+              <div v-else-if="!item.cover" class="event-cover is-logo" aria-hidden="true">
                 <img :src="getSourceLogo(primarySource(item))" alt="" @error="onLogoError" />
               </div>
               <div class="event-main">
                 <div class="event-source-line">
-                  <img
-                    :src="getSourceLogo(primarySource(item))"
-                    :alt="sourceLabel(item)"
-                    @error="onLogoError"
-                  />
-                  <span>{{ sourceLabel(item) }}</span>
+                  <a class="event-source-link" :href="primaryRankPath(item)" :title="sourceLabel(item)">
+                    <img
+                      :src="getSourceLogo(primarySource(item))"
+                      :alt="sourceLabel(item)"
+                      @error="onLogoError"
+                    />
+                    <span>{{ sourceLabel(item) }}</span>
+                  </a>
                   <em v-if="isSeriousEvent(item)" class="serious-event-badge" :title="ui.seriousTip">
                     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c1.2 1.4 1.7 2.2 1.7 3.1A1.7 1.7 0 0 1 8 7 1.7 1.7 0 0 1 6.3 5.3C6.3 4.4 6.8 3.6 8 2.2Zm-2.2 6h4.4v5.2H5.8V8.2Zm-1.5 5.2h7.4" /></svg>
                     {{ ui.serious }}
@@ -349,7 +374,7 @@ import RankingBadgeGroup from "@/components/RankingBadgeGroup.vue";
 import { getTopicFeed } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
-import { getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
+import { buildRankPath, getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
 import { getSourceLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
@@ -358,6 +383,7 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 const result = ref(null);
+const coverImageErrors = reactive({});
 const loading = ref(false);
 const loadError = ref("");
 const searchQuery = ref(
@@ -734,6 +760,15 @@ const sourceLabel = (item) =>
   confirmations(item)[0]
     ? evidenceLabel(confirmations(item)[0])
     : getSourceLabel(primarySource(item), locale.value, primarySource(item));
+const primaryEvidence = (item) => confirmations(item)[0] || null;
+const rankPathForEvidence = (entry) =>
+  entry?.source ? buildRankPath(locale.value, entry.source, entry.variant || "") : buildRankPath(locale.value, "");
+const primaryRankPath = (item) => {
+  const entry = primaryEvidence(item);
+  return entry?.source
+    ? rankPathForEvidence(entry)
+    : buildRankPath(locale.value, primarySource(item));
+};
 const categoryLabel = (category) => ui.value.categories[category] || category;
 const visibleRankingBadges = (item) =>
   normalizeRankingBadges(item?.badges, 2).filter((badge) => badge.placement !== "prefix");
@@ -1057,11 +1092,12 @@ const formatFreshness = (value) => {
   }).format(new Date(Number(value)));
 };
 const coverSrc = (cover) => getCoverDisplaySrc(cover);
+const hasUsableCover = (item) => Boolean(item?.cover && !coverImageErrors[item.cover]);
+const markCoverError = (cover) => {
+  if (cover) coverImageErrors[cover] = true;
+};
 const onLogoError = (event) => {
   if (event?.target) event.target.src = getSourceLogoFallback();
-};
-const onImageError = (event, item) => {
-  if (event?.target) event.target.src = getSourceLogo(primarySource(item));
 };
 
 let querySyncTimer;
@@ -1299,6 +1335,19 @@ watch(locale, () => void loadTopic(false));
   flex: 0 0 54px;
   color: var(--radar-cyan);
 }
+.radar-watermelon {
+  position: absolute;
+  right: -3px;
+  bottom: -1px;
+  width: 25px !important;
+  height: 16px !important;
+  overflow: visible;
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, #dc4969 18%, transparent));
+}
+.radar-mark { position: relative; }
+.radar-watermelon__rind { fill: #2f9f68; stroke: #217b51 !important; stroke-width: .6 !important; opacity: .98 !important; }
+.radar-watermelon__flesh { fill: #e95872; stroke: none !important; opacity: .98 !important; }
+.radar-watermelon circle { fill: #53323a !important; stroke: none !important; opacity: .9 !important; }
 .radar-mark svg {
   width: 100%;
   height: 100%;
@@ -1540,67 +1589,101 @@ watch(locale, () => void loadTopic(false));
 }
 .event-lane-item {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
   align-items: center;
   min-width: 0;
-  min-height: 52px;
-  padding: 6px 1px;
+  min-height: 62px;
+  padding: 5px 2px;
   border-bottom: 1px solid var(--n-border-color);
   color: inherit;
-  text-decoration: none;
 }
-.event-lane-item:last-child {
-  border-bottom: 0;
+.event-lane-item.has-cover {
+  grid-template-columns: 82px minmax(0, 1fr);
 }
-.event-lane-item:hover strong,
-.event-lane-item:focus-visible strong {
-  text-decoration: underline;
-}
-.event-lane-item:focus-visible {
-  outline: none;
-}
-.event-lane-item > img {
-  width: 56px;
-  height: 34px;
-  border-radius: 5px;
-  object-fit: cover;
-  background: var(--n-color);
-}
-.event-lane-item > div {
-  min-width: 0;
-}
-.event-lane-item strong {
+.event-lane-item:last-child { border-bottom: 0; }
+.event-lane-copy { min-width: 0; }
+.event-lane-title {
   display: block;
   overflow: hidden;
+  color: var(--n-text-color);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
-  line-height: 1.35;
+}
+.event-lane-title:hover,
+.event-lane-title:focus-visible {
+  color: var(--n-primary-color);
+  text-decoration: underline;
+  outline: none;
+}
+.event-lane-cover {
+  display: block;
+  width: 82px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--n-color);
+  cursor: zoom-in;
+}
+.event-lane-cover :deep(img) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .16s ease;
+}
+.event-lane-cover:hover :deep(img),
+.event-lane-cover:focus-within :deep(img) { transform: scale(1.06); }
+.event-lane-hover-cover {
+  display: block;
+  width: auto;
+  max-width: 240px;
+  height: auto;
+  max-height: 224px;
+  border-radius: 8px;
+  object-fit: contain;
 }
 .event-lane-item p {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
-  margin: 3px 0 0;
+  margin: 4px 0 0;
   color: var(--n-text-color-3);
-  font-size: 9px;
+  font-size: 10px;
   white-space: nowrap;
 }
-.event-lane-item p span {
+.event-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-source-link:hover,
+.event-source-link:focus-visible {
+  color: var(--n-primary-color);
+  text-decoration: underline;
+  outline: none;
+}
+.event-lane-item p .event-source-link {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .event-lane-item p b {
   flex: 0 0 auto;
   color: var(--n-text-color);
-  font-size: 9px;
+  font-size: 10px;
 }
-.event-lane-item p em {
-  flex: 0 0 auto;
-  font-style: normal;
-}
+.event-lane-item p em { flex: 0 0 auto; font-style: normal; }
 .event-lane-serious {
   display: inline-flex;
   align-items: center;
@@ -1613,11 +1696,12 @@ watch(locale, () => void loadTopic(false));
 .event-lane-serious svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
 .event-lane-item.is-serious {
   margin-inline: -4px;
-  padding-inline: 4px;
+  padding-inline: 5px;
   border-radius: 6px;
   background: linear-gradient(90deg, color-mix(in srgb, #6b7280 8%, transparent), transparent 72%);
 }
-.event-lane-item.is-serious > img { filter: grayscale(.88) saturate(.18) contrast(.96); }
+.event-lane-item.is-serious .event-lane-cover :deep(img),
+.event-lane-item.is-serious + :deep(.n-popover) .event-lane-hover-cover { filter: grayscale(.88) saturate(.18) contrast(.96); }
 .event-list {
   display: grid;
 }
@@ -1629,6 +1713,10 @@ watch(locale, () => void loadTopic(false));
   min-width: 0;
   padding: 11px 2px;
   border-top: 1px solid var(--n-border-color);
+}
+
+.event-item:not(.has-media) {
+  grid-template-columns: 30px minmax(0, 1fr) auto;
 }
 .event-rank {
   align-self: start;
@@ -1974,10 +2062,10 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-layout {
   display: grid;
-  grid-template-columns: minmax(164px, 188px) minmax(0, 900px) minmax(174px, 200px);
+  grid-template-columns: minmax(190px, 272px) minmax(0, 720px) minmax(190px, 272px);
   align-items: start;
   justify-content: center;
-  gap: 16px;
+  gap: 24px;
   min-width: 0;
 }
 .topic-main {
@@ -2138,9 +2226,12 @@ watch(locale, () => void loadTopic(false));
 .chigua-topic :deep(.topic-lane__head strong) {
   color: var(--lane-tone, var(--n-text-color));
 }
+.chigua-topic :deep(.topic-lane__items) {
+  align-content: start;
+}
 .chigua-topic :deep(.topic-lane.is-scrollable .topic-lane__items) {
-  height: 224px;
-  max-height: 224px;
+  height: 252px;
+  max-height: 252px;
 }
 .event-rank {
   display: inline-flex;
@@ -2239,27 +2330,30 @@ watch(locale, () => void loadTopic(false));
   color: #6b7280;
 }
 
-@media (max-width: 1240px) and (min-width: 901px) {
+@media (max-width: 1360px) {
   .topic-layout {
-    grid-template-columns: minmax(160px, 180px) minmax(0, 1fr) minmax(180px, 200px);
-    gap: 14px;
+    grid-template-columns: minmax(180px, 220px) minmax(0, 720px) minmax(180px, 220px);
+    gap: 16px;
   }
+}
+@media (max-width: 1240px) {
   .chigua-topic :deep(.topic-lane-grid) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (max-width: 900px) and (min-width: 721px) {
+@media (max-width: 1120px) and (min-width: 821px) {
   .topic-layout {
-    grid-template-columns: 176px minmax(0, 1fr);
+    grid-template-columns: minmax(170px, 190px) minmax(0, 720px);
     gap: 14px;
   }
+  .topic-category-rail { grid-column: 1; grid-row: 1; }
+  .topic-main { grid-column: 2; grid-row: 1; }
   .topic-controls {
     position: static;
-    grid-column: 2;
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
-  .topic-trend-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .topic-trend-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .topic-controls-card {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: end;
@@ -2269,12 +2363,9 @@ watch(locale, () => void loadTopic(false));
   .topic-controls-title { grid-column: 1 / -1; }
   .topic-controls-card > .resonance-toggle,
   .topic-controls-card > .reset-filter,
-  .topic-controls-card > :deep(.n-button) {
-    width: auto;
-    margin: 8px;
-  }
+  .topic-controls-card > :deep(.n-button) { width: auto; margin: 8px; }
 }
-@media (max-width: 720px) {
+@media (max-width: 820px) {
   .topic-section { padding: 12px; }
   .topic-layout {
     display: flex;

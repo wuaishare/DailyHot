@@ -30,6 +30,8 @@ assert.ok(
   clientSuffixes.includes("ci.xiaohongshu.com"),
   "the exact Xiaohongshu cover host must use the server-side image proxy",
 );
+assert.ok(clientSuffixes.includes("thepaper.cn"), "The Paper covers must use the shared image proxy");
+assert.ok(clientSuffixes.includes("geekpark.net"), "GeekPark covers must use the shared image proxy");
 assert.ok(
   !clientSuffixes.includes("xiaohongshu.com"),
   "do not broaden image-proxy admission to every Xiaohongshu subdomain",
