@@ -36,6 +36,7 @@
       v-model="sortableNews"
       class="news-grid"
       :class="{ 'is-compact': store.compactMode }"
+      :style="{ '--home-grid-columns': String(desktopColumns) }"
       item-key="name"
       :animation="180"
       :disabled="cardDragDisabled"
@@ -111,6 +112,12 @@ const enableCardEntrance = ref(true);
 const isCardDragging = ref(false);
 const isSubtypeInteracting = ref(false);
 const sortableNews = ref([]);
+const clampDesktopColumns = (value, fallback) => Math.min(5, Math.max(3, Math.round(Number(value) || fallback)));
+const desktopColumns = computed(() =>
+  store.compactMode
+    ? clampDesktopColumns(store.homeCompactColumns, 5)
+    : clampDesktopColumns(store.homeCardColumns, 4),
+);
 const renderNews = computed(() => {
   return store.newsArr
     .filter((item) => item.show)
@@ -327,7 +334,7 @@ const reset = () => {
     gap: 24px;
 
     &.is-compact {
-      gap: 14px;
+      gap: 10px 12px;
     }
   }
 
@@ -375,13 +382,7 @@ const reset = () => {
 
 @media (min-width: 1100px) {
   .home .news-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1500px) {
-  .home .news-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--home-grid-columns, 4), minmax(0, 1fr));
   }
 }
 

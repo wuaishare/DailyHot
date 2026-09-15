@@ -393,7 +393,9 @@ const isDesktop = ref(isClient ? window.innerWidth > 680 : true);
 const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self",
 );
-const showImages = computed(() => store.showImages);
+const showImages = computed(() =>
+  store.showImages !== false && store.showDetailImages !== false,
+);
 const logoSrc = (name) => getSourceLogo(name);
 const getSourceDisplayLabel = (item) =>
   getLocalizedSourceDisplayLabel(

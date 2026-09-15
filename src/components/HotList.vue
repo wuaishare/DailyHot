@@ -1,10 +1,11 @@
 <template>
   <n-card
-    :header-style="{ padding: '16px' }"
-    :content-style="{ padding: '0 16px' }"
-    :footer-style="{ padding: '16px' }"
+    :header-style="{ padding: store.compactMode ? '10px 12px' : '16px' }"
+    :content-style="{ padding: store.compactMode ? '0 12px' : '0 16px' }"
+    :footer-style="{ padding: store.compactMode ? '10px 12px' : '16px' }"
     :id="`hot-list-${hotData.name}`"
     class="hot-list"
+    :class="{ 'is-compact': store.compactMode }"
     hoverable
     @click="toList"
   >
@@ -110,7 +111,7 @@
               class="line"
               :class="{
                 'has-inline-cover':
-                  showImages &&
+                  showCardImages &&
                   item.cover &&
                   !coverErrorMap[item.cover] &&
                   !item.marketQuote &&
@@ -141,7 +142,7 @@
               </n-text>
               <button
                 v-if="
-                  showImages &&
+                  showCardImages &&
                   item.cover &&
                   !coverErrorMap[item.cover] &&
                   !item.marketQuote &&
@@ -551,10 +552,15 @@ const linkTarget = computed(() =>
 );
 const previewTextOnlyWidth = 340;
 const previewTooltipId = computed(() => `hot-item-preview-${props.hotData.name}`);
-const showImages = computed(() => store.showImages);
+const showCardImages = computed(() =>
+  store.showImages !== false && store.showCardImages !== false,
+);
+const showPreviewImages = computed(() =>
+  store.showImages !== false && store.showPreviewImages !== false,
+);
 const previewHasCover = computed(
   () =>
-    showImages.value &&
+    showPreviewImages.value &&
     previewItem.value?.cover &&
     !coverErrorMap[previewItem.value.cover]
 );
@@ -1092,7 +1098,7 @@ const hasPreviewContent = (item) =>
   Boolean(
     item?.displayDesc ||
     item?.rankingMeta?.hasContent ||
-    (showImages.value && item?.cover && !coverErrorMap[item.cover])
+    (showPreviewImages.value && item?.cover && !coverErrorMap[item.cover])
   );
 
 const getPreviewDimensions = (item, mediaLayout) => {
@@ -1211,7 +1217,7 @@ const positionPreview = (item, target, mediaLayout, preferredPlacement = null) =
 };
 
 const openPreview = async (item, target, requestId) => {
-  const canShowCover = showImages.value && item?.cover && !coverErrorMap[item.cover];
+  const canShowCover = showPreviewImages.value && item?.cover && !coverErrorMap[item.cover];
   let mediaLayout = null;
   if (canShowCover) {
     try {
@@ -1651,6 +1657,25 @@ onBeforeUnmount(() => {
       overflow: hidden;
       text-overflow: ellipsis;
     }
+  }
+
+  &.is-compact {
+    .title {
+      height: 28px;
+      gap: 8px;
+      font-size: 15px;
+      .name .n-avatar { width: 22px; height: 22px; margin-right: 6px; }
+      .header-subtype:deep(.subtype-chip) { padding: 3px 7px; font-size: 11px; }
+      .subtitle { margin-left: 8px; font-size: 11px; }
+    }
+    .message { height: 20px; }
+    :deep(.news-list) { height: 286px; }
+    .lists { padding-right: 4px; }
+    .lists .item { min-height: 28px; margin-bottom: 4px; }
+    .lists .item .line { gap: 6px; }
+    .lists .item .line.has-inline-cover { grid-template-columns: auto 46px minmax(0, 1fr); }
+    .lists .item .item-thumb { width: 46px; height: 36px; }
+    .lists .item .num { width: 22px; height: 22px; min-width: 22px; margin-right: 4px; border-radius: 6px; }
   }
 
   .message {

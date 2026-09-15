@@ -66,6 +66,24 @@
         <n-switch v-model:value="compactMode" :round="false" />
       </div>
     </n-card>
+    <n-card v-if="showsDisplay" class="set-item full column-count-setting">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">{{ t("settings.homeColumns") }}</n-text>
+          <n-text class="tip" :depth="3">{{ t("settings.homeColumnsTip") }}</n-text>
+        </div>
+        <div class="column-count-controls">
+          <label class="column-count-control">
+            <span>{{ t("settings.homeCardColumns") }}</span>
+            <n-select v-model:value="homeCardColumns" :options="columnOptions" size="small" :show-checkmark="false" />
+          </label>
+          <label class="column-count-control">
+            <span>{{ t("settings.homeCompactColumns") }}</span>
+            <n-select v-model:value="homeCompactColumns" :options="columnOptions" size="small" :show-checkmark="false" />
+          </label>
+        </div>
+      </div>
+    </n-card>
     <n-card v-if="showsDisplay" class="set-item full layout-width-setting">
       <div class="top">
         <div class="name">
@@ -90,6 +108,33 @@
           <n-input-number v-model:value="focusContainerWidth" :min="1080" :max="1600" :step="40" size="small" />
           <span>px</span>
         </div>
+      </div>
+    </n-card>
+    <n-card v-if="showsDisplay" class="set-item full cover-visibility-setting">
+      <div class="cover-visibility-head">
+        <div class="name">
+          <n-text class="text">{{ t("settings.showImages") }}</n-text>
+          <n-text class="tip" :depth="3">{{ t("settings.showImagesTip") }}</n-text>
+        </div>
+        <n-switch v-model:value="showImages" :round="false" />
+      </div>
+      <div class="cover-visibility-grid" :class="{ 'is-disabled': !showImages }">
+        <label class="cover-visibility-option">
+          <span><strong>{{ t("settings.showCardImages") }}</strong><small>{{ t("settings.showCardImagesTip") }}</small></span>
+          <n-switch v-model:value="showCardImages" :disabled="!showImages" :round="false" />
+        </label>
+        <label class="cover-visibility-option">
+          <span><strong>{{ t("settings.showStreamImages") }}</strong><small>{{ t("settings.showStreamImagesTip") }}</small></span>
+          <n-switch v-model:value="showStreamImages" :disabled="!showImages" :round="false" />
+        </label>
+        <label class="cover-visibility-option">
+          <span><strong>{{ t("settings.showDetailImages") }}</strong><small>{{ t("settings.showDetailImagesTip") }}</small></span>
+          <n-switch v-model:value="showDetailImages" :disabled="!showImages" :round="false" />
+        </label>
+        <label class="cover-visibility-option">
+          <span><strong>{{ t("settings.showPreviewImages") }}</strong><small>{{ t("settings.showPreviewImagesTip") }}</small></span>
+          <n-switch v-model:value="showPreviewImages" :disabled="!showImages" :round="false" />
+        </label>
       </div>
     </n-card>
     <n-card v-if="showsDisplay" class="set-item">
@@ -303,17 +348,6 @@
     <n-card v-if="showsMisc" class="set-item">
       <div class="top">
         <div class="name">
-          <n-text class="text">{{ t("settings.showImages") }}</n-text>
-          <n-text class="tip" :depth="3">
-            {{ t("settings.showImagesTip") }}
-          </n-text>
-        </div>
-        <n-switch v-model:value="showImages" :round="false" />
-      </div>
-    </n-card>
-    <n-card v-if="showsMisc" class="set-item">
-      <div class="top">
-        <div class="name">
           <n-text class="text">{{ t("settings.clearCache") }}</n-text>
           <n-text class="tip" :depth="3">
             {{
@@ -411,6 +445,8 @@ const {
   linkOpenType,
   headerFixed,
   compactMode,
+  homeCardColumns,
+  homeCompactColumns,
   siteContainerWidth,
   focusContainerWidth,
   showPinnedRankings,
@@ -419,6 +455,10 @@ const {
   autoRefreshEnabled,
   autoRefreshInterval,
   showImages,
+  showCardImages,
+  showStreamImages,
+  showDetailImages,
+  showPreviewImages,
   categoryEnabled,
   activeCategory,
 } = storeToRefs(store);
@@ -440,6 +480,8 @@ const persistedKeys = [
   "linkOpenType",
   "headerFixed",
   "compactMode",
+  "homeCardColumns",
+  "homeCompactColumns",
   "siteContainerWidth",
   "focusContainerWidth",
   "showPinnedRankings",
@@ -450,6 +492,10 @@ const persistedKeys = [
   "autoRefreshPaused",
   "autoRefreshInterval",
   "showImages",
+  "showCardImages",
+  "showStreamImages",
+  "showDetailImages",
+  "showPreviewImages",
   "categoryEnabled",
   "activeCategory",
   "categories",
@@ -494,6 +540,12 @@ const linkOptions = computed(() => [
     value: "href",
   },
 ]);
+const columnOptions = computed(() =>
+  [3, 4, 5].map((value) => ({
+    value,
+    label: t("settings.columns", { count: value }),
+  })),
+);
 
 const listFontMarks = computed(() => ({
   14: t("settings.listFontSmall"),
@@ -882,6 +934,49 @@ watch(
   }
 }
 
+.column-count-setting .top,
+.cover-visibility-setting .cover-visibility-head {
+  gap: 24px;
+}
+.column-count-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 190px));
+  gap: 10px;
+}
+.column-count-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 86px;
+  align-items: center;
+  gap: 8px;
+  color: var(--n-text-color-2);
+  font-size: 12px;
+}
+.cover-visibility-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.cover-visibility-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+.cover-visibility-grid.is-disabled { opacity: .62; }
+.cover-visibility-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 54px;
+  padding: 9px 11px;
+  border: 1px solid var(--n-border-color);
+  border-radius: 9px;
+  background: var(--n-action-color);
+}
+.cover-visibility-option > span { display: grid; gap: 2px; min-width: 0; }
+.cover-visibility-option strong { color: var(--n-text-color-2); font-size: 12px; font-weight: 650; }
+.cover-visibility-option small { color: var(--n-text-color-3); font-size: 10px; line-height: 1.35; }
 .layout-width-setting .top {
   gap: 24px;
 }
@@ -897,7 +992,8 @@ watch(
   font-size: 12px;
 }
 @media (max-width: 720px) {
-  .layout-width-setting .top { align-items: stretch; }
+  .layout-width-setting .top, .column-count-setting .top { align-items: stretch; }
   .layout-width-control { grid-template-columns: minmax(0, 1fr) 100px auto; width: 100%; }
+  .column-count-controls, .cover-visibility-grid { grid-template-columns: minmax(0, 1fr); width: 100%; }
 }
 </style>

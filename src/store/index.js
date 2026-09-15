@@ -1269,6 +1269,9 @@ export const mainStore = defineStore("mainData", {
       headerFixed: true,
       // 紧凑模式：统一控制站点导航、上下文工具栏和页面密度
       compactMode: true,
+      // 首页卡片视图桌面列数：普通 / 紧凑独立控制
+      homeCardColumns: 4,
+      homeCompactColumns: 5,
       // 普通页面与聚焦页面的内容容器宽度
       siteContainerWidth: 1400,
       focusContainerWidth: 1360,
@@ -1280,8 +1283,12 @@ export const mainStore = defineStore("mainData", {
       autoRefreshRoutePaused: false,
       autoRefreshRemainingMs: null,
       autoRefreshInterval: 1800,
-      // 是否显示封面图片
+      // 封面图片：总开关 + 分场景偏好（旧 showImages 继续作为总开关兼容历史配置）
       showImages: true,
+      showCardImages: true,
+      showStreamImages: true,
+      showDetailImages: true,
+      showPreviewImages: true,
       // 信息流是否显示摘要/热度等辅助信息
       showStreamDescriptions: true,
       // 分类页视图偏好：内容组织方式与显示偏好分离
@@ -1859,6 +1866,8 @@ export const mainStore = defineStore("mainData", {
         "linkOpenType",
         "headerFixed",
         "compactMode",
+        "homeCardColumns",
+        "homeCompactColumns",
         "siteContainerWidth",
         "focusContainerWidth",
         "showPinnedRankings",
@@ -1866,6 +1875,10 @@ export const mainStore = defineStore("mainData", {
         "autoRefreshPaused",
         "autoRefreshInterval",
         "showImages",
+        "showCardImages",
+        "showStreamImages",
+        "showDetailImages",
+        "showPreviewImages",
         "showStreamDescriptions",
         "categoryViewMode",
         "categoryViewPerCategory",
