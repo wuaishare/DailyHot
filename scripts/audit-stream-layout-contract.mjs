@@ -106,10 +106,16 @@ assert.match(component, /data-cover-presentation="mixed"[\s\S]{0,220}grid-templa
 assert.match(component, /data-cover-presentation="portrait-uniform"[\s\S]{0,240}grid-template-columns: 42px 60px minmax\(0, 1fr\)/);
 assert.match(component, /category-stream\.is-source-page \.category-stream__list \{[\s\S]{0,100}overflow: visible;[\s\S]{0,100}border-radius: 14px;/);
 assert.match(component, /category-stream\.is-source-page \.category-stream__media \{[\s\S]{0,260}place-items: center;[\s\S]{0,220}width: 112px;[\s\S]{0,80}height: 84px;[\s\S]{0,180}overflow: visible;[\s\S]{0,100}border-radius: 0;[\s\S]{0,100}background: transparent;/);
-assert.match(component, /data-cover-presentation="mixed"\] \.category-stream__media \{[\s\S]{0,160}width: 84px;[\s\S]{0,80}height: 84px/);
+assert.match(component, /data-cover-presentation="mixed"\] \.category-stream__media \{[\s\S]{0,180}width: 84px;[\s\S]{0,80}height: 84px;[\s\S]{0,100}overflow: hidden;/);
 assert.match(component, /data-cover-presentation="portrait-uniform"\] \.category-stream__media \{[\s\S]{0,160}width: 60px;[\s\S]{0,80}height: 84px/);
 assert.match(component, /category-stream\.is-source-page \.category-stream__media\.is-cover img \{[\s\S]{0,260}max-width: 100%;[\s\S]{0,80}max-height: 100%;[\s\S]{0,100}border-radius: 8px;[\s\S]{0,100}object-fit: contain;/);
-assert.match(component, /data-cover-presentation="mixed"\][\s\S]{0,160}category-stream__preview-image\.n-image img[\s\S]{0,220}width: 100%;[\s\S]{0,80}height: 100%;[\s\S]{0,100}object-fit: cover;/);
+assert.match(component, /data-cover-presentation="mixed"\][\s\S]{0,180}:deep\(\.category-stream__preview-image\.n-image\) \{[\s\S]{0,180}overflow: hidden;/);
+assert.match(component, /data-cover-presentation="mixed"\][\s\S]{0,220}:deep\(\.category-stream__preview-image\.n-image img\)[\s\S]{0,300}top: 50%;[\s\S]{0,100}left: 50%;[\s\S]{0,160}width: 100%;[\s\S]{0,80}height: 100%;[\s\S]{0,100}object-fit: cover;/);
+assert.match(component, /image\.naturalWidth \/ image\.naturalHeight/);
+assert.match(component, /--cover-hover-width[\s\S]{0,180}fullWidth \* hoverScale/);
+assert.match(component, /--cover-hover-height[\s\S]{0,180}fullHeight \* hoverScale/);
+assert.match(component, /--cover-hover-center-y-shift[\s\S]{0,160}centerShiftY/);
+assert.match(component, /data-cover-presentation="mixed"[\s\S]{0,700}row\.has-media:hover[\s\S]{0,360}:deep\(\.category-stream__preview-image\.n-image img\)[\s\S]{0,300}top: calc\(50% \+ var\(--cover-hover-center-y-shift, 0px\)\);[\s\S]{0,120}right: 0;[\s\S]{0,180}width: var\(--cover-hover-width[\s\S]{0,160}height: var\(--cover-hover-height[\s\S]{0,160}object-fit: contain !important;[\s\S]{0,120}transform: translateY\(-50%\)/);
 assert.match(template, /<n-image[\s\S]{0,420}:preview-src="coverSrc\(entry\.cover\)"[\s\S]{0,320}:object-fit="currentCoverObjectFit"[\s\S]{0,260}onLoad: handleCoverImageLoad/);
 assert.match(template, /tabindex: 0[\s\S]{0,160}role: 'button'/);
 assert.match(component, /handleCoverPreviewKeydown[\s\S]{0,180}currentTarget\?\.click/);

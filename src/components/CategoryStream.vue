@@ -1069,6 +1069,37 @@ const syncCoverHoverGeometry = (image) => {
   const imageHeight = Number(image.offsetHeight || 0);
   if (!mediaWidth || !mediaHeight || !imageWidth || !imageHeight) return;
 
+  const stream = image.closest?.(".category-stream");
+  const isMixed = stream?.dataset?.coverPresentation === COVER_PRESENTATION_MODES.MIXED;
+  if (isMixed && image.naturalWidth && image.naturalHeight) {
+    const naturalRatio = image.naturalWidth / image.naturalHeight;
+    let fullWidth = mediaWidth;
+    let fullHeight = fullWidth / naturalRatio;
+    if (fullHeight > mediaHeight) {
+      fullHeight = mediaHeight;
+      fullWidth = fullHeight * naturalRatio;
+    }
+    const fillScale = Math.max(
+      mediaWidth / fullWidth,
+      mediaHeight / fullHeight,
+      1,
+    );
+    const hoverScale = Math.min(
+      Math.max(fillScale * COVER_HOVER_BOOST, COVER_HOVER_MIN_SCALE),
+      COVER_HOVER_MAX_SCALE,
+    );
+    const row = image.closest?.(".category-stream__row");
+    const mediaRect = media?.getBoundingClientRect?.();
+    const rowRect = row?.getBoundingClientRect?.();
+    const centerShiftY = mediaRect && rowRect
+      ? (rowRect.top + rowRect.height / 2) - (mediaRect.top + mediaRect.height / 2)
+      : 0;
+    motionTarget.style?.setProperty?.("--cover-hover-width", `${(fullWidth * hoverScale).toFixed(2)}px`);
+    motionTarget.style?.setProperty?.("--cover-hover-height", `${(fullHeight * hoverScale).toFixed(2)}px`);
+    motionTarget.style?.setProperty?.("--cover-hover-center-y-shift", `${centerShiftY.toFixed(2)}px`);
+    return;
+  }
+
   const fillScale = Math.max(
     mediaWidth / imageWidth,
     mediaHeight / imageHeight,
@@ -2269,6 +2300,7 @@ const hideBrokenMedia = (event) => {
   height: 84px;
   max-width: 84px;
   max-height: 84px;
+  overflow: hidden;
 }
 
 .category-stream.is-source-page[data-cover-presentation="portrait-uniform"] .category-stream__media {
@@ -2317,12 +2349,22 @@ const hideBrokenMedia = (event) => {
   will-change: transform;
 }
 
+.category-stream.is-source-page[data-cover-presentation="mixed"] :deep(.category-stream__preview-image.n-image) {
+  position: relative;
+  overflow: hidden;
+}
+
 .category-stream.is-source-page[data-cover-presentation="mixed"] :deep(.category-stream__preview-image.n-image img) {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 100%;
   height: 100%;
   max-width: none;
   max-height: none;
   object-fit: cover;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
 }
 
 .category-stream.is-source-page :deep(.category-stream__preview-image.n-image img:focus-visible) {
@@ -2340,6 +2382,24 @@ const hideBrokenMedia = (event) => {
     z-index: 5;
     transform: scale(var(--cover-hover-scale, 1.35));
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  }
+
+  .category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__row.has-media:hover .category-stream__media,
+  .category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__row.has-media:hover :deep(.category-stream__preview-image.n-image) {
+    overflow: visible;
+  }
+
+  .category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__row.has-media:hover :deep(.category-stream__preview-image.n-image img) {
+    top: calc(50% + var(--cover-hover-center-y-shift, 0px));
+    right: 0;
+    left: auto;
+    width: var(--cover-hover-width, 113.4px);
+    height: var(--cover-hover-height, 113.4px);
+    max-width: none;
+    max-height: none;
+    object-fit: contain !important;
+    transform: translateY(-50%);
+    transform-origin: right center;
   }
 }
 
