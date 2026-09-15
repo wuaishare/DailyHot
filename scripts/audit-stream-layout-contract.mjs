@@ -7,6 +7,7 @@ const coverPresentation = fs.readFileSync("src/utils/coverPresentation.js", "utf
 const home = fs.readFileSync("src/views/Home.vue", "utf8");
 const categoryRail = fs.readFileSync("src/components/CategorySourceRail.vue", "utf8");
 const hotList = fs.readFileSync("src/components/HotList.vue", "utf8");
+const contextToolbar = fs.readFileSync("src/components/ContextToolbar.vue", "utf8");
 const listView = fs.readFileSync("src/views/List.vue", "utf8");
 const sharedBadges = fs.readFileSync("src/components/RankingBadgeGroup.vue", "utf8");
 const subtypeBar = fs.readFileSync("src/components/SubtypeBar.vue", "utf8");
@@ -22,6 +23,7 @@ assert.match(template, /category-stream__context/);
 assert.match(template, /category-stream__variant-nav/);
 assert.match(template, /currentVariantLabel/);
 assert.match(template, /sourceVariantPathFor\(currentPageSource\.name, item\.value\)/);
+assert.match(template, /@click="rememberSourceVariant\(currentPageSource\.name, item\.value\)"/);
 assert.match(template, /v-for="entry in pagedEntries"/);
 assert.match(template, /:class="\{ 'has-media': !minimalMode && showImages && Boolean\(entry\.cover\) \}"/);
 assert.match(template, /v-if="sourcePageMode && !minimalMode && showImages && entry\.cover"[\s\S]{0,160}category-stream__media is-cover is-previewable/);
@@ -45,7 +47,15 @@ assert.match(component, /@media \(max-width: 820px\)[\s\S]*category-stream__sour
 assert.match(component, /@media \(max-width: 820px\)[\s\S]*overflow-x: auto/);
 assert.match(component, /setTocSourceRef/);
 assert.match(component, /ensureActiveSourceVisible/);
+assert.match(component, /const remembered = readSourceSubtype\(source\.name\)/);
+assert.match(component, /const options = getSourceSubtypeOptions\(source\.name\)/);
+assert.match(component, /options\.length[\s\S]{0,120}resolveSourceSubtype\(options, remembered\)[\s\S]{0,80}: remembered/);
+assert.match(component, /rememberSourceVariant/);
 assert.match(component, /container\.scrollTop \+= delta/);
+assert.match(component, /const sourceNavigationPathFor = \(source\) => \{[\s\S]{0,420}readSourceSubtype\(source\.name\)[\s\S]{0,260}rememberedSubtype \|\| getDefaultSourceSubtype/);
+assert.match(component, /const rememberSourceVariant = \(sourceName, variant\) => \{[\s\S]{0,260}persistSourceSubtype\(sourceName, resolved\)/);
+assert.match(contextToolbar, /\.context-breadcrumb__caret \{[\s\S]{0,180}stroke: currentColor;[\s\S]{0,80}opacity: 0\.66/);
+assert.doesNotMatch(contextToolbar, /\.context-breadcrumb__caret \{[^}]*stroke: var\(--n-text-color-3\)/s);
 assert.match(component, /category-stream\.is-source-page \.category-stream__rank \{[\s\S]{0,100}align-self: center/);
 
 assert.match(home, /import CategorySourceRail from "@\/components\/CategorySourceRail\.vue"/);
