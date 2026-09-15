@@ -1,5 +1,6 @@
 <template>
   <section
+    ref="streamRoot"
     class="category-stream"
     :class="{
       'is-compact': store.compactMode,
@@ -259,6 +260,7 @@ import {
   onBeforeUnmount,
   onMounted,
   reactive,
+  ref,
   watch,
 } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -305,6 +307,7 @@ const props = defineProps({
   sourcePageSource: { type: String, default: "" },
 });
 
+const streamRoot = ref(null);
 const route = useRoute();
 const router = useRouter();
 const store = mainStore();
@@ -1122,6 +1125,48 @@ const prepareRowCoverHover = (event) => {
   const image = event?.currentTarget?.querySelector?.(".category-stream__preview-image img");
   if (image?.complete) syncCoverHoverGeometry(image);
 };
+const pendingCoverGeometryImages = new WeakSet();
+const ensureCoverGeometry = (image) => {
+  if (!image) return;
+  if (image.complete && image.naturalWidth > 0 && image.naturalHeight > 0) {
+    pendingCoverGeometryImages.delete(image);
+    syncCoverHoverGeometry(image);
+    return;
+  }
+  if (pendingCoverGeometryImages.has(image)) return;
+  pendingCoverGeometryImages.add(image);
+  image.addEventListener?.(
+    "load",
+    () => {
+      pendingCoverGeometryImages.delete(image);
+      syncCoverHoverGeometry(image);
+    },
+    { once: true },
+  );
+};
+const syncReadyCoverGeometries = () => {
+  if (!sourcePageMode.value) return;
+  const root = streamRoot.value;
+  if (!root) return;
+  root.querySelectorAll?.(".category-stream__preview-image img").forEach(ensureCoverGeometry);
+};
+const queueCoverGeometrySync = () => {
+  if (typeof window === "undefined") return;
+  nextTick(() => window.requestAnimationFrame?.(syncReadyCoverGeometries));
+};
+onMounted(queueCoverGeometrySync);
+watch(
+  () => [
+    sourcePageMode.value,
+    currentCoverPresentationMode.value,
+    showImages.value,
+    currentPage.value,
+    pageSize.value,
+    pagedEntries.value.map((entry) => `${entry.key}:${entry.cover || ""}`).join("|"),
+  ],
+  queueCoverGeometrySync,
+  { flush: "post" },
+);
 const handleCoverPreviewKeydown = (event) => {
   if (event?.key !== "Enter" && event?.key !== " ") return;
   event.preventDefault();
