@@ -177,7 +177,7 @@
                       :title="metric.label"
                       :aria-label="metric.label"
                     >
-                      <UiGlyph name="fire" />
+                      <n-icon :component="Fire" />
                     </span>
                     <span v-else>{{ metric.label }}</span>
                     <strong>{{ metric.value }}</strong>
@@ -264,7 +264,7 @@ import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { normalizeRankingBadges, resolveRankingBadgeIconUrl } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
-import { Refresh } from "@icon-park/vue-next";
+import { Fire, Refresh } from "@icon-park/vue-next";
 import { formatTime } from "@/utils/getTime";
 import { getRankingItemMeta } from "@/utils/rankingItemMeta";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";

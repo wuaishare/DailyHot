@@ -224,7 +224,7 @@
                               :title="metric.label"
                               :aria-label="metric.label"
                             >
-                              <UiGlyph name="fire" />
+                              <n-icon :component="Fire" />
                             </span>
                             <span v-else>{{ metric.label }}</span>
                             <strong>{{ metric.value }}</strong>
@@ -232,7 +232,7 @@
                         </div>
                         <div v-else class="message">
                           <div class="hot" v-if="item.hot">
-                            <UiGlyph class="ranking-hot-icon" name="fire" />
+                            <n-icon class="ranking-hot-icon" :depth="3" :component="Fire" />
                             <n-text
                               class="hot-text"
                               :depth="3"
@@ -309,7 +309,7 @@ import {
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
 import { getRankingItemMeta } from "@/utils/rankingItemMeta";
-import UiGlyph from "@/components/ui/UiGlyph.vue";
+import { Fire } from "@icon-park/vue-next";
 import {
   getFundMetricView,
   getMarketEntityDisplayTitle,

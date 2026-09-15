@@ -78,8 +78,12 @@ assert.doesNotMatch(
   "CategorySourceRail must not label every ranking value as heat",
 );
 
-assert.match(stream, /metric\.key === ['"]hot['"][\s\S]{0,240}<UiGlyph name="fire" \/>/, "CategoryStream heat metrics must use the fire glyph");
-assert.match(rail, /primaryMetric\.key === ['"]hot['"][\s\S]{0,300}<UiGlyph name="fire" \/>/, "CategorySourceRail heat metrics must use the fire glyph");
-assert.match(list, /metric\.key === ['"]hot['"][\s\S]{0,240}<UiGlyph name="fire" \/>/, "List heat metrics must use the fire glyph");
+assert.match(stream, /metric\.key === ['"]hot['"][\s\S]{0,240}<n-icon :component="Fire" \/>/, "CategoryStream heat metrics must use the established IconPark Fire icon");
+assert.match(rail, /primaryMetric\.key === ['"]hot['"][\s\S]{0,300}<n-icon :component="Fire" \/>/, "CategorySourceRail heat metrics must use the established IconPark Fire icon");
+assert.match(list, /metric\.key === ['"]hot['"][\s\S]{0,240}<n-icon :component="Fire" \/>/, "List heat metrics must use the established IconPark Fire icon");
+assert.match(hotList, /preview-hot-icon[\s\S]{0,120}:component="Fire"/, "HotList preview heat must preserve the established IconPark Fire icon");
+for (const [name, source] of Object.entries({ stream, rail, hotList, list })) {
+  assert.doesNotMatch(source, /<UiGlyph[^>]*name="fire"/, `${name} must not replace the established heat icon with a custom UiGlyph fire`);
+}
 
 console.log("[ranking-meta-consumers] result variant, shared resolver and semantic primary states verified");
