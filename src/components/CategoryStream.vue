@@ -164,9 +164,23 @@
                   </span>
                 </div>
                 <p v-if="showDescriptions && entry.description" class="category-stream__desc">{{ entry.description }}</p>
-                <div v-if="showDescriptions && (entry.hot || entry.author)" class="category-stream__meta">
-                  <span v-if="entry.hot">{{ copy.heat }} {{ formatCompactMetric(entry.hot, locale) }}</span>
-                  <span v-if="entry.author">{{ entry.author }}</span>
+                <div v-if="showDescriptions && entry.rankingMeta?.hasContent" class="category-stream__meta">
+                  <span
+                    v-for="metric in entry.rankingMeta.metrics"
+                    :key="metric.key"
+                    class="category-stream__metric"
+                    :class="{ 'is-primary': metric.isPrimary }"
+                  >
+                    <span>{{ metric.label }}</span>
+                    <strong>{{ metric.value }}</strong>
+                  </span>
+                  <span
+                    v-for="meta in entry.rankingMeta.context"
+                    :key="meta.key"
+                    class="category-stream__context-meta"
+                  >
+                    {{ meta.label }} {{ meta.value }}
+                  </span>
                 </div>
               </a>
             </div>
@@ -244,7 +258,7 @@ import { normalizeRankingBadges, resolveRankingBadgeIconUrl } from "@/utils/rank
 import UiGlyph from "@/components/ui/UiGlyph.vue";
 import { Refresh } from "@icon-park/vue-next";
 import { formatTime } from "@/utils/getTime";
-import { formatCompactMetric } from "@/utils/compactMetric";
+import { getRankingItemMeta } from "@/utils/rankingItemMeta";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
 
@@ -858,6 +872,9 @@ const entries = computed(() => {
       const description = stripText(item?.desc || item?.originalDesc || "");
       const hot = stripText(item?.hot || "");
       const href = item?.url || item?.mobileUrl || "";
+      const rankingMeta = getRankingItemMeta(item, locale.value, {
+        variant: result?.variant || sourceSubtypeFor(source.name),
+      });
       output.push({
         ...item,
         key:
@@ -878,6 +895,7 @@ const entries = computed(() => {
         title,
         description,
         hot,
+        rankingMeta,
         href,
       });
     });
@@ -898,6 +916,8 @@ const visibleEntries = computed(() => {
       entry.description,
       entry.hot,
       entry.author,
+      entry.rankingMeta?.metrics?.map(({ label, value }) => `${label} ${value}`).join(" "),
+      entry.rankingMeta?.context?.map(({ label, value }) => `${label} ${value}`).join(" "),
       entry.sourceLabel,
       entry.sourceName,
       entry.code,
@@ -1271,9 +1291,42 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
   margin-top: 3px;
   color: var(--category-stream-text-3);
   font-size: 11px;
+  line-height: 1.6;
+}
+
+.category-stream__metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.category-stream__metric strong {
+  color: var(--category-stream-text-2);
+  font-size: inherit;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+}
+
+.category-stream__metric.is-primary {
+  padding: 1px 6px;
+  color: var(--category-stream-primary);
+  border: 1px solid color-mix(in srgb, var(--category-stream-primary) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--category-stream-primary) 9%, transparent);
+  font-weight: 700;
+}
+
+.category-stream__metric.is-primary strong {
+  color: inherit;
+  font-weight: 760;
 }
 
 .category-stream.is-compact .category-stream__title {
@@ -2106,8 +2159,6 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream.is-source-page .category-stream__meta {
-  display: flex;
-  gap: 10px;
   margin-top: 3px;
   font-size: 10px;
 }

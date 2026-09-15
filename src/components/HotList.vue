@@ -383,6 +383,7 @@
               v-for="metric in previewItem.rankingMeta.metrics"
               :key="metric.key"
               class="preview-metric"
+              :class="{ 'is-primary': metric.isPrimary }"
             >
               <span>{{ metric.label }}</span>
               <strong>{{ metric.value }}</strong>
@@ -683,7 +684,9 @@ const visibleItems = computed(() => {
       displayRank,
       marketQuote,
       fundMetric: getFundMetricView(item, locale.value),
-      rankingMeta: getRankingItemMeta(item, locale.value),
+      rankingMeta: getRankingItemMeta(item, locale.value, {
+        variant: hotListData.value?.variant || activeSubType.value,
+      }),
       hasReadableTranslation:
         shouldProtectEntityTitles.value ||
         Boolean(item?.noAutoTranslate) ||
@@ -1266,6 +1269,7 @@ const getPreviewThemeVars = () => {
     "--preview-muted-color": isDarkTheme
       ? "rgba(255, 255, 255, 0.48)"
       : "rgba(31, 34, 37, 0.56)",
+    "--preview-primary-color": isDarkTheme ? "#ff737a" : "#ea444d",
   };
 };
 
@@ -2101,6 +2105,26 @@ onBeforeUnmount(() => {
     font-size: 12px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+  }
+
+  .preview-metric.is-primary {
+    color: var(--preview-primary-color, var(--n-primary-color, #ea444d));
+    border-color: color-mix(
+      in srgb,
+      var(--preview-primary-color, var(--n-primary-color, #ea444d)) 32%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--preview-primary-color, var(--n-primary-color, #ea444d)) 9%,
+      transparent
+    );
+    font-weight: 700;
+  }
+
+  .preview-metric.is-primary strong {
+    color: inherit;
+    font-weight: 760;
   }
 
   .preview-meta {
