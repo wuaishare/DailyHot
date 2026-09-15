@@ -96,6 +96,7 @@
                   class="category-stream__variant-tab"
                   :class="{ active: isActiveTocVariant(currentPageSource.name, item.value) }"
                   :to="sourceVariantPathFor(currentPageSource.name, item.value)"
+                  @click="rememberSourceVariant(currentPageSource.name, item.value)"
                   :aria-current="isActiveTocVariant(currentPageSource.name, item.value) ? 'page' : undefined"
                 >
                   {{ item.label }}
@@ -273,6 +274,7 @@ import {
   getSourceSubtypeControlGroups,
   getSourceSubtypeOptions,
   readSourceSubtype,
+  persistSourceSubtype,
   resolveSourceSubtype,
 } from "@/utils/sourceSubtypes";
 import {
@@ -630,14 +632,23 @@ const isActiveTocVariant = (sourceName, value) =>
   isActiveTocSource(sourceName) && currentTocSubtype.value === value;
 const sourceNavigationPathFor = (source) => {
   subtypeCatalogRevision.value;
+  const remembered = readSourceSubtype(source.name);
+  const options = getSourceSubtypeOptions(source.name);
+  const rememberedSubtype = options.length
+    ? resolveSourceSubtype(options, remembered)
+    : remembered;
   return buildRankPath(
     locale.value,
     source.name,
-    getDefaultSourceSubtype(source.name) || "",
+    rememberedSubtype || getDefaultSourceSubtype(source.name) || "",
   );
 };
 const sourceVariantPathFor = (sourceName, variant) =>
   buildRankPath(locale.value, sourceName, variant || "");
+const rememberSourceVariant = (sourceName, variant) => {
+  const resolved = resolveSourceSubtype(getSourceSubtypeOptions(sourceName), variant);
+  if (resolved) persistSourceSubtype(sourceName, resolved);
+};
 const updatePageSize = (value) => {
   const next = PAGE_SIZE_VALUES.includes(Number(value)) ? Number(value) : 30;
   replaceFilterQuery({ size: next === 30 ? null : next });

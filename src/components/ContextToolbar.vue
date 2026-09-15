@@ -1078,7 +1078,8 @@ watchEffect(() => {
   height: 10px;
   flex: 0 0 auto;
   fill: none;
-  stroke: var(--n-text-color-3);
+  stroke: currentColor;
+  opacity: 0.66;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.5;
