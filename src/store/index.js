@@ -94,6 +94,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "抖音",
           name: "douyin",
+          coverPresentationMode: "mixed",
           order: 0,
           show: true,
           category: "综合",
@@ -117,6 +118,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "快手",
           name: "kuaishou",
+          coverPresentationMode: "mixed",
           order: 2,
           show: true,
           category: "综合",
