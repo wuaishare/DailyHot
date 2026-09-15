@@ -135,7 +135,15 @@
                     v-if="entry.rankingMeta?.primaryMetric"
                     class="category-story-card__primary-metric"
                   >
-                    {{ entry.rankingMeta.primaryMetric.label }}
+                    <span
+                      v-if="entry.rankingMeta.primaryMetric.key === 'hot'"
+                      class="category-story-card__heat-label"
+                      :title="entry.rankingMeta.primaryMetric.label"
+                      :aria-label="entry.rankingMeta.primaryMetric.label"
+                    >
+                      <UiGlyph name="fire" />
+                    </span>
+                    <span v-else>{{ entry.rankingMeta.primaryMetric.label }}</span>
                     <strong>{{ entry.rankingMeta.primaryMetric.value }}</strong>
                   </span>
                   <span v-else class="category-story-card__context-meta">{{ entry.sourceLabel }}</span>
@@ -178,6 +186,7 @@ import { useTrendsCatalogRevision } from '@/composables/useTrendsCatalogRevision
 import { DATA_REFRESH_EVENT } from '@/utils/dataRefresh';
 import { formatTime } from '@/utils/getTime';
 import { getRankingItemMeta } from '@/utils/rankingItemMeta';
+import UiGlyph from '@/components/ui/UiGlyph.vue';
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },
