@@ -2,6 +2,10 @@ import fs from "node:fs";
 import assert from "node:assert/strict";
 
 const component = fs.readFileSync("src/components/CategoryStream.vue", "utf8");
+const app = fs.readFileSync("src/App.vue", "utf8");
+const header = fs.readFileSync("src/components/Header.vue", "utf8");
+const footer = fs.readFileSync("src/components/Footer.vue", "utf8");
+const generalSettings = fs.readFileSync("src/components/GeneralSettings.vue", "utf8");
 const store = fs.readFileSync("src/store/index.js", "utf8");
 const coverPresentation = fs.readFileSync("src/utils/coverPresentation.js", "utf8");
 const coverPreviewGeometry = fs.readFileSync("src/utils/coverPreviewGeometry.js", "utf8");
@@ -16,6 +20,20 @@ const trendStrip = fs.readFileSync("src/components/TrendIntelligenceStrip.vue", 
 const topicLaneGrid = fs.readFileSync("src/components/TopicLaneGrid.vue", "utf8");
 const chigua = fs.readFileSync("src/views/ChiguaTopic.vue", "utf8");
 const template = component.split("<script setup>")[0];
+
+assert.match(store, /siteContainerWidth: 1400/);
+assert.match(store, /focusContainerWidth: 1360/);
+assert.match(store, /"siteContainerWidth"/);
+assert.match(store, /"focusContainerWidth"/);
+assert.match(app, /--site-container-width/);
+assert.match(app, /--site-focus-container-width/);
+assert.match(app, /width: min\(calc\(100% - var\(--site-gutter-total\)\), var\(--site-container-width\)\)/);
+assert.match(header, /max-width: var\(--site-container-width, 1400px\)/);
+assert.match(footer, /var\(--site-container-width, 1400px\)/);
+assert.match(generalSettings, /v-model:value="siteContainerWidth"/);
+assert.match(generalSettings, /v-model:value="focusContainerWidth"/);
+assert.match(component, /var\(--site-focus-container-width, 1360px\)/);
+assert.match(chigua, /var\(--site-focus-container-width, 1360px\)/);
 
 assert.match(template, /category-stream__source-rail/);
 assert.match(template, /category-stream__main/);
@@ -39,7 +57,7 @@ assert.match(component, /const currentPageSource = computed/);
 assert.match(component, /const currentVariantLabel = computed/);
 assert.match(component, /const minimalMode = computed\(\(\) => !showImages\.value && !showDescriptions\.value\)/);
 assert.match(component, /const PAGE_SIZE_VALUES = \[20, 30, 50, 100\]/);
-assert.match(component, /grid-template-columns: 272px 720px 272px/);
+assert.match(component, /grid-template-columns: minmax\(190px, 272px\) minmax\(0, 720px\) minmax\(190px, 272px\)/);
 assert.match(component, /\.category-stream\.is-source-page \.category-stream__row\.has-media/);
 assert.match(component, /\.category-stream__variant-tab\.active/);
 assert.match(component, /\.category-stream\.is-source-page \.category-stream__rail-card/);
@@ -223,7 +241,7 @@ assert.match(trendStrip, /trend-card\.is-new/);
 assert.match(trendStrip, /trend-card\.is-falling/);
 
 assert.match(topicLaneGrid, /:class="`is-\$\{lane\.key\}`"/);
-assert.match(chigua, /grid-template-columns: 220px minmax\(0, 860px\) 230px/);
+assert.match(chigua, /grid-template-columns: minmax\(170px, 200px\) minmax\(0, 860px\) minmax\(180px, 210px\)/);
 assert.match(chigua, /lane\("fresh", isFreshEvent\)/);
 assert.match(chigua, /lane\("rising", isRisingEvent\)/);
 assert.match(chigua, /lane\("resonance", isResonanceItem\)/);

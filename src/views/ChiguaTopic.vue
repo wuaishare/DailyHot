@@ -1118,7 +1118,7 @@ watch(locale, () => void loadTopic(false));
 .chigua-topic {
   display: grid;
   gap: 14px;
-  width: min(100%, 1240px);
+  width: min(100%, var(--site-focus-container-width, 1360px));
   margin: 0 auto;
 }
 .topic-section {
@@ -1653,17 +1653,17 @@ watch(locale, () => void loadTopic(false));
 
 /* Chigua intelligence workspace */
 .chigua-topic {
-  width: min(100%, 1504px);
+  width: min(100%, var(--site-focus-container-width, 1360px));
 }
 .topic-section {
   padding: 16px 18px 18px;
 }
 .topic-layout {
   display: grid;
-  grid-template-columns: 220px minmax(0, 860px) 230px;
+  grid-template-columns: minmax(170px, 200px) minmax(0, 860px) minmax(180px, 210px);
   align-items: start;
   justify-content: center;
-  gap: 18px;
+  gap: 16px;
   min-width: 0;
 }
 .topic-main {
@@ -1875,7 +1875,7 @@ watch(locale, () => void loadTopic(false));
 
 @media (max-width: 1240px) and (min-width: 901px) {
   .topic-layout {
-    grid-template-columns: 180px minmax(0, 1fr) 205px;
+    grid-template-columns: minmax(160px, 180px) minmax(0, 1fr) minmax(180px, 200px);
     gap: 14px;
   }
   .chigua-topic :deep(.topic-lane-grid) {

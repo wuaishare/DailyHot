@@ -66,6 +66,32 @@
         <n-switch v-model:value="compactMode" :round="false" />
       </div>
     </n-card>
+    <n-card v-if="showsDisplay" class="set-item full layout-width-setting">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">{{ t("settings.siteContainerWidth") }}</n-text>
+          <n-text class="tip" :depth="3">{{ t("settings.siteContainerWidthTip") }}</n-text>
+        </div>
+        <div class="layout-width-control">
+          <n-slider v-model:value="siteContainerWidth" :min="1120" :max="1800" :step="40" :tooltip="false" />
+          <n-input-number v-model:value="siteContainerWidth" :min="1120" :max="1800" :step="40" size="small" />
+          <span>px</span>
+        </div>
+      </div>
+    </n-card>
+    <n-card v-if="showsDisplay" class="set-item full layout-width-setting">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">{{ t("settings.focusContainerWidth") }}</n-text>
+          <n-text class="tip" :depth="3">{{ t("settings.focusContainerWidthTip") }}</n-text>
+        </div>
+        <div class="layout-width-control">
+          <n-slider v-model:value="focusContainerWidth" :min="1080" :max="1600" :step="40" :tooltip="false" />
+          <n-input-number v-model:value="focusContainerWidth" :min="1080" :max="1600" :step="40" size="small" />
+          <span>px</span>
+        </div>
+      </div>
+    </n-card>
     <n-card v-if="showsDisplay" class="set-item">
       <div class="top">
         <div class="name">
@@ -385,6 +411,8 @@ const {
   linkOpenType,
   headerFixed,
   compactMode,
+  siteContainerWidth,
+  focusContainerWidth,
   showPinnedRankings,
   categoryViewMode,
   listFontSize,
@@ -412,6 +440,8 @@ const persistedKeys = [
   "linkOpenType",
   "headerFixed",
   "compactMode",
+  "siteContainerWidth",
+  "focusContainerWidth",
   "showPinnedRankings",
   "categoryViewMode",
   "categoryViewPerCategory",
@@ -850,5 +880,24 @@ watch(
     }
 
   }
+}
+
+.layout-width-setting .top {
+  gap: 24px;
+}
+.layout-width-control {
+  display: grid;
+  grid-template-columns: minmax(180px, 320px) 108px auto;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 460px);
+}
+.layout-width-control > span {
+  color: var(--n-text-color-3);
+  font-size: 12px;
+}
+@media (max-width: 720px) {
+  .layout-width-setting .top { align-items: stretch; }
+  .layout-width-control { grid-template-columns: minmax(0, 1fr) 100px auto; width: 100%; }
 }
 </style>
