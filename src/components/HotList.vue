@@ -101,9 +101,9 @@
             :key="item.id || item.url || item.mobileUrl || `${props.hotData.name}-${index}-${item.originalTitle}`"
             :aria-describedby="previewItem === item ? previewTooltipId : undefined"
             @pointerenter="showPreview(item, $event)"
-            @pointerleave="hidePreview"
+            @pointerleave="schedulePreviewClose"
             @focusin="showPreview(item, $event)"
-            @focusout="hidePreview"
+            @focusout="schedulePreviewClose"
             @keydown.esc="hidePreview"
           >
             <div
@@ -139,7 +139,7 @@
                 />
                 <template v-else>{{ item.displayRank }}</template>
               </n-text>
-              <a
+              <button
                 v-if="
                   showImages &&
                   item.cover &&
@@ -148,20 +148,19 @@
                   !item.fundMetric &&
                   !isIndexOverviewSource
                 "
+                type="button"
                 class="item-thumb"
-                :href="getItemLink(item)"
-                :target="linkTarget"
-                rel="noopener noreferrer nofollow"
-                tabindex="-1"
-                @click.stop
+                :title="previewImageLabel(item)"
+                :aria-label="previewImageLabel(item)"
+                @click.stop="openFullImagePreview(item.cover)"
               >
                 <img
                   :src="getCoverDisplaySrc(item.cover)"
-                  alt=""
+                  :alt="item.displayTitle || item.originalTitle || ''"
                   loading="lazy"
                   @error="coverErrorMap[item.cover] = true"
                 />
-              </a>
+              </button>
               <n-a
                 v-if="item.marketQuote"
                 :style="{ fontSize: store.listFontSize + 'px' }"
@@ -364,7 +363,12 @@
           'is-media-only': previewIsMediaOnly,
         }"
         :style="previewStyle"
-        role="tooltip"
+        role="group"
+        :aria-label="previewItem.displayTitle || previewItem.originalTitle || sourceLabel"
+        @pointerenter="cancelPreviewClose"
+        @pointerleave="schedulePreviewClose"
+        @focusin="cancelPreviewClose"
+        @focusout="schedulePreviewClose"
       >
         <div
           v-if="previewItem.displayDesc || previewItem.rankingMeta?.hasContent"
@@ -393,15 +397,22 @@
             <span>{{ formatPreviewHot(previewItem.hot) }}</span>
           </div>
         </div>
-        <div v-if="previewHasCover" class="preview-cover-wrap">
+        <button
+          v-if="previewHasCover"
+          type="button"
+          class="preview-cover-wrap"
+          :title="previewImageLabel(previewItem)"
+          :aria-label="previewImageLabel(previewItem)"
+          @click.stop="openFullImagePreview(previewItem.cover)"
+        >
           <img
             class="cover"
             :src="getCoverDisplaySrc(previewItem.cover)"
-            alt=""
+            :alt="previewItem.displayTitle || previewItem.originalTitle || ''"
             loading="lazy"
             @error="handlePreviewCoverError(previewItem.cover)"
           />
-        </div>
+        </button>
         <div v-if="previewIsMediaOnly && previewItem.hot" class="preview-meta preview-media-meta">
           <n-icon class="preview-hot-icon" :component="Fire" />
           <span>{{ formatPreviewHot(previewItem.hot) }}</span>
@@ -409,6 +420,14 @@
       </div>
     </Transition>
   </Teleport>
+  <n-image
+    v-if="imagePreviewSrc"
+    ref="imagePreviewRef"
+    class="hot-list__image-preview-trigger"
+    :src="imagePreviewSrc"
+    :preview-src="imagePreviewSrc"
+    :show-toolbar="true"
+  />
 </template>
 
 <script setup>
@@ -416,6 +435,7 @@ import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
 import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
+import { resolveCoverPreviewLayout } from "@/utils/coverPreviewGeometry";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
 import RankingBadgeGroup from "@/components/RankingBadgeGroup.vue";
@@ -517,8 +537,11 @@ const loadingError = ref(false);
 const previewItem = ref(null);
 const previewStyle = ref({});
 const previewMediaCache = new Map();
+const imagePreviewRef = ref(null);
+const imagePreviewSrc = ref("");
 let previewRequestId = 0;
 let previewOpenTimer = null;
+let previewCloseTimer = null;
 let previewTarget = null;
 let previewPlacement = null;
 let previewViewportListenersBound = false;
@@ -527,20 +550,6 @@ const linkTarget = computed(() =>
   store.linkOpenType === "open" ? "_blank" : "_self"
 );
 const previewTextOnlyWidth = 340;
-const previewMediaPresets = {
-  portrait: {
-    detail: { width: 96, height: 128, previewWidth: 420 },
-    mediaOnly: { width: 168, height: 224 },
-  },
-  square: {
-    detail: { width: 112, height: 112, previewWidth: 430 },
-    mediaOnly: { width: 200, height: 200 },
-  },
-  landscape: {
-    detail: { width: 148, height: 96, previewWidth: 460 },
-    mediaOnly: { width: 240, height: 144 },
-  },
-};
 const previewTooltipId = computed(() => `hot-item-preview-${props.hotData.name}`);
 const showImages = computed(() => store.showImages);
 const previewHasCover = computed(
@@ -1043,15 +1052,40 @@ const getPreviewMediaLayout = (cover) => {
         reject(new Error("Invalid preview image dimensions"));
         return;
       }
-      const ratio = naturalWidth / naturalHeight;
-      const kind = ratio < 0.8 ? "portrait" : ratio < 1.25 ? "square" : "landscape";
-      resolve({ kind, ...previewMediaPresets[kind] });
+      const layout = resolveCoverPreviewLayout(naturalWidth, naturalHeight);
+      if (!layout) {
+        reject(new Error("Invalid preview image layout"));
+        return;
+      }
+      resolve(layout);
     };
     image.onerror = reject;
     image.src = getCoverDisplaySrc(cover);
   });
   previewMediaCache.set(cover, mediaPromise);
   return mediaPromise;
+};
+
+const previewImageLabel = (item) =>
+  `${item?.displayTitle || item?.originalTitle || sourceLabel.value || ""}`.trim();
+const cancelPreviewClose = () => {
+  if (!previewCloseTimer) return;
+  window.clearTimeout(previewCloseTimer);
+  previewCloseTimer = null;
+};
+const schedulePreviewClose = () => {
+  cancelPreviewClose();
+  if (!isClient) return;
+  previewCloseTimer = window.setTimeout(() => {
+    previewCloseTimer = null;
+    hidePreview();
+  }, 140);
+};
+const openFullImagePreview = (cover) => {
+  if (!cover || !isClient) return;
+  cancelPreviewClose();
+  imagePreviewSrc.value = getCoverDisplaySrc(cover);
+  nextTick(() => imagePreviewRef.value?.click?.());
 };
 
 const hasPreviewContent = (item) =>
@@ -1171,7 +1205,6 @@ const positionPreview = (item, target, mediaLayout, preferredPlacement = null) =
     height: isMediaOnly ? `${previewHeight}px` : undefined,
     "--preview-cover-width": activeMedia ? `${activeMedia.width}px` : "0px",
     "--preview-cover-height": activeMedia ? `${activeMedia.height}px` : "0px",
-    "--preview-cover-position": mediaLayout?.kind === "portrait" ? "center 28%" : "center",
     ...getPreviewThemeVars(),
   };
   return true;
@@ -1199,6 +1232,7 @@ const showPreview = (item, event) => {
   if ((item?.marketQuote && !isIndexOverviewSource.value) || item?.fundMetric) return;
   if (!isClient || !isDesktop.value || !event?.currentTarget) return;
   if (!hasPreviewContent(item)) return;
+  cancelPreviewClose();
   if (previewOpenTimer) window.clearTimeout(previewOpenTimer);
   const target = event.currentTarget;
   const requestId = ++previewRequestId;
@@ -1226,6 +1260,10 @@ const hidePreview = () => {
   if (previewOpenTimer) {
     window.clearTimeout(previewOpenTimer);
     previewOpenTimer = null;
+  }
+  if (previewCloseTimer) {
+    window.clearTimeout(previewCloseTimer);
+    previewCloseTimer = null;
   }
   previewRequestId += 1;
   previewTarget = null;
@@ -1727,11 +1765,15 @@ onBeforeUnmount(() => {
 
       .item-thumb {
         display: block;
+        box-sizing: border-box;
         width: 50px;
         height: 40px;
+        padding: 0;
         overflow: hidden;
+        border: 0;
         border-radius: 6px;
         background: var(--n-action-color);
+        cursor: zoom-in;
         box-shadow: inset 0 0 0 1px
           color-mix(in srgb, var(--n-border-color) 70%, transparent);
 
@@ -2026,7 +2068,8 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
   max-width: calc(100vw - 24px);
   padding: 12px;
-  pointer-events: none;
+  pointer-events: auto;
+  user-select: text;
   color: var(--preview-title-color, var(--n-text-color, rgba(31, 34, 37, 0.92)));
   background: var(--preview-bg, var(--n-color, #fff));
   border: 1px solid var(--preview-border, var(--n-border-color, rgba(127, 127, 127, 0.2)));
@@ -2046,7 +2089,7 @@ onBeforeUnmount(() => {
   &.is-media-only {
     position: fixed;
     display: block;
-    overflow: hidden;
+    overflow: visible;
     padding: 0;
     border: 0;
     background: transparent;
@@ -2134,21 +2177,38 @@ onBeforeUnmount(() => {
   }
 
   .preview-cover-wrap {
-    overflow: hidden;
+    display: grid;
+    place-items: center;
+    overflow: visible;
     width: var(--preview-cover-width);
     height: var(--preview-cover-height);
+    padding: 0;
+    border: 0;
     border-radius: 8px;
-    background: rgba(127, 127, 127, 0.08);
+    background: transparent;
+    cursor: zoom-in;
   }
 
   .cover {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    object-position: var(--preview-cover-position, center);
+    border-radius: 8px;
+    object-fit: contain;
+    object-position: center;
   }
 }
+
+.hot-list__image-preview-trigger {
+  position: fixed !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  pointer-events: none;
+  opacity: 0;
+}
+
 
 .item-preview-enter-active,
 .item-preview-leave-active {
