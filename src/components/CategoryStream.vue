@@ -7,6 +7,7 @@
       'shows-descriptions': showDescriptions,
       'is-minimal': minimalMode,
       'is-source-page': sourcePageMode,
+      'is-xiaohongshu-source-page': isXiaohongshuSourcePage,
     }"
     :style="streamStyle"
   >
@@ -169,7 +170,7 @@
                     v-for="metric in entry.rankingMeta.metrics"
                     :key="metric.key"
                     class="category-stream__metric"
-                    :class="{ 'is-primary': metric.isPrimary }"
+                    :class="{ 'is-primary': isXiaohongshuSourcePage && metric.isPrimary && metric.key !== 'hot' }"
                   >
                     <span
                       v-if="metric.key === 'hot'"
@@ -178,6 +179,14 @@
                       :aria-label="metric.label"
                     >
                       <n-icon :component="Fire" />
+                    </span>
+                    <span
+                      v-else-if="isXiaohongshuSourcePage && XIAOHONGSHU_METRIC_ICONS[metric.key]"
+                      class="category-stream__metric-icon"
+                      :title="metric.label"
+                      :aria-label="metric.label"
+                    >
+                      <n-icon :component="XIAOHONGSHU_METRIC_ICONS[metric.key]" />
                     </span>
                     <span v-else>{{ metric.label }}</span>
                     <strong>{{ metric.value }}</strong>
@@ -264,7 +273,7 @@ import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { normalizeRankingBadges, resolveRankingBadgeIconUrl } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
-import { Fire, Refresh } from "@icon-park/vue-next";
+import { Bookmark, Comment, Fire, Like, PreviewOpen, Refresh } from "@icon-park/vue-next";
 import { formatTime } from "@/utils/getTime";
 import { getRankingItemMeta } from "@/utils/rankingItemMeta";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
@@ -430,6 +439,15 @@ const queryString = (value) =>
 
 const sourceQuery = computed(() => queryString(route.query.sources));
 const sourcePageMode = computed(() => Boolean(props.sourcePageSource));
+const isXiaohongshuSourcePage = computed(
+  () => sourcePageMode.value && props.sourcePageSource === "xiaohongshu",
+);
+const XIAOHONGSHU_METRIC_ICONS = Object.freeze({
+  views: PreviewOpen,
+  likes: Like,
+  comments: Comment,
+  collects: Bookmark,
+});
 const allowedSourceNames = computed(
   () => new Set(props.sources.map((item) => item.name)),
 );
@@ -2104,8 +2122,9 @@ const hideBrokenMedia = (event) => {
 
 .category-stream.is-source-page .category-stream__row.has-media,
 .category-stream.is-source-page.shows-images .category-stream__row.has-media {
-  grid-template-columns: 42px fit-content(112px) minmax(0, 1fr);
+  grid-template-columns: 42px 112px minmax(0, 1fr);
 }
+
 
 .category-stream.is-source-page.is-compact .category-stream__row,
 .category-stream.is-source-page.is-compact.shows-images .category-stream__row {
@@ -2142,12 +2161,13 @@ const hideBrokenMedia = (event) => {
 .category-stream.is-source-page .category-stream__rank.is-three { color: #eead3f; }
 
 .category-stream.is-source-page .category-stream__media {
-  width: auto;
-  height: auto;
+  width: 112px;
+  height: 84px;
   max-width: 112px;
   max-height: 84px;
+  place-items: center end;
   border-radius: 8px;
-  background: var(--category-stream-action);
+  background: transparent;
 }
 
 .category-stream.is-source-page .category-stream__media.is-cover img {
@@ -2356,9 +2376,11 @@ const hideBrokenMedia = (event) => {
   }
   .category-stream.is-source-page .category-stream__row.has-media,
   .category-stream.is-source-page.shows-images .category-stream__row.has-media {
-    grid-template-columns: 34px fit-content(76px) minmax(0, 1fr);
+    grid-template-columns: 34px 76px minmax(0, 1fr);
   }
   .category-stream.is-source-page .category-stream__media {
+    width: 76px;
+    height: 64px;
     max-width: 76px;
     max-height: 64px;
   }

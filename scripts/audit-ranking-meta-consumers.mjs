@@ -24,9 +24,22 @@ for (const [name, source] of Object.entries({ stream, rail, hotList, list })) {
   );
 }
 
-for (const [name, source] of Object.entries({ stream, list })) {
-  assert.match(source, /is-primary/, `${name} must render a semantic primary metric state`);
-}
+assert.match(
+  stream,
+  /:class="\{ 'is-primary': isXiaohongshuSourcePage && metric\.isPrimary && metric\.key !== 'hot' \}"/,
+  "only non-heat primary metrics on the Xiaohongshu source detail page may receive theme emphasis",
+);
+
+assert.doesNotMatch(
+  stream,
+  /metric\.key === ['"]hot['"][\s\S]{0,180}is-primary/,
+  "Xiaohongshu heat must stay visually neutral even when hot is the active variant",
+);
+assert.doesNotMatch(
+  list,
+  /:class="\{ 'is-primary': metric\.isPrimary \}"|&\.is-primary/,
+  "legacy list view metrics must stay visually neutral",
+);
 
 assert.match(
   hotList,
@@ -47,19 +60,24 @@ const primaryStyleBlock = (name, source, selector) => {
   return source.slice(start, end);
 };
 
-for (const [name, source, selector] of [
-  ["CategoryStream", stream, ".category-stream__metric.is-primary"],
-  ["CategorySourceRail", rail, ".category-story-card__primary-metric"],
-  ["List", list, "&.is-primary"],
-]) {
-  const block = primaryStyleBlock(name, source, selector);
-  assert.match(block, /\bcolor\s*:/, `${name} primary metric must keep theme color`);
-  assert.doesNotMatch(
-    block,
-    /\b(?:background(?:-color)?|border(?:-[\w-]+)?|padding(?:-[\w-]+)?|font-weight)\s*:/,
-    `${name} primary metric must use color as its only visual distinction`,
-  );
-}
+const streamPrimaryBlock = primaryStyleBlock(
+  "CategoryStream",
+  stream,
+  ".category-stream__metric.is-primary",
+);
+assert.match(streamPrimaryBlock, /\bcolor\s*:/, "Xiaohongshu detail primary metric must keep theme color");
+assert.doesNotMatch(
+  streamPrimaryBlock,
+  /\b(?:background(?:-color)?|border(?:-[\w-]+)?|padding(?:-[\w-]+)?|font-weight)\s*:/,
+  "Xiaohongshu detail primary metric must use color as its only visual distinction",
+);
+
+const railPrimaryBlock = primaryStyleBlock(
+  "CategorySourceRail",
+  rail,
+  ".category-story-card__primary-metric",
+);
+assert.match(railPrimaryBlock, /color:\s*inherit/, "card metrics must keep the default neutral text color");
 
 assert.doesNotMatch(
   rail,
@@ -78,6 +96,9 @@ assert.doesNotMatch(
   "CategorySourceRail must not label every ranking value as heat",
 );
 
+assert.match(stream, /const isXiaohongshuSourcePage = computed\([\s\S]{0,180}props\.sourcePageSource === ["']xiaohongshu["']/, "Xiaohongshu metric emphasis must be scoped to its source detail page");
+assert.match(stream, /XIAOHONGSHU_METRIC_ICONS = Object\.freeze\(\{[\s\S]{0,220}views: PreviewOpen[\s\S]{0,80}likes: Like[\s\S]{0,80}comments: Comment[\s\S]{0,80}collects: Bookmark/, "Xiaohongshu engagement labels must use established IconPark glyphs");
+assert.match(stream, /isXiaohongshuSourcePage && XIAOHONGSHU_METRIC_ICONS\[metric\.key\][\s\S]{0,260}:title="metric\.label"[\s\S]{0,160}:aria-label="metric\.label"/, "Xiaohongshu engagement icons must retain accessible text semantics");
 assert.match(stream, /metric\.key === ['"]hot['"][\s\S]{0,240}<n-icon :component="Fire" \/>/, "CategoryStream heat metrics must use the established IconPark Fire icon");
 assert.match(rail, /primaryMetric\.key === ['"]hot['"][\s\S]{0,300}<n-icon :component="Fire" \/>/, "CategorySourceRail heat metrics must use the established IconPark Fire icon");
 assert.match(list, /metric\.key === ['"]hot['"][\s\S]{0,240}<n-icon :component="Fire" \/>/, "List heat metrics must use the established IconPark Fire icon");

@@ -53,7 +53,7 @@ const catalog = {
           key: "ranking",
           label: "榜单",
           options: [
-            { key: "hot", label: "实时热点", recommendedRefreshIntervalSeconds: 180 },
+            { key: "hot", label: "热搜", recommendedRefreshIntervalSeconds: 180 },
           ],
         },
       ],
@@ -88,7 +88,7 @@ pgyXiaohongshu.variantDimensions = [
     key: "ranking",
     label: "榜单",
     options: [
-      { key: "hot", label: "实时热点" },
+      { key: "hot", label: "热搜" },
       { key: "read", label: "阅读榜" },
       { key: "like", label: "点赞榜" },
       { key: "collect", label: "收藏榜" },
@@ -106,7 +106,7 @@ pgyXiaohongshu.variantDimensions = [
   },
 ];
 pgyXiaohongshu.variantGroups[0].options = [
-  { key: "hot", label: "实时热点", dimensionValues: { ranking: "hot" }, runtimeAvailability: "available" },
+  { key: "hot", label: "热搜", dimensionValues: { ranking: "hot" }, runtimeAvailability: "available" },
   ...["read", "like", "collect"].flatMap((ranking) =>
     ["3d", "7d", "14d", "30d"].map((period) => ({
       key: `${ranking}-${period}`,

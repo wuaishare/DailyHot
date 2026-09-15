@@ -216,7 +216,6 @@
                             v-for="metric in item.rankingMeta.metrics"
                             :key="metric.key"
                             class="ranking-metric"
-                            :class="{ 'is-primary': metric.isPrimary }"
                           >
                             <span
                               v-if="metric.key === 'hot'"
@@ -1360,12 +1359,6 @@ onBeforeUnmount(() => {
           font-size: 12px;
           font-weight: 600;
           font-variant-numeric: tabular-nums;
-        }
-        &.is-primary {
-          color: var(--n-primary-color, #ea444d);
-          strong {
-            color: inherit;
-          }
         }
       }
       .message {
