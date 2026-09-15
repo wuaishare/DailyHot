@@ -131,8 +131,15 @@
                 <div class="category-story-card__title">{{ entry.title }}</div>
                 <p v-if="entry.description">{{ entry.description }}</p>
                 <div class="category-story-card__meta">
-                  <span>{{ entry.hot ? `${copy.heat} ${formatCompactMetric(entry.hot, locale)}` : entry.sourceLabel }}</span>
-                  <span v-if="entry.author">{{ entry.author }}</span>
+                  <span
+                    v-if="entry.rankingMeta?.primaryMetric"
+                    class="category-story-card__primary-metric"
+                  >
+                    {{ entry.rankingMeta.primaryMetric.label }}
+                    <strong>{{ entry.rankingMeta.primaryMetric.value }}</strong>
+                  </span>
+                  <span v-else class="category-story-card__context-meta">{{ entry.sourceLabel }}</span>
+                  <span v-if="entry.author" class="category-story-card__context-meta">{{ entry.author }}</span>
                 </div>
               </div>
             </a>
@@ -170,7 +177,7 @@ import { normalizeRankingBadges } from '@/utils/rankingBadges';
 import { useTrendsCatalogRevision } from '@/composables/useTrendsCatalogRevision';
 import { DATA_REFRESH_EVENT } from '@/utils/dataRefresh';
 import { formatTime } from '@/utils/getTime';
-import { formatCompactMetric } from '@/utils/compactMetric';
+import { getRankingItemMeta } from '@/utils/rankingItemMeta';
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },
@@ -347,6 +354,9 @@ const sourceEntries = (sourceName) => {
         description,
         hot: stripText(item?.hot || ''),
         author: stripText(item?.author || ''),
+        rankingMeta: getRankingItemMeta(item, locale.value, {
+          variant: result?.variant || sourceSubtype(sourceName),
+        }),
         cover: item?.cover || '',
         href: item?.url || item?.mobileUrl || '',
         suffixBadges: normalizeRankingBadges(item?.badges, 3).filter((badge) => badge.placement !== 'prefix'),
@@ -702,9 +712,27 @@ onBeforeUnmount(() => {
 .category-story-card:not(.has-cover) p {
   -webkit-line-clamp: 3;
 }
-.category-story-card__meta { display: flex; justify-content: space-between; gap: 8px; color: inherit; opacity: .74; font-size: 10px; }
+.category-story-card__meta { display: flex; justify-content: space-between; gap: 8px; color: inherit; font-size: 10px; }
+.category-story-card__context-meta { opacity: .74; }
+.category-story-card__primary-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 0;
+  color: var(--csr-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.category-story-card__primary-metric strong { font-weight: 780; }
+.category-story-card.has-cover .category-story-card__primary-metric {
+  padding: 1px 5px;
+  color: rgba(255,255,255,.96);
+  border: 1px solid color-mix(in srgb, var(--csr-primary) 58%, rgba(255,255,255,.42));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--csr-primary) 54%, rgba(12,14,18,.62));
+}
 .category-story-card.has-cover p { opacity: .82; }
-.category-story-card.has-cover .category-story-card__meta { opacity: .84; }
+.category-story-card.has-cover .category-story-card__context-meta { opacity: .84; }
 .category-story-card.skeleton { background: linear-gradient(100deg,var(--csr-panel-soft) 20%,color-mix(in srgb,var(--csr-panel-soft) 55%,var(--csr-panel)) 45%,var(--csr-panel-soft) 70%); background-size: 200% 100%; animation: csr-shimmer 1.4s linear infinite; }
 .category-source-section__error { display: flex; align-items: center; justify-content: space-between; min-height: 92px; padding: 14px; border-radius: 12px; background: var(--csr-panel-soft); color: var(--csr-text-3); font-size: 12px; }
 .category-source-section__error button { border: 0; background: transparent; color: var(--csr-primary); cursor: pointer; font-weight: 650; }

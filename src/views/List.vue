@@ -216,6 +216,7 @@
                             v-for="metric in item.rankingMeta.metrics"
                             :key="metric.key"
                             class="ranking-metric"
+                            :class="{ 'is-primary': metric.isPrimary }"
                           >
                             <span>{{ metric.label }}</span>
                             <strong>{{ metric.value }}</strong>
@@ -569,7 +570,9 @@ const currentPageItems = computed(() =>
           ? getMarketQuoteView(item, locale.value)
           : null,
         fundMetric: getFundMetricView(item, locale.value),
-        rankingMeta: getRankingItemMeta(item, locale.value),
+        rankingMeta: getRankingItemMeta(item, locale.value, {
+          variant: listData.value?.variant || listSubType.value,
+        }),
         hasReadableTranslation:
           shouldProtectEntityTitles.value ||
           Boolean(item?.noAutoTranslate) ||
@@ -1349,6 +1352,16 @@ onBeforeUnmount(() => {
           font-size: 12px;
           font-weight: 600;
           font-variant-numeric: tabular-nums;
+        }
+        &.is-primary {
+          color: var(--n-primary-color, #ea444d);
+          border-color: color-mix(in srgb, var(--n-primary-color, #ea444d) 32%, transparent);
+          background: color-mix(in srgb, var(--n-primary-color, #ea444d) 8%, transparent);
+          font-weight: 700;
+          strong {
+            color: inherit;
+            font-weight: 760;
+          }
         }
       }
       .message {

@@ -210,6 +210,7 @@ const normalizeTrendsRankingResult = (payload) => {
     total: items.length,
     fromCache: true,
     updateTime,
+    variant: feed?.variant || "",
     centralized: true,
     observationId: payload?.observation?.id || null,
     data: items.map((item, index) => ({
