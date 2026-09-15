@@ -728,7 +728,7 @@ onBeforeUnmount(() => {
   align-items: baseline;
   gap: 3px;
   min-width: 0;
-  color: var(--csr-primary);
+  color: inherit;
   font-variant-numeric: tabular-nums;
 }
 .category-story-card.has-cover p { opacity: .82; }
