@@ -101,6 +101,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "小红书",
           name: "xiaohongshu",
+          coverPresentationMode: "mixed",
           order: 0.5,
           show: true,
           category: "综合",
@@ -108,6 +109,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "百度",
           name: "baidu",
+          coverPresentationMode: "mixed",
           order: 1,
           show: true,
           category: "综合",
@@ -136,6 +138,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "腾讯新闻",
           name: "qq-news",
+          coverPresentationMode: "landscape-uniform",
           order: 5,
           show: true,
           category: "综合",
@@ -353,6 +356,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "豆瓣电影",
           name: "douban-movie",
+          coverPresentationMode: "portrait-uniform",
           order: 16,
           show: true,
           category: "生活",
@@ -360,6 +364,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "微信读书",
           name: "weread",
+          coverPresentationMode: "portrait-uniform",
           order: 17,
           show: true,
           category: "生活",
@@ -437,6 +442,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "米游社",
           name: "miyoushe",
+          coverPresentationMode: "landscape-uniform",
           order: 28,
           show: true,
           category: "游戏",
@@ -458,6 +464,7 @@ export const mainStore = defineStore("mainData", {
         {
           label: "崩坏3",
           name: "honkai",
+          coverPresentationMode: "landscape-uniform",
           order: 31,
           show: true,
           category: "游戏",

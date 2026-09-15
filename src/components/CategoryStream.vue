@@ -9,6 +9,7 @@
       'is-source-page': sourcePageMode,
       'is-xiaohongshu-source-page': isXiaohongshuSourcePage,
     }"
+    :data-cover-presentation="sourcePageMode ? currentCoverPresentationMode : undefined"
     :style="streamStyle"
   >
     <div v-if="!props.sources.length" class="category-stream__empty">
@@ -132,7 +133,7 @@
                 :preview-src="coverSrc(entry.cover)"
                 :alt="coverPreviewLabel(entry)"
                 lazy
-                object-fit="contain"
+                :object-fit="currentCoverObjectFit"
                 :img-props="{ tabindex: 0, role: 'button', onKeydown: handleCoverPreviewKeydown, onLoad: handleCoverImageLoad }"
                 @error="hideBrokenMedia"
               />
@@ -294,6 +295,10 @@ import { formatTime } from "@/utils/getTime";
 import { getRankingItemMeta } from "@/utils/rankingItemMeta";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
+import {
+  COVER_PRESENTATION_MODES,
+  resolveCoverPresentationMode,
+} from "@/utils/coverPresentation";
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },
@@ -729,6 +734,17 @@ const sourceLabelFor = (source) =>
 const currentPageSource = computed(() =>
   props.sources.find((source) => source.name === props.sourcePageSource) || null,
 );
+const defaultPageSource = computed(() =>
+  store.defaultNewsArr.find((source) => source.name === props.sourcePageSource) || null,
+);
+const currentCoverPresentationMode = computed(() =>
+  resolveCoverPresentationMode(currentPageSource.value, defaultPageSource.value),
+);
+const currentCoverObjectFit = computed(() =>
+  currentCoverPresentationMode.value === COVER_PRESENTATION_MODES.MIXED
+    ? "cover"
+    : "contain",
+);
 const currentSourceLoading = computed(() =>
   Boolean(currentPageSource.value && sourceStates[currentPageSource.value.name] === "loading"),
 );
@@ -1041,6 +1057,7 @@ const handleLogoError = (event) => {
 const coverSrc = (cover) => getCoverDisplaySrc(cover);
 const coverPreviewLabel = (entry) => `${entry?.title || ""} · ${copy.value.previewImage}`;
 const COVER_HOVER_BOOST = 1.1;
+const COVER_HOVER_MIN_SCALE = 1.35;
 const COVER_HOVER_MAX_SCALE = 4.5;
 const syncCoverHoverGeometry = (image) => {
   if (!sourcePageMode.value || !image?.isConnected) return;
@@ -1058,7 +1075,7 @@ const syncCoverHoverGeometry = (image) => {
     1,
   );
   const hoverScale = Math.min(
-    Math.max(fillScale * COVER_HOVER_BOOST, COVER_HOVER_BOOST),
+    Math.max(fillScale * COVER_HOVER_BOOST, COVER_HOVER_MIN_SCALE),
     COVER_HOVER_MAX_SCALE,
   );
   const hoverShiftX = Math.max(0, (mediaWidth - imageWidth) / 2);
@@ -2189,6 +2206,16 @@ const hideBrokenMedia = (event) => {
   grid-template-columns: 42px 112px minmax(0, 1fr);
 }
 
+.category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__row.has-media,
+.category-stream.is-source-page[data-cover-presentation="mixed"].shows-images .category-stream__row.has-media {
+  grid-template-columns: 42px 84px minmax(0, 1fr);
+}
+
+.category-stream.is-source-page[data-cover-presentation="portrait-uniform"] .category-stream__row.has-media,
+.category-stream.is-source-page[data-cover-presentation="portrait-uniform"].shows-images .category-stream__row.has-media {
+  grid-template-columns: 42px 60px minmax(0, 1fr);
+}
+
 .category-stream.is-source-page.is-compact .category-stream__row,
 .category-stream.is-source-page.is-compact.shows-images .category-stream__row {
   min-height: 58px;
@@ -2237,6 +2264,20 @@ const hideBrokenMedia = (event) => {
   background: transparent;
 }
 
+.category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__media {
+  width: 84px;
+  height: 84px;
+  max-width: 84px;
+  max-height: 84px;
+}
+
+.category-stream.is-source-page[data-cover-presentation="portrait-uniform"] .category-stream__media {
+  width: 60px;
+  height: 84px;
+  max-width: 60px;
+  max-height: 84px;
+}
+
 .category-stream.is-source-page .category-stream__media.is-cover img {
   display: block;
   width: auto;
@@ -2264,8 +2305,8 @@ const hideBrokenMedia = (event) => {
   display: block;
   width: auto;
   height: auto;
-  max-width: 112px;
-  max-height: 84px;
+  max-width: 100%;
+  max-height: 100%;
   border-radius: 8px;
   object-fit: contain;
   object-position: center;
@@ -2274,6 +2315,14 @@ const hideBrokenMedia = (event) => {
   transform-origin: right center;
   transition: left 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
   will-change: transform;
+}
+
+.category-stream.is-source-page[data-cover-presentation="mixed"] :deep(.category-stream__preview-image.n-image img) {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
 }
 
 .category-stream.is-source-page :deep(.category-stream__preview-image.n-image img:focus-visible) {
@@ -2289,7 +2338,7 @@ const hideBrokenMedia = (event) => {
   .category-stream.is-source-page .category-stream__row.has-media:hover :deep(.category-stream__preview-image.n-image img) {
     left: var(--cover-hover-shift-x, 0px);
     z-index: 5;
-    transform: scale(var(--cover-hover-scale, 1.1));
+    transform: scale(var(--cover-hover-scale, 1.35));
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
   }
 }
@@ -2499,19 +2548,35 @@ const hideBrokenMedia = (event) => {
   .category-stream.is-source-page.shows-images .category-stream__row.has-media {
     grid-template-columns: 34px 76px minmax(0, 1fr);
   }
+  .category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__row.has-media,
+  .category-stream.is-source-page[data-cover-presentation="mixed"].shows-images .category-stream__row.has-media {
+    grid-template-columns: 34px 64px minmax(0, 1fr);
+  }
+  .category-stream.is-source-page[data-cover-presentation="portrait-uniform"] .category-stream__row.has-media,
+  .category-stream.is-source-page[data-cover-presentation="portrait-uniform"].shows-images .category-stream__row.has-media {
+    grid-template-columns: 34px 44px minmax(0, 1fr);
+  }
   .category-stream.is-source-page .category-stream__media {
     width: 76px;
     height: 64px;
     max-width: 76px;
     max-height: 64px;
   }
-  .category-stream.is-source-page .category-stream__media.is-cover img {
-    max-width: 76px;
+  .category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__media {
+    width: 64px;
+    height: 64px;
+    max-width: 64px;
     max-height: 64px;
   }
-  .category-stream.is-source-page :deep(.category-stream__preview-image.n-image img) {
-    max-width: 76px;
+  .category-stream.is-source-page[data-cover-presentation="portrait-uniform"] .category-stream__media {
+    width: 44px;
+    height: 64px;
+    max-width: 44px;
     max-height: 64px;
+  }
+  .category-stream.is-source-page .category-stream__media.is-cover img {
+    max-width: 100%;
+    max-height: 100%;
   }
   .category-stream.is-source-page .category-stream__rank {
     font-size: 14px;
