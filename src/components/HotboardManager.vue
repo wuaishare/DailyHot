@@ -119,7 +119,61 @@
           </div>
         </aside>
 
-        <section class="boards-panel">
+        <section class="boards-panel" :style="managerGridStyle">
+          <div class="manager-display-bar">
+            <div class="manager-display-summary">
+              <div>
+                <strong>{{ copy.displayStrategy }}</strong>
+                <span>{{ currentLayoutSummary }}</span>
+              </div>
+              <n-tag size="small" :bordered="false">{{ currentContextLabel }}</n-tag>
+            </div>
+            <div class="manager-display-controls">
+              <label class="manager-control">
+                <span>{{ copy.compact }}</span>
+                <n-switch v-model:value="store.compactMode" size="small" />
+              </label>
+              <label class="manager-control manager-control--columns">
+                <span>{{ copy.columns }}</span>
+                <n-select
+                  size="tiny"
+                  :show-checkmark="false"
+                  :value="activeColumnCount"
+                  :options="columnOptions"
+                  @update:value="setActiveColumnCount"
+                />
+              </label>
+              <label class="manager-control">
+                <span>{{ copy.pinned }}</span>
+                <n-switch v-model:value="store.showPinnedRankings" size="small" />
+              </label>
+            </div>
+            <div class="manager-cover-policy">
+              <div class="manager-cover-policy__head">
+                <div>
+                  <strong>{{ copy.covers }}</strong>
+                  <span>{{ copy.coversTip }}</span>
+                </div>
+                <n-switch v-model:value="store.showImages" size="small" />
+              </div>
+              <div class="manager-cover-policy__grid" :class="{ 'is-disabled': !store.showImages }">
+                <label
+                  v-for="option in coverOptions"
+                  :key="option.key"
+                  class="manager-cover-option"
+                  :class="{ 'is-current': option.key === currentCoverKey }"
+                >
+                  <span>{{ option.label }} <em v-if="option.key === currentCoverKey">{{ copy.current }}</em></span>
+                  <n-switch
+                    size="small"
+                    :value="store[option.field]"
+                    :disabled="!store.showImages"
+                    @update:value="(value) => (store[option.field] = value)"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
           <div class="boards-toolbar">
             <div>
               <strong>{{ selectedCategoryLabel }}</strong>
@@ -216,6 +270,7 @@ import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { useI18n } from "vue-i18n";
 import { Drag } from "@icon-park/vue-next";
 import { BUILTIN_CATEGORIES } from "@/config/site-metadata.mjs";
+import { useRoute } from "vue-router";
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -224,6 +279,51 @@ const props = defineProps({
 const emit = defineEmits(["update:show"]);
 const store = mainStore();
 const { locale } = useI18n({ useScope: "global" });
+const route = useRoute();
+const columnOptions = [3, 4, 5].map((value) => ({ value, label: String(value) }));
+const activeColumnCount = computed(() =>
+  store.compactMode ? Number(store.homeCompactColumns || 5) : Number(store.homeCardColumns || 4),
+);
+const setActiveColumnCount = (value) => {
+  const next = Math.max(3, Math.min(5, Number(value) || 4));
+  if (store.compactMode) store.homeCompactColumns = next;
+  else store.homeCardColumns = next;
+};
+const managerGridStyle = computed(() => ({
+  '--manager-grid-columns': String(activeColumnCount.value),
+}));
+const currentViewMode = computed(() =>
+  store.resolveCategoryViewMode(props.initialCategoryId || null),
+);
+const currentCoverKey = computed(() => {
+  if (/\/rank\//.test(route.path)) return 'detail';
+  return currentViewMode.value === 'stream' ? 'stream' : 'card';
+});
+const coverOptions = computed(() => [
+  { key: 'card', field: 'showCardImages', label: copy.value.cardCover },
+  { key: 'stream', field: 'showStreamImages', label: copy.value.streamCover },
+  { key: 'detail', field: 'showDetailImages', label: copy.value.detailCover },
+  { key: 'preview', field: 'showPreviewImages', label: copy.value.previewCover },
+]);
+const currentContextLabel = computed(() =>
+  currentCoverKey.value === 'detail'
+    ? copy.value.detailContext
+    : currentCoverKey.value === 'stream'
+      ? copy.value.streamContext
+      : copy.value.cardContext,
+);
+const currentCoverEnabled = computed(() => {
+  const option = coverOptions.value.find((item) => item.key === currentCoverKey.value);
+  return store.showImages !== false && option ? store[option.field] !== false : store.showImages !== false;
+});
+const currentLayoutSummary = computed(() =>
+  [
+    currentContextLabel.value,
+    store.compactMode ? copy.value.compactState : copy.value.regularState,
+    `${activeColumnCount.value}${copy.value.columnUnit}`,
+    currentCoverEnabled.value ? copy.value.coverOn : copy.value.coverOff,
+  ].join(' · '),
+);
 const selectedCategoryId = ref("all");
 const search = ref("");
 const addingCategory = ref(false);
@@ -237,7 +337,26 @@ const sortableCategories = ref([]);
 const COPY = {
   "zh-CN": {
     title: "热榜管理",
-    subtitle: "分类、归属、启停与排序集中管理",
+    subtitle: "分类、归属、启停、排序与显示策略集中管理",
+    displayStrategy: "展示策略",
+    compact: "紧凑模式",
+    columns: "榜单列数",
+    columnUnit: "列",
+    pinned: "显示置顶",
+    covers: "封面图片",
+    coversTip: "按实际页面场景独立控制",
+    cardCover: "卡片",
+    streamCover: "信息流",
+    detailCover: "单榜详情",
+    previewCover: "悬浮预览",
+    current: "当前",
+    cardContext: "卡片视图",
+    streamContext: "信息流",
+    detailContext: "单榜详情",
+    compactState: "紧凑",
+    regularState: "普通",
+    coverOn: "封面开",
+    coverOff: "封面关",
     settingsTabs: "设置栏目",
     boardsTab: "榜单管理",
     generalTab: "通用设置",
@@ -260,7 +379,8 @@ const COPY = {
   },
   en: {
     title: "Hotboard Manager",
-    subtitle: "Manage categories, visibility and order",
+    subtitle: "Manage categories, rankings and display strategy",
+    displayStrategy: "Display strategy", compact: "Compact", columns: "Columns", columnUnit: " cols", pinned: "Pinned", covers: "Covers", coversTip: "Control covers by page context", cardCover: "Cards", streamCover: "Stream", detailCover: "Detail", previewCover: "Hover preview", current: "Current", cardContext: "Card view", streamContext: "Stream", detailContext: "Ranking detail", compactState: "Compact", regularState: "Regular", coverOn: "Covers on", coverOff: "Covers off",
     settingsTabs: "Settings sections",
     boardsTab: "Boards",
     generalTab: "General",
@@ -283,7 +403,8 @@ const COPY = {
   },
   "zh-TW": {
     title: "熱榜管理",
-    subtitle: "集中管理分類、歸屬、顯示與排序",
+    subtitle: "集中管理分類、歸屬、顯示、排序與版面策略",
+    displayStrategy: "顯示策略", compact: "緊湊模式", columns: "榜單欄數", columnUnit: "欄", pinned: "顯示置頂", covers: "封面圖片", coversTip: "依實際頁面情境獨立控制", cardCover: "卡片", streamCover: "資訊流", detailCover: "單榜詳情", previewCover: "懸浮預覽", current: "目前", cardContext: "卡片檢視", streamContext: "資訊流", detailContext: "單榜詳情", compactState: "緊湊", regularState: "一般", coverOn: "封面開", coverOff: "封面關",
     settingsTabs: "設定分頁",
     boardsTab: "榜單管理",
     generalTab: "通用設定",
@@ -306,7 +427,8 @@ const COPY = {
   },
   ja: {
     title: "ランキング管理",
-    subtitle: "カテゴリ・所属・表示・並び順をまとめて管理",
+    subtitle: "カテゴリ・表示・並び順・レイアウトをまとめて管理",
+    displayStrategy: "表示戦略", compact: "コンパクト", columns: "列数", columnUnit: "列", pinned: "固定項目", covers: "カバー画像", coversTip: "ページごとに個別管理", cardCover: "カード", streamCover: "ストリーム", detailCover: "詳細", previewCover: "ホバー", current: "現在", cardContext: "カード表示", streamContext: "ストリーム", detailContext: "詳細表示", compactState: "コンパクト", regularState: "通常", coverOn: "カバーあり", coverOff: "カバーなし",
     settingsTabs: "設定セクション",
     boardsTab: "ランキング管理",
     generalTab: "一般設定",
@@ -330,7 +452,8 @@ const COPY = {
   },
   ko: {
     title: "인기 목록 관리",
-    subtitle: "분류·소속·표시·정렬을 한곳에서 관리",
+    subtitle: "분류·표시·정렬·레이아웃을 한곳에서 관리",
+    displayStrategy: "표시 전략", compact: "컴팩트", columns: "열 수", columnUnit: "열", pinned: "고정 항목", covers: "커버 이미지", coversTip: "페이지 상황별로 개별 제어", cardCover: "카드", streamCover: "스트림", detailCover: "상세", previewCover: "호버 미리보기", current: "현재", cardContext: "카드 보기", streamContext: "스트림", detailContext: "상세 보기", compactState: "컴팩트", regularState: "일반", coverOn: "커버 켬", coverOff: "커버 끔",
     settingsTabs: "설정 섹션",
     boardsTab: "목록 관리",
     generalTab: "일반 설정",
@@ -548,7 +671,7 @@ const restoreDefaults = () => {
 
 <style scoped>
 .hotboard-manager {
-  width: min(1120px, calc(100vw - 32px));
+  width: min(1400px, calc(100vw - 32px));
   height: min(820px, calc(100vh - 32px));
   max-height: min(820px, calc(100vh - 32px));
   display: flex;
@@ -593,7 +716,7 @@ const restoreDefaults = () => {
 }
 .manager-layout {
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   max-height: none;
@@ -609,6 +732,38 @@ const restoreDefaults = () => {
   padding-left: 16px;
   overflow: auto;
 }
+.manager-display-bar {
+  display: grid;
+  gap: 9px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid var(--n-border-color, rgba(127,127,127,.18));
+  border-radius: 12px;
+  background: var(--n-action-color, rgba(127,127,127,.04));
+}
+.manager-display-summary,
+.manager-display-controls,
+.manager-cover-policy__head,
+.manager-cover-option {
+  display: flex;
+  align-items: center;
+}
+.manager-display-summary,
+.manager-cover-policy__head { justify-content: space-between; gap: 12px; }
+.manager-display-summary > div,
+.manager-cover-policy__head > div { display: grid; gap: 2px; min-width: 0; }
+.manager-display-summary span,
+.manager-cover-policy__head span { color: var(--n-text-color-3); font-size: 10px; }
+.manager-display-controls { gap: 8px; flex-wrap: wrap; }
+.manager-control { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; padding: 4px 7px; border: 1px solid var(--n-border-color); border-radius: 8px; font-size: 10px; }
+.manager-control--columns :deep(.n-select) { width: 72px; }
+.manager-cover-policy { display: grid; gap: 7px; padding-top: 8px; border-top: 1px solid var(--n-border-color); }
+.manager-cover-policy__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.manager-cover-policy__grid.is-disabled { opacity: .55; }
+.manager-cover-option { justify-content: space-between; gap: 7px; min-width: 0; min-height: 30px; padding: 5px 7px; border: 1px solid var(--n-border-color); border-radius: 8px; font-size: 10px; }
+.manager-cover-option.is-current { border-color: color-mix(in srgb, var(--n-primary-color) 38%, var(--n-border-color)); background: color-mix(in srgb, var(--n-primary-color) 8%, transparent); }
+.manager-cover-option span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.manager-cover-option em { margin-left: 4px; color: var(--n-primary-color); font-size: 8px; font-style: normal; font-weight: 700; }
 .panel-toolbar,
 .boards-toolbar {
   margin-bottom: 12px;
@@ -675,7 +830,7 @@ const restoreDefaults = () => {
 }
 .board-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--manager-grid-columns, 4), minmax(0, 1fr));
   gap: 10px;
   align-content: start;
 }
@@ -725,8 +880,9 @@ const restoreDefaults = () => {
     grid-template-columns: 190px minmax(0, 1fr);
   }
   .board-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  .manager-cover-policy__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 680px) {
   .hotboard-manager {
@@ -749,9 +905,9 @@ const restoreDefaults = () => {
   .boards-panel {
     padding: 12px 0 0;
   }
-  .board-grid {
-    grid-template-columns: 1fr;
-  }
+  .board-grid { grid-template-columns: 1fr; }
+  .manager-cover-policy__grid { grid-template-columns: 1fr 1fr; }
+  .manager-display-summary { align-items: flex-start; }
   .board-search {
     width: 160px;
   }

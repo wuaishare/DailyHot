@@ -55,35 +55,8 @@
         <n-switch v-model:value="headerFixed" :round="false" />
       </div>
     </n-card>
-    <n-card v-if="showsDisplay" class="set-item">
-      <div class="top">
-        <div class="name">
-          <n-text class="text">{{ t("settings.compactMode") }}</n-text>
-          <n-text class="tip" :depth="3">
-            {{ t("settings.compactModeTip") }}
-          </n-text>
-        </div>
-        <n-switch v-model:value="compactMode" :round="false" />
-      </div>
-    </n-card>
-    <n-card v-if="showsDisplay" class="set-item full column-count-setting">
-      <div class="top">
-        <div class="name">
-          <n-text class="text">{{ t("settings.homeColumns") }}</n-text>
-          <n-text class="tip" :depth="3">{{ t("settings.homeColumnsTip") }}</n-text>
-        </div>
-        <div class="column-count-controls">
-          <label class="column-count-control">
-            <span>{{ t("settings.homeCardColumns") }}</span>
-            <n-select v-model:value="homeCardColumns" :options="columnOptions" size="small" :show-checkmark="false" />
-          </label>
-          <label class="column-count-control">
-            <span>{{ t("settings.homeCompactColumns") }}</span>
-            <n-select v-model:value="homeCompactColumns" :options="columnOptions" size="small" :show-checkmark="false" />
-          </label>
-        </div>
-      </div>
-    </n-card>
+
+
     <n-card v-if="showsDisplay" class="set-item full layout-width-setting">
       <div class="top">
         <div class="name">
@@ -110,44 +83,8 @@
         </div>
       </div>
     </n-card>
-    <n-card v-if="showsDisplay" class="set-item full cover-visibility-setting">
-      <div class="cover-visibility-head">
-        <div class="name">
-          <n-text class="text">{{ t("settings.showImages") }}</n-text>
-          <n-text class="tip" :depth="3">{{ t("settings.showImagesTip") }}</n-text>
-        </div>
-        <n-switch v-model:value="showImages" :round="false" />
-      </div>
-      <div class="cover-visibility-grid" :class="{ 'is-disabled': !showImages }">
-        <label class="cover-visibility-option">
-          <span><strong>{{ t("settings.showCardImages") }}</strong><small>{{ t("settings.showCardImagesTip") }}</small></span>
-          <n-switch v-model:value="showCardImages" :disabled="!showImages" :round="false" />
-        </label>
-        <label class="cover-visibility-option">
-          <span><strong>{{ t("settings.showStreamImages") }}</strong><small>{{ t("settings.showStreamImagesTip") }}</small></span>
-          <n-switch v-model:value="showStreamImages" :disabled="!showImages" :round="false" />
-        </label>
-        <label class="cover-visibility-option">
-          <span><strong>{{ t("settings.showDetailImages") }}</strong><small>{{ t("settings.showDetailImagesTip") }}</small></span>
-          <n-switch v-model:value="showDetailImages" :disabled="!showImages" :round="false" />
-        </label>
-        <label class="cover-visibility-option">
-          <span><strong>{{ t("settings.showPreviewImages") }}</strong><small>{{ t("settings.showPreviewImagesTip") }}</small></span>
-          <n-switch v-model:value="showPreviewImages" :disabled="!showImages" :round="false" />
-        </label>
-      </div>
-    </n-card>
-    <n-card v-if="showsDisplay" class="set-item">
-      <div class="top">
-        <div class="name">
-          <n-text class="text">{{ t("settings.showPinnedRankings") }}</n-text>
-          <n-text class="tip" :depth="3">
-            {{ t("settings.showPinnedRankingsTip") }}
-          </n-text>
-        </div>
-        <n-switch v-model:value="showPinnedRankings" :round="false" />
-      </div>
-    </n-card>
+
+
     <n-card v-if="showsDisplay" class="set-item full view-memory-setting">
       <div class="view-memory-head">
         <div class="name">
@@ -213,58 +150,7 @@
         </n-space>
       </div>
     </n-card>
-    <n-card v-if="showsCategories" class="set-item full">
-      <div class="top" style="align-items: flex-start">
-        <div class="name">
-          <n-text class="text">{{ t("settings.categoryManagement") }}</n-text>
-          <n-text class="tip" :depth="3">
-            {{ t("settings.categoryManagementTip") }}
-          </n-text>
-        </div>
-        <div class="categories">
-          <div class="add">
-            <n-input
-              v-model:value="newCategory"
-              size="small"
-              :placeholder="t('settings.newCategoryPlaceholder')"
-              style="width: 180px"
-            />
-            <n-button size="small" type="primary" @click="handleAddCategory">
-              {{ t("settings.addCategory") }}
-            </n-button>
-          </div>
-          <div class="list">
-            <div
-              class="cat-item"
-              v-for="cat in categories"
-              :key="cat.id"
-            >
-              <n-input
-                v-if="cat.builtin"
-                size="small"
-                disabled
-                :value="getCategoryDisplayName(cat)"
-              />
-              <n-input
-                v-else
-                size="small"
-                v-model:value="cat.name"
-                @change="(val) => handleRenameCategory(cat.id, val)"
-              />
-              <n-button
-                size="small"
-                type="error"
-                ghost
-                :disabled="cat.builtin"
-                @click="store.removeCategory(cat.id)"
-              >
-                {{ t("settings.deleteCategory") }}
-              </n-button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </n-card>
+
     <n-h6 v-if="showsMisc" id="settings-misc" prefix="bar">
       {{ t("settings.miscSection") }}
     </n-h6>
@@ -416,7 +302,7 @@ import { OPEN_CONSENT_EVENT } from "@/utils/analytics";
 import { useOsTheme } from "naive-ui";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { buildFixedLocalePath, getCategoryLabel } from "@/utils/locale";
+import { buildFixedLocalePath } from "@/utils/locale";
 
 const props = defineProps({
   embedded: { type: Boolean, default: false },
@@ -424,15 +310,12 @@ const props = defineProps({
     type: String,
     default: "all",
     validator: (value) =>
-      ["all", "display", "categories", "misc"].includes(value),
+      ["all", "display", "misc"].includes(value),
   },
 });
 const embedded = computed(() => props.embedded);
 const showsDisplay = computed(() =>
   ["all", "display"].includes(props.section),
-);
-const showsCategories = computed(() =>
-  ["all", "categories"].includes(props.section),
 );
 const showsMisc = computed(() => ["all", "misc"].includes(props.section));
 const store = mainStore();
@@ -444,33 +327,16 @@ const {
   siteThemeAuto,
   linkOpenType,
   headerFixed,
-  compactMode,
-  homeCardColumns,
-  homeCompactColumns,
   siteContainerWidth,
   focusContainerWidth,
-  showPinnedRankings,
   categoryViewMode,
   listFontSize,
   autoRefreshEnabled,
   autoRefreshInterval,
-  showImages,
-  showCardImages,
-  showStreamImages,
-  showDetailImages,
-  showPreviewImages,
   categoryEnabled,
   activeCategory,
 } = storeToRefs(store);
-const categories = computed(() =>
-  store.categories.slice().sort((a, b) => a.order - b.order),
-);
-const newCategory = ref("");
 const cacheVersion = ref(getCacheVersion());
-const getCategoryDisplayName = (category) =>
-  category?.builtin
-    ? getCategoryLabel(category.name, locale.value)
-    : category?.name || "";
 const importFileRef = ref(null);
 const isAnalyticsPanelVisible = !import.meta.env.PROD;
 const persistedKeys = [
@@ -540,13 +406,6 @@ const linkOptions = computed(() => [
     value: "href",
   },
 ]);
-const columnOptions = computed(() =>
-  [3, 4, 5].map((value) => ({
-    value,
-    label: t("settings.columns", { count: value }),
-  })),
-);
-
 const listFontMarks = computed(() => ({
   14: t("settings.listFontSmall"),
   16: t("settings.listFontDefault"),
@@ -674,18 +533,6 @@ const handleImportFile = async (event) => {
   await nextTick();
   store.checkNewsUpdate();
   $message.success(t("settings.importSuccess"));
-};
-
-const handleAddCategory = () => {
-  if (!newCategory.value) return;
-  const ok = store.addCategory(newCategory.value.trim());
-  if (ok) {
-    newCategory.value = "";
-  }
-};
-
-const handleRenameCategory = (id, val) => {
-  store.renameCategory(id, val);
 };
 
 const openConsentSettings = () => {
@@ -862,31 +709,6 @@ watch(
         }
       }
 
-      .categories {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        width: 100%;
-
-        .add {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .list {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-
-          .cat-item {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            max-width: 320px;
-          }
-        }
-      }
     }
 
     &.view-memory-setting {
@@ -934,49 +756,6 @@ watch(
   }
 }
 
-.column-count-setting .top,
-.cover-visibility-setting .cover-visibility-head {
-  gap: 24px;
-}
-.column-count-controls {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(150px, 190px));
-  gap: 10px;
-}
-.column-count-control {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 86px;
-  align-items: center;
-  gap: 8px;
-  color: var(--n-text-color-2);
-  font-size: 12px;
-}
-.cover-visibility-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-.cover-visibility-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 14px;
-}
-.cover-visibility-grid.is-disabled { opacity: .62; }
-.cover-visibility-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 54px;
-  padding: 9px 11px;
-  border: 1px solid var(--n-border-color);
-  border-radius: 9px;
-  background: var(--n-action-color);
-}
-.cover-visibility-option > span { display: grid; gap: 2px; min-width: 0; }
-.cover-visibility-option strong { color: var(--n-text-color-2); font-size: 12px; font-weight: 650; }
-.cover-visibility-option small { color: var(--n-text-color-3); font-size: 10px; line-height: 1.35; }
 .layout-width-setting .top {
   gap: 24px;
 }
@@ -992,8 +771,7 @@ watch(
   font-size: 12px;
 }
 @media (max-width: 720px) {
-  .layout-width-setting .top, .column-count-setting .top { align-items: stretch; }
+  .layout-width-setting .top { align-items: stretch; }
   .layout-width-control { grid-template-columns: minmax(0, 1fr) 100px auto; width: 100%; }
-  .column-count-controls, .cover-visibility-grid { grid-template-columns: minmax(0, 1fr); width: 100%; }
 }
 </style>

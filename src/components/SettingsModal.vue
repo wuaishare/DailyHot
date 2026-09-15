@@ -65,12 +65,7 @@
           role="tabpanel"
           :aria-label="activeTabLabel"
         >
-          <GeneralSettings
-            v-if="activeTab !== 'ranking'"
-            embedded
-            :section="activeTab"
-          />
-          <RankingOrderSettings v-else />
+          <GeneralSettings embedded :section="activeTab" />
         </div>
       </div>
     </section>
@@ -79,13 +74,8 @@
 
 <script setup>
 import GeneralSettings from "@/components/GeneralSettings.vue";
-import { defineAsyncComponent } from "vue";
 import { mainStore } from "@/store";
 import { useI18n } from "vue-i18n";
-
-const loadRankingOrderSettings = () =>
-  import("@/components/RankingOrderSettings.vue");
-const RankingOrderSettings = defineAsyncComponent(loadRankingOrderSettings);
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -94,50 +84,11 @@ const emit = defineEmits(["update:show"]);
 const store = mainStore();
 const { t } = useI18n({ useScope: "global" });
 const activeTab = ref("display");
-let rankingPrefetchHandle = null;
-
-const prefetchRankingSettings = () => {
-  void loadRankingOrderSettings();
-};
-const scheduleRankingPrefetch = () => {
-  if (typeof window === "undefined") return;
-  if ("requestIdleCallback" in window) {
-    rankingPrefetchHandle = window.requestIdleCallback(
-      prefetchRankingSettings,
-      { timeout: 1800 },
-    );
-    return;
-  }
-  rankingPrefetchHandle = window.setTimeout(prefetchRankingSettings, 1000);
-};
-const cancelRankingPrefetch = () => {
-  if (rankingPrefetchHandle == null || typeof window === "undefined") return;
-  if (
-    "cancelIdleCallback" in window &&
-    typeof window.cancelIdleCallback === "function"
-  ) {
-    window.cancelIdleCallback(rankingPrefetchHandle);
-  } else {
-    window.clearTimeout(rankingPrefetchHandle);
-  }
-  rankingPrefetchHandle = null;
-};
-
 const tabs = computed(() => [
   {
     value: "display",
     label: t("settings.displayAndView"),
     icon: '<svg viewBox="0 0 18 18"><rect x="2.5" y="3" width="13" height="9" rx="2"/><path d="M6 15h6M9 12v3"/></svg>',
-  },
-  {
-    value: "categories",
-    label: t("settings.categoryManagement"),
-    icon: '<svg viewBox="0 0 18 18"><path d="M3 4.5h5l1 1.5h6v8H3z"/><path d="M3 7h12"/></svg>',
-  },
-  {
-    value: "ranking",
-    label: t("settings.rankingOrder"),
-    icon: '<svg viewBox="0 0 18 18"><path d="M6 4h9M6 9h9M6 14h9"/><circle cx="3" cy="4" r="1"/><circle cx="3" cy="9" r="1"/><circle cx="3" cy="14" r="1"/></svg>',
   },
   {
     value: "misc",
@@ -172,8 +123,6 @@ watch(
   },
 );
 
-onMounted(scheduleRankingPrefetch);
-onBeforeUnmount(cancelRankingPrefetch);
 </script>
 
 <style scoped>

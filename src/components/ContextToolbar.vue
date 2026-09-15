@@ -213,7 +213,7 @@
       </div>
 
       <button
-        v-if="routeKind === 'home' || routeKind === 'category'"
+        v-if="routeKind === 'home' || routeKind === 'category' || routeKind === 'list'"
         type="button"
         class="context-toolbar__manager"
         :aria-label="managerButtonLabel"
