@@ -78,4 +78,8 @@ assert.doesNotMatch(
   "CategorySourceRail must not label every ranking value as heat",
 );
 
+assert.match(stream, /metric\.key === ['"]hot['"][\s\S]{0,240}<UiGlyph name="fire" \/>/, "CategoryStream heat metrics must use the fire glyph");
+assert.match(rail, /primaryMetric\.key === ['"]hot['"][\s\S]{0,300}<UiGlyph name="fire" \/>/, "CategorySourceRail heat metrics must use the fire glyph");
+assert.match(list, /metric\.key === ['"]hot['"][\s\S]{0,240}<UiGlyph name="fire" \/>/, "List heat metrics must use the fire glyph");
+
 console.log("[ranking-meta-consumers] result variant, shared resolver and semantic primary states verified");

@@ -171,7 +171,15 @@
                     class="category-stream__metric"
                     :class="{ 'is-primary': metric.isPrimary }"
                   >
-                    <span>{{ metric.label }}</span>
+                    <span
+                      v-if="metric.key === 'hot'"
+                      class="category-stream__heat-label"
+                      :title="metric.label"
+                      :aria-label="metric.label"
+                    >
+                      <UiGlyph name="fire" />
+                    </span>
+                    <span v-else>{{ metric.label }}</span>
                     <strong>{{ metric.value }}</strong>
                   </span>
                   <span

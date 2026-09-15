@@ -389,7 +389,7 @@
             </span>
           </div>
           <div v-else-if="previewItem.hot" class="preview-meta">
-            <n-icon :component="Fire" />
+            <UiGlyph class="preview-hot-icon" name="fire" />
             <span>{{ formatPreviewHot(previewItem.hot) }}</span>
           </div>
         </div>
@@ -403,7 +403,7 @@
           />
         </div>
         <div v-if="previewIsMediaOnly && previewItem.hot" class="preview-meta preview-media-meta">
-          <n-icon :component="Fire" />
+          <UiGlyph class="preview-hot-icon" name="fire" />
           <span>{{ formatPreviewHot(previewItem.hot) }}</span>
         </div>
       </div>
@@ -412,7 +412,7 @@
 </template>
 
 <script setup>
-import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
+import { Drag, Refresh, More } from "@icon-park/vue-next";
 import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
@@ -1721,14 +1721,14 @@ onBeforeUnmount(() => {
         gap: 8px;
 
         &.has-inline-cover {
-          grid-template-columns: auto 54px minmax(0, 1fr);
+          grid-template-columns: auto 50px minmax(0, 1fr);
         }
       }
 
       .item-thumb {
         display: block;
-        width: 54px;
-        height: 34px;
+        width: 50px;
+        height: 40px;
         overflow: hidden;
         border-radius: 6px;
         background: var(--n-action-color);
@@ -1740,6 +1740,7 @@ onBeforeUnmount(() => {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          object-position: center;
           transition: transform 0.18s ease;
         }
 

@@ -218,13 +218,21 @@
                             class="ranking-metric"
                             :class="{ 'is-primary': metric.isPrimary }"
                           >
-                            <span>{{ metric.label }}</span>
+                            <span
+                              v-if="metric.key === 'hot'"
+                              class="ranking-heat-label"
+                              :title="metric.label"
+                              :aria-label="metric.label"
+                            >
+                              <UiGlyph name="fire" />
+                            </span>
+                            <span v-else>{{ metric.label }}</span>
                             <strong>{{ metric.value }}</strong>
                           </span>
                         </div>
                         <div v-else class="message">
                           <div class="hot" v-if="item.hot">
-                            <n-icon :depth="3" :component="Fire" />
+                            <UiGlyph class="ranking-hot-icon" name="fire" />
                             <n-text
                               class="hot-text"
                               :depth="3"
@@ -272,7 +280,6 @@
 </template>
 
 <script setup>
-import { Fire } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
 import {
   getSourceCategoryIds,
@@ -302,6 +309,7 @@ import {
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { useTrendsCatalogRevision } from "@/composables/useTrendsCatalogRevision";
 import { getRankingItemMeta } from "@/utils/rankingItemMeta";
+import UiGlyph from "@/components/ui/UiGlyph.vue";
 import {
   getFundMetricView,
   getMarketEntityDisplayTitle,
@@ -1279,17 +1287,22 @@ onBeforeUnmount(() => {
           }
         }
         .cover-wrapper {
+          display: flex;
           flex: 0 0 auto;
+          align-items: center;
+          justify-content: center;
           opacity: 1;
           overflow: hidden;
           border-radius: 10px;
           .cover {
-            width: 78px;
-            height: 104px;
-            object-fit: cover;
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 116px;
+            max-height: 104px;
+            object-fit: contain;
             object-position: center;
             border-radius: 10px;
-            display: block;
             background: rgba(0, 0, 0, 0.05);
           }
         }
@@ -1316,8 +1329,8 @@ onBeforeUnmount(() => {
           }
           .cover-wrapper {
             .cover {
-              width: 84px;
-              height: 112px;
+              max-width: 132px;
+              max-height: 112px;
             }
           }
         }
