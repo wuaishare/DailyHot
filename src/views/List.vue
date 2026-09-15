@@ -1287,22 +1287,17 @@ onBeforeUnmount(() => {
           }
         }
         .cover-wrapper {
-          display: flex;
           flex: 0 0 auto;
-          align-items: center;
-          justify-content: center;
           opacity: 1;
           overflow: hidden;
           border-radius: 10px;
           .cover {
-            display: block;
-            width: auto;
-            height: auto;
-            max-width: 116px;
-            max-height: 104px;
-            object-fit: contain;
+            width: 78px;
+            height: 104px;
+            object-fit: cover;
             object-position: center;
             border-radius: 10px;
+            display: block;
             background: rgba(0, 0, 0, 0.05);
           }
         }
@@ -1329,8 +1324,8 @@ onBeforeUnmount(() => {
           }
           .cover-wrapper {
             .cover {
-              max-width: 132px;
-              max-height: 112px;
+              width: 84px;
+              height: 112px;
             }
           }
         }

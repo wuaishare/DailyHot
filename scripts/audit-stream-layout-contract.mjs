@@ -78,9 +78,12 @@ assert.match(hotList, /const formatPreviewHot = \(value\) => formatCompactMetric
 assert.match(hotList, /<UiGlyph class="preview-hot-icon" name="fire" \/>/);
 assert.match(hotList, /grid-template-columns: auto 50px minmax\(0, 1fr\)/);
 assert.match(hotList, /\.item-thumb \{[\s\S]{0,120}width: 50px;[\s\S]{0,80}height: 40px;/);
-assert.match(listView, /\.cover \{[\s\S]{0,220}max-width: 116px;[\s\S]{0,80}max-height: 104px;[\s\S]{0,80}object-fit: contain;/);
-assert.match(listView, /max-width: 132px;[\s\S]{0,80}max-height: 112px;/);
 assert.match(component, /\.category-stream__media \{[\s\S]{0,120}width: 92px;[\s\S]{0,80}height: 56px;/);
+assert.match(component, /category-stream\.is-source-page \.category-stream__row\.has-media[\s\S]{0,180}fit-content\(112px\)/);
+assert.match(component, /category-stream\.is-source-page \.category-stream__media \{[\s\S]{0,160}max-width: 112px;[\s\S]{0,80}max-height: 84px;/);
+assert.match(component, /category-stream\.is-source-page \.category-stream__media\.is-cover img \{[\s\S]{0,180}max-width: 112px;[\s\S]{0,80}max-height: 84px;[\s\S]{0,80}object-fit: contain;/);
+assert.match(component, /@media \(max-width: 680px\)[\s\S]*fit-content\(76px\)[\s\S]*max-width: 76px;[\s\S]*max-height: 64px;/);
+assert.match(listView, /\.cover \{[\s\S]{0,100}width: 78px;[\s\S]{0,80}height: 104px;[\s\S]{0,80}object-fit: cover;/);
 assert.match(store, /showStreamDescriptions: true/);
 assert.match(store, /"showStreamDescriptions"/);
 
