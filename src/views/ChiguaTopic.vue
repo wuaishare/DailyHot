@@ -19,16 +19,49 @@
 
     <section class="topic-section">
       <div class="topic-workspace-header">
-        <div class="topic-workspace-summary">
+        <div class="radar-identity">
+          <div class="radar-mark" aria-hidden="true">
+            <svg viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="24" />
+              <circle cx="32" cy="32" r="16" />
+              <circle cx="32" cy="32" r="8" />
+              <path d="M32 8v48M8 32h48M15 15l34 34M49 15 15 49" />
+              <path class="radar-mark__beam" d="M32 32 52 18" />
+              <circle class="radar-mark__ping" cx="45" cy="23" r="2.8" />
+            </svg>
+          </div>
           <div class="topic-workspace-title">
+            <span class="radar-eyebrow">{{ ui.radar }}</span>
             <h1>{{ copy.title }}</h1>
             <p>{{ copy.description }}</p>
           </div>
+        </div>
+        <div class="radar-actions">
           <div v-if="dashboard" class="hero-stats">
-            <strong>{{ dashboard.total || data.length }}</strong>
-            <span>{{ ui.events }}</span>
-            <em>{{ dashboard.sourceCount }} {{ ui.sources }}</em>
+            <span><strong>{{ dashboard.total || data.length }}</strong>{{ ui.events }}</span>
+            <span><strong>{{ dashboard.sourceCount }}</strong>{{ ui.sources }}</span>
           </div>
+          <button type="button" class="radar-refresh" :class="{ 'is-loading': loading }" :disabled="loading" @click="loadTopic(true)">
+            <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M14.5 6.1A6 6 0 1 0 15 10.2M14.5 3.5v3.2h-3.2" /></svg>
+            <span>{{ ui.refresh }}</span>
+          </button>
+        </div>
+        <div v-if="trendItems.length" class="radar-trend-rail" :aria-label="ui.trend">
+          <span class="radar-trend-label">{{ ui.trend }} <b>{{ trendMatchCount }}</b></span>
+          <a
+            v-for="item in trendItems.slice(0, 4)"
+            :key="`radar-${item.id}`"
+            class="radar-trend-item"
+            :class="`is-${eventTrend(item)?.signal || 'steady'}`"
+            :href="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            :title="item.title"
+          >
+            <em>{{ trendSignalLabel(eventTrend(item)?.signal) }}</em>
+            <strong>{{ trendMetric(eventTrend(item)) }}</strong>
+            <span>{{ item.title }}</span>
+          </a>
         </div>
       </div>
 
@@ -93,10 +126,12 @@
             :lanes="featuredGroups"
             :aria-label="copy.feedTitle"
             @select="selectFeaturedLane"
+            @load-more="loadMoreFeaturedLane"
           >
             <template #item="{ item }">
               <a
                 class="event-lane-item"
+                :class="{ 'is-serious': isSeriousEvent(item) }"
                 :href="item.url"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -108,6 +143,10 @@
                   @error="onImageError($event, item)"
                 />
                 <div>
+                  <span v-if="isSeriousEvent(item)" class="event-lane-serious" :title="ui.seriousTip">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c1.2 1.4 1.7 2.2 1.7 3.1A1.7 1.7 0 0 1 8 7 1.7 1.7 0 0 1 6.3 5.3C6.3 4.4 6.8 3.6 8 2.2Zm-2.2 6h4.4v5.2H5.8V8.2Zm-1.5 5.2h7.4" /></svg>
+                    {{ ui.serious }}
+                  </span>
                   <strong>{{ item.title }}</strong>
                   <p>
                     <span>{{ sourceLabel(item) }}</span>
@@ -119,14 +158,6 @@
             </template>
           </TopicLaneGrid>
 
-          <TrendIntelligenceStrip
-            v-if="trendItems.length"
-            :items="trendItems"
-            :total="trendMatchCount"
-            :window-seconds="result?.dynamics?.windowSeconds || 3600"
-            :locale="locale"
-          />
-
           <div v-if="loading && !result" class="topic-loading">
             <n-skeleton text :repeat="9" />
           </div>
@@ -135,6 +166,7 @@
               v-for="(item, index) in pagedData"
               :key="item.id"
               class="event-item"
+              :class="{ 'is-serious': isSeriousEvent(item) }"
             >
               <span class="event-rank" :class="rankClass(pageStart + index + 1)">{{
                 String(pageStart + index + 1).padStart(2, "0")
@@ -161,6 +193,10 @@
                     @error="onLogoError"
                   />
                   <span>{{ sourceLabel(item) }}</span>
+                  <em v-if="isSeriousEvent(item)" class="serious-event-badge" :title="ui.seriousTip">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c1.2 1.4 1.7 2.2 1.7 3.1A1.7 1.7 0 0 1 8 7 1.7 1.7 0 0 1 6.3 5.3C6.3 4.4 6.8 3.6 8 2.2Zm-2.2 6h4.4v5.2H5.8V8.2Zm-1.5 5.2h7.4" /></svg>
+                    {{ ui.serious }}
+                  </em>
                   <em
                     v-if="isResonanceItem(item)"
                     class="event-resonance"
@@ -202,13 +238,38 @@
                     :title="formatFullTime(item.timestamp)"
                     >{{ formatFreshness(item.timestamp) }}</time
                   >
-                  <span
-                    v-for="confirmation in visibleConfirmations(item)"
-                    :key="`${item.id}-${confirmation.source}-${confirmation.variant || 'default'}`"
-                    class="source-pill"
+                  <n-popover
+                    v-if="supportingConfirmations(item).length"
+                    trigger="hover"
+                    placement="top-start"
+                    :show-arrow="false"
+                    :delay="80"
                   >
-                    {{ evidenceLabel(confirmation, { includeRole: true }) }}
-                  </span>
+                    <template #trigger>
+                      <button type="button" class="event-evidence-summary">
+                        <span>{{ ui.corroboration }}：</span>
+                        <template v-for="(confirmation, confirmationIndex) in evidenceSummary(item)" :key="`${item.id}-summary-${confirmation.source}-${confirmation.variant || 'default'}`">
+                          <b>{{ evidenceLabel(confirmation) }}</b><i v-if="confirmationIndex < evidenceSummary(item).length - 1">、</i>
+                        </template>
+                        <em v-if="supportingConfirmations(item).length > evidenceSummary(item).length">+{{ supportingConfirmations(item).length - evidenceSummary(item).length }}</em>
+                      </button>
+                    </template>
+                    <div class="event-evidence-popover">
+                      <strong>{{ ui.evidenceSources }}</strong>
+                      <template v-for="confirmation in supportingConfirmations(item)" :key="`${item.id}-evidence-${confirmation.source}-${confirmation.variant || 'default'}`">
+                        <a v-if="confirmation.url" :href="confirmation.url" target="_blank" rel="noopener noreferrer">
+                          <span>{{ evidenceLabel(confirmation) }}</span>
+                          <em v-if="confirmation.rank">#{{ confirmation.rank }}</em>
+                          <small>{{ evidenceRoleLabel(confirmation) }}</small>
+                        </a>
+                        <span v-else class="is-unlinked">
+                          <span>{{ evidenceLabel(confirmation) }}</span>
+                          <em v-if="confirmation.rank">#{{ confirmation.rank }}</em>
+                          <small>{{ evidenceRoleLabel(confirmation) }}</small>
+                        </span>
+                      </template>
+                    </div>
+                  </n-popover>
                 </div>
               </div>
               <a
@@ -271,7 +332,7 @@
               @click="activeConfirmed = !activeConfirmed"
             >{{ ui.resonance }} <span>{{ resonanceMatchCount }}</span></button>
             <button v-if="hasFilters" type="button" class="reset-filter" @click="resetFilters">{{ ui.reset }}</button>
-            <n-button size="small" tertiary :loading="loading" @click="loadTopic(true)">{{ ui.refresh }}</n-button>
+
           </div>
         </aside>
       </div>
@@ -282,7 +343,6 @@
 <script setup>
 import CompactFilter from "@/components/CompactFilter.vue";
 import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
-import TrendIntelligenceStrip from "@/components/TrendIntelligenceStrip.vue";
 import RankingBadgeGroup from "@/components/RankingBadgeGroup.vue";
 import { getTopicFeed } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
@@ -346,6 +406,12 @@ const UI_COPY = {
     matches: "条结果",
     resonance: "多平台共振",
     refresh: "刷新",
+    radar: "娱乐热点态势雷达",
+    trend: "榜位趋势",
+    serious: "严肃事件",
+    seriousTip: "涉及死亡、遇难、讣告等严肃主题，采用中性低饱和展示。",
+    evidenceSources: "佐证来源",
+    scrollMore: "继续滚动加载",
     filters: "吃瓜事件筛选",
     perPage: "每页",
     category: "分类",
@@ -366,7 +432,7 @@ const UI_COPY = {
       fresh: "新瓜速递",
       rising: "正在发酵",
       resonance: "多平台共振",
-      hot: "高位热瓜",
+      hot: "高位焦点",
     },
     featuredSubtitles: {
       fresh: "优先看刚进入这一轮热议的新事件",
@@ -396,6 +462,12 @@ const UI_COPY = {
     matches: "results",
     resonance: "Cross-platform",
     refresh: "Refresh",
+    radar: "Entertainment signal radar",
+    trend: "Rank movement",
+    serious: "Serious event",
+    seriousTip: "Sensitive events involving death, casualties or obituaries use a neutral presentation.",
+    evidenceSources: "Evidence sources",
+    scrollMore: "Scroll to load more",
     filters: "Entertainment filters",
     perPage: "Per page",
     category: "Category",
@@ -416,7 +488,7 @@ const UI_COPY = {
       fresh: "Just in",
       rising: "Gaining traction",
       resonance: "Cross-platform",
-      hot: "Top-ranked",
+      hot: "Top focus",
     },
     featuredSubtitles: { fresh: "New events entering the current buzz cycle", rising: "Moving up, re-entering or breaking into the top 10", resonance: "Entertainment events appearing across independent platforms", hot: "Events already ranked in the top 10 of a core board" },
     trendSignals: { reentry: "Re-entered", breakthrough: "Top 10", rising: "Rank up", falling: "Rank down", new: "New entry" },
@@ -441,6 +513,12 @@ const UI_COPY = {
     matches: "筆結果",
     resonance: "多平台共振",
     refresh: "重新整理",
+    radar: "娛樂熱點態勢雷達",
+    trend: "榜位趨勢",
+    serious: "嚴肅事件",
+    seriousTip: "涉及死亡、遇難、訃告等嚴肅主題，採用中性低飽和展示。",
+    evidenceSources: "佐證來源",
+    scrollMore: "繼續捲動載入",
     filters: "吃瓜事件篩選",
     perPage: "每頁",
     category: "分類",
@@ -461,7 +539,7 @@ const UI_COPY = {
       fresh: "新瓜速遞",
       rising: "正在發酵",
       resonance: "多平台共振",
-      hot: "高位熱瓜",
+      hot: "高位焦點",
     },
     featuredSubtitles: { fresh: "優先看剛進入這一輪熱議的新事件", rising: "榜位正在上升、重回榜單或進入前十", resonance: "多個獨立平台同時出現的娛樂事件", hot: "已經進入核心榜單前十的高位事件" },
     trendSignals: { reentry: "重新上榜", breakthrough: "進入前十", rising: "榜位上升", falling: "榜位下降", new: "新上榜" },
@@ -486,6 +564,12 @@ const UI_COPY = {
     matches: "件",
     resonance: "複数平台",
     refresh: "更新",
+    radar: "エンタメ動向レーダー",
+    trend: "順位トレンド",
+    serious: "重大・慎重な話題",
+    seriousTip: "死亡・事故・訃報などを含む話題は中立的な低彩度表示にします。",
+    evidenceSources: "補強ソース",
+    scrollMore: "スクロールしてさらに表示",
     filters: "エンタメフィルター",
     perPage: "件数",
     category: "分類",
@@ -506,7 +590,7 @@ const UI_COPY = {
       fresh: "新着速報",
       rising: "上昇中",
       resonance: "複数プラットフォーム",
-      hot: "上位トピック",
+      hot: "上位フォーカス",
     },
     featuredSubtitles: { fresh: "現在の話題サイクルに入った新しいイベント", rising: "順位上昇・再ランクイン・トップ10入り", resonance: "複数の独立プラットフォームで同時に出現", hot: "主要ランキングですでにトップ10入り" },
     trendSignals: { reentry: "再ランクイン", breakthrough: "トップ10入り", rising: "順位上昇", falling: "順位下降", new: "新規ランクイン" },
@@ -531,6 +615,12 @@ const UI_COPY = {
     matches: "개 결과",
     resonance: "다중 플랫폼",
     refresh: "새로고침",
+    radar: "엔터테인먼트 동향 레이더",
+    trend: "순위 추세",
+    serious: "엄중한 이슈",
+    seriousTip: "사망·사고·부고 등 엄중한 주제는 중립적이고 낮은 채도로 표시합니다.",
+    evidenceSources: "근거 출처",
+    scrollMore: "스크롤하여 더 불러오기",
     filters: "엔터테인먼트 필터",
     perPage: "페이지당",
     category: "분류",
@@ -551,7 +641,7 @@ const UI_COPY = {
       fresh: "새 소식",
       rising: "상승 중",
       resonance: "다중 플랫폼",
-      hot: "상위 이슈",
+      hot: "상위 포커스",
     },
     featuredSubtitles: { fresh: "현재 화제 흐름에 새로 진입한 이벤트", rising: "순위 상승·재진입·TOP 10 진입", resonance: "여러 독립 플랫폼에서 동시에 포착", hot: "핵심 랭킹 TOP 10에 이미 진입" },
     trendSignals: { reentry: "재진입", breakthrough: "TOP 10 진입", rising: "순위 상승", falling: "순위 하락", new: "신규 진입" },
@@ -661,7 +751,18 @@ const rankClass = (rank) => ({
   "is-three": rank === 3,
   "is-top10": rank > 3 && rank <= 10,
 });
-const visibleConfirmations = (item) => confirmations(item).slice(1, 5);
+const supportingConfirmations = (item) =>
+  confirmations(item).slice(1).filter((entry) => entry?.source);
+const evidenceSummary = (item) => supportingConfirmations(item).slice(0, 3);
+const evidenceRoleLabel = (entry) =>
+  entry?.role === "corroboration"
+    ? ui.value.corroboration
+    : entry?.role === "support"
+      ? ui.value.support
+      : "";
+const SERIOUS_EVENT_PATTERN = /(去世|逝世|病逝|离世|辞世|身亡|遇难|罹难|讣告|死亡|去世享年|逝世享年|passed away|died|death|obituary|訃報|死去|死亡|사망|별세|부고)/i;
+const isSeriousEvent = (item) =>
+  SERIOUS_EVENT_PATTERN.test(`${item?.title || ""} ${item?.desc || ""}`);
 const confirmationTitle = (item) =>
   confirmations(item)
     .map((entry) => evidenceLabel(entry, { includeRole: true }))
@@ -830,7 +931,29 @@ const handlePageChange = () => {
   });
 };
 
-const FEATURED_LANE_LIMIT = 3;
+const FEATURED_LANE_VISIBLE = 5;
+const FEATURED_LANE_BATCH = 5;
+const FEATURED_LANE_INITIAL_RENDER = FEATURED_LANE_VISIBLE + FEATURED_LANE_BATCH;
+const featuredLaneRenderLimits = reactive({
+  fresh: FEATURED_LANE_INITIAL_RENDER,
+  rising: FEATURED_LANE_INITIAL_RENDER,
+  resonance: FEATURED_LANE_INITIAL_RENDER,
+  hot: FEATURED_LANE_INITIAL_RENDER,
+});
+const resetFeaturedLaneRenderLimits = () => {
+  Object.keys(featuredLaneRenderLimits).forEach((key) => {
+    featuredLaneRenderLimits[key] = FEATURED_LANE_INITIAL_RENDER;
+  });
+};
+const loadMoreFeaturedLane = (lane) => {
+  const key = lane?.key;
+  if (!key || !Object.prototype.hasOwnProperty.call(featuredLaneRenderLimits, key)) return;
+  const total = Number(lane?.count || 0);
+  featuredLaneRenderLimits[key] = Math.min(
+    total || featuredLaneRenderLimits[key] + FEATURED_LANE_BATCH,
+    featuredLaneRenderLimits[key] + FEATURED_LANE_BATCH,
+  );
+};
 const featuredGroups = computed(() => {
   const sortLaneItems = (key, items) =>
     items.slice().sort((a, b) => {
@@ -851,7 +974,10 @@ const featuredGroups = computed(() => {
       label: ui.value.featured[key],
       subtitle: ui.value.featuredSubtitles?.[key] || "",
       count: items.length,
-      items: items.slice(0, FEATURED_LANE_LIMIT),
+      items: items.slice(0, featuredLaneRenderLimits[key] || FEATURED_LANE_INITIAL_RENDER),
+      hasMore: items.length > (featuredLaneRenderLimits[key] || FEATURED_LANE_INITIAL_RENDER),
+      scrollable: true,
+      loadMoreLabel: ui.value.scrollMore,
       actionLabel: `${viewAllLabel.value} ${items.length}`,
       filter: { focus: key },
     };
@@ -1082,6 +1208,7 @@ const normalizeTopicFeed = (feed) => {
 };
 
 const loadTopic = async (force = false) => {
+  if (force) resetFeaturedLaneRenderLimits();
   loading.value = true;
   loadError.value = "";
   try {
@@ -1132,47 +1259,192 @@ watch(locale, () => void loadTopic(false));
   border-radius: 12px;
 }
 .topic-workspace-header {
+  --radar-cyan: #168a84;
+  --radar-violet: #705ac8;
+  position: relative;
+  isolation: isolate;
   display: grid;
-  gap: 10px;
-  padding-bottom: 10px;
-  margin-bottom: 10px;
-  border-bottom: 1px solid var(--n-border-color, rgba(127, 127, 127, 0.18));
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 11px 16px;
+  margin-bottom: 12px;
+  padding: 13px 15px 11px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--radar-cyan) 18%, var(--n-border-color));
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 7% -15%, color-mix(in srgb, var(--radar-cyan) 12%, transparent), transparent 34%),
+    radial-gradient(circle at 92% 5%, color-mix(in srgb, var(--radar-violet) 8%, transparent), transparent 32%),
+    color-mix(in srgb, var(--n-color) 97%, var(--radar-cyan) 3%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--n-color) 70%, transparent);
 }
-.topic-workspace-summary {
+.topic-workspace-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(108deg, transparent 0 67%, color-mix(in srgb, var(--radar-cyan) 4%, transparent) 67% 68%, transparent 68%);
+}
+.radar-identity {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-}
-.topic-workspace-title {
+  gap: 12px;
   min-width: 0;
 }
+.radar-mark {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  color: var(--radar-cyan);
+}
+.radar-mark svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: .75;
+  opacity: .86;
+}
+.radar-mark svg circle:not(.radar-mark__ping),
+.radar-mark svg > path:not(.radar-mark__beam) { opacity: .38; }
+.radar-mark__beam { stroke: var(--radar-violet); stroke-width: 1.4; }
+.radar-mark__ping {
+  fill: var(--radar-violet);
+  stroke: color-mix(in srgb, var(--radar-violet) 44%, transparent);
+  stroke-width: 5;
+  transform-origin: 45px 23px;
+  animation: radar-ping 1.8s ease-out infinite;
+}
+@keyframes radar-ping {
+  0%, 38% { opacity: .95; transform: scale(.78); }
+  100% { opacity: .28; transform: scale(1.28); }
+}
+.radar-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--radar-cyan);
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: .12em;
+}
+.topic-workspace-title { min-width: 0; }
 .topic-workspace-title h1 {
   margin: 0;
   font-size: clamp(20px, 2vw, 26px);
-  line-height: 1.2;
+  line-height: 1.18;
+  letter-spacing: -.015em;
 }
 .topic-workspace-title p {
-  max-width: 940px;
+  max-width: 820px;
   margin: 4px 0 0;
   color: var(--n-text-color-3);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.45;
 }
-.hero-stats {
-  display: grid;
-  min-width: 100px;
-  justify-items: end;
+.radar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
-.hero-stats strong {
-  font-size: 28px;
+.hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-stats > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-height: 30px;
+  padding: 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--n-border-color) 78%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--n-color) 82%, transparent);
+  color: var(--n-text-color-3);
+  font-size: 9px;
+  white-space: nowrap;
+}
+.hero-stats > span strong {
+  color: var(--n-text-color);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
-.hero-stats span,
-.hero-stats em {
+.radar-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--radar-cyan) 24%, var(--n-border-color));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--radar-cyan) 6%, var(--n-color));
+  color: var(--radar-cyan);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 680;
+  cursor: pointer;
+}
+.radar-refresh:disabled { cursor: default; opacity: .62; }
+.radar-refresh svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.radar-refresh.is-loading svg { animation: radar-refresh-spin .8s linear infinite; }
+@keyframes radar-refresh-spin { to { transform: rotate(360deg); } }
+.radar-trend-rail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 9px;
+  border-top: 1px solid color-mix(in srgb, var(--n-border-color) 70%, transparent);
+}
+.radar-trend-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-right: 3px;
   color: var(--n-text-color-3);
-  font-size: 11px;
-  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.radar-trend-label b {
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--n-action-color);
+  color: var(--n-text-color-2);
+  font-size: 9px;
+  text-align: center;
+}
+.radar-trend-item {
+  --radar-signal: #5f7892;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid color-mix(in srgb, var(--radar-signal) 16%, var(--n-border-color));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--radar-signal) 5%, transparent);
+  color: inherit;
+  text-decoration: none;
+}
+.radar-trend-item:hover { border-color: color-mix(in srgb, var(--radar-signal) 36%, var(--n-border-color)); }
+.radar-trend-item em { color: var(--radar-signal); font-size: 8px; font-style: normal; font-weight: 720; white-space: nowrap; }
+.radar-trend-item strong { color: var(--radar-signal); font-size: 9px; font-weight: 760; white-space: nowrap; }
+.radar-trend-item span { overflow: hidden; color: var(--n-text-color-2); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.radar-trend-item.is-breakthrough { --radar-signal: #c65357; }
+.radar-trend-item.is-rising { --radar-signal: #c07a13; }
+.radar-trend-item.is-reentry { --radar-signal: #705ac8; }
+.radar-trend-item.is-new { --radar-signal: #168a84; }
+.radar-trend-item.is-falling { --radar-signal: #5f7892; }
+@media (prefers-reduced-motion: reduce) {
+  .radar-mark__ping, .radar-refresh.is-loading svg { animation: none; }
 }
 .event-toolbar {
   margin-bottom: 9px;
@@ -1309,7 +1581,8 @@ watch(locale, () => void loadTopic(false));
   gap: 8px;
   align-items: center;
   min-width: 0;
-  padding: 7px 1px;
+  min-height: 52px;
+  padding: 6px 1px;
   border-bottom: 1px solid var(--n-border-color);
   color: inherit;
   text-decoration: none;
@@ -1365,6 +1638,23 @@ watch(locale, () => void loadTopic(false));
   flex: 0 0 auto;
   font-style: normal;
 }
+.event-lane-serious {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 2px;
+  color: #6b7280;
+  font-size: 8px;
+  font-weight: 720;
+}
+.event-lane-serious svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
+.event-lane-item.is-serious {
+  margin-inline: -4px;
+  padding-inline: 4px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, color-mix(in srgb, #6b7280 8%, transparent), transparent 72%);
+}
+.event-lane-item.is-serious > img { filter: grayscale(.88) saturate(.18) contrast(.96); }
 .event-list {
   display: grid;
 }
@@ -1457,6 +1747,64 @@ watch(locale, () => void loadTopic(false));
   color: var(--n-text-color);
   font-size: 11px;
 }
+.event-evidence-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  max-width: min(56%, 420px);
+  min-height: 20px;
+  padding: 1px 5px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--n-text-color-3) 16%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--n-text-color-3);
+  font: inherit;
+  font-size: 9px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.event-evidence-summary:hover { border-color: color-mix(in srgb, var(--n-primary-color) 26%, transparent); color: var(--n-text-color-2); }
+.event-evidence-summary > span { flex: 0 0 auto; font-weight: 650; }
+.event-evidence-summary b { overflow: hidden; font-weight: 560; text-overflow: ellipsis; }
+.event-evidence-summary i { flex: 0 0 auto; font-style: normal; }
+.event-evidence-summary em { flex: 0 0 auto; margin-left: 3px; color: var(--n-primary-color); font-style: normal; font-weight: 700; }
+.event-evidence-popover {
+  display: grid;
+  gap: 3px;
+  min-width: 270px;
+  max-width: 360px;
+  padding: 2px;
+}
+.event-evidence-popover > strong { padding: 2px 5px 5px; color: var(--n-text-color-2); font-size: 10px; }
+.event-evidence-popover > a,
+.event-evidence-popover > .is-unlinked {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  color: inherit;
+  font-size: 10px;
+  text-decoration: none;
+}
+.event-evidence-popover > a:hover { background: var(--n-action-color); }
+.event-evidence-popover > a > span,
+.event-evidence-popover > .is-unlinked > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.event-evidence-popover em { color: var(--n-text-color-2); font-style: normal; font-variant-numeric: tabular-nums; }
+.event-evidence-popover small { color: var(--n-text-color-3); font-size: 9px; }
+.serious-event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-color: color-mix(in srgb, #6b7280 28%, transparent) !important;
+  background: color-mix(in srgb, #6b7280 7%, transparent);
+  color: #6b7280 !important;
+  font-weight: 700;
+}
+.serious-event-badge svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
 .category-pill,
 .source-pill,
 .intelligence-pill,
@@ -1548,6 +1896,16 @@ watch(locale, () => void loadTopic(false));
   .chigua-topic {
     gap: 10px;
   }
+  .topic-workspace-header { grid-template-columns: minmax(0, 1fr); padding: 11px; }
+  .radar-mark { width: 44px; height: 44px; flex-basis: 44px; }
+  .radar-actions { justify-content: space-between; }
+  .hero-stats { min-width: 0; justify-items: initial; }
+  .hero-stats > span { min-height: 28px; padding: 4px 6px; }
+  .hero-stats > span strong { font-size: 14px; }
+  .radar-trend-rail { display: flex; margin-right: -11px; padding-right: 11px; overflow-x: auto; scrollbar-width: none; }
+  .radar-trend-rail::-webkit-scrollbar { display: none; }
+  .radar-trend-label { position: sticky; left: 0; z-index: 1; flex: 0 0 auto; padding: 5px 8px 5px 0; background: color-mix(in srgb, var(--n-color) 94%, transparent); }
+  .radar-trend-item { flex: 0 0 min(70vw, 230px); }
   .topic-section {
     padding: 13px;
     border-radius: 12px;
@@ -1556,9 +1914,6 @@ watch(locale, () => void loadTopic(false));
     gap: 6px;
     padding-bottom: 8px;
     margin-bottom: 8px;
-  }
-  .topic-workspace-summary {
-    gap: 8px;
   }
   .topic-workspace-title h1 {
     font-size: 18px;
@@ -1571,15 +1926,6 @@ watch(locale, () => void loadTopic(false));
     line-height: 1.4;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
-  }
-  .hero-stats {
-    min-width: 52px;
-  }
-  .hero-stats strong {
-    font-size: 21px;
-  }
-  .hero-stats em {
-    display: none;
   }
   .toolbar-primary {
     display: grid;
@@ -1660,7 +2006,7 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-layout {
   display: grid;
-  grid-template-columns: minmax(170px, 200px) minmax(0, 860px) minmax(180px, 210px);
+  grid-template-columns: minmax(164px, 188px) minmax(0, 900px) minmax(174px, 200px);
   align-items: start;
   justify-content: center;
   gap: 16px;
@@ -1872,6 +2218,31 @@ watch(locale, () => void loadTopic(false));
 .trend-pill.is-reentry { --trend-tone: #7c5ce7; }
 .trend-pill.is-new { --trend-tone: #18a058; }
 .trend-pill.is-falling { --trend-tone: #5f7892; }
+
+.event-item.is-serious {
+  margin-inline: -6px;
+  padding-inline: 8px;
+  border-top-color: color-mix(in srgb, #6b7280 22%, var(--n-border-color));
+  border-radius: 8px;
+  background: linear-gradient(90deg, color-mix(in srgb, #6b7280 8%, transparent), transparent 66%);
+}
+.event-item.is-serious .event-cover img { filter: grayscale(.9) saturate(.15) contrast(.96); }
+.event-item.is-serious .event-rank,
+.event-item.is-serious .event-rank.is-one,
+.event-item.is-serious .event-rank.is-two,
+.event-item.is-serious .event-rank.is-three,
+.event-item.is-serious .event-rank.is-top10 {
+  background: color-mix(in srgb, #6b7280 10%, transparent);
+  color: #6b7280;
+}
+.event-item.is-serious .category-pill,
+.event-item.is-serious .trend-pill {
+  --category-tone: #6b7280;
+  --trend-tone: #6b7280;
+  border-color: color-mix(in srgb, #6b7280 22%, transparent);
+  background: color-mix(in srgb, #6b7280 7%, transparent);
+  color: #6b7280;
+}
 
 @media (max-width: 1240px) and (min-width: 901px) {
   .topic-layout {

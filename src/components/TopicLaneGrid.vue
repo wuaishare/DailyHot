@@ -1,6 +1,6 @@
 <template>
   <div class="topic-lane-grid" :aria-label="ariaLabel">
-    <section v-for="lane in lanes" :key="lane.key" class="topic-lane" :class="`is-${lane.key}`">
+    <section v-for="lane in lanes" :key="lane.key" class="topic-lane" :class="[`is-${lane.key}`, { 'is-scrollable': lane.scrollable }]">
       <header class="topic-lane__head">
         <div>
           <strong>{{ lane.label }}</strong>
@@ -9,10 +9,15 @@
         <em>{{ lane.count ?? lane.items?.length ?? 0 }}</em>
       </header>
 
-      <div class="topic-lane__items">
+      <div
+        class="topic-lane__items"
+        :tabindex="lane.scrollable && lane.items?.length > 5 ? 0 : undefined"
+        @scroll="handleItemsScroll($event, lane)"
+      >
         <template v-for="(item, index) in lane.items || []" :key="item.id || `${lane.key}-${index}`">
           <slot name="item" :lane="lane" :item="item" :index="index" />
         </template>
+        <span v-if="lane.hasMore" class="topic-lane__scroll-hint">{{ lane.loadMoreLabel || 'Scroll for more' }}</span>
       </div>
 
       <button
@@ -34,7 +39,17 @@ defineProps({
   ariaLabel: { type: String, default: "" },
 });
 
-defineEmits(["select"]);
+const emit = defineEmits(["select", "load-more"]);
+const pendingLanes = new Set();
+const handleItemsScroll = (event, lane) => {
+  if (!lane?.scrollable || !lane?.hasMore || pendingLanes.has(lane.key)) return;
+  const target = event?.currentTarget;
+  if (!target) return;
+  if (target.scrollTop + target.clientHeight < target.scrollHeight - 48) return;
+  pendingLanes.add(lane.key);
+  emit("load-more", lane);
+  requestAnimationFrame(() => pendingLanes.delete(lane.key));
+};
 </script>
 
 <style scoped>
@@ -97,6 +112,29 @@ defineEmits(["select"]);
 .topic-lane__items {
   display: grid;
   min-width: 0;
+}
+.topic-lane.is-scrollable .topic-lane__items {
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--n-text-color-3) 24%, transparent) transparent;
+}
+.topic-lane.is-scrollable .topic-lane__items:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 48%, transparent);
+  outline-offset: 2px;
+}
+.topic-lane.is-scrollable .topic-lane__items::-webkit-scrollbar { width: 5px; }
+.topic-lane.is-scrollable .topic-lane__items::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--n-text-color-3) 22%, transparent);
+}
+.topic-lane__scroll-hint {
+  display: block;
+  padding: 6px 2px 2px;
+  color: var(--n-text-color-3);
+  font-size: 9px;
+  text-align: center;
 }
 .topic-lane__action {
   display: flex;
