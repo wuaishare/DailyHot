@@ -8,9 +8,6 @@
       'is-minimal': minimalMode,
       'is-source-page': sourcePageMode,
       'is-xiaohongshu-source-page': isXiaohongshuSourcePage,
-      'is-square-cover-source-page': isSquareCoverSourcePage,
-      'is-landscape-cover-source-page': isLandscapeCoverSourcePage,
-      'is-fixed-portrait-cover-source-page': isFixedPortraitCoverSourcePage,
     }"
     :style="streamStyle"
   >
@@ -118,6 +115,7 @@
             :key="entry.key"
             class="category-stream__row"
             :class="{ 'has-media': !minimalMode && showImages && Boolean(entry.cover) }"
+            @mouseenter="prepareRowCoverHover"
           >
             <div class="category-stream__rank" :class="rankTone(entry.rank, entry.isPinned)" :title="entry.isPinned ? '置顶' : undefined">
               <UiGlyph v-if="entry.isPinned" class="category-stream__pin-icon" name="pin" aria-hidden="true" />
@@ -125,7 +123,7 @@
             </div>
 
             <div
-              v-if="usesPreviewCoverProfile && !minimalMode && showImages && entry.cover"
+              v-if="sourcePageMode && !minimalMode && showImages && entry.cover"
               class="category-stream__media is-cover is-previewable"
             >
               <n-image
@@ -134,8 +132,8 @@
                 :preview-src="coverSrc(entry.cover)"
                 :alt="coverPreviewLabel(entry)"
                 lazy
-                object-fit="cover"
-                :img-props="{ tabindex: 0, role: 'button', onKeydown: handleCoverPreviewKeydown }"
+                object-fit="contain"
+                :img-props="{ tabindex: 0, role: 'button', onKeydown: handleCoverPreviewKeydown, onLoad: handleCoverImageLoad }"
                 @error="hideBrokenMedia"
               />
             </div>
@@ -464,21 +462,6 @@ const sourceQuery = computed(() => queryString(route.query.sources));
 const sourcePageMode = computed(() => Boolean(props.sourcePageSource));
 const isXiaohongshuSourcePage = computed(
   () => sourcePageMode.value && props.sourcePageSource === "xiaohongshu",
-);
-const SQUARE_COVER_SOURCES = new Set(["xiaohongshu"]);
-const LANDSCAPE_COVER_SOURCES = new Set(["baidu"]);
-const FIXED_PORTRAIT_COVER_SOURCES = new Set(["douban-movie", "weread"]);
-const isSquareCoverSourcePage = computed(
-  () => sourcePageMode.value && SQUARE_COVER_SOURCES.has(props.sourcePageSource),
-);
-const isLandscapeCoverSourcePage = computed(
-  () => sourcePageMode.value && LANDSCAPE_COVER_SOURCES.has(props.sourcePageSource),
-);
-const isFixedPortraitCoverSourcePage = computed(
-  () => sourcePageMode.value && FIXED_PORTRAIT_COVER_SOURCES.has(props.sourcePageSource),
-);
-const usesPreviewCoverProfile = computed(
-  () => isSquareCoverSourcePage.value || isLandscapeCoverSourcePage.value || isFixedPortraitCoverSourcePage.value,
 );
 const XIAOHONGSHU_METRIC_ICONS = Object.freeze({
   views: PreviewOpen,
@@ -1057,6 +1040,41 @@ const handleLogoError = (event) => {
 };
 const coverSrc = (cover) => getCoverDisplaySrc(cover);
 const coverPreviewLabel = (entry) => `${entry?.title || ""} · ${copy.value.previewImage}`;
+const COVER_HOVER_BOOST = 1.1;
+const COVER_HOVER_MAX_SCALE = 4.5;
+const syncCoverHoverGeometry = (image) => {
+  if (!sourcePageMode.value || !image?.isConnected) return;
+  const media = image.closest?.(".category-stream__media");
+  const motionTarget = image;
+  const mediaWidth = Number(media?.clientWidth || 0);
+  const mediaHeight = Number(media?.clientHeight || 0);
+  const imageWidth = Number(image.offsetWidth || 0);
+  const imageHeight = Number(image.offsetHeight || 0);
+  if (!mediaWidth || !mediaHeight || !imageWidth || !imageHeight) return;
+
+  const fillScale = Math.max(
+    mediaWidth / imageWidth,
+    mediaHeight / imageHeight,
+    1,
+  );
+  const hoverScale = Math.min(
+    Math.max(fillScale * COVER_HOVER_BOOST, COVER_HOVER_BOOST),
+    COVER_HOVER_MAX_SCALE,
+  );
+  const hoverShiftX = Math.max(0, (mediaWidth - imageWidth) / 2);
+  motionTarget.style?.setProperty?.("--cover-hover-scale", hoverScale.toFixed(3));
+  motionTarget.style?.setProperty?.("--cover-hover-shift-x", `${hoverShiftX.toFixed(2)}px`);
+};
+const handleCoverImageLoad = (event) => {
+  const image = event?.currentTarget;
+  if (!image) return;
+  window.requestAnimationFrame?.(() => syncCoverHoverGeometry(image));
+};
+const prepareRowCoverHover = (event) => {
+  if (!sourcePageMode.value) return;
+  const image = event?.currentTarget?.querySelector?.(".category-stream__preview-image img");
+  if (image?.complete) syncCoverHoverGeometry(image);
+};
 const handleCoverPreviewKeydown = (event) => {
   if (event?.key !== "Enter" && event?.key !== " ") return;
   event.preventDefault();
@@ -2148,6 +2166,7 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream.is-source-page .category-stream__list {
+  overflow: visible;
   border-radius: 14px;
 }
 
@@ -2155,6 +2174,7 @@ const hideBrokenMedia = (event) => {
 .category-stream.is-source-page.shows-images .category-stream__row,
 .category-stream.is-source-page.is-compact .category-stream__row,
 .category-stream.is-source-page.is-compact.shows-images .category-stream__row {
+  position: relative;
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
   align-items: center;
@@ -2167,16 +2187,6 @@ const hideBrokenMedia = (event) => {
 .category-stream.is-source-page .category-stream__row.has-media,
 .category-stream.is-source-page.shows-images .category-stream__row.has-media {
   grid-template-columns: 42px 112px minmax(0, 1fr);
-}
-
-.category-stream.is-source-page.is-square-cover-source-page .category-stream__row.has-media,
-.category-stream.is-source-page.is-square-cover-source-page.shows-images .category-stream__row.has-media {
-  grid-template-columns: 42px 84px minmax(0, 1fr);
-}
-
-.category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__row.has-media,
-.category-stream.is-source-page.is-fixed-portrait-cover-source-page.shows-images .category-stream__row.has-media {
-  grid-template-columns: 42px 58px minmax(0, 1fr);
 }
 
 .category-stream.is-source-page.is-compact .category-stream__row,
@@ -2214,71 +2224,80 @@ const hideBrokenMedia = (event) => {
 .category-stream.is-source-page .category-stream__rank.is-three { color: #eead3f; }
 
 .category-stream.is-source-page .category-stream__media {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
   width: 112px;
   height: 84px;
   max-width: 112px;
   max-height: 84px;
-  place-items: center end;
-  border-radius: 8px;
+  overflow: visible;
+  border-radius: 0;
   background: transparent;
 }
 
 .category-stream.is-source-page .category-stream__media.is-cover img {
+  display: block;
   width: auto;
   height: auto;
-  max-width: 112px;
-  max-height: 84px;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
   object-fit: contain;
   object-position: center;
 }
 
-.category-stream.is-source-page.is-square-cover-source-page .category-stream__media,
-.category-stream.is-source-page.is-landscape-cover-source-page .category-stream__media,
-.category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__media {
-  place-items: stretch;
-  overflow: hidden;
-  background: var(--category-stream-action);
-}
-
-.category-stream.is-source-page.is-square-cover-source-page .category-stream__media {
-  width: 84px;
-  max-width: 84px;
-}
-
-.category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__media {
-  width: 58px;
-  max-width: 58px;
-}
-
-.category-stream.is-source-page.is-square-cover-source-page .category-stream__media.is-cover img,
-.category-stream.is-source-page.is-landscape-cover-source-page .category-stream__media.is-cover img,
-.category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__media.is-cover img {
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  border-radius: inherit;
-  object-fit: cover;
-  object-position: center;
-}
-
 .category-stream.is-source-page :deep(.category-stream__preview-image.n-image) {
-  display: block;
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
-  border-radius: inherit;
+  overflow: visible;
+  border-radius: 0;
 }
 
 .category-stream.is-source-page :deep(.category-stream__preview-image.n-image img) {
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
+  position: relative;
+  left: 0;
+  z-index: 1;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 112px;
+  max-height: 84px;
+  border-radius: 8px;
+  object-fit: contain;
+  object-position: center;
   cursor: zoom-in;
+  transform: scale(1);
+  transform-origin: right center;
+  transition: left 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  will-change: transform;
 }
 
 .category-stream.is-source-page :deep(.category-stream__preview-image.n-image img:focus-visible) {
   outline: 2px solid var(--category-stream-primary);
-  outline-offset: -2px;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .category-stream.is-source-page .category-stream__row.has-media:hover {
+    z-index: 4;
+  }
+
+  .category-stream.is-source-page .category-stream__row.has-media:hover :deep(.category-stream__preview-image.n-image img) {
+    left: var(--cover-hover-shift-x, 0px);
+    z-index: 5;
+    transform: scale(var(--cover-hover-scale, 1.1));
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-stream.is-source-page :deep(.category-stream__preview-image.n-image img) {
+    transition: none;
+  }
 }
 
 .category-stream.is-source-page .category-stream__title {
@@ -2480,14 +2499,6 @@ const hideBrokenMedia = (event) => {
   .category-stream.is-source-page.shows-images .category-stream__row.has-media {
     grid-template-columns: 34px 76px minmax(0, 1fr);
   }
-  .category-stream.is-source-page.is-square-cover-source-page .category-stream__row.has-media,
-  .category-stream.is-source-page.is-square-cover-source-page.shows-images .category-stream__row.has-media {
-    grid-template-columns: 34px 64px minmax(0, 1fr);
-  }
-  .category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__row.has-media,
-  .category-stream.is-source-page.is-fixed-portrait-cover-source-page.shows-images .category-stream__row.has-media {
-    grid-template-columns: 34px 44px minmax(0, 1fr);
-  }
   .category-stream.is-source-page .category-stream__media {
     width: 76px;
     height: 64px;
@@ -2498,17 +2509,9 @@ const hideBrokenMedia = (event) => {
     max-width: 76px;
     max-height: 64px;
   }
-  .category-stream.is-source-page.is-square-cover-source-page .category-stream__media {
-    width: 64px;
-    max-width: 64px;
-  }
-  .category-stream.is-source-page.is-landscape-cover-source-page .category-stream__media {
-    height: 57px;
-    max-height: 57px;
-  }
-  .category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__media {
-    width: 44px;
-    max-width: 44px;
+  .category-stream.is-source-page :deep(.category-stream__preview-image.n-image img) {
+    max-width: 76px;
+    max-height: 64px;
   }
   .category-stream.is-source-page .category-stream__rank {
     font-size: 14px;
