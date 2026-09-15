@@ -8,6 +8,9 @@
       'is-minimal': minimalMode,
       'is-source-page': sourcePageMode,
       'is-xiaohongshu-source-page': isXiaohongshuSourcePage,
+      'is-square-cover-source-page': isSquareCoverSourcePage,
+      'is-landscape-cover-source-page': isLandscapeCoverSourcePage,
+      'is-fixed-portrait-cover-source-page': isFixedPortraitCoverSourcePage,
     }"
     :style="streamStyle"
   >
@@ -121,8 +124,23 @@
               <template v-else>{{ entry.rank }}</template>
             </div>
 
+            <div
+              v-if="usesPreviewCoverProfile && !minimalMode && showImages && entry.cover"
+              class="category-stream__media is-cover is-previewable"
+            >
+              <n-image
+                class="category-stream__preview-image"
+                :src="coverSrc(entry.cover)"
+                :preview-src="coverSrc(entry.cover)"
+                :alt="coverPreviewLabel(entry)"
+                lazy
+                object-fit="cover"
+                :img-props="{ tabindex: 0, role: 'button', onKeydown: handleCoverPreviewKeydown }"
+                @error="hideBrokenMedia"
+              />
+            </div>
             <a
-              v-if="!minimalMode && showImages && entry.cover"
+              v-else-if="!minimalMode && showImages && entry.cover"
               class="category-stream__media is-cover"
               :href="entry.href"
               :target="linkTarget"
@@ -273,7 +291,7 @@ import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { getCoverDisplaySrc } from "@/utils/imageProxy";
 import { normalizeRankingBadges, resolveRankingBadgeIconUrl } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
-import { Bookmark, Comment, Fire, Like, PreviewOpen, Refresh } from "@icon-park/vue-next";
+import { Comment, Fire, Like, PreviewOpen, Refresh, Star } from "@icon-park/vue-next";
 import { formatTime } from "@/utils/getTime";
 import { getRankingItemMeta } from "@/utils/rankingItemMeta";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
@@ -319,6 +337,7 @@ const COPY = {
     noSearchResults: "没有匹配当前搜索的条目",
     heat: "热度",
     refreshLatest: "刷新最新数据",
+    previewImage: "查看完整图片",
   },
   en: {
     sources: "Sources",
@@ -344,6 +363,7 @@ const COPY = {
     noSearchResults: "No items match the current search",
     heat: "Heat",
     refreshLatest: "Refresh latest data",
+    previewImage: "View full image",
   },
   "zh-TW": {
     sources: "來源",
@@ -369,6 +389,7 @@ const COPY = {
     noSearchResults: "沒有符合目前搜尋的條目",
     heat: "熱度",
     refreshLatest: "重新整理最新資料",
+    previewImage: "查看完整圖片",
   },
   ja: {
     sources: "ソース",
@@ -394,6 +415,7 @@ const COPY = {
     noSearchResults: "検索条件に一致する項目がありません",
     heat: "注目度",
     refreshLatest: "最新データを更新",
+    previewImage: "画像を拡大表示",
   },
   ko: {
     sources: "출처",
@@ -419,6 +441,7 @@ const COPY = {
     noSearchResults: "현재 검색과 일치하는 항목이 없습니다",
     heat: "인기도",
     refreshLatest: "최신 데이터 새로고침",
+    previewImage: "전체 이미지 보기",
   },
 };
 const copy = computed(() => COPY[locale.value] || COPY["zh-CN"]);
@@ -442,11 +465,26 @@ const sourcePageMode = computed(() => Boolean(props.sourcePageSource));
 const isXiaohongshuSourcePage = computed(
   () => sourcePageMode.value && props.sourcePageSource === "xiaohongshu",
 );
+const SQUARE_COVER_SOURCES = new Set(["xiaohongshu"]);
+const LANDSCAPE_COVER_SOURCES = new Set(["baidu"]);
+const FIXED_PORTRAIT_COVER_SOURCES = new Set(["douban-movie", "weread"]);
+const isSquareCoverSourcePage = computed(
+  () => sourcePageMode.value && SQUARE_COVER_SOURCES.has(props.sourcePageSource),
+);
+const isLandscapeCoverSourcePage = computed(
+  () => sourcePageMode.value && LANDSCAPE_COVER_SOURCES.has(props.sourcePageSource),
+);
+const isFixedPortraitCoverSourcePage = computed(
+  () => sourcePageMode.value && FIXED_PORTRAIT_COVER_SOURCES.has(props.sourcePageSource),
+);
+const usesPreviewCoverProfile = computed(
+  () => isSquareCoverSourcePage.value || isLandscapeCoverSourcePage.value || isFixedPortraitCoverSourcePage.value,
+);
 const XIAOHONGSHU_METRIC_ICONS = Object.freeze({
   views: PreviewOpen,
   likes: Like,
   comments: Comment,
-  collects: Bookmark,
+  collects: Star,
 });
 const allowedSourceNames = computed(
   () => new Set(props.sources.map((item) => item.name)),
@@ -1018,6 +1056,12 @@ const handleLogoError = (event) => {
   if (event.target) event.target.src = getSourceLogoFallback();
 };
 const coverSrc = (cover) => getCoverDisplaySrc(cover);
+const coverPreviewLabel = (entry) => `${entry?.title || ""} · ${copy.value.previewImage}`;
+const handleCoverPreviewKeydown = (event) => {
+  if (event?.key !== "Enter" && event?.key !== " ") return;
+  event.preventDefault();
+  event.currentTarget?.click?.();
+};
 const hideBrokenMedia = (event) => {
   const media = event.target?.closest?.(".category-stream__media");
   const row = event.target?.closest?.(".category-stream__row");
@@ -2125,6 +2169,15 @@ const hideBrokenMedia = (event) => {
   grid-template-columns: 42px 112px minmax(0, 1fr);
 }
 
+.category-stream.is-source-page.is-square-cover-source-page .category-stream__row.has-media,
+.category-stream.is-source-page.is-square-cover-source-page.shows-images .category-stream__row.has-media {
+  grid-template-columns: 42px 84px minmax(0, 1fr);
+}
+
+.category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__row.has-media,
+.category-stream.is-source-page.is-fixed-portrait-cover-source-page.shows-images .category-stream__row.has-media {
+  grid-template-columns: 42px 58px minmax(0, 1fr);
+}
 
 .category-stream.is-source-page.is-compact .category-stream__row,
 .category-stream.is-source-page.is-compact.shows-images .category-stream__row {
@@ -2177,6 +2230,55 @@ const hideBrokenMedia = (event) => {
   max-height: 84px;
   object-fit: contain;
   object-position: center;
+}
+
+.category-stream.is-source-page.is-square-cover-source-page .category-stream__media,
+.category-stream.is-source-page.is-landscape-cover-source-page .category-stream__media,
+.category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__media {
+  place-items: stretch;
+  overflow: hidden;
+  background: var(--category-stream-action);
+}
+
+.category-stream.is-source-page.is-square-cover-source-page .category-stream__media {
+  width: 84px;
+  max-width: 84px;
+}
+
+.category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__media {
+  width: 58px;
+  max-width: 58px;
+}
+
+.category-stream.is-source-page.is-square-cover-source-page .category-stream__media.is-cover img,
+.category-stream.is-source-page.is-landscape-cover-source-page .category-stream__media.is-cover img,
+.category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__media.is-cover img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: inherit;
+  object-fit: cover;
+  object-position: center;
+}
+
+.category-stream.is-source-page :deep(.category-stream__preview-image.n-image) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.category-stream.is-source-page :deep(.category-stream__preview-image.n-image img) {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  cursor: zoom-in;
+}
+
+.category-stream.is-source-page :deep(.category-stream__preview-image.n-image img:focus-visible) {
+  outline: 2px solid var(--category-stream-primary);
+  outline-offset: -2px;
 }
 
 .category-stream.is-source-page .category-stream__title {
@@ -2378,6 +2480,14 @@ const hideBrokenMedia = (event) => {
   .category-stream.is-source-page.shows-images .category-stream__row.has-media {
     grid-template-columns: 34px 76px minmax(0, 1fr);
   }
+  .category-stream.is-source-page.is-square-cover-source-page .category-stream__row.has-media,
+  .category-stream.is-source-page.is-square-cover-source-page.shows-images .category-stream__row.has-media {
+    grid-template-columns: 34px 64px minmax(0, 1fr);
+  }
+  .category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__row.has-media,
+  .category-stream.is-source-page.is-fixed-portrait-cover-source-page.shows-images .category-stream__row.has-media {
+    grid-template-columns: 34px 44px minmax(0, 1fr);
+  }
   .category-stream.is-source-page .category-stream__media {
     width: 76px;
     height: 64px;
@@ -2387,6 +2497,18 @@ const hideBrokenMedia = (event) => {
   .category-stream.is-source-page .category-stream__media.is-cover img {
     max-width: 76px;
     max-height: 64px;
+  }
+  .category-stream.is-source-page.is-square-cover-source-page .category-stream__media {
+    width: 64px;
+    max-width: 64px;
+  }
+  .category-stream.is-source-page.is-landscape-cover-source-page .category-stream__media {
+    height: 57px;
+    max-height: 57px;
+  }
+  .category-stream.is-source-page.is-fixed-portrait-cover-source-page .category-stream__media {
+    width: 44px;
+    max-width: 44px;
   }
   .category-stream.is-source-page .category-stream__rank {
     font-size: 14px;

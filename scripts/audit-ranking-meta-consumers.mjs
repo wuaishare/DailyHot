@@ -97,7 +97,7 @@ assert.doesNotMatch(
 );
 
 assert.match(stream, /const isXiaohongshuSourcePage = computed\([\s\S]{0,180}props\.sourcePageSource === ["']xiaohongshu["']/, "Xiaohongshu metric emphasis must be scoped to its source detail page");
-assert.match(stream, /XIAOHONGSHU_METRIC_ICONS = Object\.freeze\(\{[\s\S]{0,220}views: PreviewOpen[\s\S]{0,80}likes: Like[\s\S]{0,80}comments: Comment[\s\S]{0,80}collects: Bookmark/, "Xiaohongshu engagement labels must use established IconPark glyphs");
+assert.match(stream, /XIAOHONGSHU_METRIC_ICONS = Object\.freeze\(\{[\s\S]{0,220}views: PreviewOpen[\s\S]{0,80}likes: Like[\s\S]{0,80}comments: Comment[\s\S]{0,80}collects: Star/, "Xiaohongshu engagement labels must use established IconPark glyphs");
 assert.match(stream, /isXiaohongshuSourcePage && XIAOHONGSHU_METRIC_ICONS\[metric\.key\][\s\S]{0,260}:title="metric\.label"[\s\S]{0,160}:aria-label="metric\.label"/, "Xiaohongshu engagement icons must retain accessible text semantics");
 assert.match(stream, /metric\.key === ['"]hot['"][\s\S]{0,240}<n-icon :component="Fire" \/>/, "CategoryStream heat metrics must use the established IconPark Fire icon");
 assert.match(rail, /primaryMetric\.key === ['"]hot['"][\s\S]{0,300}<n-icon :component="Fire" \/>/, "CategorySourceRail heat metrics must use the established IconPark Fire icon");
