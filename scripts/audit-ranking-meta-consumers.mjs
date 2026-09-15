@@ -24,9 +24,20 @@ for (const [name, source] of Object.entries({ stream, rail, hotList, list })) {
   );
 }
 
-for (const [name, source] of Object.entries({ stream, hotList, list })) {
+for (const [name, source] of Object.entries({ stream, list })) {
   assert.match(source, /is-primary/, `${name} must render a semantic primary metric state`);
 }
+
+assert.match(
+  hotList,
+  /promotePrimary:\s*false/,
+  "HotList hover preview must preserve its neutral metadata contract",
+);
+assert.doesNotMatch(
+  hotList,
+  /\.preview-metric\.is-primary/,
+  "HotList hover preview must not inherit card-level primary metric emphasis",
+);
 
 const primaryStyleBlock = (name, source, selector) => {
   const start = source.indexOf(`${selector} {`);
@@ -39,7 +50,6 @@ const primaryStyleBlock = (name, source, selector) => {
 for (const [name, source, selector] of [
   ["CategoryStream", stream, ".category-stream__metric.is-primary"],
   ["CategorySourceRail", rail, ".category-story-card__primary-metric"],
-  ["HotList", hotList, ".preview-metric.is-primary"],
   ["List", list, "&.is-primary"],
 ]) {
   const block = primaryStyleBlock(name, source, selector);

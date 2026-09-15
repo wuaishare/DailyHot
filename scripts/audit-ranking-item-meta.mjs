@@ -86,6 +86,23 @@ assert.deepEqual(
   "invalid secondary metrics must remain excluded",
 );
 
+const neutralPreview = getRankingItemMeta(completeSample, "zh-CN", {
+  variant: "like-14d",
+  promotePrimary: false,
+});
+assert.equal(neutralPreview.primaryMetric, null, "neutral preview must not expose a promoted primary metric");
+assert.equal(neutralPreview.primaryMetricKey, null, "neutral preview must not expose a primary metric key");
+assert.deepEqual(
+  neutralPreview.metrics.map(({ key }) => key),
+  ["views", "likes", "comments", "collects"],
+  "neutral preview must preserve the legacy metric order without injecting heat",
+);
+assert.equal(
+  neutralPreview.metrics.some(({ isPrimary }) => isPrimary),
+  false,
+  "neutral preview must not mark any metric as primary",
+);
+
 for (const [locale, label] of [
   ["zh-CN", "阅读"], ["zh-TW", "閱讀"], ["en", "Views"], ["ja", "閲覧"], ["ko", "조회"],
 ]) {
