@@ -1355,12 +1355,8 @@ onBeforeUnmount(() => {
         }
         &.is-primary {
           color: var(--n-primary-color, #ea444d);
-          border-color: color-mix(in srgb, var(--n-primary-color, #ea444d) 32%, transparent);
-          background: color-mix(in srgb, var(--n-primary-color, #ea444d) 8%, transparent);
-          font-weight: 700;
           strong {
             color: inherit;
-            font-weight: 760;
           }
         }
       }

@@ -2109,22 +2109,10 @@ onBeforeUnmount(() => {
 
   .preview-metric.is-primary {
     color: var(--preview-primary-color, var(--n-primary-color, #ea444d));
-    border-color: color-mix(
-      in srgb,
-      var(--preview-primary-color, var(--n-primary-color, #ea444d)) 32%,
-      transparent
-    );
-    background: color-mix(
-      in srgb,
-      var(--preview-primary-color, var(--n-primary-color, #ea444d)) 9%,
-      transparent
-    );
-    font-weight: 700;
   }
 
   .preview-metric.is-primary strong {
     color: inherit;
-    font-weight: 760;
   }
 
   .preview-meta {

@@ -720,16 +720,7 @@ onBeforeUnmount(() => {
   gap: 3px;
   min-width: 0;
   color: var(--csr-primary);
-  font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-.category-story-card__primary-metric strong { font-weight: 780; }
-.category-story-card.has-cover .category-story-card__primary-metric {
-  padding: 1px 5px;
-  color: rgba(255,255,255,.96);
-  border: 1px solid color-mix(in srgb, var(--csr-primary) 58%, rgba(255,255,255,.42));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--csr-primary) 54%, rgba(12,14,18,.62));
 }
 .category-story-card.has-cover p { opacity: .82; }
 .category-story-card.has-cover .category-story-card__context-meta { opacity: .84; }

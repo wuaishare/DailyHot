@@ -1316,17 +1316,11 @@ const hideBrokenMedia = (event) => {
 }
 
 .category-stream__metric.is-primary {
-  padding: 1px 6px;
   color: var(--category-stream-primary);
-  border: 1px solid color-mix(in srgb, var(--category-stream-primary) 28%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--category-stream-primary) 9%, transparent);
-  font-weight: 700;
 }
 
 .category-stream__metric.is-primary strong {
   color: inherit;
-  font-weight: 760;
 }
 
 .category-stream.is-compact .category-stream__title {
