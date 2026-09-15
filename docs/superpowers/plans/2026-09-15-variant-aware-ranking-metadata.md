@@ -378,6 +378,6 @@ Expected:
 
 On `read-30d`, verify the first 15 inline images use the same-origin `/api/image-proxy`, are complete, and have positive natural dimensions. Open the first hover/focus preview and verify cover, context and the highlighted primary metric. Confirm the browser console contains no new errors or warnings.
 
-- [ ] **Step 8: Close the cross-repository implementation record**
+- [ ] **Step 8: Close the downstream implementation record**
 
-After production UI evidence is complete, update the existing backend implementation plan in `/Applications/ServBay/www/wpbetter.cn/.project-docs/plans/2026-09-15-trends-xiaohongshu-pgy-browser-runtime-implementation-plan.md` with the exact DailyHot PR, merged commit, production build, four-family metadata results, 15/15 cover result and console result. Deliver that docs-only change through its own governed backend PR and Return-to-Trunk cycle.
+After production UI evidence is complete, record the exact DailyHot PR, merged commit, production build, four-family metadata results, 15/15 cover result and console result in the downstream deployment's private implementation record outside this public repository. Do not add private workspace paths or downstream implementation details here.
