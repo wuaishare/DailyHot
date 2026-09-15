@@ -1810,7 +1810,7 @@ const hideBrokenMedia = (event) => {
   .category-stream.shows-images .category-stream__row,
   .category-stream.is-compact .category-stream__row,
   .category-stream.is-compact.shows-images .category-stream__row {
-    grid-template-columns: 34px 68px minmax(0, 1fr);
+    grid-template-columns: 34px fit-content(76px) minmax(0, 1fr);
     gap: 8px;
     min-height: 66px;
     padding-inline: 9px;
@@ -2104,7 +2104,7 @@ const hideBrokenMedia = (event) => {
 
 .category-stream.is-source-page .category-stream__row.has-media,
 .category-stream.is-source-page.shows-images .category-stream__row.has-media {
-  grid-template-columns: 42px 84px minmax(0, 1fr);
+  grid-template-columns: 42px fit-content(112px) minmax(0, 1fr);
 }
 
 .category-stream.is-source-page.is-compact .category-stream__row,
@@ -2142,10 +2142,21 @@ const hideBrokenMedia = (event) => {
 .category-stream.is-source-page .category-stream__rank.is-three { color: #eead3f; }
 
 .category-stream.is-source-page .category-stream__media {
-  width: 84px;
-  height: 52px;
+  width: auto;
+  height: auto;
+  max-width: 112px;
+  max-height: 84px;
   border-radius: 8px;
   background: var(--category-stream-action);
+}
+
+.category-stream.is-source-page .category-stream__media.is-cover img {
+  width: auto;
+  height: auto;
+  max-width: 112px;
+  max-height: 84px;
+  object-fit: contain;
+  object-position: center;
 }
 
 .category-stream.is-source-page .category-stream__title {
@@ -2345,11 +2356,15 @@ const hideBrokenMedia = (event) => {
   }
   .category-stream.is-source-page .category-stream__row.has-media,
   .category-stream.is-source-page.shows-images .category-stream__row.has-media {
-    grid-template-columns: 34px 68px minmax(0, 1fr);
+    grid-template-columns: 34px fit-content(76px) minmax(0, 1fr);
   }
   .category-stream.is-source-page .category-stream__media {
-    width: 68px;
-    height: 44px;
+    max-width: 76px;
+    max-height: 64px;
+  }
+  .category-stream.is-source-page .category-stream__media.is-cover img {
+    max-width: 76px;
+    max-height: 64px;
   }
   .category-stream.is-source-page .category-stream__rank {
     font-size: 14px;
