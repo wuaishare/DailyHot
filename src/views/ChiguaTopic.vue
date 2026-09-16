@@ -1,5 +1,9 @@
 <template>
-  <section class="chigua-topic">
+  <section
+    class="chigua-topic"
+    :class="{ 'is-compact': store.compactMode }"
+    :style="{ '--chigua-list-font-size': `${store.listFontSize}px` }"
+  >
     <n-alert
       v-if="loadError"
       type="error"
@@ -56,7 +60,7 @@
       @select="selectFeaturedLane"
       @load-more="loadMoreFeaturedLane"
     >
-      <template #item="{ item }">
+      <template #item="{ item, index }">
         <article
           class="event-lane-item"
           :class="{ 'is-serious': isSeriousEvent(item), 'has-cover': hasUsableCover(item) }"
@@ -67,6 +71,11 @@
           @focusout="scheduleLanePreviewClose"
           @keydown.esc="hideLanePreview"
         >
+          <span
+            class="event-lane-rank"
+            :class="{ one: index === 0, two: index === 1, three: index === 2 }"
+            :aria-label="`第 ${index + 1} 名`"
+          >{{ index + 1 }}</span>
           <button
             v-if="hasUsableCover(item)"
             type="button"
@@ -89,11 +98,6 @@
               {{ ui.serious }}
             </span>
             <a class="event-lane-title" :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
-            <p>
-              <a class="event-source-link" :href="primaryRankPath(item)">{{ sourceLabel(item) }}</a>
-              <b v-if="eventSourceCount(item) > 1">{{ eventSourceCount(item) }} {{ ui.platforms }}</b>
-              <em v-else-if="item.hot">{{ formatHot(item.hot) }}</em>
-            </p>
           </div>
         </article>
       </template>
@@ -211,9 +215,7 @@
               :class="{ 'is-serious': isSeriousEvent(item), 'has-media': hasUsableCover(item) }"
               @mouseenter="prepareEventCoverHover"
             >
-              <span class="event-rank" :class="rankClass(pageStart + index + 1)">{{
-                String(pageStart + index + 1).padStart(2, "0")
-              }}</span>
+              <span class="event-rank" :class="rankClass(pageStart + index + 1)">{{ pageStart + index + 1 }}</span>
               <div v-if="hasUsableCover(item)" class="event-media">
                 <n-image
                   class="event-cover"
@@ -221,7 +223,7 @@
                   :preview-src="coverSrc(item.cover)"
                   :alt="item.title"
                   lazy
-                  object-fit="contain"
+                  object-fit="cover"
                   :img-props="{ tabindex: 0, role: 'button', referrerpolicy: COVER_REFERRER_POLICY, 'data-cover-source': item.cover, onKeydown: handleEventCoverPreviewKeydown, onLoad: handleEventCoverImageLoad, onError: () => markCoverError(item.cover) }"
                   @error="markCoverError(item.cover)"
                 />
@@ -424,8 +426,10 @@ import {
   resolveFloatingCoverPreviewPosition,
 } from "@/utils/floatingCoverPreview";
 import { useRoute } from "vue-router";
+import { mainStore } from "@/store";
 
 const route = useRoute();
+const store = mainStore();
 const result = ref(null);
 const coverImageErrors = reactive({});
 const loading = ref(false);
@@ -1278,6 +1282,7 @@ const syncEventCoverGeometry = (image) => {
     media: image.closest?.(".event-media"),
     preview: image.closest?.(".event-cover.n-image"),
     row: image.closest?.(".event-item"),
+    isMixed: true,
   });
 };
 const handleEventCoverImageLoad = (event) => {
@@ -1320,6 +1325,15 @@ const syncReadyEventCoverGeometries = () => {
 const queueEventCoverGeometrySync = () => {
   if (typeof window === "undefined") return;
   nextTick(() => window.requestAnimationFrame?.(syncReadyEventCoverGeometries));
+};
+let eventCoverResizeFrame = 0;
+const handleEventCoverViewportResize = () => {
+  if (eventCoverResizeFrame) window.cancelAnimationFrame?.(eventCoverResizeFrame);
+  eventCoverResizeFrame = window.requestAnimationFrame?.(() => {
+    eventCoverResizeFrame = 0;
+    hideLanePreview();
+    queueEventCoverGeometrySync();
+  }) || 0;
 };
 const handleEventCoverPreviewKeydown = (event) => {
   if (event?.key !== "Enter" && event?.key !== " ") return;
@@ -1495,6 +1509,7 @@ const handleGlobalDataRefresh = (event) => {
 };
 onMounted(() => {
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  window.addEventListener("resize", handleEventCoverViewportResize, { passive: true });
   queueEventCoverGeometrySync();
   void loadTopic(false);
 });
@@ -1510,6 +1525,8 @@ onDeactivated(() => {
 onBeforeUnmount(() => {
   clearTimeout(querySyncTimer);
   hideLanePreview();
+  if (eventCoverResizeFrame) window.cancelAnimationFrame?.(eventCoverResizeFrame);
+  window.removeEventListener("resize", handleEventCoverViewportResize);
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
 });
 watch(locale, () => void loadTopic(false));
@@ -1821,46 +1838,110 @@ watch(locale, () => void loadTopic(false));
   margin: 0;
 }
 .chigua-topic :deep(.topic-lane) {
-  padding: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--n-color);
+}
+.chigua-topic :deep(.topic-lane__head) {
+  box-sizing: border-box;
+  align-items: center;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 0 5px;
+}
+.chigua-topic :deep(.topic-lane__head strong) {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.chigua-topic :deep(.topic-lane__head em) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 20px;
+  padding-block: 0;
+  line-height: 1;
 }
 .event-lane-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--ranking-card-featured-item-gap);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
+  column-gap: var(--ranking-card-item-gap);
   min-width: 0;
-  min-height: var(--ranking-card-featured-item-min-height);
-  padding: 5px 2px;
-  border-bottom: 1px solid var(--n-border-color);
+  min-height: var(--ranking-card-item-min-height);
+  margin-bottom: var(--ranking-card-item-margin);
+  padding: 0 2px 2px;
+  border-radius: 8px;
   color: inherit;
+  transition: color .2s ease;
 }
 .event-lane-item.has-cover {
-  grid-template-columns: var(--ranking-card-featured-thumb-width) minmax(0, 1fr);
+  grid-template-columns: auto var(--ranking-card-thumb-width) minmax(0, 1fr);
 }
-.event-lane-item:last-child { border-bottom: 0; }
-.event-lane-copy { min-width: 0; }
+.event-lane-item:last-child { margin-bottom: 0; }
+.event-lane-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ranking-card-rank-size);
+  height: var(--ranking-card-rank-size);
+  min-width: var(--ranking-card-rank-size);
+  margin-right: var(--ranking-card-rank-gap);
+  border-radius: 8px;
+  background: var(--n-border-color);
+  color: var(--n-text-color-2);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: background-color .18s ease, color .18s ease;
+}
+.event-lane-rank.one { background: #ea444d; color: #fff; }
+.event-lane-rank.two { background: #ed702d; color: #fff; }
+.event-lane-rank.three { background: #eead3f; color: #fff; }
+.event-lane-copy {
+  position: relative;
+  min-width: 0;
+  transition: transform .2s ease;
+}
+.event-lane-copy::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--n-close-color-pressed);
+  transition: width .2s ease;
+}
 .event-lane-title {
-  display: block;
+  display: -webkit-box;
+  min-width: 0;
   overflow: hidden;
   color: var(--n-text-color);
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.35;
+  font-size: var(--chigua-list-font-size, 16px);
+  font-weight: 400;
+  line-height: 1.6;
   text-decoration: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .event-lane-title:hover,
 .event-lane-title:focus-visible {
   color: var(--n-primary-color);
-  text-decoration: underline;
   outline: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .event-lane-item:hover .event-lane-copy { transform: translateX(4px); }
+  .event-lane-item:hover .event-lane-copy::after { width: 90%; }
 }
 .event-lane-cover {
   display: block;
   box-sizing: border-box;
-  width: var(--ranking-card-featured-thumb-width);
-  height: var(--ranking-card-featured-thumb-height);
+  width: var(--ranking-card-thumb-width);
+  height: var(--ranking-card-thumb-height);
   padding: 0;
   overflow: hidden;
   border: 0;
@@ -1882,6 +1963,28 @@ watch(locale, () => void loadTopic(false));
 .event-lane-cover:focus-visible {
   outline: 2px solid var(--n-primary-color);
   outline-offset: 2px;
+}
+.chigua-topic.is-compact .event-lane-item {
+  column-gap: var(--ranking-card-compact-item-gap);
+  min-height: var(--ranking-card-compact-item-min-height);
+  margin-bottom: var(--ranking-card-compact-item-margin);
+}
+.chigua-topic.is-compact .event-lane-item.has-cover {
+  grid-template-columns: auto var(--ranking-card-compact-thumb-width) minmax(0, 1fr);
+}
+.chigua-topic.is-compact .event-lane-rank {
+  width: var(--ranking-card-compact-rank-size);
+  height: var(--ranking-card-compact-rank-size);
+  min-width: var(--ranking-card-compact-rank-size);
+  margin-right: var(--ranking-card-compact-rank-gap);
+  border-radius: 6px;
+}
+.chigua-topic.is-compact .event-lane-cover {
+  width: var(--ranking-card-compact-thumb-width);
+  height: var(--ranking-card-compact-thumb-height);
+}
+.chigua-topic.is-compact .event-lane-title {
+  font-size: var(--chigua-list-font-size, 16px);
 }
 .event-lane-floating-preview {
   position: fixed;
@@ -1925,16 +2028,6 @@ watch(locale, () => void loadTopic(false));
 .item-preview-leave-active { transition: opacity .16s ease, transform .16s ease; }
 .item-preview-enter-from,
 .item-preview-leave-to { opacity: 0; transform: scale(.98); }
-.event-lane-item p {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  margin: 4px 0 0;
-  color: var(--n-text-color-3);
-  font-size: 10px;
-  white-space: nowrap;
-}
 .event-source-link {
   display: inline-flex;
   align-items: center;
@@ -1952,16 +2045,6 @@ watch(locale, () => void loadTopic(false));
   text-decoration: underline;
   outline: none;
 }
-.event-lane-item p .event-source-link {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.event-lane-item p b {
-  flex: 0 0 auto;
-  color: var(--n-text-color);
-  font-size: 10px;
-}
-.event-lane-item p em { flex: 0 0 auto; font-style: normal; }
 .event-lane-serious {
   display: inline-flex;
   align-items: center;
@@ -2021,20 +2104,20 @@ watch(locale, () => void loadTopic(false));
   place-items: center;
   width: 100%;
   height: 100%;
-  overflow: visible;
-  border-radius: 0;
-  background: transparent;
+  overflow: hidden;
+  border-radius: var(--ranking-stream-media-radius);
+  background: var(--n-action-color);
 }
 .event-cover :deep(img) {
   position: relative;
   z-index: 1;
   display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
   border-radius: var(--ranking-stream-media-radius);
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   cursor: zoom-in;
 }
@@ -2125,8 +2208,8 @@ watch(locale, () => void loadTopic(false));
 }
 .event-title h3 {
   margin: 4px 0 0;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: var(--ranking-stream-title-size);
+  line-height: 1.38;
   font-weight: 650;
 }
 .event-desc {
@@ -2420,10 +2503,10 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-layout {
   display: grid;
-  grid-template-columns: minmax(190px, 272px) minmax(0, 720px) minmax(190px, 272px);
+  grid-template-columns: 280px minmax(520px, 720px) 280px;
   align-items: start;
   justify-content: center;
-  gap: 24px;
+  gap: 16px;
   min-width: 0;
 }
 .topic-main {
@@ -2450,6 +2533,7 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-category-title,
 .topic-controls-title {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2504,20 +2588,21 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-category-item.active em { color: currentColor; }
 .topic-trend-card {
-  padding: 0 8px 8px;
+  padding: 0 0 8px;
 }
 .topic-trend-title {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   min-height: 38px;
-  padding: 8px 2px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--n-border-color);
   font-size: 11px;
 }
 .topic-trend-list {
   display: grid;
   gap: 6px;
-  padding-top: 8px;
+  padding: 8px 8px 0;
 }
 .topic-controls-card {
   display: grid;
@@ -2547,10 +2632,15 @@ watch(locale, () => void loadTopic(false));
   margin: 8px 10px 0;
 }
 .event-toolbar {
-  margin-bottom: 10px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  margin-bottom: 0;
 }
 .toolbar-primary {
   display: grid;
+  width: 100%;
   grid-template-columns: auto minmax(180px, 1fr);
   align-items: center;
   gap: 10px;
@@ -2585,34 +2675,49 @@ watch(locale, () => void loadTopic(false));
   color: var(--lane-tone, var(--n-text-color));
 }
 .chigua-topic :deep(.topic-lane__items) {
+  grid-auto-rows: max-content;
   align-content: start;
+  padding-top: 6px;
 }
 .chigua-topic :deep(.topic-lane.is-scrollable .topic-lane__items) {
-  height: 252px;
-  max-height: 252px;
+  height: 300px;
+  max-height: 300px;
+}
+.chigua-topic.is-compact :deep(.topic-lane.is-scrollable .topic-lane__items) {
+  height: 286px;
+  max-height: 286px;
 }
 .event-rank {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 100%;
+  height: auto;
   padding: 0;
-  border-radius: 7px;
-  background: var(--n-action-color);
+  border-radius: 0;
+  background: transparent;
   color: var(--n-text-color-3);
-  font-weight: 750;
+  font-size: 16px;
+  font-weight: 720;
+  line-height: 1.4;
+  text-align: center;
 }
-.event-rank.is-one { background: rgba(229,72,77,.14); color: #e5484d; }
-.event-rank.is-two { background: rgba(217,119,6,.14); color: #d97706; }
-.event-rank.is-three { background: rgba(222,162,33,.16); color: #b77905; }
-.event-rank.is-top10 { color: var(--n-text-color-2); font-weight: 700; }
+.event-rank.is-one,
+.event-rank.is-two,
+.event-rank.is-three {
+  font-size: 18px;
+  font-weight: 820;
+}
+.event-rank.is-one { color: #ea444d; }
+.event-rank.is-two { color: #ed702d; }
+.event-rank.is-three { color: #eead3f; }
+.event-rank.is-top10 { color: var(--n-text-color-2); font-weight: 720; }
 .event-title-row {
   display: flex;
-  align-items: flex-start;
-  gap: 7px;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
-  margin-top: 3px;
+  margin-top: 2px;
 }
 .event-title-row .event-title {
   min-width: 0;
@@ -2675,7 +2780,7 @@ watch(locale, () => void loadTopic(false));
 .event-item.is-serious .event-rank.is-two,
 .event-item.is-serious .event-rank.is-three,
 .event-item.is-serious .event-rank.is-top10 {
-  background: color-mix(in srgb, #6b7280 10%, transparent);
+  background: transparent;
   color: #6b7280;
 }
 .event-item.is-serious .category-pill,
