@@ -60,34 +60,29 @@
         <article
           class="event-lane-item"
           :class="{ 'is-serious': isSeriousEvent(item), 'has-cover': hasUsableCover(item) }"
+          :aria-describedby="lanePreviewItem === item ? lanePreviewTooltipId : undefined"
+          @pointerenter="showLanePreview(item, $event)"
+          @pointerleave="scheduleLanePreviewClose"
+          @focusin="showLanePreview(item, $event)"
+          @focusout="scheduleLanePreviewClose"
+          @keydown.esc="hideLanePreview"
         >
-          <n-popover
+          <button
             v-if="hasUsableCover(item)"
-            trigger="hover"
-            placement="top"
-            :delay="90"
-            :show-arrow="false"
+            type="button"
+            class="event-lane-cover"
+            :title="item.title"
+            :aria-label="item.title"
+            @click.stop="openLaneFullImagePreview(item.cover)"
           >
-            <template #trigger>
-              <n-image
-                class="event-lane-cover"
-                :src="coverSrc(item.cover)"
-                :preview-src="coverSrc(item.cover)"
-                :alt="item.title"
-                lazy
-                object-fit="cover"
-                :img-props="{ referrerpolicy: COVER_REFERRER_POLICY, onError: () => markCoverError(item.cover) }"
-                @error="markCoverError(item.cover)"
-              />
-            </template>
             <img
-              class="event-lane-hover-cover"
               :src="coverSrc(item.cover)"
               :referrerpolicy="COVER_REFERRER_POLICY"
               :alt="item.title"
+              loading="lazy"
               @error="markCoverError(item.cover)"
             />
-          </n-popover>
+          </button>
           <div class="event-lane-copy">
             <span v-if="isSeriousEvent(item)" class="event-lane-serious" :title="ui.seriousTip">
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c1.2 1.4 1.7 2.2 1.7 3.1A1.7 1.7 0 0 1 8 7 1.7 1.7 0 0 1 6.3 5.3C6.3 4.4 6.8 3.6 8 2.2Zm-2.2 6h4.4v5.2H5.8V8.2Zm-1.5 5.2h7.4" /></svg>
@@ -103,6 +98,48 @@
         </article>
       </template>
     </TopicLaneGrid>
+
+    <Teleport to="body">
+      <Transition name="item-preview">
+        <div
+          v-if="lanePreviewItem"
+          :id="lanePreviewTooltipId"
+          class="event-lane-floating-preview"
+          :class="{ 'is-serious': isSeriousEvent(lanePreviewItem) }"
+          :style="lanePreviewStyle"
+          role="group"
+          :aria-label="lanePreviewItem.title"
+          @pointerenter="cancelLanePreviewClose"
+          @pointerleave="scheduleLanePreviewClose"
+          @focusin="cancelLanePreviewClose"
+          @focusout="scheduleLanePreviewClose"
+        >
+          <button
+            type="button"
+            class="event-lane-floating-preview__media"
+            :title="lanePreviewItem.title"
+            :aria-label="lanePreviewItem.title"
+            @click.stop="openLaneFullImagePreview(lanePreviewItem.cover)"
+          >
+            <img
+              :src="coverSrc(lanePreviewItem.cover)"
+              :referrerpolicy="COVER_REFERRER_POLICY"
+              :alt="lanePreviewItem.title"
+              @error="handleLanePreviewCoverError(lanePreviewItem.cover)"
+            />
+          </button>
+        </div>
+      </Transition>
+    </Teleport>
+    <n-image
+      v-if="laneImagePreviewSrc"
+      ref="laneImagePreviewRef"
+      class="event-lane-image-preview-trigger"
+      :src="laneImagePreviewSrc"
+      :preview-src="laneImagePreviewSrc"
+      :show-toolbar="true"
+      :img-props="{ referrerpolicy: COVER_REFERRER_POLICY }"
+    />
 
     <section class="topic-section topic-feed-section">
       <div class="topic-layout">
@@ -171,24 +208,23 @@
               v-for="(item, index) in pagedData"
               :key="item.id"
               class="event-item"
-              :class="{ 'is-serious': isSeriousEvent(item), 'has-media': hasUsableCover(item) || !item.cover }"
+              :class="{ 'is-serious': isSeriousEvent(item), 'has-media': hasUsableCover(item) }"
+              @mouseenter="prepareEventCoverHover"
             >
               <span class="event-rank" :class="rankClass(pageStart + index + 1)">{{
                 String(pageStart + index + 1).padStart(2, "0")
               }}</span>
-              <n-image
-                v-if="hasUsableCover(item)"
-                class="event-cover"
-                :src="coverSrc(item.cover)"
-                :preview-src="coverSrc(item.cover)"
-                :alt="item.title"
-                lazy
-                object-fit="cover"
-                :img-props="{ referrerpolicy: COVER_REFERRER_POLICY, onError: () => markCoverError(item.cover) }"
-                @error="markCoverError(item.cover)"
-              />
-              <div v-else-if="!item.cover" class="event-cover is-logo" aria-hidden="true">
-                <img :src="getSourceLogo(primarySource(item))" alt="" @error="onLogoError" />
+              <div v-if="hasUsableCover(item)" class="event-media">
+                <n-image
+                  class="event-cover"
+                  :src="coverSrc(item.cover)"
+                  :preview-src="coverSrc(item.cover)"
+                  :alt="item.title"
+                  lazy
+                  object-fit="contain"
+                  :img-props="{ tabindex: 0, role: 'button', referrerpolicy: COVER_REFERRER_POLICY, 'data-cover-source': item.cover, onKeydown: handleEventCoverPreviewKeydown, onLoad: handleEventCoverImageLoad, onError: () => markCoverError(item.cover) }"
+                  @error="markCoverError(item.cover)"
+                />
               </div>
               <div class="event-main">
                 <div class="event-source-line">
@@ -380,6 +416,13 @@ import { getSourceLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
 import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
+import { resolveCoverPreviewLayout } from "@/utils/coverPreviewGeometry";
+import { applyExpandableCoverGeometry } from "@/utils/expandableCoverGeometry";
+import {
+  FLOATING_COVER_PREVIEW_CLOSE_DELAY,
+  FLOATING_COVER_PREVIEW_OPEN_DELAY,
+  resolveFloatingCoverPreviewPosition,
+} from "@/utils/floatingCoverPreview";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
@@ -413,6 +456,16 @@ const routePageSize = Number.parseInt(String(route.query.size || "30"), 10);
 const currentPage = ref(Number.isFinite(routePage) && routePage > 0 ? routePage : 1);
 const pageSize = ref(PAGE_SIZE_VALUES.includes(routePageSize) ? routePageSize : 30);
 const eventListRef = ref(null);
+const lanePreviewItem = ref(null);
+const lanePreviewStyle = ref({});
+const lanePreviewMediaCache = new Map();
+const laneImagePreviewRef = ref(null);
+const laneImagePreviewSrc = ref("");
+const lanePreviewTooltipId = "chigua-lane-cover-preview";
+let lanePreviewRequestId = 0;
+let lanePreviewOpenTimer = null;
+let lanePreviewCloseTimer = null;
+let lanePreviewViewportListenersBound = false;
 const locale = computed(() => normalizeLocale(getLocaleFromRoute(route)));
 const copy = computed(
   () => CHIGUA_TOPIC_METADATA[locale.value] || CHIGUA_TOPIC_METADATA["zh-CN"],
@@ -1095,10 +1148,183 @@ const formatFreshness = (value) => {
 const coverSrc = (cover) => getCoverDisplaySrc(cover);
 const hasUsableCover = (item) => Boolean(item?.cover && !coverImageErrors[item.cover]);
 const markCoverError = (cover) => {
-  if (cover) coverImageErrors[cover] = true;
+  if (!cover) return;
+  coverImageErrors[cover] = true;
+  if (lanePreviewItem.value?.cover === cover) hideLanePreview();
 };
 const onLogoError = (event) => {
   if (event?.target) event.target.src = getSourceLogoFallback();
+};
+
+const getLanePreviewMediaLayout = (cover) => {
+  if (lanePreviewMediaCache.has(cover)) return lanePreviewMediaCache.get(cover);
+  const mediaPromise = new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const layout = resolveCoverPreviewLayout(image.naturalWidth, image.naturalHeight);
+      if (!layout) {
+        reject(new Error("Invalid lane preview image layout"));
+        return;
+      }
+      resolve(layout);
+    };
+    image.onerror = reject;
+    image.referrerPolicy = COVER_REFERRER_POLICY;
+    image.src = coverSrc(cover);
+  });
+  lanePreviewMediaCache.set(cover, mediaPromise);
+  return mediaPromise;
+};
+const cancelLanePreviewClose = () => {
+  if (!lanePreviewCloseTimer) return;
+  window.clearTimeout(lanePreviewCloseTimer);
+  lanePreviewCloseTimer = null;
+};
+const scheduleLanePreviewClose = () => {
+  cancelLanePreviewClose();
+  lanePreviewCloseTimer = window.setTimeout(() => {
+    lanePreviewCloseTimer = null;
+    hideLanePreview();
+  }, FLOATING_COVER_PREVIEW_CLOSE_DELAY);
+};
+const openLaneFullImagePreview = (cover) => {
+  if (!cover) return;
+  cancelLanePreviewClose();
+  laneImagePreviewSrc.value = coverSrc(cover);
+  nextTick(() => laneImagePreviewRef.value?.click?.());
+};
+const bindLanePreviewViewportListeners = () => {
+  if (lanePreviewViewportListenersBound) return;
+  window.addEventListener("scroll", hideLanePreview, true);
+  window.addEventListener("blur", hideLanePreview);
+  lanePreviewViewportListenersBound = true;
+};
+const unbindLanePreviewViewportListeners = () => {
+  if (!lanePreviewViewportListenersBound) return;
+  window.removeEventListener("scroll", hideLanePreview, true);
+  window.removeEventListener("blur", hideLanePreview);
+  lanePreviewViewportListenersBound = false;
+};
+const hideLanePreview = () => {
+  if (lanePreviewOpenTimer) {
+    window.clearTimeout(lanePreviewOpenTimer);
+    lanePreviewOpenTimer = null;
+  }
+  if (lanePreviewCloseTimer) {
+    window.clearTimeout(lanePreviewCloseTimer);
+    lanePreviewCloseTimer = null;
+  }
+  lanePreviewRequestId += 1;
+  lanePreviewItem.value = null;
+  lanePreviewStyle.value = {};
+  unbindLanePreviewViewportListeners();
+};
+const positionLanePreview = (item, target, mediaLayout) => {
+  if (!target?.isConnected || !mediaLayout?.mediaOnly) return false;
+  const targetRect = target.getBoundingClientRect();
+  const lane = target.closest?.(".topic-lane");
+  const containerRect = lane?.getBoundingClientRect?.();
+  const textRects = Array.from(lane?.querySelectorAll?.(".event-lane-copy") || []).map((node) =>
+    node.getBoundingClientRect(),
+  );
+  const previewWidth = mediaLayout.mediaOnly.width;
+  const previewHeight = mediaLayout.mediaOnly.height;
+  const position = resolveFloatingCoverPreviewPosition({
+    targetRect,
+    containerRect,
+    textRects,
+    previewWidth,
+    previewHeight,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+  });
+  if (!position) return false;
+  lanePreviewItem.value = item;
+  lanePreviewStyle.value = {
+    left: `${position.left}px`,
+    top: `${position.top}px`,
+    width: `${previewWidth}px`,
+    height: `${previewHeight}px`,
+  };
+  bindLanePreviewViewportListeners();
+  return true;
+};
+const openLanePreview = async (item, target, requestId) => {
+  try {
+    const mediaLayout = await getLanePreviewMediaLayout(item.cover);
+    if (requestId !== lanePreviewRequestId || !target?.isConnected) return;
+    if (!positionLanePreview(item, target, mediaLayout)) hideLanePreview();
+  } catch {
+    markCoverError(item.cover);
+  }
+};
+const showLanePreview = (item, event) => {
+  if (typeof window === "undefined" || window.innerWidth <= 680 || !event?.currentTarget || !hasUsableCover(item)) return;
+  cancelLanePreviewClose();
+  if (lanePreviewOpenTimer) window.clearTimeout(lanePreviewOpenTimer);
+  const target = event.currentTarget;
+  const requestId = ++lanePreviewRequestId;
+  lanePreviewOpenTimer = window.setTimeout(() => {
+    lanePreviewOpenTimer = null;
+    void openLanePreview(item, target, requestId);
+  }, FLOATING_COVER_PREVIEW_OPEN_DELAY);
+};
+const handleLanePreviewCoverError = (cover) => markCoverError(cover);
+
+const syncEventCoverGeometry = (image) => {
+  if (!image?.isConnected) return;
+  applyExpandableCoverGeometry({
+    image,
+    media: image.closest?.(".event-media"),
+    preview: image.closest?.(".event-cover.n-image"),
+    row: image.closest?.(".event-item"),
+  });
+};
+const handleEventCoverImageLoad = (event) => {
+  const image = event?.currentTarget;
+  if (!image) return;
+  window.requestAnimationFrame?.(() => syncEventCoverGeometry(image));
+};
+const prepareEventCoverHover = (event) => {
+  const image = event?.currentTarget?.querySelector?.(".event-cover img");
+  if (image?.complete) syncEventCoverGeometry(image);
+};
+const pendingEventCoverGeometryImages = new WeakSet();
+const markBrokenEventCoverImage = (image) => {
+  const cover = image?.dataset?.coverSource || "";
+  pendingEventCoverGeometryImages.delete(image);
+  if (cover) markCoverError(cover);
+};
+const ensureEventCoverGeometry = (image) => {
+  if (!image) return;
+  if (image.complete) {
+    if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+      pendingEventCoverGeometryImages.delete(image);
+      syncEventCoverGeometry(image);
+    } else {
+      markBrokenEventCoverImage(image);
+    }
+    return;
+  }
+  if (pendingEventCoverGeometryImages.has(image)) return;
+  pendingEventCoverGeometryImages.add(image);
+  image.addEventListener?.("load", () => {
+    pendingEventCoverGeometryImages.delete(image);
+    syncEventCoverGeometry(image);
+  }, { once: true });
+  image.addEventListener?.("error", () => markBrokenEventCoverImage(image), { once: true });
+};
+const syncReadyEventCoverGeometries = () => {
+  eventListRef.value?.querySelectorAll?.(".event-cover img").forEach(ensureEventCoverGeometry);
+};
+const queueEventCoverGeometrySync = () => {
+  if (typeof window === "undefined") return;
+  nextTick(() => window.requestAnimationFrame?.(syncReadyEventCoverGeometries));
+};
+const handleEventCoverPreviewKeydown = (event) => {
+  if (event?.key !== "Enter" && event?.key !== " ") return;
+  event.preventDefault();
+  event.currentTarget?.click?.();
 };
 
 let querySyncTimer;
@@ -1145,6 +1371,11 @@ watch(
 watch(pageCount, (count) => {
   if (currentPage.value > count) currentPage.value = count;
 });
+watch(
+  () => pagedData.value.map((item) => `${item.id}:${item.cover || ""}`).join("|"),
+  queueEventCoverGeometrySync,
+  { flush: "post" },
+);
 watch(categoryOptions, (options) => {
   if (
     activeCategory.value !== "all" &&
@@ -1264,17 +1495,21 @@ const handleGlobalDataRefresh = (event) => {
 };
 onMounted(() => {
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  queueEventCoverGeometrySync();
   void loadTopic(false);
 });
 onActivated(() => {
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+  queueEventCoverGeometrySync();
 });
-onDeactivated(() =>
-  window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh),
-);
+onDeactivated(() => {
+  hideLanePreview();
+  window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
+});
 onBeforeUnmount(() => {
   clearTimeout(querySyncTimer);
+  hideLanePreview();
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
 });
 watch(locale, () => void loadTopic(false));
@@ -1591,16 +1826,16 @@ watch(locale, () => void loadTopic(false));
 .event-lane-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 9px;
+  gap: var(--ranking-card-featured-item-gap);
   align-items: center;
   min-width: 0;
-  min-height: 62px;
+  min-height: var(--ranking-card-featured-item-min-height);
   padding: 5px 2px;
   border-bottom: 1px solid var(--n-border-color);
   color: inherit;
 }
 .event-lane-item.has-cover {
-  grid-template-columns: 82px minmax(0, 1fr);
+  grid-template-columns: var(--ranking-card-featured-thumb-width) minmax(0, 1fr);
 }
 .event-lane-item:last-child { border-bottom: 0; }
 .event-lane-copy { min-width: 0; }
@@ -1623,31 +1858,73 @@ watch(locale, () => void loadTopic(false));
 }
 .event-lane-cover {
   display: block;
-  width: 82px;
-  height: 52px;
+  box-sizing: border-box;
+  width: var(--ranking-card-featured-thumb-width);
+  height: var(--ranking-card-featured-thumb-height);
+  padding: 0;
   overflow: hidden;
-  border-radius: 7px;
-  background: var(--n-color);
+  border: 0;
+  border-radius: var(--ranking-card-thumb-radius);
+  background: var(--n-action-color);
   cursor: zoom-in;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--n-border-color) 70%, transparent);
 }
-.event-lane-cover :deep(img) {
+.event-lane-cover img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform .16s ease;
+  object-position: center;
+  transition: transform .18s ease;
 }
-.event-lane-cover:hover :deep(img),
-.event-lane-cover:focus-within :deep(img) { transform: scale(1.06); }
-.event-lane-hover-cover {
+.event-lane-cover:hover img,
+.event-lane-cover:focus-visible img { transform: scale(1.04); }
+.event-lane-cover:focus-visible {
+  outline: 2px solid var(--n-primary-color);
+  outline-offset: 2px;
+}
+.event-lane-floating-preview {
+  position: fixed;
+  z-index: 3000;
   display: block;
-  width: auto;
-  max-width: 240px;
-  height: auto;
-  max-height: 224px;
-  border-radius: 8px;
-  object-fit: contain;
+  overflow: visible;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .16);
+  pointer-events: auto;
 }
+.event-lane-floating-preview__media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: zoom-in;
+}
+.event-lane-floating-preview__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: contain;
+  object-position: center;
+}
+.event-lane-floating-preview.is-serious img { filter: grayscale(.88) saturate(.18) contrast(.96); }
+.event-lane-image-preview-trigger {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.item-preview-enter-active,
+.item-preview-leave-active { transition: opacity .16s ease, transform .16s ease; }
+.item-preview-enter-from,
+.item-preview-leave-to { opacity: 0; transform: scale(.98); }
 .event-lane-item p {
   display: flex;
   align-items: center;
@@ -1701,47 +1978,121 @@ watch(locale, () => void loadTopic(false));
   border-radius: 6px;
   background: linear-gradient(90deg, color-mix(in srgb, #6b7280 8%, transparent), transparent 72%);
 }
-.event-lane-item.is-serious .event-lane-cover :deep(img),
-.event-lane-item.is-serious + :deep(.n-popover) .event-lane-hover-cover { filter: grayscale(.88) saturate(.18) contrast(.96); }
+.event-lane-item.is-serious .event-lane-cover img { filter: grayscale(.88) saturate(.18) contrast(.96); }
 .event-list {
   display: grid;
 }
 .event-item {
+  position: relative;
   display: grid;
-  grid-template-columns: 30px 96px minmax(0, 1fr) auto;
-  gap: 11px;
+  grid-template-columns: var(--ranking-stream-rank-width) var(--ranking-stream-media-width) minmax(0, 1fr) auto;
+  gap: var(--ranking-stream-row-gap);
   align-items: center;
   min-width: 0;
-  padding: 11px 2px;
+  min-height: var(--ranking-stream-row-min-height);
+  padding: var(--ranking-stream-row-padding-block) var(--ranking-stream-row-padding-inline-end) var(--ranking-stream-row-padding-block) var(--ranking-stream-row-padding-inline-start);
   border-top: 1px solid var(--n-border-color);
+  transition: background-color .16s ease;
 }
-
+.event-item:hover { background: var(--n-action-color); }
 .event-item:not(.has-media) {
-  grid-template-columns: 30px minmax(0, 1fr) auto;
+  grid-template-columns: var(--ranking-stream-rank-width) minmax(0, 1fr) auto;
 }
 .event-rank {
-  align-self: start;
-  padding-top: 3px;
+  align-self: center;
+  padding-top: 0;
   color: var(--n-text-color-3);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
-.event-cover {
-  display: block;
-  width: 96px;
-  height: 54px;
-  overflow: hidden;
-  border-radius: 6px;
-  background: var(--n-action-color);
-  cursor: zoom-in;
+.event-media {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--ranking-stream-media-width);
+  height: var(--ranking-stream-media-height);
+  max-width: var(--ranking-stream-media-width);
+  max-height: var(--ranking-stream-media-height);
+  overflow: visible;
 }
-.event-cover.is-logo { cursor: default; }
-.event-cover :deep(img),
-.event-cover.is-logo img {
-  display: block;
+.event-cover {
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  overflow: visible;
+  border-radius: 0;
+  background: transparent;
+}
+.event-cover :deep(img) {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: var(--ranking-stream-media-radius);
+  object-fit: contain;
+  object-position: center;
+  cursor: zoom-in;
+}
+.event-cover :deep(img:focus-visible) {
+  outline: 2px solid var(--n-primary-color);
+  outline-offset: 2px;
+}
+.event-cover.is-cover-geometry-ready {
+  position: absolute;
+  top: calc(50% + var(--cover-hover-center-y-shift, 0px));
+  right: 0;
+  width: var(--cover-base-viewport-width, 100%);
+  height: var(--cover-base-viewport-height, 100%);
+  max-width: none;
+  max-height: none;
+  overflow: hidden;
+  border-radius: var(--ranking-stream-media-radius);
+  transform: translateY(-50%);
+  transition: width .24s cubic-bezier(.22,1,.36,1), height .24s cubic-bezier(.22,1,.36,1), top .24s cubic-bezier(.22,1,.36,1), box-shadow .18s ease;
+  will-change: width, height;
+}
+.event-cover.is-cover-geometry-ready :deep(img) {
+  position: absolute;
+  top: 50%;
+  right: var(--cover-base-image-right, 0px);
+  left: auto;
+  width: var(--cover-base-image-width, 100%);
+  height: var(--cover-base-image-height, 100%);
+  max-width: none;
+  max-height: none;
+  border-radius: var(--ranking-stream-media-radius);
+  object-fit: contain !important;
+  transform: translateY(-50%);
+  transform-origin: right center;
+  transition: width .24s cubic-bezier(.22,1,.36,1), height .24s cubic-bezier(.22,1,.36,1), right .24s cubic-bezier(.22,1,.36,1);
+  will-change: width, height, right;
+}
+@media (hover: hover) and (pointer: fine) {
+  .event-item.has-media:hover { z-index: 4; }
+  .event-item.has-media:hover .event-cover.is-cover-geometry-ready {
+    z-index: 5;
+    width: var(--cover-hover-width, 113.4px);
+    height: var(--cover-hover-height, 113.4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .16);
+  }
+  .event-item.has-media:hover .event-cover.is-cover-geometry-ready :deep(img) {
+    right: 0;
+    width: var(--cover-hover-width, 113.4px);
+    height: var(--cover-hover-height, 113.4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .event-cover.is-cover-geometry-ready,
+  .event-cover.is-cover-geometry-ready :deep(img),
+  .item-preview-enter-active,
+  .item-preview-leave-active { transition: none; }
+  .item-preview-enter-from,
+  .item-preview-leave-to { transform: none; }
 }
 .event-main {
   min-width: 0;
@@ -2016,13 +2367,19 @@ watch(locale, () => void loadTopic(false));
     flex: 0 0 auto;
   }
   .event-item {
-    grid-template-columns: 24px 62px minmax(0, 1fr);
-    gap: 8px;
-    padding: 10px 0;
+    grid-template-columns: var(--ranking-stream-mobile-rank-width) var(--ranking-stream-mobile-media-width) minmax(0, 1fr);
+    gap: var(--ranking-stream-mobile-row-gap);
+    min-height: var(--ranking-stream-mobile-row-min-height);
+    padding: var(--ranking-stream-mobile-row-padding-block) var(--ranking-stream-mobile-row-padding-inline-end) var(--ranking-stream-mobile-row-padding-block) var(--ranking-stream-mobile-row-padding-inline-start);
   }
-  .event-cover {
-    width: 62px;
-    height: 36px;
+  .event-item:not(.has-media) {
+    grid-template-columns: var(--ranking-stream-mobile-rank-width) minmax(0, 1fr);
+  }
+  .event-media {
+    width: var(--ranking-stream-mobile-media-width);
+    height: var(--ranking-stream-mobile-media-height);
+    max-width: var(--ranking-stream-mobile-media-width);
+    max-height: var(--ranking-stream-mobile-media-height);
   }
   .event-open {
     display: none;
@@ -2312,8 +2669,7 @@ watch(locale, () => void loadTopic(false));
   border-radius: 8px;
   background: linear-gradient(90deg, color-mix(in srgb, #6b7280 8%, transparent), transparent 66%);
 }
-.event-item.is-serious .event-cover :deep(img),
-.event-item.is-serious .event-cover.is-logo img { filter: grayscale(.9) saturate(.15) contrast(.96); }
+.event-item.is-serious .event-cover :deep(img) { filter: grayscale(.9) saturate(.15) contrast(.96); }
 .event-item.is-serious .event-rank,
 .event-item.is-serious .event-rank.is-one,
 .event-item.is-serious .event-rank.is-two,
