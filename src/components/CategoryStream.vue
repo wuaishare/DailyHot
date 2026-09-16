@@ -1143,7 +1143,22 @@ const queueCoverGeometrySync = () => {
   if (typeof window === "undefined") return;
   nextTick(() => window.requestAnimationFrame?.(syncReadyCoverGeometries));
 };
-onMounted(queueCoverGeometrySync);
+let coverGeometryResizeFrame = 0;
+const handleCoverGeometryViewportResize = () => {
+  if (coverGeometryResizeFrame) window.cancelAnimationFrame?.(coverGeometryResizeFrame);
+  coverGeometryResizeFrame = window.requestAnimationFrame?.(() => {
+    coverGeometryResizeFrame = 0;
+    queueCoverGeometrySync();
+  }) || 0;
+};
+onMounted(() => {
+  queueCoverGeometrySync();
+  window.addEventListener("resize", handleCoverGeometryViewportResize, { passive: true });
+});
+onBeforeUnmount(() => {
+  if (coverGeometryResizeFrame) window.cancelAnimationFrame?.(coverGeometryResizeFrame);
+  window.removeEventListener("resize", handleCoverGeometryViewportResize);
+});
 watch(
   () => [
     sourcePageMode.value,
