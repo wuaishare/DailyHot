@@ -1,6 +1,11 @@
 import { handleTrendsIntelligenceProxy } from "./_trends-intelligence.js";
 import { resolveProxiedImageContentType } from "./_image-content-type.js";
 import { protectTranslationTerms } from "./_translation-terms.js";
+import {
+  BILIBILI_CDN_FRESH_SECONDS,
+  BILIBILI_CDN_STALE_SECONDS,
+  resolveBilibiliCacheEntry,
+} from "./_bilibili-cache.mjs";
 
 export const config = {
   runtime: "nodejs",
@@ -1219,7 +1224,13 @@ const normalizeBilibiliItems = (items = []) =>
     };
   });
 
-const buildBilibiliResponse = ({ type, items, updateTime = new Date().toISOString() }) => ({
+const buildBilibiliResponse = ({
+  type,
+  items,
+  updateTime = new Date().toISOString(),
+  fromCache = false,
+  stale = false,
+}) => ({
   code: 200,
   name: "bilibili",
   title: "哔哩哔哩",
@@ -1234,10 +1245,33 @@ const buildBilibiliResponse = ({ type, items, updateTime = new Date().toISOStrin
   },
   link: BILIBILI_LINKS[type] || BILIBILI_LINKS.all,
   total: items.length,
-  fromCache: false,
+  fromCache,
+  stale,
   updateTime,
   data: normalizeBilibiliItems(items),
 });
+
+const getBilibiliCacheStore = () => {
+  if (!globalThis.__dailyhotBilibiliCache) {
+    globalThis.__dailyhotBilibiliCache = new Map();
+  }
+  return globalThis.__dailyhotBilibiliCache;
+};
+
+const setBilibiliCacheHeaders = (res, { forceNoCache, cacheState }) => {
+  if (forceNoCache) {
+    res.setHeader("cache-control", "no-store");
+    res.setHeader("vercel-cdn-cache-control", "no-store");
+    res.setHeader("x-dailyhot-bilibili-cache", "bypass");
+    return;
+  }
+  res.setHeader("cache-control", "public, max-age=0, must-revalidate");
+  res.setHeader(
+    "vercel-cdn-cache-control",
+    `public, max-age=${BILIBILI_CDN_FRESH_SECONDS}, stale-while-revalidate=${BILIBILI_CDN_STALE_SECONDS}`,
+  );
+  res.setHeader("x-dailyhot-bilibili-cache", cacheState || `edge-${BILIBILI_CDN_FRESH_SECONDS}s`);
+};
 
 const fetchBilibiliJson = async (url, options = {}) => {
   let lastError;
@@ -1302,9 +1336,14 @@ const fetchBilibiliItems = async (type) => {
   };
 };
 
-const handleBilibili = async (req, res) => {
-  if (req.method !== "GET") return false;
-  const type = getBilibiliType(normalizeQueryValue(req.query.type, "all"));
+const fetchBilibiliRanking = async (type, { forceNoCache = false } = {}) => {
+  const cache = getBilibiliCacheStore();
+  const cached = cache.get(type);
+  if (!forceNoCache) {
+    const fresh = resolveBilibiliCacheEntry(cached);
+    if (fresh?.freshness === "fresh") return { ...fresh.value, cacheState: "memory-fresh" };
+  }
+
   try {
     const result = await fetchBilibiliItems(type);
     const response = buildBilibiliResponse({
@@ -1312,9 +1351,36 @@ const handleBilibili = async (req, res) => {
       items: result.items,
       updateTime: result.updateTime,
     });
-    res.status(200).json(response);
+    if (!response.data.length) throw new Error(`Bilibili ${type} response has no usable items`);
+    cache.set(type, { cachedAt: Date.now(), value: response });
+    return { ...response, cacheState: "direct" };
+  } catch (error) {
+    if (!forceNoCache) {
+      const stale = resolveBilibiliCacheEntry(cached, { allowStale: true });
+      if (stale?.freshness === "stale") {
+        console.warn(`Bilibili ${type} direct fetch failed; serving stale cache`, error);
+        return { ...stale.value, cacheState: "memory-stale" };
+      }
+    }
+    throw error;
+  }
+};
+
+const handleBilibili = async (req, res) => {
+  if (req.method !== "GET") return false;
+  const type = getBilibiliType(normalizeQueryValue(req.query.type, "all"));
+  const forceNoCache =
+    String(normalizeQueryValue(req.query.cache, "true")).toLowerCase() === "false";
+  try {
+    const response = await fetchBilibiliRanking(type, { forceNoCache });
+    setBilibiliCacheHeaders(res, { forceNoCache, cacheState: response.cacheState });
+    const { cacheState: _cacheState, ...payload } = response;
+    res.status(200).json(payload);
     return true;
   } catch (error) {
+    res.setHeader("cache-control", "no-store");
+    res.setHeader("vercel-cdn-cache-control", "no-store");
+    res.setHeader("x-dailyhot-bilibili-cache", forceNoCache ? "bypass" : "miss");
     console.warn("Bilibili direct fetch failed", error);
     return false;
   }

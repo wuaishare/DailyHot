@@ -17,7 +17,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "prebuild": "npm run audit:trends-catalog:contract && npm run audit:ranking-item-meta && npm run audit:ranking-meta-consumers && npm run audit:translation-terms && npm run audit:category-integrity && npm run audit:stream-layout && npm run audit:image-proxy && node scripts/generate-seo-files.js",
+    "prebuild": "npm run audit:trends-catalog:contract && npm run audit:ranking-item-meta && npm run audit:ranking-meta-consumers && npm run audit:translation-terms && npm run audit:category-integrity && npm run audit:stream-layout && npm run audit:image-proxy && npm run audit:bilibili-cache && node scripts/generate-seo-files.js",
     "build": "vite build",
     "postbuild": "node scripts/generate-route-shells.cjs && npm run audit:seo-shells && npm run audit:home-seo",
     "preview": "vite preview",
@@ -39,6 +39,7 @@
     "audit:home-seo": "node scripts/audit-home-seo.cjs",
     "audit:stream-layout": "node scripts/audit-stream-layout-contract.mjs",
     "audit:image-proxy": "node scripts/audit-image-proxy-contract.mjs",
+    "audit:bilibili-cache": "node scripts/audit-bilibili-cache.mjs",
     "audit:translation-terms": "node scripts/audit-translation-terms.mjs"
   },
   "dependencies": {
