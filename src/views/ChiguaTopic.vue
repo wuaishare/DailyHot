@@ -67,7 +67,7 @@
       :aria-label="copy.feedTitle"
       :sortable="true"
       :drag-disabled="featuredLaneDragDisabled"
-      :hide-scrollbar="true"
+      :hover-scrollbar="true"
       @select="selectFeaturedLane"
       @load-more="loadMoreFeaturedLane"
       @reorder="saveFeaturedLaneOrder"
@@ -158,7 +158,7 @@
         class="topic-trend-card topic-trend-card--featured"
         :aria-label="ui.trend"
       >
-        <div class="topic-trend-title"><strong>{{ ui.trend }}</strong></div>
+        <div class="topic-trend-title"><strong>{{ ui.trend }}</strong><em>{{ trendItems.length }}</em></div>
         <div class="topic-trend-list">
           <a
             v-for="item in trendItems.slice(0, 4)"
@@ -182,7 +182,7 @@
       class="topic-trend-strip"
       :aria-label="ui.trend"
     >
-      <div class="topic-trend-title"><strong>{{ ui.trend }}</strong></div>
+      <div class="topic-trend-title"><strong>{{ ui.trend }}</strong><em>{{ trendItems.length }}</em></div>
       <div class="topic-trend-list">
         <a
           v-for="item in trendItems.slice(0, 4)"
@@ -254,7 +254,7 @@
             <nav>
               <button
                 type="button"
-                class="topic-category-item"
+                class="topic-category-item is-all"
                 :class="{ active: activeCategory === 'all' }"
                 :aria-current="activeCategory === 'all' ? 'true' : undefined"
                 @click="setCategory('all')"
@@ -915,7 +915,10 @@ const trendMetric = (trend) => {
     !["reentry", "new"].includes(trend?.signal) &&
     baselineRank > 0 &&
     rank > 0
-  ) return `#${baselineRank} → #${rank}`;
+  ) {
+    const direction = rank < baselineRank ? "↑" : rank > baselineRank ? "↓" : "→";
+    return `#${baselineRank} ${direction} #${rank}`;
+  }
   return rank > 0 ? `#${rank}` : "";
 };
 const rankClass = (rank) => ({
@@ -1850,7 +1853,8 @@ watch(locale, () => void loadTopic(false));
   border-radius: 8px;
   background: color-mix(in srgb, var(--n-color) 82%, transparent);
   color: var(--n-text-color-3);
-  font-size: 9px;
+  font-size: 11px;
+  font-weight: 600;
   white-space: nowrap;
 }
 .hero-stats > span strong {
@@ -1874,15 +1878,15 @@ watch(locale, () => void loadTopic(false));
   text-decoration: none;
 }
 .radar-trend-item:hover { border-color: color-mix(in srgb, var(--radar-signal) 36%, var(--n-border-color)); }
-.radar-trend-item em { color: var(--radar-signal); font-size: 8px; font-style: normal; font-weight: 720; white-space: nowrap; }
-.radar-trend-item strong { justify-self: end; color: var(--radar-signal); font-size: 9px; font-weight: 760; white-space: nowrap; }
+.radar-trend-item em { color: var(--radar-signal); font-size: 11px; font-style: normal; font-weight: 720; white-space: nowrap; }
+.radar-trend-item strong { justify-self: end; color: var(--radar-signal); font-size: 11px; font-weight: 760; white-space: nowrap; }
 .radar-trend-item span {
   display: -webkit-box;
   grid-column: 1 / -1;
   overflow: hidden;
   color: var(--n-text-color-2);
-  font-size: 9px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.4;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -1916,7 +1920,7 @@ watch(locale, () => void loadTopic(false));
 }
 .toolbar-title span {
   color: var(--n-text-color-3);
-  font-size: 10px;
+  font-size: 11px;
 }
 .topic-search {
   box-sizing: border-box;
@@ -1985,7 +1989,7 @@ watch(locale, () => void loadTopic(false));
 }
 .result-count span {
   color: var(--n-text-color-3);
-  font-size: 10px;
+  font-size: 11px;
 }
 .resonance-toggle,
 .reset-filter {
@@ -1995,7 +1999,7 @@ watch(locale, () => void loadTopic(false));
   border-radius: 7px;
   background: transparent;
   color: var(--n-text-color-2);
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -2028,23 +2032,61 @@ watch(locale, () => void loadTopic(false));
   gap: 8px;
 }
 .topic-featured-workspace.is-five-column :deep(.topic-lane-grid) { height: 100%; }
-.topic-trend-card--featured {
+.topic-trend-card.topic-trend-card--featured {
+  --lane-tone: #5f7892;
+  position: relative;
+  box-sizing: border-box;
   display: flex;
   min-width: 0;
   height: 100%;
+  overflow: hidden;
   flex-direction: column;
-  padding: 10px 12px 8px;
+  padding: 10px 12px;
   border-radius: 12px;
 }
+.topic-trend-card.topic-trend-card--featured::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--lane-tone);
+  opacity: .78;
+}
 .topic-trend-card--featured .topic-trend-title {
+  justify-content: space-between;
+  height: 28px;
   min-height: 28px;
   padding: 0 0 5px;
   font-size: 15px;
 }
+.topic-trend-card--featured .topic-trend-title strong { color: var(--lane-tone); }
+.topic-trend-card--featured .topic-trend-title em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--n-color);
+  color: var(--n-text-color-2);
+  font-size: 10px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
 .topic-trend-card--featured .topic-trend-list {
   flex: 1 1 auto;
   grid-template-rows: repeat(4, minmax(0, 1fr));
-  padding: 8px 0 0;
+  padding: 6px 0 0;
+}
+.topic-trend-card--featured .radar-trend-item {
+  padding: 4px 2px;
+  border-color: transparent;
+  background: transparent;
+}
+.topic-trend-card--featured .radar-trend-item:hover {
+  border-color: transparent;
+  background: var(--n-action-color);
 }
 .topic-trend-strip {
   display: grid;
@@ -2816,7 +2858,8 @@ watch(locale, () => void loadTopic(false));
   min-height: 38px;
   padding: 8px 10px;
   border-bottom: 1px solid var(--n-border-color);
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 700;
 }
 .topic-category-title span,
 .topic-controls-title span {
@@ -2839,28 +2882,37 @@ watch(locale, () => void loadTopic(false));
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: var(--n-text-color-2);
+  --category-tone: var(--n-text-color-2);
+  color: var(--category-tone);
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   text-align: left;
   cursor: pointer;
 }
 .topic-category-item:hover {
-  background: var(--n-action-color);
-  color: var(--n-text-color);
+  background: color-mix(in srgb, var(--category-tone) 8%, var(--n-action-color));
+  color: var(--category-tone);
 }
 .topic-category-item.active {
-  background: color-mix(in srgb, var(--n-primary-color) 9%, var(--n-action-color));
-  color: var(--n-primary-color);
-  box-shadow: inset 2px 0 0 var(--n-primary-color);
+  background: color-mix(in srgb, var(--category-tone) 10%, var(--n-action-color));
+  color: var(--category-tone);
+  box-shadow: inset 2px 0 0 var(--category-tone);
   font-weight: 700;
 }
 .topic-category-item em {
-  color: var(--n-text-color-3);
-  font-size: 10px;
+  color: color-mix(in srgb, var(--category-tone) 72%, var(--n-text-color-3));
+  font-size: 11px;
   font-style: normal;
   font-variant-numeric: tabular-nums;
 }
+.topic-category-item.is-all { --category-tone: var(--n-primary-color); }
+.topic-category-item.is-gossip { --category-tone: #d14b72; }
+.topic-category-item.is-celebrity { --category-tone: #7c5ce7; }
+.topic-category-item.is-film-tv { --category-tone: #4f7fd8; }
+.topic-category-item.is-variety { --category-tone: #d97706; }
+.topic-category-item.is-music { --category-tone: #6268c7; }
+.topic-category-item.is-creator { --category-tone: #168a84; }
+.topic-category-item.is-other { --category-tone: #6b7280; }
 .topic-category-item.active em { color: currentColor; }
 .topic-trend-card {
   padding: 0 0 8px;
@@ -2869,10 +2921,19 @@ watch(locale, () => void loadTopic(false));
   box-sizing: border-box;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   min-height: 38px;
   padding: 8px 10px;
   border-bottom: 1px solid var(--n-border-color);
+  font-size: 13px;
+  font-weight: 700;
+}
+.topic-trend-title em {
+  color: var(--n-text-color-3);
   font-size: 11px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
 }
 .topic-trend-list {
   display: grid;
@@ -2892,7 +2953,7 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-control-section > span {
   color: var(--n-text-color-3);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: .02em;
 }
@@ -2900,6 +2961,8 @@ watch(locale, () => void loadTopic(false));
   width: 100%;
   max-width: none;
 }
+.topic-controls-card :deep(.compact-filter__label) { font-size: 11px; }
+.topic-controls-card :deep(.compact-filter__value) { font-size: 12px; }
 .topic-controls-card > .resonance-toggle,
 .topic-controls-card > .reset-filter,
 .topic-controls-card > :deep(.n-button) {
@@ -2955,11 +3018,13 @@ watch(locale, () => void loadTopic(false));
   align-content: start;
   padding-top: 6px;
 }
-.chigua-topic :deep(.topic-lane.is-scrollable .topic-lane__items) {
+.chigua-topic :deep(.topic-lane.is-scrollable .topic-lane__items:not(.topic-lane__items--overlay)),
+.chigua-topic :deep(.topic-lane.is-scrollable .topic-lane__scrollbar) {
   height: 266px;
   max-height: 266px;
 }
-.chigua-topic.is-compact :deep(.topic-lane.is-scrollable .topic-lane__items) {
+.chigua-topic.is-compact :deep(.topic-lane.is-scrollable .topic-lane__items:not(.topic-lane__items--overlay)),
+.chigua-topic.is-compact :deep(.topic-lane.is-scrollable .topic-lane__scrollbar) {
   height: 252px;
   max-height: 252px;
 }
@@ -3036,7 +3101,7 @@ watch(locale, () => void loadTopic(false));
   color: var(--trend-tone);
   font-weight: 700;
 }
-.trend-pill b { font-size: 9px; font-weight: 750; }
+.trend-pill b { font-size: 11px; font-weight: 750; }
 .trend-pill.is-breakthrough { --trend-tone: #e5484d; }
 .trend-pill.is-rising { --trend-tone: #d97706; }
 .trend-pill.is-reentry { --trend-tone: #7c5ce7; }
