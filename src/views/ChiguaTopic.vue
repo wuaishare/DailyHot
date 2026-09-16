@@ -70,7 +70,6 @@
     <div
       v-if="featuredGroups.length"
       class="topic-featured-workspace"
-      :class="{ 'is-five-column': showTrendAsFeaturedLane }"
     >
     <TopicLaneGrid
       class="topic-featured-lanes"
@@ -142,32 +141,9 @@
         </article>
       </template>
     </TopicLaneGrid>
-      <section
-        v-if="showTrendAsFeaturedLane"
-        class="topic-trend-card topic-trend-card--featured"
-        :aria-label="ui.trend"
-      >
-        <div class="topic-trend-title"><strong>{{ ui.trend }}</strong><em>{{ trendItems.length }}</em></div>
-        <div class="topic-trend-list">
-          <a
-            v-for="item in trendItems.slice(0, 4)"
-            :key="`featured-trend-${item.id}`"
-            class="radar-trend-item"
-            :class="`is-${eventTrend(item)?.signal || 'steady'}`"
-            :href="item.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            :title="item.title"
-          >
-            <em>{{ trendSignalLabel(eventTrend(item)?.signal) }}</em>
-            <strong>{{ trendMetric(eventTrend(item)) }}</strong>
-            <span>{{ item.title }}</span>
-          </a>
-        </div>
-      </section>
     </div>
     <section
-      v-if="trendItems.length && !showTrendAsFeaturedLane"
+      v-if="trendItems.length"
       class="topic-trend-strip"
       :aria-label="ui.trend"
     >
@@ -407,7 +383,7 @@
                 >{{ ui.open }}</a
               >
             </article>
-            <div class="event-pagination">
+            <div class="event-pagination event-pagination--mobile">
               <div class="event-pagination__meta">
                 <span>{{ pageRangeText }}</span>
                 <CompactFilter
@@ -446,6 +422,29 @@
             </section>
             <section class="topic-control-section">
               <CompactFilter v-model="activeSort" :label="ui.sort" :aria-label="ui.sort" :options="sortOptions" :show-count="false" />
+            </section>
+            <section class="topic-control-section topic-control-pagination">
+              <div class="topic-pagination-control">
+                <div class="topic-pagination-meta">
+                  <span>{{ pageRangeText }}</span>
+                  <CompactFilter
+                    v-model="pageSize"
+                    :label="ui.perPage"
+                    :aria-label="ui.perPage"
+                    :options="pageSizeOptions"
+                    :show-count="false"
+                    :default-value="30"
+                  />
+                </div>
+                <n-pagination
+                  v-if="pageCount > 1"
+                  v-model:page="currentPage"
+                  :page-count="pageCount"
+                  :page-slot="5"
+                  size="small"
+                  @update:page="handlePageChange"
+                />
+              </div>
             </section>
             <button
               v-if="resonanceMatchCount"
@@ -935,7 +934,7 @@ const effectiveResonanceSourceCount = (item) => eventSourceCount(item);
 const resonanceMatchCount = computed(
   () => data.value.filter((item) => isResonanceItem(item)).length,
 );
-const TREND_SIGNAL_ORDER = ["reentry", "breakthrough", "rising", "falling", "new"];
+const TREND_SIGNAL_ORDER = ["breakthrough", "rising", "falling", "reentry", "new"];
 const trendItems = computed(() => {
   const buckets = new Map(TREND_SIGNAL_ORDER.map((signal) => [signal, []]));
   for (const item of data.value) {
@@ -949,14 +948,37 @@ const trendItems = computed(() => {
       || eventScore(right) - eventScore(left));
   }
   const selected = [];
-  for (let round = 0; round < 2 && selected.length < 6; round += 1) {
-    for (const signal of TREND_SIGNAL_ORDER) {
-      const item = buckets.get(signal)?.[round];
-      if (item) selected.push(item);
-      if (selected.length >= 6) break;
+  const selectedKeys = new Set();
+  const takeFirst = (signals) => {
+    for (const signal of signals) {
+      const item = buckets.get(signal)?.find((candidate) => {
+        const key = candidate.id || candidate.url || candidate.title;
+        return key && !selectedKeys.has(key);
+      });
+      if (!item) continue;
+      const key = item.id || item.url || item.title;
+      selected.push(item);
+      selectedKeys.add(key);
+      return;
+    }
+  };
+  takeFirst(["breakthrough", "rising"]);
+  takeFirst(["falling"]);
+  takeFirst(["reentry"]);
+  takeFirst(["new"]);
+  if (selected.length < 4) {
+    const remaining = [...buckets.values()]
+      .flat()
+      .filter((item) => !selectedKeys.has(item.id || item.url || item.title))
+      .sort((left, right) =>
+        Math.abs(Number(right.trend?.rankDelta || 0)) - Math.abs(Number(left.trend?.rankDelta || 0))
+        || eventScore(right) - eventScore(left));
+    for (const item of remaining) {
+      selected.push(item);
+      if (selected.length >= 4) break;
     }
   }
-  return selected;
+  return selected.slice(0, 4);
 });
 const requestedWorkspaceColumns = computed(() =>
   store.compactMode
@@ -971,9 +993,6 @@ const effectiveWorkspaceColumns = computed(() =>
   }),
 );
 const featuredLaneColumns = computed(() => Math.min(4, effectiveWorkspaceColumns.value));
-const showTrendAsFeaturedLane = computed(() =>
-  trendItems.value.length > 0 && effectiveWorkspaceColumns.value >= 5,
-);
 
 const categoryOptions = computed(() => [
   { value: "all", label: ui.value.all, count: data.value.length },
@@ -1988,69 +2007,6 @@ watch(locale, () => void loadTopic(false));
   min-width: 0;
 }
 .chigua-topic.is-compact .topic-featured-workspace { --chigua-featured-lane-height: 300px; }
-.topic-featured-workspace.is-five-column {
-  display: grid;
-  grid-template-columns: minmax(0, 4fr) minmax(220px, 1fr);
-  align-items: start;
-  gap: 8px;
-}
-.topic-featured-workspace.is-five-column :deep(.topic-lane-grid) { height: auto; }
-.topic-trend-card.topic-trend-card--featured {
-  --lane-tone: #5f7892;
-  position: relative;
-  box-sizing: border-box;
-  display: flex;
-  min-width: 0;
-  height: var(--chigua-featured-lane-height);
-  overflow: hidden;
-  flex-direction: column;
-  padding: 10px 12px;
-  border-radius: 12px;
-}
-.topic-trend-card.topic-trend-card--featured::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 2px;
-  background: var(--lane-tone);
-  opacity: .78;
-}
-.topic-trend-card--featured .topic-trend-title {
-  justify-content: space-between;
-  height: 28px;
-  min-height: 28px;
-  padding: 0 0 5px;
-  font-size: 15px;
-}
-.topic-trend-card--featured .topic-trend-title strong { color: var(--lane-tone); }
-.topic-trend-card--featured .topic-trend-title em {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--n-color);
-  color: var(--n-text-color-2);
-  font-size: 10px;
-  font-style: normal;
-  font-variant-numeric: tabular-nums;
-}
-.topic-trend-card--featured .topic-trend-list {
-  flex: 1 1 auto;
-  grid-template-rows: repeat(4, minmax(0, 1fr));
-  padding: 6px 0 0;
-}
-.topic-trend-card--featured .radar-trend-item {
-  padding: 4px 2px;
-  border-color: transparent;
-  background: transparent;
-}
-.topic-trend-card--featured .radar-trend-item:hover {
-  border-color: transparent;
-  background: var(--n-action-color);
-}
 .topic-trend-strip {
   min-width: 0;
 }
@@ -2794,8 +2750,7 @@ watch(locale, () => void loadTopic(false));
   gap: 10px;
 }
 .topic-category-card,
-.topic-controls-card,
-.topic-trend-card {
+.topic-controls-card {
   overflow: hidden;
   border: 1px solid var(--n-border-color);
   border-radius: 12px;
@@ -2866,29 +2821,7 @@ watch(locale, () => void loadTopic(false));
 .topic-category-item.is-music { --category-tone: #6268c7; }
 .topic-category-item.is-creator { --category-tone: #168a84; }
 .topic-category-item.is-other { --category-tone: #6b7280; }
-.topic-category-item.active em { color: currentColor; }
-.topic-trend-card {
-  padding: 0 0 8px;
-}
-.topic-trend-title {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 38px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--n-border-color);
-  font-size: 13px;
-  font-weight: 700;
-}
-.topic-trend-title em {
-  color: var(--n-text-color-3);
-  font-size: 12px;
-  font-style: normal;
-  font-variant-numeric: tabular-nums;
-}
-.topic-trend-list {
+.topic-category-item.active em { color: currentColor; }.topic-trend-list {
   display: grid;
   gap: 6px;
   padding: 8px 8px 0;
@@ -2907,6 +2840,35 @@ watch(locale, () => void loadTopic(false));
 .topic-control-section :deep(.compact-filter) {
   width: 100%;
   max-width: none;
+}
+.topic-control-pagination {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+.topic-pagination-control {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.topic-pagination-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--n-text-color-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.topic-pagination-meta :deep(.compact-filter) {
+  width: auto;
+  min-width: 96px;
+}
+.topic-pagination-control :deep(.n-pagination) {
+  justify-content: flex-start;
+  min-width: 0;
+}
+.event-pagination--mobile {
+  display: none;
 }
 .topic-controls-card :deep(.compact-filter__label) { font-size: 12px; }
 .topic-controls-card :deep(.compact-filter__value) { font-size: 12px; }
@@ -3106,17 +3068,20 @@ watch(locale, () => void loadTopic(false));
     padding-bottom: 0;
   }
   .topic-controls-title { grid-column: 1 / -1; }
+  .topic-control-pagination {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--n-border-color);
+  }
+  .topic-pagination-control {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
   .topic-controls-card > .resonance-toggle,
   .topic-controls-card > .reset-filter,
   .topic-controls-card > :deep(.n-button) { width: auto; margin: 8px; }
 }
 @media (max-width: 820px) {
   .topic-trend-strip { grid-template-columns: 1fr; }
-  .topic-trend-strip .topic-trend-title {
-    min-height: 34px;
-    border-right: 0;
-    border-bottom: 1px solid var(--n-border-color);
-  }
   .topic-section { padding: 12px; }
   .topic-layout {
     display: flex;
@@ -3177,6 +3142,8 @@ watch(locale, () => void loadTopic(false));
   }
   .topic-control-section > span { display: none; }
   .topic-control-section :deep(.compact-filter) { width: auto; max-width: 160px; }
+  .topic-control-pagination { display: none; }
+  .event-pagination--mobile { display: flex; }
   .topic-controls-card > .resonance-toggle,
   .topic-controls-card > .reset-filter,
   .topic-controls-card > :deep(.n-button) {
