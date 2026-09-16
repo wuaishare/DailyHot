@@ -165,7 +165,7 @@
               </button>
               <n-a
                 v-if="item.marketQuote"
-                :style="{ fontSize: store.listFontSize + 'px' }"
+                :style="{ fontSize: store.effectiveListFontSize + 'px' }"
                 class="text market-quote-link"
                 :href="getItemLink(item)"
                 :target="linkTarget"
@@ -205,7 +205,7 @@
               </n-a>
               <n-a
                 v-else-if="item.fundMetric"
-                :style="{ fontSize: store.listFontSize + 'px' }"
+                :style="{ fontSize: store.effectiveListFontSize + 'px' }"
                 class="text fund-metric-link"
                 :href="getItemLink(item)"
                 :target="linkTarget"
@@ -235,7 +235,7 @@
               </n-a>
               <n-a
                 v-else
-                :style="{ fontSize: store.listFontSize + 'px' }"
+                :style="{ fontSize: store.effectiveListFontSize + 'px' }"
                 class="text"
                 :href="getItemLink(item)"
                 :target="linkTarget"

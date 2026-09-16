@@ -1,8 +1,12 @@
 <template>
   <section
+    ref="chiguaTopicRef"
     class="chigua-topic"
     :class="{ 'is-compact': store.compactMode }"
-    :style="{ '--chigua-list-font-size': `${store.listFontSize}px` }"
+    :style="{
+      '--chigua-list-font-size': `${store.effectiveListFontSize}px`,
+      '--chigua-featured-columns': String(featuredLaneColumns),
+    }"
   >
     <n-alert
       v-if="loadError"
@@ -52,9 +56,13 @@
         </div>
     </div>
 
+    <div
+      v-if="featuredGroups.length"
+      class="topic-featured-workspace"
+      :class="{ 'is-five-column': showTrendAsFeaturedLane }"
+    >
     <TopicLaneGrid
       class="topic-featured-lanes"
-      v-if="featuredGroups.length"
       :lanes="featuredGroups"
       :aria-label="copy.feedTitle"
       :sortable="true"
@@ -99,10 +107,6 @@
             />
           </button>
           <div class="event-lane-copy">
-            <span v-if="isSeriousEvent(item)" class="event-lane-serious" :title="ui.seriousTip">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1c-1.5 0-2.6 1.1-2.6 2.5 0 1.4.8 2.6 2 3.8l-2.1 5.3M8 2.1c1.5 0 2.6 1.1 2.6 2.5 0 1.4-.8 2.6-2 3.8l2.1 5.3M6.5 8.8h3" /></svg>
-              {{ ui.serious }}
-            </span>
             <a class="event-lane-title" :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
             <div class="event-lane-meta">
               <a :href="primaryRankPath(item)" @click.stop>{{ sourceLabel(item) }}</a>
@@ -149,6 +153,53 @@
         </div>
       </template>
     </TopicLaneGrid>
+      <section
+        v-if="showTrendAsFeaturedLane"
+        class="topic-trend-card topic-trend-card--featured"
+        :aria-label="ui.trend"
+      >
+        <div class="topic-trend-title"><strong>{{ ui.trend }}</strong></div>
+        <div class="topic-trend-list">
+          <a
+            v-for="item in trendItems.slice(0, 4)"
+            :key="`featured-trend-${item.id}`"
+            class="radar-trend-item"
+            :class="`is-${eventTrend(item)?.signal || 'steady'}`"
+            :href="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            :title="item.title"
+          >
+            <em>{{ trendSignalLabel(eventTrend(item)?.signal) }}</em>
+            <strong>{{ trendMetric(eventTrend(item)) }}</strong>
+            <span>{{ item.title }}</span>
+          </a>
+        </div>
+      </section>
+    </div>
+    <section
+      v-if="trendItems.length && !showTrendAsFeaturedLane"
+      class="topic-trend-strip"
+      :aria-label="ui.trend"
+    >
+      <div class="topic-trend-title"><strong>{{ ui.trend }}</strong></div>
+      <div class="topic-trend-list">
+        <a
+          v-for="item in trendItems.slice(0, 4)"
+          :key="`strip-trend-${item.id}`"
+          class="radar-trend-item"
+          :class="`is-${eventTrend(item)?.signal || 'steady'}`"
+          :href="item.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          :title="item.title"
+        >
+          <em>{{ trendSignalLabel(eventTrend(item)?.signal) }}</em>
+          <strong>{{ trendMetric(eventTrend(item)) }}</strong>
+          <span>{{ item.title }}</span>
+        </a>
+      </div>
+    </section>
 
     <Teleport to="body">
       <Transition name="item-preview">
@@ -285,10 +336,6 @@
                     />
                     <span>{{ sourceLabel(item) }}</span>
                   </a>
-                  <em v-if="isSeriousEvent(item)" class="serious-event-badge" :title="ui.seriousTip">
-                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1c-1.5 0-2.6 1.1-2.6 2.5 0 1.4.8 2.6 2 3.8l-2.1 5.3M8 2.1c1.5 0 2.6 1.1 2.6 2.5 0 1.4-.8 2.6-2 3.8l2.1 5.3M6.5 8.8h3" /></svg>
-                    {{ ui.serious }}
-                  </em>
                   <em
                     v-if="isResonanceItem(item)"
                     class="event-resonance"
@@ -398,27 +445,6 @@
         </main>
 
         <aside class="topic-controls" :aria-label="ui.browseSettings">
-          <section v-if="trendItems.length" class="topic-trend-card" :aria-label="ui.trend">
-            <div class="topic-trend-title">
-              <strong>{{ ui.trend }}</strong>
-            </div>
-            <div class="topic-trend-list">
-              <a
-                v-for="item in trendItems.slice(0, 4)"
-                :key="`trend-${item.id}`"
-                class="radar-trend-item"
-                :class="`is-${eventTrend(item)?.signal || 'steady'}`"
-                :href="item.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                :title="item.title"
-              >
-                <em>{{ trendSignalLabel(eventTrend(item)?.signal) }}</em>
-                <strong>{{ trendMetric(eventTrend(item)) }}</strong>
-                <span>{{ item.title }}</span>
-              </a>
-            </div>
-          </section>
           <div class="topic-controls-card">
             <div class="topic-controls-title">
               <strong>{{ ui.browseSettings }}</strong>
@@ -466,9 +492,11 @@ import { buildRankPath, getLocaleFromRoute, normalizeLocale } from "@/utils/loca
 import { getSourceLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
+import { isSeriousEvent } from "@/utils/seriousEvents";
 import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
 import { resolveCoverPreviewLayout } from "@/utils/coverPreviewGeometry";
 import { applyExpandableCoverGeometry } from "@/utils/expandableCoverGeometry";
+import { resolveResponsiveCardColumns } from "@/utils/responsiveColumns";
 import {
   FLOATING_COVER_PREVIEW_CLOSE_DELAY,
   FLOATING_COVER_PREVIEW_OPEN_DELAY,
@@ -482,6 +510,9 @@ const route = useRoute();
 const store = mainStore();
 const { t } = useI18n({ useScope: "global" });
 const result = ref(null);
+const chiguaTopicRef = ref(null);
+const chiguaWidth = ref(typeof window !== "undefined" ? window.innerWidth : 1400);
+let chiguaResizeObserver = null;
 const coverImageErrors = reactive({});
 const loading = ref(false);
 const loadError = ref("");
@@ -547,8 +578,6 @@ const UI_COPY = {
     updateFailed: "更新失败",
     radar: "娱乐热点态势雷达",
     trend: "榜位趋势",
-    serious: "严肃事件",
-    seriousTip: "涉及死亡、遇难、讣告等严肃主题，采用完整灰阶与纪念丝带展示。",
     evidenceSources: "佐证来源",
     scrollMore: "继续滚动加载",
     filters: "吃瓜事件筛选",
@@ -604,8 +633,6 @@ const UI_COPY = {
     updateFailed: "Update failed",
     radar: "Entertainment signal radar",
     trend: "Rank movement",
-    serious: "Serious event",
-    seriousTip: "Sensitive events involving death, casualties or obituaries use a full grayscale memorial presentation.",
     evidenceSources: "Evidence sources",
     scrollMore: "Scroll to load more",
     filters: "Entertainment filters",
@@ -656,8 +683,6 @@ const UI_COPY = {
     updateFailed: "更新失敗",
     radar: "娛樂熱點態勢雷達",
     trend: "榜位趨勢",
-    serious: "嚴肅事件",
-    seriousTip: "涉及死亡、遇難、訃告等嚴肅主題，採用完整灰階與紀念絲帶展示。",
     evidenceSources: "佐證來源",
     scrollMore: "繼續捲動載入",
     filters: "吃瓜事件篩選",
@@ -708,8 +733,6 @@ const UI_COPY = {
     updateFailed: "更新失敗",
     radar: "エンタメ動向レーダー",
     trend: "順位トレンド",
-    serious: "重大・慎重な話題",
-    seriousTip: "死亡・事故・訃報などを含む話題は完全なグレースケールと追悼リボンで表示します。",
     evidenceSources: "補強ソース",
     scrollMore: "スクロールしてさらに表示",
     filters: "エンタメフィルター",
@@ -760,8 +783,6 @@ const UI_COPY = {
     updateFailed: "업데이트 실패",
     radar: "엔터테인먼트 동향 레이더",
     trend: "순위 추세",
-    serious: "엄중한 이슈",
-    seriousTip: "사망·사고·부고 등 엄중한 주제는 완전한 회색조와 추모 리본으로 표시합니다.",
     evidenceSources: "근거 출처",
     scrollMore: "스크롤하여 더 불러오기",
     filters: "엔터테인먼트 필터",
@@ -912,9 +933,6 @@ const evidenceRoleLabel = (entry) =>
     : entry?.role === "support"
       ? ui.value.support
       : "";
-const SERIOUS_EVENT_PATTERN = /(去世|逝世|病逝|离世|辞世|身亡|遇难|罹难|讣告|死亡|去世享年|逝世享年|passed away|died|death|obituary|訃報|死去|死亡|사망|별세|부고)/i;
-const isSeriousEvent = (item) =>
-  SERIOUS_EVENT_PATTERN.test(`${item?.title || ""} ${item?.desc || ""}`);
 const confirmationTitle = (item) =>
   confirmations(item)
     .map((entry) => evidenceLabel(entry, { includeRole: true }))
@@ -953,6 +971,22 @@ const trendItems = computed(() => {
   }
   return selected;
 });
+const requestedWorkspaceColumns = computed(() =>
+  store.compactMode
+    ? Number(store.homeCompactColumns || 5)
+    : Number(store.homeCardColumns || 4),
+);
+const effectiveWorkspaceColumns = computed(() =>
+  resolveResponsiveCardColumns({
+    width: chiguaWidth.value,
+    requested: requestedWorkspaceColumns.value,
+    compact: store.compactMode,
+  }),
+);
+const featuredLaneColumns = computed(() => Math.min(4, effectiveWorkspaceColumns.value));
+const showTrendAsFeaturedLane = computed(() =>
+  trendItems.value.length > 0 && effectiveWorkspaceColumns.value >= 5,
+);
 
 const categoryOptions = computed(() => [
   { value: "all", label: ui.value.all, count: data.value.length },
@@ -1644,6 +1678,17 @@ const handleGlobalDataRefresh = (event) => {
   void loadTopic(Boolean(event?.detail?.force));
 };
 onMounted(() => {
+  const updateChiguaWidth = () => {
+    if (chiguaTopicRef.value) chiguaWidth.value = chiguaTopicRef.value.getBoundingClientRect().width;
+  };
+  updateChiguaWidth();
+  if (typeof ResizeObserver !== "undefined" && chiguaTopicRef.value) {
+    chiguaResizeObserver = new ResizeObserver(updateChiguaWidth);
+    chiguaResizeObserver.observe(chiguaTopicRef.value);
+  } else {
+    window.addEventListener("resize", updateChiguaWidth);
+    chiguaResizeObserver = { disconnect: () => window.removeEventListener("resize", updateChiguaWidth) };
+  }
   window.addEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
   window.addEventListener("resize", handleEventCoverViewportResize, { passive: true });
   queueEventCoverGeometrySync();
@@ -1659,6 +1704,8 @@ onDeactivated(() => {
   window.removeEventListener(DATA_REFRESH_EVENT, handleGlobalDataRefresh);
 });
 onBeforeUnmount(() => {
+  chiguaResizeObserver?.disconnect?.();
+  chiguaResizeObserver = null;
   clearTimeout(querySyncTimer);
   hideLanePreview();
   if (eventCoverResizeFrame) window.cancelAnimationFrame?.(eventCoverResizeFrame);
@@ -1969,9 +2016,55 @@ watch(locale, () => void loadTopic(false));
   }
 }
 .chigua-topic :deep(.topic-lane-grid) {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--chigua-featured-columns, 4), minmax(0, 1fr));
   gap: 8px;
   margin: 0;
+}
+.topic-featured-workspace { min-width: 0; }
+.topic-featured-workspace.is-five-column {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(220px, 1fr);
+  align-items: stretch;
+  gap: 8px;
+}
+.topic-featured-workspace.is-five-column :deep(.topic-lane-grid) { height: 100%; }
+.topic-trend-card--featured {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  padding: 10px 12px 8px;
+  border-radius: 12px;
+}
+.topic-trend-card--featured .topic-trend-title {
+  min-height: 28px;
+  padding: 0 0 5px;
+  font-size: 15px;
+}
+.topic-trend-card--featured .topic-trend-list {
+  flex: 1 1 auto;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  padding: 8px 0 0;
+}
+.topic-trend-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--n-border-color);
+  border-radius: 12px;
+  background: var(--n-color);
+}
+.topic-trend-strip .topic-trend-title {
+  min-width: 90px;
+  min-height: 100%;
+  border-right: 1px solid var(--n-border-color);
+  border-bottom: 0;
+}
+.topic-trend-strip .topic-trend-list {
+  grid-template-columns: repeat(var(--chigua-featured-columns, 4), minmax(0, 1fr));
+  align-items: stretch;
+  padding: 7px;
 }
 .chigua-topic :deep(.topic-lane) {
   padding: 10px 12px;
@@ -2202,16 +2295,6 @@ watch(locale, () => void loadTopic(false));
   text-decoration: underline;
   outline: none;
 }
-.event-lane-serious {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  margin-bottom: 2px;
-  color: #6b7280;
-  font-size: 8px;
-  font-weight: 720;
-}
-.event-lane-serious svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
 .event-lane-item.is-serious {
   margin-inline: -4px;
   filter: grayscale(1);
@@ -2492,16 +2575,6 @@ watch(locale, () => void loadTopic(false));
 .event-evidence-popover > .is-unlinked > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event-evidence-popover em { color: var(--n-text-color-2); font-style: normal; font-variant-numeric: tabular-nums; }
 .event-evidence-popover small { color: var(--n-text-color-3); font-size: 9px; }
-.serious-event-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  border-color: color-mix(in srgb, #6b7280 28%, transparent) !important;
-  background: color-mix(in srgb, #6b7280 7%, transparent);
-  color: #6b7280 !important;
-  font-weight: 700;
-}
-.serious-event-badge svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
 .category-pill,
 .source-pill,
 .intelligence-pill,
@@ -2583,11 +2656,6 @@ watch(locale, () => void loadTopic(false));
 }
 .event-pagination__meta :deep(.compact-filter) {
   max-width: 110px;
-}
-@media (max-width: 1100px) and (min-width: 721px) {
-  .chigua-topic :deep(.topic-lane-grid) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 @media (max-width: 720px) {
   .chigua-topic {
@@ -2858,7 +2926,7 @@ watch(locale, () => void loadTopic(false));
   max-width: 320px;
 }
 .chigua-topic :deep(.topic-lane-grid) {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--chigua-featured-columns, 4), minmax(0, 1fr));
   gap: 8px;
 }
 .chigua-topic :deep(.topic-lane) {
@@ -3007,11 +3075,6 @@ watch(locale, () => void loadTopic(false));
     gap: 16px;
   }
 }
-@media (max-width: 1240px) {
-  .chigua-topic :deep(.topic-lane-grid) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 @media (max-width: 1120px) and (min-width: 821px) {
   .topic-layout {
     grid-template-columns: minmax(170px, 190px) minmax(0, 720px);
@@ -3024,7 +3087,6 @@ watch(locale, () => void loadTopic(false));
     grid-column: 1 / -1;
     grid-row: 2;
   }
-  .topic-trend-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .topic-controls-card {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: end;
@@ -3037,6 +3099,12 @@ watch(locale, () => void loadTopic(false));
   .topic-controls-card > :deep(.n-button) { width: auto; margin: 8px; }
 }
 @media (max-width: 820px) {
+  .topic-trend-strip { grid-template-columns: 1fr; }
+  .topic-trend-strip .topic-trend-title {
+    min-height: 34px;
+    border-right: 0;
+    border-bottom: 1px solid var(--n-border-color);
+  }
   .topic-section { padding: 12px; }
   .topic-layout {
     display: flex;

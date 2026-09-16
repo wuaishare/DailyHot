@@ -1306,11 +1306,17 @@ export const mainStore = defineStore("mainData", {
       analyticsRecommendedOrder: [],
       // 时间数据
       timeData: null,
-      // 字体大小
+      // 列表字体大小：普通 / 紧凑独立控制
       listFontSize: 16,
+      compactListFontSize: 14,
     };
   },
-  getters: {},
+  getters: {
+    effectiveListFontSize: (state) =>
+      state.compactMode
+        ? Number(state.compactListFontSize || 14)
+        : Number(state.listFontSize || 16),
+  },
   actions: {
     ensureBuiltinCategories() {
       const current = normalizeCategoryTree(
@@ -1887,6 +1893,7 @@ export const mainStore = defineStore("mainData", {
         "activeCategory",
         "categories",
         "listFontSize",
+        "compactListFontSize",
         "analyticsConsent",
         "analyticsPromptDismissed",
       ],

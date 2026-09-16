@@ -123,8 +123,12 @@ const clampLayoutWidth = (value, fallback, min, max) => {
 const layoutStyle = computed(() => ({
   "--site-container-width": `${clampLayoutWidth(store.siteContainerWidth, 1400, 1120, 1800)}px`,
   "--site-focus-container-width": `${clampLayoutWidth(store.focusContainerWidth, 1360, 1080, 1600)}px`,
-  "--site-gutter": store.compactMode ? "3vw" : "5vw",
-  "--site-gutter-total": store.compactMode ? "6vw" : "10vw",
+  "--site-gutter": store.compactMode
+    ? "clamp(12px, 1.5vw, 24px)"
+    : "clamp(16px, 2vw, 32px)",
+  "--site-gutter-total": store.compactMode
+    ? "clamp(24px, 3vw, 48px)"
+    : "clamp(32px, 4vw, 64px)",
 }));
 
 const autoRefreshTimer = ref(null);

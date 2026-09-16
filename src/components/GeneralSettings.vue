@@ -121,14 +121,14 @@
               margin: '12px 0',
             }"
           >
-            <n-text :style="{ fontSize: listFontSize + 'px' }">
+            <n-text :style="{ fontSize: activeListFontSize + 'px' }">
               {{ t("settings.listFontPreview") }}
             </n-text>
           </n-card>
         </div>
 
         <n-slider
-          v-model:value="listFontSize"
+          v-model:value="activeListFontSize"
           :tooltip="false"
           :max="20"
           :min="14"
@@ -331,6 +331,7 @@ const {
   focusContainerWidth,
   categoryViewMode,
   listFontSize,
+  compactListFontSize,
   autoRefreshEnabled,
   autoRefreshInterval,
   categoryEnabled,
@@ -366,6 +367,7 @@ const persistedKeys = [
   "activeCategory",
   "categories",
   "listFontSize",
+  "compactListFontSize",
 ];
 
 // 深浅模式
@@ -411,6 +413,14 @@ const listFontMarks = computed(() => ({
   16: t("settings.listFontDefault"),
   20: t("settings.listFontLarge"),
 }));
+const activeListFontSize = computed({
+  get: () => store.compactMode ? compactListFontSize.value : listFontSize.value,
+  set: (value) => {
+    const normalized = Math.max(14, Math.min(20, Number(value) || 16));
+    if (store.compactMode) compactListFontSize.value = normalized;
+    else listFontSize.value = normalized;
+  },
+});
 
 // 重置数据
 const reset = () => {
