@@ -5,7 +5,7 @@ import {
   BILIBILI_CDN_FRESH_SECONDS,
   BILIBILI_CDN_STALE_SECONDS,
   resolveBilibiliCacheEntry,
-} from "./_bilibili-cache.mjs";
+} from "./_bilibili-cache.js";
 
 export const config = {
   runtime: "nodejs",

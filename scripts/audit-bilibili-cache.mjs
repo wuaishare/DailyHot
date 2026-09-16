@@ -6,7 +6,7 @@ import {
   BILIBILI_CDN_FRESH_SECONDS,
   BILIBILI_CDN_STALE_SECONDS,
   resolveBilibiliCacheEntry,
-} from "../api/_bilibili-cache.mjs";
+} from "../api/_bilibili-cache.js";
 
 const now = 10_000_000;
 const value = { code: 200, data: [{ title: "cached" }], fromCache: false, stale: false };
@@ -30,6 +30,7 @@ assert.equal(BILIBILI_CDN_STALE_SECONDS, 21600);
 console.log("[bilibili-cache] fresh, stale, expiry and CDN policy verified");
 
 const route = fs.readFileSync(new URL("../api/[...path].js", import.meta.url), "utf8");
+assert.doesNotMatch(route, /from\s+["\'][^"\']+\.mjs["\']/, "Vercel CommonJS serverless entry must not statically import .mjs helpers");
 assert.match(route, /const forceNoCache =[\s\S]*?req\.query\.cache/);
 assert.match(route, /if \(!forceNoCache\) \{[\s\S]*?resolveBilibiliCacheEntry\(cached\)/);
 assert.match(route, /if \(!forceNoCache\) \{[\s\S]*?resolveBilibiliCacheEntry\(cached, \{ allowStale: true \}\)/);
