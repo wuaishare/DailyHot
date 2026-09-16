@@ -29,6 +29,8 @@ assert.ok(
   clientSuffixes.includes("ci.xiaohongshu.com"),
   "the exact Xiaohongshu cover host must use the server-side image proxy",
 );
+assert.ok(clientSuffixes.includes("sinaimg.cn"), "Weibo media covers must use the server-side image proxy");
+assert.ok(serverSuffixes.includes("sinaimg.cn"), "the server proxy must admit Weibo media covers");
 assert.ok(serverSuffixes.includes("thepaper.cn"), "keep The Paper server admission for older cached clients");
 assert.ok(serverSuffixes.includes("geekpark.net"), "keep GeekPark server admission for older cached clients");
 assert.ok(!clientSuffixes.includes("thepaper.cn"), "The Paper covers must load directly with no-referrer");
@@ -57,6 +59,12 @@ assert.equal(
 assert.equal(
   clientModule.getCoverDisplaySrc("http://ci.xiaohongshu.com/example.jpg"),
   "http://ci.xiaohongshu.com/example.jpg",
+);
+
+const weiboCover = "https://wx3.sinaimg.cn/large/example.jpg";
+assert.equal(
+  clientModule.getCoverDisplaySrc(weiboCover),
+  `/api/image-proxy?url=${encodeURIComponent(weiboCover)}`,
 );
 
 assert.equal(

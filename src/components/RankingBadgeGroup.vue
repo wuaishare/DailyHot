@@ -10,6 +10,7 @@
           'is-strong': badge.prominence === 'strong',
           'is-animated': badge.animated,
           'has-icon': Boolean(iconUrl(badge)),
+          'is-exclusive': badge.sourceCode === '独家' || badge.label === '独家',
         },
       ]"
       role="img"
@@ -77,28 +78,17 @@ const handleImageError = (badge) => {
 .ranking-badge.is-discussion { background: #ff3852; }
 .ranking-badge.is-explosive {
   position: relative;
-  isolation: isolate;
-  min-width: 20px;
+  min-width: 22px;
   height: 20px;
-  padding: 0 4px;
-  border: 1px solid rgba(164, 16, 10, .48);
-  background: linear-gradient(180deg, #d52a1f 0%, #b8150d 100%);
-  box-shadow: 0 1px 2px rgba(111,8,4,.28), 0 3px 9px rgba(211,36,27,.32), 0 0 13px rgba(255,74,58,.18);
+  padding: 0 5px 0 4px;
+  border: 0;
+  background: linear-gradient(90deg, rgba(224, 43, 36, .98) 0%, rgba(224, 43, 36, .76) 52%, rgba(224, 43, 36, .08) 100%);
+  box-shadow: none;
   font-size: 12px;
   font-weight: 850;
   line-height: 18px;
-  text-shadow: 0 1px 1px rgba(96,5,0,.28);
+  text-shadow: 0 1px 1px rgba(96,5,0,.24);
   transform: translateY(-1px);
-}
-.ranking-badge.is-explosive::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: -4px;
-  border-radius: 7px;
-  background: rgba(245,52,39,.18);
-  filter: blur(5px);
-  pointer-events: none;
 }
 .ranking-badge.is-interpretation,
 .ranking-badge.is-depth { background: linear-gradient(135deg, #4d7cff, #6d5ce7); }
@@ -109,6 +99,7 @@ const handleImageError = (badge) => {
 .ranking-badge.is-commercial { background: #00a6d9; }
 .ranking-badge.is-category,
 .ranking-badge.is-source { background: color-mix(in srgb, var(--n-text-color, #606770) 68%, transparent); }
+.ranking-badge.is-source.is-exclusive { background: rgb(147, 83, 224); }
 .ranking-badge.has-icon {
   width: auto;
   min-width: 18px;

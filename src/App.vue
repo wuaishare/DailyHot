@@ -29,7 +29,7 @@
           </keep-alive>
         </router-view>
       </main>
-      <Footer />
+      <Footer class="site-footer" />
       <AnalyticsConsent />
       <HotboardManager
         v-model:show="hotboardManagerOpen"
@@ -618,7 +618,7 @@ onBeforeUnmount(() => {
   }
 
   // 页脚紧凑化
-  :deep(footer) {
+  :deep(.site-footer) {
     padding: 0;
     margin-top: 12px;
     height: 80px;

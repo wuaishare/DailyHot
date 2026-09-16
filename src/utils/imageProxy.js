@@ -3,6 +3,7 @@ const PROXY_HOST_SUFFIXES = [
   "gtimg.com",
   "hdslb.com",
   "ci.xiaohongshu.com",
+  "sinaimg.cn",
 ];
 
 export const COVER_REFERRER_POLICY = "no-referrer";
