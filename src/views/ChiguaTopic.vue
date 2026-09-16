@@ -97,9 +97,10 @@
           {{ t("hotList.dragSort") }}
         </n-popover>
       </template>
-      <template #item="{ item, index }">
+      <template #item="{ lane, item, index }">
         <article
           class="event-lane-item"
+          :data-lane-item-key="`${lane.key}-${index}`"
           :class="{ 'is-serious': isSeriousEvent(item), 'has-cover': hasUsableCover(item) }"
           :aria-describedby="lanePreviewItem === item ? lanePreviewTooltipId : undefined"
           @pointerenter="showLanePreview(item, $event)"
@@ -130,7 +131,16 @@
             />
           </button>
           <div class="event-lane-copy">
-            <a class="event-lane-title" :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+            <a class="event-lane-title" :href="item.url" target="_blank" rel="noopener noreferrer">
+              <span>{{ item.title }}</span>
+              <em
+                v-if="laneTrendIndicator(lane, item)"
+                class="event-lane-trend"
+                :class="`is-${laneTrendIndicator(lane, item).signal}`"
+                aria-hidden="true"
+              >{{ laneTrendIndicator(lane, item).label }}</em>
+              <span v-if="laneTrendIndicator(lane, item)" class="sr-only">{{ laneTrendIndicator(lane, item).ariaLabel }}</span>
+            </a>
             <div class="event-lane-meta">
               <a :href="primaryRankPath(item)" @click.stop>{{ sourceLabel(item) }}</a>
               <span v-if="effectiveResonanceSourceCount(item) > 1">
@@ -140,31 +150,34 @@
           </div>
         </article>
       </template>
-    </TopicLaneGrid>
-    </div>
-    <section
-      v-if="trendItems.length"
-      class="topic-trend-strip"
-      :aria-label="ui.trend"
-    >
-      <div class="topic-trend-list">
+      <template #sticky-item="{ item, meta }">
         <a
-          v-for="item in trendItems.slice(0, 4)"
-          :key="`strip-trend-${item.id}`"
-          class="radar-trend-item"
-          :class="`is-${eventTrend(item)?.signal || 'steady'}`"
+          class="event-lane-sticky"
+          :class="{ 'has-cover': hasUsableCover(item), 'is-serious': isSeriousEvent(item) }"
           :href="item.url"
           target="_blank"
           rel="noopener noreferrer"
-          :title="item.title"
+          :aria-label="meta?.ariaLabel || item.title"
+          :title="meta?.ariaLabel || item.title"
         >
-          <em>{{ trendSignalLabel(eventTrend(item)?.signal) }}</em>
-          <strong>{{ trendMetric(eventTrend(item)) }}</strong>
-          <span>{{ item.title }}</span>
+          <img
+            v-if="hasUsableCover(item)"
+            :src="coverSrc(item.cover)"
+            :referrerpolicy="COVER_REFERRER_POLICY"
+            :alt="item.title"
+            loading="lazy"
+            @error="markCoverError(item.cover)"
+          />
+          <span class="event-lane-sticky__signal">{{ meta?.label }}</span>
+          <span class="event-lane-sticky__copy">
+            <strong>{{ item.title }}</strong>
+            <small>{{ sourceLabel(item) }}</small>
+          </span>
+          <b v-if="meta?.metric">{{ meta.metric }}</b>
         </a>
-      </div>
-    </section>
-
+      </template>
+    </TopicLaneGrid>
+    </div>
     <Teleport to="body">
       <Transition name="item-preview">
         <div
@@ -331,9 +344,11 @@
                     v-if="eventTrend(item)"
                     class="trend-pill"
                     :class="`is-${eventTrend(item).signal}`"
+                    :aria-label="trendAccessibleLabel(eventTrend(item))"
+                    :title="trendAccessibleLabel(eventTrend(item))"
                   >
-                    {{ trendSignalLabel(eventTrend(item).signal) }}
-                    <b>{{ trendMetric(eventTrend(item)) }}</b>
+                    <span aria-hidden="true">{{ trendVisualLabel(eventTrend(item)) }}</span>
+                    <b v-if="trendSecondaryMetric(eventTrend(item))" aria-hidden="true">{{ trendSecondaryMetric(eventTrend(item)) }}</b>
                   </span>
                   <strong v-if="item.hot">{{ formatHot(item.hot) }}</strong>
                   <time
@@ -891,18 +906,105 @@ const categoryLabel = (category) => ui.value.categories[category] || category;
 const visibleRankingBadges = (item) =>
   normalizeRankingBadges(item?.badges, 2).filter((badge) => badge.placement !== "prefix");
 const trendSignalLabel = (signal) => ui.value.trendSignals?.[signal] || signal || "";
-const trendMetric = (trend) => {
-  const rank = Number(trend?.currentRank || 0);
+const trendRankChange = (trend) => {
+  const currentRank = Number(trend?.currentRank || 0);
   const baselineRank = Number(trend?.baselineRank || 0);
-  if (
-    !["reentry", "new"].includes(trend?.signal) &&
-    baselineRank > 0 &&
-    rank > 0
-  ) {
-    const direction = rank < baselineRank ? "↑" : rank > baselineRank ? "↓" : "→";
-    return `#${baselineRank} ${direction} #${rank}`;
+  if (baselineRank > 0 && currentRank > 0) return baselineRank - currentRank;
+  const rawDelta = Number(trend?.rankDelta || 0);
+  if (!Number.isFinite(rawDelta)) return 0;
+  if (["rising", "breakthrough"].includes(trend?.signal)) return Math.abs(rawDelta);
+  if (trend?.signal === "falling") return -Math.abs(rawDelta);
+  return 0;
+};
+const trendVisualLabel = (trend) => {
+  if (["new", "reentry"].includes(trend?.signal)) return trendSignalLabel(trend.signal);
+  const change = trendRankChange(trend);
+  if (change > 0) return `▲ ${change}`;
+  if (change < 0) return `▼ ${Math.abs(change)}`;
+  return trendSignalLabel(trend?.signal);
+};
+const trendAccessibleLabel = (trend) => {
+  if (!trend?.signal) return "";
+  const signal = trendSignalLabel(trend.signal);
+  const currentRank = Number(trend?.currentRank || 0);
+  const baselineRank = Number(trend?.baselineRank || 0);
+  if (["new", "reentry"].includes(trend.signal)) {
+    return currentRank > 0 ? `${signal}，当前第 ${currentRank} 名` : signal;
   }
-  return rank > 0 ? `#${rank}` : "";
+  const change = trendRankChange(trend);
+  if (baselineRank > 0 && currentRank > 0 && change !== 0) {
+    return `${signal}，从第 ${baselineRank} 名${change > 0 ? "上升" : "下降"}到第 ${currentRank} 名，${change > 0 ? "上升" : "下降"} ${Math.abs(change)} 名`;
+  }
+  return currentRank > 0 ? `${signal}，当前第 ${currentRank} 名` : signal;
+};
+const trendSecondaryMetric = (trend) => {
+  if (!["new", "reentry"].includes(trend?.signal)) return "";
+  const currentRank = Number(trend?.currentRank || 0);
+  return currentRank > 0 ? `#${currentRank}` : "";
+};
+const laneTrendIndicator = (_lane, item) => {
+  const trend = eventTrend(item);
+  if (!trend?.signal) return null;
+  const label = trendVisualLabel(trend);
+  return label ? { signal: trend.signal, label, ariaLabel: trendAccessibleLabel(trend) } : null;
+};
+
+const SPOTLIGHT_BADGE_WEIGHTS = {
+  explosive: 100,
+  "first-release": 98,
+  boiling: 92,
+  "hot-live": 88,
+  new: 76,
+  hot: 64,
+};
+const spotlightBadge = (item) => {
+  const badges = normalizeRankingBadges(item?.badges, 8);
+  let best = null;
+  for (const badge of badges) {
+    const label = String(badge?.label || "").trim();
+    const labelScore = /独家/.test(label) ? 99
+      : /首发/.test(label) ? 98
+        : /爆/.test(label) ? 100
+          : /沸/.test(label) ? 92
+            : /^热$|热榜|热议/.test(label) ? 64
+              : /^新$|新上榜/.test(label) ? 76
+                : 0;
+    const score = Math.max(labelScore, SPOTLIGHT_BADGE_WEIGHTS[badge.kind] || 0);
+    if (score > Number(best?.score || 0)) best = { score, label: label || badge.kind };
+  }
+  return best;
+};
+const spotlightMeta = (item) => {
+  const trend = eventTrend(item);
+  if (trend?.signal === "falling") return null;
+
+  const badge = spotlightBadge(item);
+  const change = trendRankChange(trend);
+  let trendCandidate = null;
+  if (trend?.signal === "breakthrough" && change > 0) {
+    trendCandidate = { score: 96 + Math.min(change, 30) / 10, label: ui.value.trendSignals?.breakthrough || "进入前十" };
+  } else if (trend?.signal === "rising" && change >= 5) {
+    trendCandidate = { score: 82 + Math.min(change, 30) / 10, label: "快速上升" };
+  } else if (trend?.signal === "new") {
+    trendCandidate = { score: 78, label: ui.value.trendSignals?.new || "新上榜" };
+  } else if (trend?.signal === "reentry") {
+    trendCandidate = { score: 58, label: ui.value.trendSignals?.reentry || "重新上榜" };
+  }
+
+  const candidate = Number(badge?.score || 0) >= Number(trendCandidate?.score || 0) ? badge : trendCandidate;
+  if (!candidate || candidate.score < 64) return null;
+  const metric = trend?.signal
+    ? (["new", "reentry"].includes(trend.signal)
+      ? trendSecondaryMetric(trend)
+      : trendVisualLabel(trend))
+    : "";
+  const trendA11y = trendAccessibleLabel(trend);
+  return {
+    score: candidate.score,
+    label: candidate.label,
+    metric,
+    ariaLabel: [candidate.label, item.title, sourceLabel(item), trendA11y].filter(Boolean).join("，"),
+  };
 };
 const rankClass = (rank) => ({
   "is-one": rank === 1,
@@ -934,52 +1036,6 @@ const effectiveResonanceSourceCount = (item) => eventSourceCount(item);
 const resonanceMatchCount = computed(
   () => data.value.filter((item) => isResonanceItem(item)).length,
 );
-const TREND_SIGNAL_ORDER = ["breakthrough", "rising", "falling", "reentry", "new"];
-const trendItems = computed(() => {
-  const buckets = new Map(TREND_SIGNAL_ORDER.map((signal) => [signal, []]));
-  for (const item of data.value) {
-    const trend = eventMeta(item).trend;
-    if (!trend?.signal || !buckets.has(trend.signal)) continue;
-    buckets.get(trend.signal).push({ ...item, trend });
-  }
-  for (const items of buckets.values()) {
-    items.sort((left, right) =>
-      Math.abs(Number(right.trend?.rankDelta || 0)) - Math.abs(Number(left.trend?.rankDelta || 0))
-      || eventScore(right) - eventScore(left));
-  }
-  const selected = [];
-  const selectedKeys = new Set();
-  const takeFirst = (signals) => {
-    for (const signal of signals) {
-      const item = buckets.get(signal)?.find((candidate) => {
-        const key = candidate.id || candidate.url || candidate.title;
-        return key && !selectedKeys.has(key);
-      });
-      if (!item) continue;
-      const key = item.id || item.url || item.title;
-      selected.push(item);
-      selectedKeys.add(key);
-      return;
-    }
-  };
-  takeFirst(["breakthrough", "rising"]);
-  takeFirst(["falling"]);
-  takeFirst(["reentry"]);
-  takeFirst(["new"]);
-  if (selected.length < 4) {
-    const remaining = [...buckets.values()]
-      .flat()
-      .filter((item) => !selectedKeys.has(item.id || item.url || item.title))
-      .sort((left, right) =>
-        Math.abs(Number(right.trend?.rankDelta || 0)) - Math.abs(Number(left.trend?.rankDelta || 0))
-        || eventScore(right) - eventScore(left));
-    for (const item of remaining) {
-      selected.push(item);
-      if (selected.length >= 4) break;
-    }
-  }
-  return selected.slice(0, 4);
-});
 const requestedWorkspaceColumns = computed(() =>
   store.compactMode
     ? Number(store.homeCompactColumns || 5)
@@ -1170,12 +1226,37 @@ const sortFeaturedLaneItems = (key, items) =>
       return eventBestRank(a) - eventBestRank(b) || eventScore(b) - eventScore(a);
     return eventScore(b) - eventScore(a);
   });
+const spotlightIdentity = (item) => item?.id || item?.url || item?.title || "";
+const spotlightLaneAffinity = (laneKey, item) => {
+  const signal = eventTrend(item)?.signal;
+  if (signal === "new" && laneKey === "fresh") return 40;
+  if (["rising", "breakthrough"].includes(signal) && laneKey === "rising") return 40;
+  if (signal === "breakthrough" && laneKey === "hot") return 32;
+  if (signal === "reentry" && laneKey === "resonance") return 28;
+  if (laneKey === "hot") return 18;
+  if (laneKey === "resonance") return 14;
+  if (laneKey === "fresh") return 10;
+  if (laneKey === "rising") return 8;
+  return 0;
+};
 const buildFeaturedLane = (key, sourceData) => {
   const allItems = sortFeaturedLaneItems(
     key,
     sourceData.filter(featuredLanePredicate(key)),
   );
   const limit = featuredLaneRenderLimits[key] || FEATURED_LANE_INITIAL_RENDER;
+  const spotlightCandidates = allItems
+    .map((item, index) => ({
+      item,
+      index,
+      key: `${key}-${index}`,
+      meta: spotlightMeta(item),
+    }))
+    .filter((candidate) => candidate.index >= 3 && candidate.meta)
+    .sort((left, right) =>
+      right.meta.score - left.meta.score
+      || eventScore(right.item) - eventScore(left.item)
+      || left.index - right.index);
   return {
     key,
     label: ui.value.featured[key],
@@ -1183,21 +1264,63 @@ const buildFeaturedLane = (key, sourceData) => {
     hideSubtitle: true,
     visibleCount: 3,
     count: allItems.length,
-    items: allItems.slice(0, limit),
-    hasMore: allItems.length > limit,
     scrollable: true,
     loadMoreLabel: ui.value.scrollMore,
     actionLabel: viewAllLabel.value,
     actionPlacement: "header",
     filter: { focus: key },
+    _allItems: allItems,
+    _renderLimit: limit,
+    _spotlightCandidates: spotlightCandidates,
   };
 };
 const featuredGroups = computed(() => {
   const groups = FEATURED_LANE_KEYS
     .map((key) => buildFeaturedLane(key, data.value))
-    .filter((group) => group.items.length);
+    .filter((group) => group.count > 0);
   const byKey = new Map(groups.map((group) => [group.key, group]));
-  return featuredLaneOrder.value.map((key) => byKey.get(key)).filter(Boolean);
+  const ordered = featuredLaneOrder.value.map((key) => byKey.get(key)).filter(Boolean);
+
+  const winnerByIdentity = new Map();
+  for (const group of ordered) {
+    for (const candidate of group._spotlightCandidates) {
+      const identity = spotlightIdentity(candidate.item);
+      if (!identity) continue;
+      const weightedScore = candidate.meta.score + spotlightLaneAffinity(group.key, candidate.item);
+      const previous = winnerByIdentity.get(identity);
+      if (!previous || weightedScore > previous.weightedScore) {
+        winnerByIdentity.set(identity, { laneKey: group.key, weightedScore });
+      }
+    }
+  }
+
+  return ordered.map((group) => {
+    const stickyCandidates = group._spotlightCandidates
+      .filter((candidate) => winnerByIdentity.get(spotlightIdentity(candidate.item))?.laneKey === group.key);
+    const furthestStickyIndex = stickyCandidates.reduce(
+      (maxIndex, candidate) => Math.max(maxIndex, candidate.index),
+      -1,
+    );
+    const effectiveLimit = furthestStickyIndex >= 0
+      ? Math.max(group._renderLimit, furthestStickyIndex + 1)
+      : group._renderLimit;
+    return {
+      key: group.key,
+      label: group.label,
+      subtitle: group.subtitle,
+      hideSubtitle: group.hideSubtitle,
+      visibleCount: group.visibleCount,
+      count: group.count,
+      items: group._allItems.slice(0, effectiveLimit),
+      hasMore: group._allItems.length > effectiveLimit,
+      stickyCandidates,
+      scrollable: group.scrollable,
+      loadMoreLabel: group.loadMoreLabel,
+      actionLabel: group.actionLabel,
+      actionPlacement: group.actionPlacement,
+      filter: group.filter,
+    };
+  });
 });
 const saveFeaturedLaneOrder = (ordered = []) => {
   const keys = ordered.map((lane) => lane?.key).filter((key) => FEATURED_LANE_KEYS.includes(key));
@@ -1841,38 +1964,6 @@ watch(locale, () => void loadTopic(false));
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
-.radar-trend-item {
-  --radar-signal: #5f7892;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 3px 6px;
-  min-width: 0;
-  padding: 7px 8px;
-  border: 1px solid color-mix(in srgb, var(--radar-signal) 16%, var(--n-border-color));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--radar-signal) 5%, transparent);
-  color: inherit;
-  text-decoration: none;
-}
-.radar-trend-item:hover { border-color: color-mix(in srgb, var(--radar-signal) 36%, var(--n-border-color)); }
-.radar-trend-item em { color: var(--radar-signal); font-size: 12px; font-style: normal; font-weight: 720; white-space: nowrap; }
-.radar-trend-item strong { justify-self: end; color: var(--radar-signal); font-size: 12px; font-weight: 760; white-space: nowrap; }
-.radar-trend-item span {
-  display: -webkit-box;
-  grid-column: 1 / -1;
-  overflow: hidden;
-  color: var(--n-text-color-2);
-  font-size: 12px;
-  line-height: 1.4;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.radar-trend-item.is-breakthrough { --radar-signal: #c65357; }
-.radar-trend-item.is-rising { --radar-signal: #c07a13; }
-.radar-trend-item.is-reentry { --radar-signal: #705ac8; }
-.radar-trend-item.is-new { --radar-signal: #168a84; }
-.radar-trend-item.is-falling { --radar-signal: #5f7892; }
 @media (prefers-reduced-motion: reduce) {
   .radar-mark__ping { animation: none; }
 }
@@ -2007,15 +2098,6 @@ watch(locale, () => void loadTopic(false));
   min-width: 0;
 }
 .chigua-topic.is-compact .topic-featured-workspace { --chigua-featured-lane-height: 300px; }
-.topic-trend-strip {
-  min-width: 0;
-}
-.topic-trend-strip .topic-trend-list {
-  grid-template-columns: repeat(var(--chigua-featured-columns, 4), minmax(0, 1fr));
-  align-items: stretch;
-  gap: 8px;
-  padding: 0;
-}
 .chigua-topic :deep(.topic-lane) {
   padding: 10px 12px;
   border-radius: 12px;
@@ -2113,6 +2195,22 @@ watch(locale, () => void loadTopic(false));
   color: var(--n-primary-color);
   outline: none;
 }
+.event-lane-trend {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+  color: var(--n-text-color-3);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.event-lane-trend.is-rising,
+.event-lane-trend.is-breakthrough { color: #c46d13; }
+.event-lane-trend.is-falling { color: #60788f; }
+.event-lane-trend.is-new { color: #168a84; }
+.event-lane-trend.is-reentry { color: #705ac8; }
 .event-lane-meta {
   display: flex;
   align-items: center;
@@ -2134,6 +2232,69 @@ watch(locale, () => void loadTopic(false));
 .event-lane-meta a:hover,
 .event-lane-meta a:focus-visible { color: var(--n-text-color-2); outline: none; }
 .event-lane-meta span { flex: 0 0 auto; font-weight: 650; }
+.event-lane-sticky {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 24%, var(--n-border-color));
+  border-left: 3px solid var(--lane-tone, var(--n-primary-color));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--n-color) 94%, var(--lane-tone, var(--n-primary-color)) 6%);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 -5px 18px rgba(0, 0, 0, .09);
+  backdrop-filter: blur(10px);
+}
+.event-lane-sticky.has-cover { grid-template-columns: 40px auto minmax(0, 1fr) auto; }
+.event-lane-sticky > img {
+  display: block;
+  width: 40px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.event-lane-sticky__signal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 12%, transparent);
+  color: var(--lane-tone, var(--n-primary-color));
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.event-lane-sticky__copy { display: grid; min-width: 0; gap: 1px; }
+.event-lane-sticky__copy strong {
+  overflow: hidden;
+  color: var(--n-text-color);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-lane-sticky__copy small {
+  overflow: hidden;
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-lane-sticky > b {
+  color: var(--n-text-color-2);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.event-lane-sticky.is-serious { filter: grayscale(1); }
 @media (hover: hover) and (pointer: fine) {
   .event-lane-item:hover .event-lane-copy { transform: translateX(4px); }
   .event-lane-item:hover .event-lane-copy::after { width: 90%; }
@@ -2821,11 +2982,7 @@ watch(locale, () => void loadTopic(false));
 .topic-category-item.is-music { --category-tone: #6268c7; }
 .topic-category-item.is-creator { --category-tone: #168a84; }
 .topic-category-item.is-other { --category-tone: #6b7280; }
-.topic-category-item.active em { color: currentColor; }.topic-trend-list {
-  display: grid;
-  gap: 6px;
-  padding: 8px 8px 0;
-}
+.topic-category-item.active em { color: currentColor; }
 .topic-controls-card {
   display: grid;
   gap: 0;
@@ -3081,7 +3238,6 @@ watch(locale, () => void loadTopic(false));
   .topic-controls-card > :deep(.n-button) { width: auto; margin: 8px; }
 }
 @media (max-width: 820px) {
-  .topic-trend-strip { grid-template-columns: 1fr; }
   .topic-section { padding: 12px; }
   .topic-layout {
     display: flex;

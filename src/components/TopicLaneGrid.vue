@@ -20,7 +20,11 @@
     @update:model-value="handleOrderUpdate"
   >
     <template #item="{ element: lane }">
-      <section class="topic-lane" :class="[`is-${lane.key}`, { 'is-scrollable': lane.scrollable }]">
+      <section
+        :ref="(el) => registerLaneRef(lane.key, el)"
+        class="topic-lane"
+        :class="[`is-${lane.key}`, { 'is-scrollable': lane.scrollable }]"
+      >
       <header class="topic-lane__head">
         <div :title="lane.subtitle || undefined">
           <div class="topic-lane__title-row">
@@ -69,6 +73,18 @@
         <span v-if="lane.hasMore" class="topic-lane__scroll-hint">{{ lane.loadMoreLabel || 'Scroll for more' }}</span>
       </div>
 
+      <div
+        v-if="activeSticky[lane.key] && $slots['sticky-item']"
+        class="topic-lane__sticky no-lane-drag"
+      >
+        <slot
+          name="sticky-item"
+          :lane="lane"
+          :item="activeSticky[lane.key].item"
+          :meta="activeSticky[lane.key].meta"
+        />
+      </div>
+
       <button
         v-if="lane.actionLabel && lane.actionPlacement !== 'header'"
         type="button"
@@ -88,9 +104,10 @@
 </template>
 
 <script setup>
+import { nextTick, onBeforeUnmount, onMounted, reactive, watch } from "vue";
 import draggable from "vuedraggable";
 
-defineProps({
+const props = defineProps({
   lanes: { type: Array, default: () => [] },
   ariaLabel: { type: String, default: "" },
   sortable: { type: Boolean, default: false },
@@ -102,14 +119,80 @@ defineProps({
 const emit = defineEmits(["select", "load-more", "reorder", "drag-start", "drag-end"]);
 const handleOrderUpdate = (ordered) => emit("reorder", Array.isArray(ordered) ? ordered : []);
 const pendingLanes = new Set();
+const laneRefs = new Map();
+const activeSticky = reactive({});
+let stickyRefreshFrame = 0;
+
+const registerLaneRef = (key, el) => {
+  if (!key) return;
+  if (el) laneRefs.set(key, el);
+  else laneRefs.delete(key);
+};
+
+const laneScrollTarget = (laneEl) =>
+  laneEl?.querySelector(".n-scrollbar-container") || laneEl?.querySelector(".topic-lane__items");
+
+const updateStickyVisibility = (lane, explicitTarget = null) => {
+  if (!lane?.key) return;
+  const candidates = Array.isArray(lane?.stickyCandidates) ? lane.stickyCandidates : [];
+  const laneEl = laneRefs.get(lane.key);
+  const target = explicitTarget || laneScrollTarget(laneEl);
+  if (!target || !candidates.length) {
+    activeSticky[lane.key] = null;
+    return;
+  }
+  const atBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 8;
+  if (atBottom) {
+    activeSticky[lane.key] = null;
+    return;
+  }
+  const targetRect = target.getBoundingClientRect();
+  const tolerance = 4;
+  const candidate = candidates.find((entry) => {
+    const itemEl = laneEl?.querySelector(`[data-lane-item-key="${entry.key}"]`);
+    if (!itemEl) return false;
+    const itemRect = itemEl.getBoundingClientRect();
+    const intersects =
+      itemRect.bottom > targetRect.top + tolerance &&
+      itemRect.top < targetRect.bottom - tolerance;
+    const targetIsBelowViewport = itemRect.top >= targetRect.bottom - tolerance;
+    return targetIsBelowViewport && !intersects;
+  });
+  activeSticky[lane.key] = candidate || null;
+};
+
+const refreshStickyVisibility = () => {
+  if (stickyRefreshFrame) cancelAnimationFrame(stickyRefreshFrame);
+  stickyRefreshFrame = requestAnimationFrame(() => {
+    stickyRefreshFrame = 0;
+    for (const lane of props.lanes || []) updateStickyVisibility(lane);
+  });
+};
+
+watch(
+  () => props.lanes,
+  () => nextTick(refreshStickyVisibility),
+  { deep: true, immediate: true },
+);
+
+onMounted(() => window.addEventListener("resize", refreshStickyVisibility, { passive: true }));
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", refreshStickyVisibility);
+  if (stickyRefreshFrame) cancelAnimationFrame(stickyRefreshFrame);
+});
+
 const handleItemsScroll = (event, lane) => {
-  if (!lane?.scrollable || !lane?.hasMore || pendingLanes.has(lane.key)) return;
   const target = event?.currentTarget;
   if (!target) return;
+  updateStickyVisibility(lane, target);
+  if (!lane?.scrollable || !lane?.hasMore || pendingLanes.has(lane.key)) return;
   if (target.scrollTop + target.clientHeight < target.scrollHeight - 48) return;
   pendingLanes.add(lane.key);
   emit("load-more", lane);
-  requestAnimationFrame(() => pendingLanes.delete(lane.key));
+  requestAnimationFrame(() => {
+    pendingLanes.delete(lane.key);
+    nextTick(refreshStickyVisibility);
+  });
 };
 </script>
 
@@ -121,6 +204,7 @@ const handleItemsScroll = (event, lane) => {
   margin: 2px 0 12px;
 }
 .topic-lane {
+  position: relative;
   display: flex;
   min-width: 0;
   min-height: 0;
@@ -254,6 +338,14 @@ const handleItemsScroll = (event, lane) => {
   color: var(--n-text-color-3);
   font-size: 9px;
   text-align: center;
+}
+.topic-lane__sticky {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  left: 9px;
+  z-index: 5;
+  pointer-events: auto;
 }
 .topic-lane__action {
   display: flex;
