@@ -116,6 +116,7 @@
                 v-if="showStreamImages && entry.cover"
                 class="category-story-card__cover"
                 :src="coverSrc(entry.cover)"
+                :referrerpolicy="COVER_REFERRER_POLICY"
                 alt=""
                 loading="lazy"
                 @error="hideBrokenCover"
@@ -180,7 +181,7 @@ import {
 import { getSourceDisplayLabel, getSourceSubtitleLabel, localizeSubtypeGroups } from '@/utils/sourceLabels';
 import { buildRankPath, getLocaleFromRoute, normalizeLocale } from '@/utils/locale';
 import { getSourceLogo, getSourceLogoFallback } from '@/utils/sourceLogos';
-import { getCoverDisplaySrc } from '@/utils/imageProxy';
+import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from '@/utils/imageProxy';
 import { normalizeRankingBadges } from '@/utils/rankingBadges';
 import { useTrendsCatalogRevision } from '@/composables/useTrendsCatalogRevision';
 import { DATA_REFRESH_EVENT } from '@/utils/dataRefresh';

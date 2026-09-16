@@ -76,13 +76,14 @@
                 :alt="item.title"
                 lazy
                 object-fit="cover"
-                :img-props="{ onError: () => markCoverError(item.cover) }"
+                :img-props="{ referrerpolicy: COVER_REFERRER_POLICY, onError: () => markCoverError(item.cover) }"
                 @error="markCoverError(item.cover)"
               />
             </template>
             <img
               class="event-lane-hover-cover"
               :src="coverSrc(item.cover)"
+              :referrerpolicy="COVER_REFERRER_POLICY"
               :alt="item.title"
               @error="markCoverError(item.cover)"
             />
@@ -183,7 +184,7 @@
                 :alt="item.title"
                 lazy
                 object-fit="cover"
-                :img-props="{ onError: () => markCoverError(item.cover) }"
+                :img-props="{ referrerpolicy: COVER_REFERRER_POLICY, onError: () => markCoverError(item.cover) }"
                 @error="markCoverError(item.cover)"
               />
               <div v-else-if="!item.cover" class="event-cover is-logo" aria-hidden="true">
@@ -378,7 +379,7 @@ import { buildRankPath, getLocaleFromRoute, normalizeLocale } from "@/utils/loca
 import { getSourceLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
-import { getCoverDisplaySrc } from "@/utils/imageProxy";
+import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
 import { useRoute } from "vue-router";
 
 const route = useRoute();

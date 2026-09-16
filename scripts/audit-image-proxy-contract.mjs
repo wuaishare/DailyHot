@@ -21,17 +21,19 @@ const serverSuffixes = readSuffixes(
   "IMAGE_PROXY_ALLOWED_HOST_SUFFIXES",
 );
 
-assert.deepEqual(
-  clientSuffixes,
-  serverSuffixes,
-  "browser routing and server-side host admission must stay aligned",
+assert.ok(
+  clientSuffixes.every((suffix) => serverSuffixes.includes(suffix)),
+  "every browser-proxied host must remain admitted by the server proxy",
 );
 assert.ok(
   clientSuffixes.includes("ci.xiaohongshu.com"),
   "the exact Xiaohongshu cover host must use the server-side image proxy",
 );
-assert.ok(clientSuffixes.includes("thepaper.cn"), "The Paper covers must use the shared image proxy");
-assert.ok(clientSuffixes.includes("geekpark.net"), "GeekPark covers must use the shared image proxy");
+assert.ok(serverSuffixes.includes("thepaper.cn"), "keep The Paper server admission for older cached clients");
+assert.ok(serverSuffixes.includes("geekpark.net"), "keep GeekPark server admission for older cached clients");
+assert.ok(!clientSuffixes.includes("thepaper.cn"), "The Paper covers must load directly with no-referrer");
+assert.ok(!clientSuffixes.includes("geekpark.net"), "GeekPark covers must load directly with no-referrer");
+assert.match(clientSource, /export const COVER_REFERRER_POLICY = "no-referrer"/);
 assert.ok(
   !clientSuffixes.includes("xiaohongshu.com"),
   "do not broaden image-proxy admission to every Xiaohongshu subdomain",
@@ -55,6 +57,15 @@ assert.equal(
 assert.equal(
   clientModule.getCoverDisplaySrc("http://ci.xiaohongshu.com/example.jpg"),
   "http://ci.xiaohongshu.com/example.jpg",
+);
+
+assert.equal(
+  clientModule.getCoverDisplaySrc("https://imgpai.thepaper.cn/example.jpg"),
+  "https://imgpai.thepaper.cn/example.jpg",
+);
+assert.equal(
+  clientModule.getCoverDisplaySrc("https://imgslim.geekpark.net/example.jpg"),
+  "https://imgslim.geekpark.net/example.jpg",
 );
 
 assert.equal(
@@ -85,5 +96,17 @@ assert.equal(
   ),
   "",
 );
+
+const coverConsumerPaths = [
+  "src/components/HotList.vue",
+  "src/components/CategoryStream.vue",
+  "src/components/CategorySourceRail.vue",
+  "src/views/List.vue",
+  "src/views/ChiguaTopic.vue",
+];
+for (const path of coverConsumerPaths) {
+  const source = fs.readFileSync(path, "utf8");
+  assert.match(source, /COVER_REFERRER_POLICY/, `${path} must apply the shared cover referrer policy`);
+}
 
 console.log("PASS: DailyHot image proxy client/server contract");
