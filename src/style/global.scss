@@ -11,6 +11,47 @@ body,
   background: #ffffff;
 }
 
+:root {
+  --ranking-card-item-min-height: 30px;
+  --ranking-card-item-gap: 8px;
+  --ranking-card-item-margin: 6px;
+  --ranking-card-thumb-width: 50px;
+  --ranking-card-thumb-height: 40px;
+  --ranking-card-thumb-radius: 6px;
+  --ranking-card-rank-size: 24px;
+  --ranking-card-rank-gap: 8px;
+  --ranking-card-compact-item-min-height: 28px;
+  --ranking-card-compact-item-gap: 6px;
+  --ranking-card-compact-item-margin: 4px;
+  --ranking-card-compact-thumb-width: 46px;
+  --ranking-card-compact-thumb-height: 36px;
+  --ranking-card-compact-rank-size: 22px;
+  --ranking-card-compact-rank-gap: 4px;
+  --ranking-card-featured-item-min-height: 72px;
+  --ranking-card-featured-item-gap: 9px;
+  --ranking-card-featured-thumb-width: 80px;
+  --ranking-card-featured-thumb-height: 64px;
+  --ranking-stream-rank-width: 42px;
+  --ranking-stream-row-min-height: 68px;
+  --ranking-stream-row-gap: 10px;
+  --ranking-stream-row-padding-block: 9px;
+  --ranking-stream-row-padding-inline-start: 10px;
+  --ranking-stream-row-padding-inline-end: 14px;
+  --ranking-stream-media-width: 112px;
+  --ranking-stream-media-height: 84px;
+  --ranking-stream-media-radius: 8px;
+  --ranking-stream-title-size: 15px;
+  --ranking-stream-meta-size: 10px;
+  --ranking-stream-mobile-rank-width: 34px;
+  --ranking-stream-mobile-row-min-height: 62px;
+  --ranking-stream-mobile-row-gap: 8px;
+  --ranking-stream-mobile-row-padding-block: 8px;
+  --ranking-stream-mobile-row-padding-inline-start: 6px;
+  --ranking-stream-mobile-row-padding-inline-end: 9px;
+  --ranking-stream-mobile-media-width: 76px;
+  --ranking-stream-mobile-media-height: 64px;
+}
+
 html[data-dailyhot-theme="dark"],
 html[data-dailyhot-theme="dark"] body,
 html[data-dailyhot-theme="dark"] #app {

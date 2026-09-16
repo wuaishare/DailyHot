@@ -440,6 +440,11 @@ import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
 import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
 import { resolveCoverPreviewLayout } from "@/utils/coverPreviewGeometry";
+import {
+  FLOATING_COVER_PREVIEW_CLOSE_DELAY,
+  FLOATING_COVER_PREVIEW_OPEN_DELAY,
+  resolveFloatingCoverPreviewPosition,
+} from "@/utils/floatingCoverPreview";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
 import RankingBadgeGroup from "@/components/RankingBadgeGroup.vue";
@@ -1089,7 +1094,7 @@ const schedulePreviewClose = () => {
   previewCloseTimer = window.setTimeout(() => {
     previewCloseTimer = null;
     hidePreview();
-  }, 140);
+  }, FLOATING_COVER_PREVIEW_CLOSE_DELAY);
 };
 const openFullImagePreview = (cover) => {
   if (!cover || !isClient) return;
@@ -1138,62 +1143,22 @@ const positionPreview = (item, target, mediaLayout, preferredPlacement = null) =
   const textRects = Array.from(card?.querySelectorAll(".text") || []).map(
     (node) => node.getBoundingClientRect()
   );
-  const padding = 12;
-  const gap = 10;
   const { width: previewWidth, height: previewHeight } = getPreviewDimensions(
     item,
     mediaLayout
   );
-  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-  const clampLeft = (value) =>
-    clamp(value, padding, window.innerWidth - previewWidth - padding);
-  const clampTop = (value) =>
-    clamp(value, padding, window.innerHeight - previewHeight - padding);
-  const placeRight =
-    window.innerWidth - rect.right >= previewWidth + gap + padding;
-  const placeLeft = rect.left >= previewWidth + gap + padding;
-  const placeBelow =
-    cardRect &&
-    window.innerHeight - cardRect.bottom >= previewHeight + gap + padding;
-  const placeAbove =
-    cardRect && cardRect.top >= previewHeight + gap + padding;
-  const availablePlacements = {
-    right: placeRight,
-    left: placeLeft,
-    below: placeBelow,
-    above: placeAbove,
-  };
-  const placement =
-    (preferredPlacement && availablePlacements[preferredPlacement]
-      ? preferredPlacement
-      : null) ||
-    (placeRight ? "right" : placeLeft ? "left" : placeBelow ? "below" : placeAbove ? "above" : null);
-  if (!placement) return false;
-
-  let left = clampLeft(rect.left + 32);
-  let top = clampTop(rect.top - 8);
-
-  if (placement === "right") {
-    left = rect.right + gap;
-  } else if (placement === "left") {
-    left = rect.left - previewWidth - gap;
-  } else if (placement === "below") {
-    top = cardRect.bottom + gap;
-  } else {
-    top = cardRect.top - previewHeight - gap;
-  }
-
-  left = clampLeft(left);
-  top = clampTop(top);
-
-  const overlapsText = textRects.some(
-    (textRect) =>
-      left < textRect.right &&
-      left + previewWidth > textRect.left &&
-      top < textRect.bottom &&
-      top + previewHeight > textRect.top
-  );
-  if (overlapsText && (placement === "left" || placement === "right")) return false;
+  const previewPosition = resolveFloatingCoverPreviewPosition({
+    targetRect: rect,
+    containerRect: cardRect,
+    textRects,
+    previewWidth,
+    previewHeight,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    preferredPlacement,
+  });
+  if (!previewPosition) return false;
+  const { left, top, placement } = previewPosition;
 
   const isMediaOnly = Boolean(
     mediaLayout && !item?.displayDesc && !item?.rankingMeta?.hasContent
@@ -1249,7 +1214,7 @@ const showPreview = (item, event) => {
   previewOpenTimer = window.setTimeout(() => {
     previewOpenTimer = null;
     openPreview(item, target, requestId);
-  }, 180);
+  }, FLOATING_COVER_PREVIEW_OPEN_DELAY);
 };
 
 const bindPreviewViewportListeners = () => {
@@ -1675,11 +1640,11 @@ onBeforeUnmount(() => {
     .message { height: 20px; }
     :deep(.news-list) { height: 286px; }
     .lists { padding-right: 4px; }
-    .lists .item { min-height: 28px; margin-bottom: 4px; }
-    .lists .item .line { gap: 6px; }
-    .lists .item .line.has-inline-cover { grid-template-columns: auto 46px minmax(0, 1fr); }
-    .lists .item .item-thumb { width: 46px; height: 36px; }
-    .lists .item .num { width: 22px; height: 22px; min-width: 22px; margin-right: 4px; border-radius: 6px; }
+    .lists .item { min-height: var(--ranking-card-compact-item-min-height); margin-bottom: var(--ranking-card-compact-item-margin); }
+    .lists .item .line { gap: var(--ranking-card-compact-item-gap); }
+    .lists .item .line.has-inline-cover { grid-template-columns: auto var(--ranking-card-compact-thumb-width) minmax(0, 1fr); }
+    .lists .item .item-thumb { width: var(--ranking-card-compact-thumb-width); height: var(--ranking-card-compact-thumb-height); }
+    .lists .item .num { width: var(--ranking-card-compact-rank-size); height: var(--ranking-card-compact-rank-size); min-width: var(--ranking-card-compact-rank-size); margin-right: var(--ranking-card-compact-rank-gap); border-radius: 6px; }
   }
 
   .message {
@@ -1770,9 +1735,9 @@ onBeforeUnmount(() => {
       position: relative;
       display: flex;
       flex-direction: column;
-      margin-bottom: 6px;
+      margin-bottom: var(--ranking-card-item-margin);
       padding-bottom: 2px;
-      min-height: 30px;
+      min-height: var(--ranking-card-item-min-height);
       border-radius: 8px;
       transition: all 0.3s;
       cursor: pointer;
@@ -1785,22 +1750,22 @@ onBeforeUnmount(() => {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
-        gap: 8px;
+        gap: var(--ranking-card-item-gap);
 
         &.has-inline-cover {
-          grid-template-columns: auto 50px minmax(0, 1fr);
+          grid-template-columns: auto var(--ranking-card-thumb-width) minmax(0, 1fr);
         }
       }
 
       .item-thumb {
         display: block;
         box-sizing: border-box;
-        width: 50px;
-        height: 40px;
+        width: var(--ranking-card-thumb-width);
+        height: var(--ranking-card-thumb-height);
         padding: 0;
         overflow: hidden;
         border: 0;
-        border-radius: 6px;
+        border-radius: var(--ranking-card-thumb-radius);
         background: var(--n-action-color);
         cursor: zoom-in;
         box-shadow: inset 0 0 0 1px
@@ -1836,10 +1801,10 @@ onBeforeUnmount(() => {
       }
 
       .num {
-        width: 24px;
-        height: 24px;
-        min-width: 24px;
-        margin-right: 8px;
+        width: var(--ranking-card-rank-size);
+        height: var(--ranking-card-rank-size);
+        min-width: var(--ranking-card-rank-size);
+        margin-right: var(--ranking-card-rank-gap);
         font-size: 12px;
         display: flex;
         align-items: center;

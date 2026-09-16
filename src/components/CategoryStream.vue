@@ -303,7 +303,7 @@ import {
   COVER_PRESENTATION_MODES,
   resolveCoverPresentationMode,
 } from "@/utils/coverPresentation";
-import { resolveCoverPreviewLayout } from "@/utils/coverPreviewGeometry";
+import { applyExpandableCoverGeometry } from "@/utils/expandableCoverGeometry";
 
 const props = defineProps({
   sources: { type: Array, default: () => [] },
@@ -1076,86 +1076,19 @@ const handleLogoError = (event) => {
 };
 const coverSrc = (cover) => getCoverDisplaySrc(cover);
 const coverPreviewLabel = (entry) => `${entry?.title || ""} · ${copy.value.previewImage}`;
-const COVER_HOVER_BOOST = 1.1;
-const COVER_HOVER_MIN_SCALE = 1.35;
-const COVER_HOVER_MAX_SCALE = 4.5;
 const syncCoverHoverGeometry = (image) => {
   if (!sourcePageMode.value || !image?.isConnected) return;
   const media = image.closest?.(".category-stream__media");
   const preview = image.closest?.(".category-stream__preview-image.n-image");
-  const mediaWidth = Number(media?.clientWidth || 0);
-  const mediaHeight = Number(media?.clientHeight || 0);
-  if (!mediaWidth || !mediaHeight || !preview) return;
-
-  const naturalWidth = Number(image.naturalWidth || image.offsetWidth || 0);
-  const naturalHeight = Number(image.naturalHeight || image.offsetHeight || 0);
-  if (!naturalWidth || !naturalHeight) return;
-
-  const naturalRatio = naturalWidth / naturalHeight;
-  let fullWidth = mediaWidth;
-  let fullHeight = fullWidth / naturalRatio;
-  if (fullHeight > mediaHeight) {
-    fullHeight = mediaHeight;
-    fullWidth = fullHeight * naturalRatio;
-  }
-
-  const stream = image.closest?.(".category-stream");
-  const isMixed = stream?.dataset?.coverPresentation === COVER_PRESENTATION_MODES.MIXED;
-  const fillScale = Math.max(
-    mediaWidth / fullWidth,
-    mediaHeight / fullHeight,
-    1,
-  );
-  const baseViewportWidth = isMixed ? mediaWidth : fullWidth;
-  const baseViewportHeight = isMixed ? mediaHeight : fullHeight;
-  const baseImageWidth = isMixed ? fullWidth * fillScale : fullWidth;
-  const baseImageHeight = isMixed ? fullHeight * fillScale : fullHeight;
-  const baseImageRight = isMixed
-    ? Math.min(0, -Math.max(0, (baseImageWidth - baseViewportWidth) / 2))
-    : 0;
   const row = image.closest?.(".category-stream__row");
-  const mediaRect = media?.getBoundingClientRect?.();
-  const rowRect = row?.getBoundingClientRect?.();
-  const previewLayout = resolveCoverPreviewLayout(naturalWidth, naturalHeight);
-  const preferredHover = previewLayout?.mediaOnly;
-  const viewportPadding = 12;
-  const rowCenterY = rowRect ? rowRect.top + rowRect.height / 2 : 0;
-  const availableWidth = mediaRect
-    ? Math.max(baseViewportWidth, mediaRect.right - viewportPadding)
-    : Number(preferredHover?.width || baseViewportWidth);
-  const availableHeight = rowCenterY && typeof window !== "undefined"
-    ? Math.max(
-        baseViewportHeight,
-        2 * Math.max(0, Math.min(
-          rowCenterY - viewportPadding,
-          window.innerHeight - rowCenterY - viewportPadding,
-        )),
-      )
-    : Number(preferredHover?.height || baseViewportHeight);
-  const preferredScale = preferredHover
-    ? Math.min(preferredHover.width / fullWidth, preferredHover.height / fullHeight)
-    : COVER_HOVER_MIN_SCALE;
-  const availableScale = Math.min(availableWidth / fullWidth, availableHeight / fullHeight);
-  const baselineScale = Math.max(fillScale * COVER_HOVER_BOOST, COVER_HOVER_MIN_SCALE);
-  const hoverScale = Math.min(
-    Math.max(baselineScale, Math.min(preferredScale, availableScale)),
-    COVER_HOVER_MAX_SCALE,
-  );
-  const hoverWidth = fullWidth * hoverScale;
-  const hoverHeight = fullHeight * hoverScale;
-  const centerShiftY = mediaRect && rowRect
-    ? (rowRect.top + rowRect.height / 2) - (mediaRect.top + mediaRect.height / 2)
-    : 0;
-
-  preview.style?.setProperty?.("--cover-base-viewport-width", `${baseViewportWidth.toFixed(2)}px`);
-  preview.style?.setProperty?.("--cover-base-viewport-height", `${baseViewportHeight.toFixed(2)}px`);
-  preview.style?.setProperty?.("--cover-base-image-width", `${baseImageWidth.toFixed(2)}px`);
-  preview.style?.setProperty?.("--cover-base-image-height", `${baseImageHeight.toFixed(2)}px`);
-  preview.style?.setProperty?.("--cover-base-image-right", `${baseImageRight.toFixed(2)}px`);
-  preview.style?.setProperty?.("--cover-hover-width", `${hoverWidth.toFixed(2)}px`);
-  preview.style?.setProperty?.("--cover-hover-height", `${hoverHeight.toFixed(2)}px`);
-  preview.style?.setProperty?.("--cover-hover-center-y-shift", `${centerShiftY.toFixed(2)}px`);
-  preview.classList?.add?.("is-cover-geometry-ready");
+  const stream = image.closest?.(".category-stream");
+  applyExpandableCoverGeometry({
+    image,
+    media,
+    preview,
+    row,
+    isMixed: stream?.dataset?.coverPresentation === COVER_PRESENTATION_MODES.MIXED,
+  });
 };
 const handleCoverImageLoad = (event) => {
   const image = event?.currentTarget;
@@ -2324,17 +2257,17 @@ const hideBrokenMedia = (event, cover = "") => {
 .category-stream.is-source-page.is-compact.shows-images .category-stream__row {
   position: relative;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: var(--ranking-stream-rank-width) minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
-  min-height: 68px;
-  padding: 9px 14px 9px 10px;
+  gap: var(--ranking-stream-row-gap);
+  min-height: var(--ranking-stream-row-min-height);
+  padding: var(--ranking-stream-row-padding-block) var(--ranking-stream-row-padding-inline-end) var(--ranking-stream-row-padding-block) var(--ranking-stream-row-padding-inline-start);
   border-bottom: 1px solid color-mix(in srgb, var(--category-stream-border) 72%, transparent);
 }
 
 .category-stream.is-source-page .category-stream__row.has-media,
 .category-stream.is-source-page.shows-images .category-stream__row.has-media {
-  grid-template-columns: 42px 112px minmax(0, 1fr);
+  grid-template-columns: var(--ranking-stream-rank-width) var(--ranking-stream-media-width) minmax(0, 1fr);
 }
 
 .category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__row.has-media,
@@ -2386,10 +2319,10 @@ const hideBrokenMedia = (event, cover = "") => {
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 112px;
-  height: 84px;
-  max-width: 112px;
-  max-height: 84px;
+  width: var(--ranking-stream-media-width);
+  height: var(--ranking-stream-media-height);
+  max-width: var(--ranking-stream-media-width);
+  max-height: var(--ranking-stream-media-height);
   overflow: visible;
   border-radius: 0;
   background: transparent;
@@ -2416,7 +2349,7 @@ const hideBrokenMedia = (event, cover = "") => {
   height: auto;
   max-width: 100%;
   max-height: 100%;
-  border-radius: 8px;
+  border-radius: var(--ranking-stream-media-radius);
   object-fit: contain;
   object-position: center;
 }
@@ -2438,7 +2371,7 @@ const hideBrokenMedia = (event, cover = "") => {
   height: auto;
   max-width: 100%;
   max-height: 100%;
-  border-radius: 8px;
+  border-radius: var(--ranking-stream-media-radius);
   object-fit: contain;
   object-position: center;
   cursor: zoom-in;
@@ -2453,7 +2386,7 @@ const hideBrokenMedia = (event, cover = "") => {
   max-width: none;
   max-height: none;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--ranking-stream-media-radius);
   transform: translateY(-50%);
   transition:
     width 0.24s cubic-bezier(0.22, 1, 0.36, 1),
@@ -2472,7 +2405,7 @@ const hideBrokenMedia = (event, cover = "") => {
   height: var(--cover-base-image-height, 100%);
   max-width: none;
   max-height: none;
-  border-radius: 8px;
+  border-radius: var(--ranking-stream-media-radius);
   object-fit: contain !important;
   transform: translateY(-50%);
   transform-origin: right center;
@@ -2515,7 +2448,7 @@ const hideBrokenMedia = (event, cover = "") => {
 }
 
 .category-stream.is-source-page .category-stream__title {
-  font-size: var(--category-stream-font-size, 15px);
+  font-size: var(--category-stream-font-size, var(--ranking-stream-title-size));
   font-weight: 650;
   line-height: 1.38;
 }
@@ -2528,7 +2461,7 @@ const hideBrokenMedia = (event, cover = "") => {
 
 .category-stream.is-source-page .category-stream__meta {
   margin-top: 3px;
-  font-size: 10px;
+  font-size: var(--ranking-stream-meta-size);
 }
 
 .category-stream.is-source-page .category-stream__controls-card {
@@ -2704,28 +2637,28 @@ const hideBrokenMedia = (event, cover = "") => {
   .category-stream.is-source-page.shows-images .category-stream__row,
   .category-stream.is-source-page.is-compact .category-stream__row,
   .category-stream.is-source-page.is-compact.shows-images .category-stream__row {
-    grid-template-columns: 34px minmax(0, 1fr);
-    gap: 8px;
-    min-height: 62px;
-    padding: 8px 9px 8px 6px;
+    grid-template-columns: var(--ranking-stream-mobile-rank-width) minmax(0, 1fr);
+    gap: var(--ranking-stream-mobile-row-gap);
+    min-height: var(--ranking-stream-mobile-row-min-height);
+    padding: var(--ranking-stream-mobile-row-padding-block) var(--ranking-stream-mobile-row-padding-inline-end) var(--ranking-stream-mobile-row-padding-block) var(--ranking-stream-mobile-row-padding-inline-start);
   }
   .category-stream.is-source-page .category-stream__row.has-media,
   .category-stream.is-source-page.shows-images .category-stream__row.has-media {
-    grid-template-columns: 34px 76px minmax(0, 1fr);
+    grid-template-columns: var(--ranking-stream-mobile-rank-width) var(--ranking-stream-mobile-media-width) minmax(0, 1fr);
   }
   .category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__row.has-media,
   .category-stream.is-source-page[data-cover-presentation="mixed"].shows-images .category-stream__row.has-media {
-    grid-template-columns: 34px 64px minmax(0, 1fr);
+    grid-template-columns: var(--ranking-stream-mobile-rank-width) 64px minmax(0, 1fr);
   }
   .category-stream.is-source-page[data-cover-presentation="portrait-uniform"] .category-stream__row.has-media,
   .category-stream.is-source-page[data-cover-presentation="portrait-uniform"].shows-images .category-stream__row.has-media {
-    grid-template-columns: 34px 44px minmax(0, 1fr);
+    grid-template-columns: var(--ranking-stream-mobile-rank-width) 44px minmax(0, 1fr);
   }
   .category-stream.is-source-page .category-stream__media {
-    width: 76px;
-    height: 64px;
-    max-width: 76px;
-    max-height: 64px;
+    width: var(--ranking-stream-mobile-media-width);
+    height: var(--ranking-stream-mobile-media-height);
+    max-width: var(--ranking-stream-mobile-media-width);
+    max-height: var(--ranking-stream-mobile-media-height);
   }
   .category-stream.is-source-page[data-cover-presentation="mixed"] .category-stream__media {
     width: 64px;
@@ -2754,7 +2687,7 @@ const hideBrokenMedia = (event, cover = "") => {
   }
   .category-stream.is-source-page.is-minimal .category-stream__row,
   .category-stream.is-source-page.is-minimal.is-compact .category-stream__row {
-    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-columns: var(--ranking-stream-mobile-rank-width) minmax(0, 1fr);
     height: 40px;
     min-height: 40px;
   }
