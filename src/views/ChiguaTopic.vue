@@ -2217,7 +2217,7 @@ watch(locale, () => void loadTopic(false));
   filter: grayscale(1);
   padding-inline: 5px;
   border-radius: 6px;
-  background: linear-gradient(90deg, color-mix(in srgb, #6b7280 8%, transparent), transparent 72%);
+  background: linear-gradient(90deg, color-mix(in srgb, #6b7280 22%, transparent) 0%, color-mix(in srgb, #6b7280 10%, transparent) 48%, transparent 100%);
 }
 .event-lane-item.is-serious .event-lane-cover img { filter: grayscale(.88) saturate(.18) contrast(.96); }
 .event-list {
@@ -2981,7 +2981,7 @@ watch(locale, () => void loadTopic(false));
   padding-inline: 8px;
   border-top-color: color-mix(in srgb, #6b7280 22%, var(--n-border-color));
   border-radius: 8px;
-  background: linear-gradient(90deg, color-mix(in srgb, #6b7280 8%, transparent), transparent 66%);
+  background: linear-gradient(90deg, color-mix(in srgb, #6b7280 22%, transparent) 0%, color-mix(in srgb, #6b7280 10%, transparent) 48%, transparent 100%);
 }
 .event-item.is-serious .event-cover :deep(img) { filter: grayscale(.9) saturate(.15) contrast(.96); }
 .event-item.is-serious .event-rank,

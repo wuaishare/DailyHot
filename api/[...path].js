@@ -74,6 +74,7 @@ const IMAGE_PROXY_ALLOWED_HOST_SUFFIXES = [
   "thepaper.cn",
   "geekpark.net",
   "ci.xiaohongshu.com",
+  "sinaimg.cn",
 ];
 const IMAGE_PROXY_MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_PROXY_TIMEOUT_MS = 15000;
