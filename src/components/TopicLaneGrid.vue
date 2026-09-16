@@ -1,7 +1,7 @@
 <template>
   <draggable
     class="topic-lane-grid"
-    :class="{ 'is-scrollbar-hidden': hideScrollbar }"
+    :class="{ 'is-scrollbar-hidden': hideScrollbar, 'is-scrollbar-hover': hoverScrollbar }"
     :model-value="lanes"
     item-key="key"
     :disabled="!sortable || dragDisabled"
@@ -38,7 +38,22 @@
         </div>
       </header>
 
+      <n-scrollbar
+        v-if="hoverScrollbar && lane.scrollable"
+        class="topic-lane__scrollbar"
+        trigger="hover"
+        :tabindex="lane.items?.length > Number(lane.visibleCount ?? 5) ? 0 : undefined"
+        @scroll="handleItemsScroll($event, lane)"
+      >
+        <div class="topic-lane__items topic-lane__items--overlay">
+          <template v-for="(item, index) in lane.items || []" :key="item.id || `${lane.key}-${index}`">
+            <slot name="item" :lane="lane" :item="item" :index="index" />
+          </template>
+          <span v-if="lane.hasMore" class="topic-lane__scroll-hint">{{ lane.loadMoreLabel || 'Scroll for more' }}</span>
+        </div>
+      </n-scrollbar>
       <div
+        v-else
         class="topic-lane__items"
         :tabindex="lane.scrollable && lane.items?.length > Number(lane.visibleCount ?? 5) ? 0 : undefined"
         @scroll="handleItemsScroll($event, lane)"
@@ -76,6 +91,7 @@ defineProps({
   sortable: { type: Boolean, default: false },
   dragDisabled: { type: Boolean, default: false },
   hideScrollbar: { type: Boolean, default: false },
+  hoverScrollbar: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["select", "load-more", "reorder", "drag-start", "drag-end"]);
@@ -197,6 +213,18 @@ const handleItemsScroll = (event, lane) => {
   display: none;
   width: 0;
   height: 0;
+}
+.topic-lane__scrollbar {
+  max-height: 320px;
+}
+.topic-lane-grid.is-scrollbar-hover .topic-lane.is-scrollable .topic-lane__items--overlay {
+  max-height: none;
+  overflow: visible;
+  scrollbar-width: auto;
+}
+.topic-lane__scrollbar :deep(.n-scrollbar-rail.n-scrollbar-rail--vertical) {
+  right: 0;
+  width: 5px;
 }
 .topic-lane__scroll-hint {
   display: block;
