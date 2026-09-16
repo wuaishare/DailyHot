@@ -1,5 +1,6 @@
 export const COVER_PRESENTATION_MODES = Object.freeze({
-  AUTO: "auto-contain",
+  AUTO: "auto-fill",
+  LEGACY_CONTAIN: "auto-contain",
   MIXED: "mixed",
   PORTRAIT: "portrait-uniform",
   LANDSCAPE: "landscape-uniform",

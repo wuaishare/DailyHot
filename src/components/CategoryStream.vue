@@ -686,9 +686,9 @@ const setShowDescriptions = (value) => {
 const streamStyle = computed(() => {
   const dark = store.siteTheme === "dark";
   return {
-    "--category-stream-font-size": String(store.listFontSize) + "px",
+    "--category-stream-font-size": String(store.effectiveListFontSize) + "px",
     "--category-stream-compact-font-size":
-      String(Math.max(12, Number(store.listFontSize || 16) - 2)) + "px",
+      String(Math.max(12, Number(store.effectiveListFontSize || 16) - 2)) + "px",
     "--category-stream-primary": dark ? "#ff737a" : "#ea444d",
     "--category-stream-panel": dark ? "#18181c" : "#ffffff",
     "--category-stream-action": dark
@@ -1087,7 +1087,10 @@ const syncCoverHoverGeometry = (image) => {
     media,
     preview,
     row,
-    isMixed: stream?.dataset?.coverPresentation === COVER_PRESENTATION_MODES.MIXED,
+    isMixed: [
+      COVER_PRESENTATION_MODES.AUTO,
+      COVER_PRESENTATION_MODES.MIXED,
+    ].includes(stream?.dataset?.coverPresentation),
   });
 };
 const handleCoverImageLoad = (event) => {

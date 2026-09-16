@@ -1,5 +1,5 @@
 <template>
-  <div class="home">
+  <div ref="homeRef" class="home">
     <router-link
       v-if="isGamesCategory"
       :to="gameDealsTopicPath"
@@ -104,6 +104,7 @@ import {
 } from "@/config/site-metadata.mjs";
 import { sourceBelongsToCategory } from "@/utils/categoryTree";
 import { getSourceDisplayLabel } from "@/utils/sourceLabels";
+import { resolveResponsiveCardColumns } from "@/utils/responsiveColumns";
 
 const store = mainStore();
 const { t } = useI18n({ useScope: "global" });
@@ -112,11 +113,21 @@ const enableCardEntrance = ref(true);
 const isCardDragging = ref(false);
 const isSubtypeInteracting = ref(false);
 const sortableNews = ref([]);
+const homeRef = ref(null);
+const homeWidth = ref(typeof window !== "undefined" ? window.innerWidth : 1400);
+let homeResizeObserver = null;
 const clampDesktopColumns = (value, fallback) => Math.min(5, Math.max(3, Math.round(Number(value) || fallback)));
-const desktopColumns = computed(() =>
+const requestedDesktopColumns = computed(() =>
   store.compactMode
     ? clampDesktopColumns(store.homeCompactColumns, 5)
     : clampDesktopColumns(store.homeCardColumns, 4),
+);
+const desktopColumns = computed(() =>
+  resolveResponsiveCardColumns({
+    width: homeWidth.value,
+    requested: requestedDesktopColumns.value,
+    compact: store.compactMode,
+  }),
 );
 const renderNews = computed(() => {
   return store.newsArr
@@ -217,6 +228,17 @@ onMounted(() => {
   window.setTimeout(() => {
     enableCardEntrance.value = false;
   }, 400);
+  const updateHomeWidth = () => {
+    if (homeRef.value) homeWidth.value = homeRef.value.getBoundingClientRect().width;
+  };
+  updateHomeWidth();
+  if (typeof ResizeObserver !== "undefined" && homeRef.value) {
+    homeResizeObserver = new ResizeObserver(updateHomeWidth);
+    homeResizeObserver.observe(homeRef.value);
+  } else {
+    window.addEventListener("resize", updateHomeWidth);
+    homeResizeObserver = { disconnect: () => window.removeEventListener("resize", updateHomeWidth) };
+  }
   window.addEventListener(
     "dailyhot:subtype-interaction",
     handleSubtypeInteraction,
@@ -224,6 +246,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  homeResizeObserver?.disconnect?.();
+  homeResizeObserver = null;
   window.removeEventListener(
     "dailyhot:subtype-interaction",
     handleSubtypeInteraction,
@@ -330,7 +354,7 @@ const reset = () => {
 
   .news-grid {
     display: grid;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--home-grid-columns, 1), minmax(0, 1fr));
     gap: 24px;
 
     &.is-compact {
@@ -365,24 +389,6 @@ const reset = () => {
   }
   .home .wool-topic-entry p {
     display: none;
-  }
-}
-
-@media (min-width: 560px) {
-  .home .news-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 800px) {
-  .home .news-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1100px) {
-  .home .news-grid {
-    grid-template-columns: repeat(var(--home-grid-columns, 4), minmax(0, 1fr));
   }
 }
 
