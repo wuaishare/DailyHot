@@ -57,8 +57,14 @@
       v-if="featuredGroups.length"
       :lanes="featuredGroups"
       :aria-label="copy.feedTitle"
+      :sortable="true"
+      :drag-disabled="featuredLaneDragDisabled"
+      :hide-scrollbar="true"
       @select="selectFeaturedLane"
       @load-more="loadMoreFeaturedLane"
+      @reorder="saveFeaturedLaneOrder"
+      @drag-start="startFeaturedLaneDrag"
+      @drag-end="endFeaturedLaneDrag"
     >
       <template #item="{ item, index }">
         <article
@@ -94,12 +100,53 @@
           </button>
           <div class="event-lane-copy">
             <span v-if="isSeriousEvent(item)" class="event-lane-serious" :title="ui.seriousTip">
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c1.2 1.4 1.7 2.2 1.7 3.1A1.7 1.7 0 0 1 8 7 1.7 1.7 0 0 1 6.3 5.3C6.3 4.4 6.8 3.6 8 2.2Zm-2.2 6h4.4v5.2H5.8V8.2Zm-1.5 5.2h7.4" /></svg>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1c-1.5 0-2.6 1.1-2.6 2.5 0 1.4.8 2.6 2 3.8l-2.1 5.3M8 2.1c1.5 0 2.6 1.1 2.6 2.5 0 1.4-.8 2.6-2 3.8l2.1 5.3M6.5 8.8h3" /></svg>
               {{ ui.serious }}
             </span>
             <a class="event-lane-title" :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+            <div class="event-lane-meta">
+              <a :href="primaryRankPath(item)" @click.stop>{{ sourceLabel(item) }}</a>
+              <span v-if="effectiveResonanceSourceCount(item) > 1">
+                {{ effectiveResonanceSourceCount(item) }}{{ ui.platforms }}
+              </span>
+            </div>
           </div>
         </article>
+      </template>
+      <template #footer="{ lane }">
+        <div class="event-lane-footer">
+          <n-text class="event-lane-update-time" :depth="3">
+            {{ featuredLaneUpdateTime(lane) || ui.updateFailed }}
+          </n-text>
+          <n-space class="event-lane-controls" :size="6">
+            <n-popover>
+              <template #trigger>
+                <span
+                  class="topic-lane__drag-handle"
+                  role="button"
+                  tabindex="0"
+                  :aria-label="t('hotList.dragSort')"
+                  @click.stop.prevent
+                  @keydown.stop.prevent
+                ><n-icon :component="Drag" /></span>
+              </template>
+              {{ t("hotList.dragSort") }}
+            </n-popover>
+            <n-popover>
+              <template #trigger>
+                <n-button
+                  size="tiny"
+                  secondary
+                  strong
+                  round
+                  :loading="isFeaturedLaneRefreshing(lane.key)"
+                  @click.stop="refreshFeaturedLane(lane)"
+                ><template #icon><n-icon :component="Refresh" /></template></n-button>
+              </template>
+              {{ t("hotList.refreshLatest") }}
+            </n-popover>
+          </n-space>
+        </div>
       </template>
     </TopicLaneGrid>
 
@@ -239,7 +286,7 @@
                     <span>{{ sourceLabel(item) }}</span>
                   </a>
                   <em v-if="isSeriousEvent(item)" class="serious-event-badge" :title="ui.seriousTip">
-                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c1.2 1.4 1.7 2.2 1.7 3.1A1.7 1.7 0 0 1 8 7 1.7 1.7 0 0 1 6.3 5.3C6.3 4.4 6.8 3.6 8 2.2Zm-2.2 6h4.4v5.2H5.8V8.2Zm-1.5 5.2h7.4" /></svg>
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1c-1.5 0-2.6 1.1-2.6 2.5 0 1.4.8 2.6 2 3.8l-2.1 5.3M8 2.1c1.5 0 2.6 1.1 2.6 2.5 0 1.4-.8 2.6-2 3.8l2.1 5.3M6.5 8.8h3" /></svg>
                     {{ ui.serious }}
                   </em>
                   <em
@@ -410,9 +457,11 @@
 import CompactFilter from "@/components/CompactFilter.vue";
 import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
 import RankingBadgeGroup from "@/components/RankingBadgeGroup.vue";
+import { Drag, Refresh } from "@icon-park/vue-next";
 import { getTopicFeed } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
+import { formatTime } from "@/utils/getTime";
 import { buildRankPath, getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
 import { getSourceLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
@@ -426,10 +475,12 @@ import {
   resolveFloatingCoverPreviewPosition,
 } from "@/utils/floatingCoverPreview";
 import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { mainStore } from "@/store";
 
 const route = useRoute();
 const store = mainStore();
+const { t } = useI18n({ useScope: "global" });
 const result = ref(null);
 const coverImageErrors = reactive({});
 const loading = ref(false);
@@ -493,10 +544,11 @@ const UI_COPY = {
     matches: "条结果",
     resonance: "多平台共振",
     refresh: "刷新",
+    updateFailed: "更新失败",
     radar: "娱乐热点态势雷达",
     trend: "榜位趋势",
     serious: "严肃事件",
-    seriousTip: "涉及死亡、遇难、讣告等严肃主题，采用中性低饱和展示。",
+    seriousTip: "涉及死亡、遇难、讣告等严肃主题，采用完整灰阶与纪念丝带展示。",
     evidenceSources: "佐证来源",
     scrollMore: "继续滚动加载",
     filters: "吃瓜事件筛选",
@@ -549,10 +601,11 @@ const UI_COPY = {
     matches: "results",
     resonance: "Cross-platform",
     refresh: "Refresh",
+    updateFailed: "Update failed",
     radar: "Entertainment signal radar",
     trend: "Rank movement",
     serious: "Serious event",
-    seriousTip: "Sensitive events involving death, casualties or obituaries use a neutral presentation.",
+    seriousTip: "Sensitive events involving death, casualties or obituaries use a full grayscale memorial presentation.",
     evidenceSources: "Evidence sources",
     scrollMore: "Scroll to load more",
     filters: "Entertainment filters",
@@ -600,10 +653,11 @@ const UI_COPY = {
     matches: "筆結果",
     resonance: "多平台共振",
     refresh: "重新整理",
+    updateFailed: "更新失敗",
     radar: "娛樂熱點態勢雷達",
     trend: "榜位趨勢",
     serious: "嚴肅事件",
-    seriousTip: "涉及死亡、遇難、訃告等嚴肅主題，採用中性低飽和展示。",
+    seriousTip: "涉及死亡、遇難、訃告等嚴肅主題，採用完整灰階與紀念絲帶展示。",
     evidenceSources: "佐證來源",
     scrollMore: "繼續捲動載入",
     filters: "吃瓜事件篩選",
@@ -651,10 +705,11 @@ const UI_COPY = {
     matches: "件",
     resonance: "複数平台",
     refresh: "更新",
+    updateFailed: "更新失敗",
     radar: "エンタメ動向レーダー",
     trend: "順位トレンド",
     serious: "重大・慎重な話題",
-    seriousTip: "死亡・事故・訃報などを含む話題は中立的な低彩度表示にします。",
+    seriousTip: "死亡・事故・訃報などを含む話題は完全なグレースケールと追悼リボンで表示します。",
     evidenceSources: "補強ソース",
     scrollMore: "スクロールしてさらに表示",
     filters: "エンタメフィルター",
@@ -702,10 +757,11 @@ const UI_COPY = {
     matches: "개 결과",
     resonance: "다중 플랫폼",
     refresh: "새로고침",
+    updateFailed: "업데이트 실패",
     radar: "엔터테인먼트 동향 레이더",
     trend: "순위 추세",
     serious: "엄중한 이슈",
-    seriousTip: "사망·사고·부고 등 엄중한 주제는 중립적이고 낮은 채도로 표시합니다.",
+    seriousTip: "사망·사고·부고 등 엄중한 주제는 완전한 회색조와 추모 리본으로 표시합니다.",
     evidenceSources: "근거 출처",
     scrollMore: "스크롤하여 더 불러오기",
     filters: "엔터테인먼트 필터",
@@ -1026,63 +1082,141 @@ const handlePageChange = () => {
 
 const FEATURED_LANE_INITIAL_RENDER = 8;
 const FEATURED_LANE_BATCH = 5;
-const featuredLaneRenderLimits = reactive({
-  fresh: FEATURED_LANE_INITIAL_RENDER,
-  rising: FEATURED_LANE_INITIAL_RENDER,
-  resonance: FEATURED_LANE_INITIAL_RENDER,
-  hot: FEATURED_LANE_INITIAL_RENDER,
-});
+const FEATURED_LANE_KEYS = ["fresh", "rising", "resonance", "hot"];
+const FEATURED_LANE_ORDER_STORAGE = "dailyhot:chigua-featured-lane-order";
+const FEATURED_LANE_REFRESH_COOLDOWN = 60000;
+const readFeaturedLaneOrder = () => {
+  if (typeof localStorage === "undefined") return FEATURED_LANE_KEYS.slice();
+  try {
+    const saved = JSON.parse(localStorage.getItem(FEATURED_LANE_ORDER_STORAGE) || "[]");
+    const valid = Array.isArray(saved) ? saved.filter((key) => FEATURED_LANE_KEYS.includes(key)) : [];
+    return [...valid, ...FEATURED_LANE_KEYS.filter((key) => !valid.includes(key))];
+  } catch {
+    return FEATURED_LANE_KEYS.slice();
+  }
+};
+const featuredLaneOrder = ref(readFeaturedLaneOrder());
+const featuredLaneDragging = ref(false);
+const featuredLaneOverrides = reactive({});
+const featuredLaneRefreshState = reactive(
+  Object.fromEntries(FEATURED_LANE_KEYS.map((key) => [key, { loading: false }])),
+);
+const featuredLaneRenderLimits = reactive(
+  Object.fromEntries(FEATURED_LANE_KEYS.map((key) => [key, FEATURED_LANE_INITIAL_RENDER])),
+);
 const resetFeaturedLaneRenderLimits = () => {
-  Object.keys(featuredLaneRenderLimits).forEach((key) => {
+  FEATURED_LANE_KEYS.forEach((key) => {
     featuredLaneRenderLimits[key] = FEATURED_LANE_INITIAL_RENDER;
   });
 };
+const clearFeaturedLaneOverrides = () => {
+  FEATURED_LANE_KEYS.forEach((key) => delete featuredLaneOverrides[key]);
+};
 const loadMoreFeaturedLane = (lane) => {
   const key = lane?.key;
-  if (!key || !Object.prototype.hasOwnProperty.call(featuredLaneRenderLimits, key)) return;
+  if (!FEATURED_LANE_KEYS.includes(key)) return;
   const total = Number(lane?.count || 0);
   featuredLaneRenderLimits[key] = Math.min(
     total || featuredLaneRenderLimits[key] + FEATURED_LANE_BATCH,
     featuredLaneRenderLimits[key] + FEATURED_LANE_BATCH,
   );
 };
-const featuredGroups = computed(() => {
-  const sortLaneItems = (key, items) =>
-    items.slice().sort((a, b) => {
-      if (key === "fresh")
-        return eventWaveStartedAt(b) - eventWaveStartedAt(a) || eventScore(b) - eventScore(a);
-      if (key === "rising")
-        return Math.abs(Number(eventTrend(b)?.rankDelta || 0)) - Math.abs(Number(eventTrend(a)?.rankDelta || 0)) || eventScore(b) - eventScore(a);
-      if (key === "resonance")
-        return effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a) || eventScore(b) - eventScore(a);
-      if (key === "hot")
-        return eventBestRank(a) - eventBestRank(b) || eventScore(b) - eventScore(a);
-      return eventScore(b) - eventScore(a);
-    });
-  const lane = (key, predicate) => {
-    const items = sortLaneItems(key, data.value.filter(predicate));
-    return {
-      key,
-      label: ui.value.featured[key],
-      subtitle: ui.value.featuredSubtitles?.[key] || "",
-      hideSubtitle: true,
-      visibleCount: 3,
-      count: items.length,
-      items: items.slice(0, featuredLaneRenderLimits[key] || FEATURED_LANE_INITIAL_RENDER),
-      hasMore: items.length > (featuredLaneRenderLimits[key] || FEATURED_LANE_INITIAL_RENDER),
-      scrollable: true,
-      loadMoreLabel: ui.value.scrollMore,
-      actionLabel: `${viewAllLabel.value} ${items.length}`,
-      filter: { focus: key },
-    };
+const featuredLanePredicate = (key) => ({
+  fresh: isFreshEvent,
+  rising: isRisingEvent,
+  resonance: isResonanceItem,
+  hot: isHotEvent,
+}[key] || (() => false));
+const sortFeaturedLaneItems = (key, items) =>
+  items.slice().sort((a, b) => {
+    if (key === "fresh")
+      return eventWaveStartedAt(b) - eventWaveStartedAt(a) || eventScore(b) - eventScore(a);
+    if (key === "rising")
+      return Math.abs(Number(eventTrend(b)?.rankDelta || 0)) - Math.abs(Number(eventTrend(a)?.rankDelta || 0)) || eventScore(b) - eventScore(a);
+    if (key === "resonance")
+      return effectiveResonanceSourceCount(b) - effectiveResonanceSourceCount(a) || eventScore(b) - eventScore(a);
+    if (key === "hot")
+      return eventBestRank(a) - eventBestRank(b) || eventScore(b) - eventScore(a);
+    return eventScore(b) - eventScore(a);
+  });
+const buildFeaturedLane = (key, sourceData, updatedAt) => {
+  const override = featuredLaneOverrides[key];
+  const allItems = override?.items || sortFeaturedLaneItems(
+    key,
+    sourceData.filter(featuredLanePredicate(key)),
+  );
+  const limit = featuredLaneRenderLimits[key] || FEATURED_LANE_INITIAL_RENDER;
+  return {
+    key,
+    label: ui.value.featured[key],
+    subtitle: ui.value.featuredSubtitles?.[key] || "",
+    hideSubtitle: true,
+    visibleCount: 3,
+    count: allItems.length,
+    items: allItems.slice(0, limit),
+    hasMore: allItems.length > limit,
+    scrollable: true,
+    loadMoreLabel: ui.value.scrollMore,
+    actionLabel: viewAllLabel.value,
+    actionPlacement: "header",
+    updatedAt: override?.updatedAt || updatedAt || null,
+    filter: { focus: key },
   };
-  return [
-    lane("fresh", isFreshEvent),
-    lane("rising", isRisingEvent),
-    lane("resonance", isResonanceItem),
-    lane("hot", isHotEvent),
-  ].filter((group) => group.items.length);
+};
+const featuredGroups = computed(() => {
+  const groups = FEATURED_LANE_KEYS
+    .map((key) => buildFeaturedLane(key, data.value, result.value?.updateTime))
+    .filter((group) => group.items.length);
+  const byKey = new Map(groups.map((group) => [group.key, group]));
+  return featuredLaneOrder.value.map((key) => byKey.get(key)).filter(Boolean);
 });
+const saveFeaturedLaneOrder = (ordered = []) => {
+  const keys = ordered.map((lane) => lane?.key).filter((key) => FEATURED_LANE_KEYS.includes(key));
+  featuredLaneOrder.value = [...keys, ...FEATURED_LANE_KEYS.filter((key) => !keys.includes(key))];
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(FEATURED_LANE_ORDER_STORAGE, JSON.stringify(featuredLaneOrder.value));
+  }
+};
+const startFeaturedLaneDrag = () => {
+  featuredLaneDragging.value = true;
+  hideLanePreview();
+};
+const endFeaturedLaneDrag = () => {
+  featuredLaneDragging.value = false;
+};
+const featuredLaneUpdateTime = (lane) => formatTime(lane?.updatedAt, locale.value);
+const isFeaturedLaneRefreshing = (key) => Boolean(featuredLaneRefreshState[key]?.loading);
+const featuredLaneDragDisabled = computed(() =>
+  FEATURED_LANE_KEYS.some((key) => isFeaturedLaneRefreshing(key)),
+);
+const refreshFeaturedLane = async (lane) => {
+  const key = lane?.key;
+  if (!FEATURED_LANE_KEYS.includes(key) || isFeaturedLaneRefreshing(key)) return;
+  const now = Date.now();
+  const storageKey = `chigua-${key}Btn`;
+  const last = typeof localStorage !== "undefined"
+    ? Number(localStorage.getItem(storageKey) || 0)
+    : 0;
+  if (now - last <= FEATURED_LANE_REFRESH_COOLDOWN) {
+    window.$message?.info?.(t("hotList.refreshTooSoon"));
+    return;
+  }
+  featuredLaneRefreshState[key].loading = true;
+  try {
+    const feed = await getTopicFeed("chigua", { limit: 160, maxRank: 80, minSources: 1, force: true });
+    const normalized = normalizeTopicFeed(feed);
+    featuredLaneOverrides[key] = {
+      items: sortFeaturedLaneItems(key, normalized.data.filter(featuredLanePredicate(key))),
+      updatedAt: normalized.updateTime,
+    };
+    featuredLaneRenderLimits[key] = FEATURED_LANE_INITIAL_RENDER;
+    if (typeof localStorage !== "undefined") localStorage.setItem(storageKey, String(now));
+  } catch (error) {
+    window.$message?.error?.(error?.message || t("hotList.loadErrorTitle"));
+  } finally {
+    featuredLaneRefreshState[key].loading = false;
+  }
+};
 const selectFeaturedLane = (lane) => {
   activeSource.value = "all";
   activeSort.value = lane?.key === "resonance" ? "resonance" : "smart";
@@ -1434,6 +1568,7 @@ const normalizeTopicFeed = (feed) => {
   const data = events.map((event, index) => {
     const sources = Array.isArray(event.sources) ? event.sources : [];
     const primary = sources[0] || {};
+    const mediaSource = sources.find((source) => source?.cover) || primary;
     const sourceKeys = [...new Set(sources.map((source) => source.sourceKey).filter(Boolean))];
     const confirmations = sources.map((source) => ({
       source: source.sourceKey,
@@ -1449,7 +1584,7 @@ const normalizeTopicFeed = (feed) => {
       title: event.title,
       url: primary.url || "#",
       mobileUrl: primary.mobileUrl || primary.url || "#",
-      cover: primary.cover || "",
+      cover: mediaSource.cover || "",
       hot: primary.hot,
       timestamp: Date.parse(event.lastSeenAt || feed.generatedAt || "") || Date.now(),
       badges: primary.badges || [],
@@ -1498,6 +1633,7 @@ const loadTopic = async (force = false) => {
   try {
     const feed = await getTopicFeed("chigua", { limit: 160, maxRank: 80, minSources: 1, force });
     result.value = normalizeTopicFeed(feed);
+    clearFeaturedLaneOverrides();
   } catch (error) {
     loadError.value = error?.message || "Failed to load";
   } finally {
@@ -1933,6 +2069,27 @@ watch(locale, () => void loadTopic(false));
   color: var(--n-primary-color);
   outline: none;
 }
+.event-lane-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 1px;
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  line-height: 1.25;
+}
+.event-lane-meta a {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-lane-meta a:hover,
+.event-lane-meta a:focus-visible { color: var(--n-text-color-2); outline: none; }
+.event-lane-meta span { flex: 0 0 auto; font-weight: 650; }
 @media (hover: hover) and (pointer: fine) {
   .event-lane-item:hover .event-lane-copy { transform: translateX(4px); }
   .event-lane-item:hover .event-lane-copy::after { width: 90%; }
@@ -2057,6 +2214,7 @@ watch(locale, () => void loadTopic(false));
 .event-lane-serious svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
 .event-lane-item.is-serious {
   margin-inline: -4px;
+  filter: grayscale(1);
   padding-inline: 5px;
   border-radius: 6px;
   background: linear-gradient(90deg, color-mix(in srgb, #6b7280 8%, transparent), transparent 72%);
@@ -2081,6 +2239,55 @@ watch(locale, () => void loadTopic(false));
 .event-item:not(.has-media) {
   grid-template-columns: var(--ranking-stream-rank-width) minmax(0, 1fr) auto;
 }
+.chigua-topic :deep(.topic-lane__head-actions) { gap: 4px; }
+.chigua-topic :deep(.topic-lane__header-action) {
+  padding: 2px 3px;
+  border-radius: 5px;
+  color: var(--n-text-color-3);
+  font-size: 10px;
+  line-height: 1;
+}
+.chigua-topic :deep(.topic-lane__header-action:hover) {
+  background: var(--n-action-color);
+  color: var(--n-text-color);
+}
+.event-lane-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 20px;
+  font-size: 12px;
+}
+.event-lane-update-time {
+  min-width: 0;
+  padding: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-lane-controls { flex: 0 0 auto; align-items: center; }
+.topic-lane__drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 22px;
+  border-radius: 999px;
+  color: var(--n-text-color-2);
+  background: rgba(127, 127, 127, 0.14);
+  cursor: grab;
+  touch-action: none;
+  transition: color .2s ease, background-color .2s ease;
+}
+.topic-lane__drag-handle:hover {
+  color: var(--n-text-color);
+  background: rgba(127, 127, 127, 0.2);
+}
+.topic-lane__drag-handle:focus-visible {
+  outline: 2px solid var(--n-close-color-pressed);
+  outline-offset: 2px;
+}
+.topic-lane__drag-handle:active { cursor: grabbing; }
 .event-rank {
   align-self: center;
   padding-top: 0;
@@ -2675,17 +2882,18 @@ watch(locale, () => void loadTopic(false));
   color: var(--lane-tone, var(--n-text-color));
 }
 .chigua-topic :deep(.topic-lane__items) {
+  box-sizing: border-box;
   grid-auto-rows: max-content;
   align-content: start;
   padding-top: 6px;
 }
 .chigua-topic :deep(.topic-lane.is-scrollable .topic-lane__items) {
-  height: 300px;
-  max-height: 300px;
+  height: 266px;
+  max-height: 266px;
 }
 .chigua-topic.is-compact :deep(.topic-lane.is-scrollable .topic-lane__items) {
-  height: 286px;
-  max-height: 286px;
+  height: 252px;
+  max-height: 252px;
 }
 .event-rank {
   display: flex;
@@ -2769,6 +2977,7 @@ watch(locale, () => void loadTopic(false));
 
 .event-item.is-serious {
   margin-inline: -6px;
+  filter: grayscale(1);
   padding-inline: 8px;
   border-top-color: color-mix(in srgb, #6b7280 22%, var(--n-border-color));
   border-radius: 8px;
