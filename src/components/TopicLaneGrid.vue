@@ -1,12 +1,41 @@
 <template>
-  <div class="topic-lane-grid" :aria-label="ariaLabel">
-    <section v-for="lane in lanes" :key="lane.key" class="topic-lane" :class="[`is-${lane.key}`, { 'is-scrollable': lane.scrollable }]">
+  <draggable
+    class="topic-lane-grid"
+    :class="{ 'is-scrollbar-hidden': hideScrollbar }"
+    :model-value="lanes"
+    item-key="key"
+    :disabled="!sortable || dragDisabled"
+    :animation="180"
+    handle=".topic-lane__drag-handle"
+    filter=".no-lane-drag, .no-lane-drag *"
+    :prevent-on-filter="false"
+    :fallback-tolerance="8"
+    :touch-start-threshold="8"
+    ghost-class="topic-lane-ghost"
+    chosen-class="topic-lane-chosen"
+    drag-class="topic-lane-drag"
+    :aria-label="ariaLabel"
+    @start="emit('drag-start')"
+    @end="emit('drag-end')"
+    @update:model-value="handleOrderUpdate"
+  >
+    <template #item="{ element: lane }">
+      <section class="topic-lane" :class="[`is-${lane.key}`, { 'is-scrollable': lane.scrollable }]">
       <header class="topic-lane__head">
         <div :title="lane.subtitle || undefined">
           <strong>{{ lane.label }}</strong>
           <span v-if="lane.subtitle && !lane.hideSubtitle">{{ lane.subtitle }}</span>
         </div>
-        <em>{{ lane.count ?? lane.items?.length ?? 0 }}</em>
+        <div class="topic-lane__head-actions no-lane-drag">
+          <em>{{ lane.count ?? lane.items?.length ?? 0 }}</em>
+          <button
+            v-if="lane.actionLabel && lane.actionPlacement === 'header'"
+            type="button"
+            class="topic-lane__header-action"
+            @click.stop="emit('select', lane)"
+          >{{ lane.actionLabel }}</button>
+          <slot name="header-actions" :lane="lane" />
+        </div>
       </header>
 
       <div
@@ -21,7 +50,7 @@
       </div>
 
       <button
-        v-if="lane.actionLabel"
+        v-if="lane.actionLabel && lane.actionPlacement !== 'header'"
         type="button"
         class="topic-lane__action"
         @click="$emit('select', lane)"
@@ -29,17 +58,28 @@
         <span>{{ lane.actionLabel }}</span>
         <b aria-hidden="true">→</b>
       </button>
-    </section>
-  </div>
+
+      <footer v-if="$slots.footer" class="topic-lane__footer">
+        <slot name="footer" :lane="lane" />
+      </footer>
+      </section>
+    </template>
+  </draggable>
 </template>
 
 <script setup>
+import draggable from "vuedraggable";
+
 defineProps({
   lanes: { type: Array, default: () => [] },
   ariaLabel: { type: String, default: "" },
+  sortable: { type: Boolean, default: false },
+  dragDisabled: { type: Boolean, default: false },
+  hideScrollbar: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["select", "load-more"]);
+const emit = defineEmits(["select", "load-more", "reorder", "drag-start", "drag-end"]);
+const handleOrderUpdate = (ordered) => emit("reorder", Array.isArray(ordered) ? ordered : []);
 const pendingLanes = new Set();
 const handleItemsScroll = (event, lane) => {
   if (!lane?.scrollable || !lane?.hasMore || pendingLanes.has(lane.key)) return;
@@ -79,6 +119,27 @@ const handleItemsScroll = (event, lane) => {
 }
 .topic-lane__head > div {
   min-width: 0;
+}
+.topic-lane__head-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.topic-lane__header-action {
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--n-text-color-3);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+.topic-lane__header-action:hover,
+.topic-lane__header-action:focus-visible {
+  color: var(--n-text-color);
+  outline: none;
 }
 .topic-lane__head strong,
 .topic-lane__head span {
@@ -129,6 +190,14 @@ const handleItemsScroll = (event, lane) => {
   border-radius: 999px;
   background: color-mix(in srgb, var(--n-text-color-3) 22%, transparent);
 }
+.topic-lane-grid.is-scrollbar-hidden .topic-lane__items {
+  scrollbar-width: none;
+}
+.topic-lane-grid.is-scrollbar-hidden .topic-lane__items::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
 .topic-lane__scroll-hint {
   display: block;
   padding: 6px 2px 2px;
@@ -160,6 +229,14 @@ const handleItemsScroll = (event, lane) => {
   font-size: 12px;
   font-weight: 500;
 }
+.topic-lane__footer {
+  margin-top: auto;
+  padding-top: 7px;
+  border-top: 1px solid var(--n-border-color);
+}
+.topic-lane-ghost { opacity: .42; }
+.topic-lane-chosen { z-index: 2; }
+.topic-lane-drag { cursor: grabbing; }
 @media (max-width: 720px) {
   .topic-lane-grid {
     display: flex;
