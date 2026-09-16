@@ -23,7 +23,12 @@
       <section class="topic-lane" :class="[`is-${lane.key}`, { 'is-scrollable': lane.scrollable }]">
       <header class="topic-lane__head">
         <div :title="lane.subtitle || undefined">
-          <strong>{{ lane.label }}</strong>
+          <div class="topic-lane__title-row">
+            <strong>{{ lane.label }}</strong>
+            <span v-if="$slots['title-actions']" class="topic-lane__title-actions">
+              <slot name="title-actions" :lane="lane" />
+            </span>
+          </div>
           <span v-if="lane.subtitle && !lane.hideSubtitle">{{ lane.subtitle }}</span>
         </div>
         <div class="topic-lane__head-actions no-lane-drag">
@@ -135,6 +140,23 @@ const handleItemsScroll = (event, lane) => {
 }
 .topic-lane__head > div {
   min-width: 0;
+}
+.topic-lane__title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.topic-lane__title-row > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topic-lane__title-actions {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
 }
 .topic-lane__head-actions {
   display: inline-flex;

@@ -50,9 +50,20 @@
         </div>
         <div class="radar-actions">
           <div v-if="dashboard" class="hero-stats">
-            <span><strong>{{ dashboard.total || data.length }}</strong>{{ ui.events }}</span>
-            <span><strong>{{ dashboard.sourceCount }}</strong>{{ ui.sources }}</span>
+            <span>{{ ui.events }} <strong>{{ dashboard.total || data.length }}</strong></span>
+            <span>{{ ui.sources }} <strong>{{ dashboard.sourceCount }}</strong></span>
           </div>
+          <button
+            type="button"
+            class="radar-refresh"
+            :class="{ 'is-loading': loading }"
+            :disabled="loading"
+            :aria-label="ui.refresh"
+            @click="loadTopic(true)"
+          >
+            <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M14.5 6.1A6 6 0 1 0 15 10.2M14.5 3.5v3.2h-3.2" /></svg>
+            <span>{{ ui.refresh }}</span>
+          </button>
         </div>
     </div>
 
@@ -66,14 +77,27 @@
       :lanes="featuredGroups"
       :aria-label="copy.feedTitle"
       :sortable="true"
-      :drag-disabled="featuredLaneDragDisabled"
       :hover-scrollbar="true"
       @select="selectFeaturedLane"
       @load-more="loadMoreFeaturedLane"
       @reorder="saveFeaturedLaneOrder"
-      @drag-start="startFeaturedLaneDrag"
-      @drag-end="endFeaturedLaneDrag"
+      @drag-start="hideLanePreview"
     >
+      <template #title-actions>
+        <n-popover>
+          <template #trigger>
+            <span
+              class="topic-lane__drag-handle"
+              role="button"
+              tabindex="0"
+              :aria-label="t('hotList.dragSort')"
+              @click.stop.prevent
+              @keydown.stop.prevent
+            ><n-icon :component="Drag" /></span>
+          </template>
+          {{ t("hotList.dragSort") }}
+        </n-popover>
+      </template>
       <template #item="{ item, index }">
         <article
           class="event-lane-item"
@@ -117,41 +141,6 @@
           </div>
         </article>
       </template>
-      <template #footer="{ lane }">
-        <div class="event-lane-footer">
-          <n-text class="event-lane-update-time" :depth="3">
-            {{ featuredLaneUpdateTime(lane) || ui.updateFailed }}
-          </n-text>
-          <n-space class="event-lane-controls" :size="6">
-            <n-popover>
-              <template #trigger>
-                <span
-                  class="topic-lane__drag-handle"
-                  role="button"
-                  tabindex="0"
-                  :aria-label="t('hotList.dragSort')"
-                  @click.stop.prevent
-                  @keydown.stop.prevent
-                ><n-icon :component="Drag" /></span>
-              </template>
-              {{ t("hotList.dragSort") }}
-            </n-popover>
-            <n-popover>
-              <template #trigger>
-                <n-button
-                  size="tiny"
-                  secondary
-                  strong
-                  round
-                  :loading="isFeaturedLaneRefreshing(lane.key)"
-                  @click.stop="refreshFeaturedLane(lane)"
-                ><template #icon><n-icon :component="Refresh" /></template></n-button>
-              </template>
-              {{ t("hotList.refreshLatest") }}
-            </n-popover>
-          </n-space>
-        </div>
-      </template>
     </TopicLaneGrid>
       <section
         v-if="showTrendAsFeaturedLane"
@@ -182,7 +171,6 @@
       class="topic-trend-strip"
       :aria-label="ui.trend"
     >
-      <div class="topic-trend-title"><strong>{{ ui.trend }}</strong><em>{{ trendItems.length }}</em></div>
       <div class="topic-trend-list">
         <a
           v-for="item in trendItems.slice(0, 4)"
@@ -451,15 +439,12 @@
               <span>{{ filteredData.length }}</span>
             </div>
             <section class="topic-control-section">
-              <span>{{ ui.focus }}</span>
               <CompactFilter v-model="activeFocus" :label="ui.focus" :aria-label="ui.focus" :options="focusOptions" />
             </section>
             <section class="topic-control-section">
-              <span>{{ ui.source }}</span>
               <CompactFilter v-model="activeSource" :label="ui.source" :aria-label="ui.source" :options="sourceOptions" />
             </section>
             <section class="topic-control-section">
-              <span>{{ ui.sort }}</span>
               <CompactFilter v-model="activeSort" :label="ui.sort" :aria-label="ui.sort" :options="sortOptions" :show-count="false" />
             </section>
             <button
@@ -483,11 +468,10 @@
 import CompactFilter from "@/components/CompactFilter.vue";
 import TopicLaneGrid from "@/components/TopicLaneGrid.vue";
 import RankingBadgeGroup from "@/components/RankingBadgeGroup.vue";
-import { Drag, Refresh } from "@icon-park/vue-next";
+import { Drag } from "@icon-park/vue-next";
 import { getTopicFeed } from "@/api";
 import { CHIGUA_TOPIC_METADATA } from "@/config/site-metadata.mjs";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
-import { formatTime } from "@/utils/getTime";
 import { buildRankPath, getLocaleFromRoute, normalizeLocale } from "@/utils/locale";
 import { getSourceLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
@@ -565,8 +549,8 @@ const showDegradedWarning = computed(() => failedSourceCount.value > 0);
 
 const UI_COPY = {
   "zh-CN": {
-    events: "条事件",
-    sources: "个核心榜单",
+    events: "热点数量",
+    sources: "核心榜单",
     source: "核心榜单",
     corroboration: "佐证",
     support: "支撑",
@@ -620,8 +604,8 @@ const UI_COPY = {
     },
   },
   en: {
-    events: "events",
-    sources: "core boards",
+    events: "Hotspots",
+    sources: "Key rankings",
     source: "Core board",
     corroboration: "corroboration",
     support: "support",
@@ -670,8 +654,8 @@ const UI_COPY = {
     },
   },
   "zh-TW": {
-    events: "筆事件",
-    sources: "個核心榜單",
+    events: "熱點數量",
+    sources: "核心榜單",
     source: "核心榜單",
     corroboration: "佐證",
     support: "支撐",
@@ -720,7 +704,7 @@ const UI_COPY = {
     },
   },
   ja: {
-    events: "件",
+    events: "注目トピック",
     sources: "主要ランキング",
     source: "主要ランキング",
     corroboration: "補強",
@@ -770,8 +754,8 @@ const UI_COPY = {
     },
   },
   ko: {
-    events: "개 이슈",
-    sources: "개 핵심 랭킹",
+    events: "핫이슈 수",
+    sources: "핵심 랭킹",
     source: "핵심 랭킹",
     corroboration: "보강",
     support: "지원",
@@ -1121,7 +1105,6 @@ const FEATURED_LANE_INITIAL_RENDER = 8;
 const FEATURED_LANE_BATCH = 5;
 const FEATURED_LANE_KEYS = ["fresh", "rising", "resonance", "hot"];
 const FEATURED_LANE_ORDER_STORAGE = "dailyhot:chigua-featured-lane-order";
-const FEATURED_LANE_REFRESH_COOLDOWN = 60000;
 const readFeaturedLaneOrder = () => {
   if (typeof localStorage === "undefined") return FEATURED_LANE_KEYS.slice();
   try {
@@ -1133,11 +1116,6 @@ const readFeaturedLaneOrder = () => {
   }
 };
 const featuredLaneOrder = ref(readFeaturedLaneOrder());
-const featuredLaneDragging = ref(false);
-const featuredLaneOverrides = reactive({});
-const featuredLaneRefreshState = reactive(
-  Object.fromEntries(FEATURED_LANE_KEYS.map((key) => [key, { loading: false }])),
-);
 const featuredLaneRenderLimits = reactive(
   Object.fromEntries(FEATURED_LANE_KEYS.map((key) => [key, FEATURED_LANE_INITIAL_RENDER])),
 );
@@ -1145,9 +1123,6 @@ const resetFeaturedLaneRenderLimits = () => {
   FEATURED_LANE_KEYS.forEach((key) => {
     featuredLaneRenderLimits[key] = FEATURED_LANE_INITIAL_RENDER;
   });
-};
-const clearFeaturedLaneOverrides = () => {
-  FEATURED_LANE_KEYS.forEach((key) => delete featuredLaneOverrides[key]);
 };
 const loadMoreFeaturedLane = (lane) => {
   const key = lane?.key;
@@ -1176,9 +1151,8 @@ const sortFeaturedLaneItems = (key, items) =>
       return eventBestRank(a) - eventBestRank(b) || eventScore(b) - eventScore(a);
     return eventScore(b) - eventScore(a);
   });
-const buildFeaturedLane = (key, sourceData, updatedAt) => {
-  const override = featuredLaneOverrides[key];
-  const allItems = override?.items || sortFeaturedLaneItems(
+const buildFeaturedLane = (key, sourceData) => {
+  const allItems = sortFeaturedLaneItems(
     key,
     sourceData.filter(featuredLanePredicate(key)),
   );
@@ -1196,13 +1170,12 @@ const buildFeaturedLane = (key, sourceData, updatedAt) => {
     loadMoreLabel: ui.value.scrollMore,
     actionLabel: viewAllLabel.value,
     actionPlacement: "header",
-    updatedAt: override?.updatedAt || updatedAt || null,
     filter: { focus: key },
   };
 };
 const featuredGroups = computed(() => {
   const groups = FEATURED_LANE_KEYS
-    .map((key) => buildFeaturedLane(key, data.value, result.value?.updateTime))
+    .map((key) => buildFeaturedLane(key, data.value))
     .filter((group) => group.items.length);
   const byKey = new Map(groups.map((group) => [group.key, group]));
   return featuredLaneOrder.value.map((key) => byKey.get(key)).filter(Boolean);
@@ -1212,46 +1185,6 @@ const saveFeaturedLaneOrder = (ordered = []) => {
   featuredLaneOrder.value = [...keys, ...FEATURED_LANE_KEYS.filter((key) => !keys.includes(key))];
   if (typeof localStorage !== "undefined") {
     localStorage.setItem(FEATURED_LANE_ORDER_STORAGE, JSON.stringify(featuredLaneOrder.value));
-  }
-};
-const startFeaturedLaneDrag = () => {
-  featuredLaneDragging.value = true;
-  hideLanePreview();
-};
-const endFeaturedLaneDrag = () => {
-  featuredLaneDragging.value = false;
-};
-const featuredLaneUpdateTime = (lane) => formatTime(lane?.updatedAt, locale.value);
-const isFeaturedLaneRefreshing = (key) => Boolean(featuredLaneRefreshState[key]?.loading);
-const featuredLaneDragDisabled = computed(() =>
-  FEATURED_LANE_KEYS.some((key) => isFeaturedLaneRefreshing(key)),
-);
-const refreshFeaturedLane = async (lane) => {
-  const key = lane?.key;
-  if (!FEATURED_LANE_KEYS.includes(key) || isFeaturedLaneRefreshing(key)) return;
-  const now = Date.now();
-  const storageKey = `chigua-${key}Btn`;
-  const last = typeof localStorage !== "undefined"
-    ? Number(localStorage.getItem(storageKey) || 0)
-    : 0;
-  if (now - last <= FEATURED_LANE_REFRESH_COOLDOWN) {
-    window.$message?.info?.(t("hotList.refreshTooSoon"));
-    return;
-  }
-  featuredLaneRefreshState[key].loading = true;
-  try {
-    const feed = await getTopicFeed("chigua", { limit: 160, maxRank: 80, minSources: 1, force: true });
-    const normalized = normalizeTopicFeed(feed);
-    featuredLaneOverrides[key] = {
-      items: sortFeaturedLaneItems(key, normalized.data.filter(featuredLanePredicate(key))),
-      updatedAt: normalized.updateTime,
-    };
-    featuredLaneRenderLimits[key] = FEATURED_LANE_INITIAL_RENDER;
-    if (typeof localStorage !== "undefined") localStorage.setItem(storageKey, String(now));
-  } catch (error) {
-    window.$message?.error?.(error?.message || t("hotList.loadErrorTitle"));
-  } finally {
-    featuredLaneRefreshState[key].loading = false;
   }
 };
 const selectFeaturedLane = (lane) => {
@@ -1670,7 +1603,6 @@ const loadTopic = async (force = false) => {
   try {
     const feed = await getTopicFeed("chigua", { limit: 160, maxRank: 80, minSources: 1, force });
     result.value = normalizeTopicFeed(feed);
-    clearFeaturedLaneOverrides();
   } catch (error) {
     loadError.value = error?.message || "Failed to load";
   } finally {
@@ -1829,7 +1761,7 @@ watch(locale, () => void loadTopic(false));
   max-width: 820px;
   margin: 4px 0 0;
   color: var(--n-text-color-3);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
 }
 .radar-actions {
@@ -1838,6 +1770,33 @@ watch(locale, () => void loadTopic(false));
   justify-content: flex-end;
   gap: 8px;
 }
+.radar-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--radar-cyan) 24%, var(--n-border-color));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--radar-cyan) 6%, var(--n-color));
+  color: var(--radar-cyan);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 680;
+  cursor: pointer;
+}
+.radar-refresh:disabled { cursor: default; opacity: .62; }
+.radar-refresh svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.radar-refresh.is-loading svg { animation: radar-refresh-spin .8s linear infinite; }
+@keyframes radar-refresh-spin { to { transform: rotate(360deg); } }
 .hero-stats {
   display: flex;
   align-items: center;
@@ -1853,13 +1812,13 @@ watch(locale, () => void loadTopic(false));
   border-radius: 8px;
   background: color-mix(in srgb, var(--n-color) 82%, transparent);
   color: var(--n-text-color-3);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
 .hero-stats > span strong {
   color: var(--n-text-color);
-  font-size: 16px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -1878,8 +1837,8 @@ watch(locale, () => void loadTopic(false));
   text-decoration: none;
 }
 .radar-trend-item:hover { border-color: color-mix(in srgb, var(--radar-signal) 36%, var(--n-border-color)); }
-.radar-trend-item em { color: var(--radar-signal); font-size: 11px; font-style: normal; font-weight: 720; white-space: nowrap; }
-.radar-trend-item strong { justify-self: end; color: var(--radar-signal); font-size: 11px; font-weight: 760; white-space: nowrap; }
+.radar-trend-item em { color: var(--radar-signal); font-size: 12px; font-style: normal; font-weight: 720; white-space: nowrap; }
+.radar-trend-item strong { justify-self: end; color: var(--radar-signal); font-size: 12px; font-weight: 760; white-space: nowrap; }
 .radar-trend-item span {
   display: -webkit-box;
   grid-column: 1 / -1;
@@ -1920,7 +1879,7 @@ watch(locale, () => void loadTopic(false));
 }
 .toolbar-title span {
   color: var(--n-text-color-3);
-  font-size: 11px;
+  font-size: 12px;
 }
 .topic-search {
   box-sizing: border-box;
@@ -1955,7 +1914,7 @@ watch(locale, () => void loadTopic(false));
   background: transparent;
   color: var(--n-text-color);
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
 }
 .toolbar-filters {
   display: flex;
@@ -1989,7 +1948,7 @@ watch(locale, () => void loadTopic(false));
 }
 .result-count span {
   color: var(--n-text-color-3);
-  font-size: 11px;
+  font-size: 12px;
 }
 .resonance-toggle,
 .reset-filter {
@@ -2024,21 +1983,25 @@ watch(locale, () => void loadTopic(false));
   gap: 8px;
   margin: 0;
 }
-.topic-featured-workspace { min-width: 0; }
+.topic-featured-workspace {
+  --chigua-featured-lane-height: 314px;
+  min-width: 0;
+}
+.chigua-topic.is-compact .topic-featured-workspace { --chigua-featured-lane-height: 300px; }
 .topic-featured-workspace.is-five-column {
   display: grid;
   grid-template-columns: minmax(0, 4fr) minmax(220px, 1fr);
-  align-items: stretch;
+  align-items: start;
   gap: 8px;
 }
-.topic-featured-workspace.is-five-column :deep(.topic-lane-grid) { height: 100%; }
+.topic-featured-workspace.is-five-column :deep(.topic-lane-grid) { height: auto; }
 .topic-trend-card.topic-trend-card--featured {
   --lane-tone: #5f7892;
   position: relative;
   box-sizing: border-box;
   display: flex;
   min-width: 0;
-  height: 100%;
+  height: var(--chigua-featured-lane-height);
   overflow: hidden;
   flex-direction: column;
   padding: 10px 12px;
@@ -2089,24 +2052,13 @@ watch(locale, () => void loadTopic(false));
   background: var(--n-action-color);
 }
 .topic-trend-strip {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
   min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--n-border-color);
-  border-radius: 12px;
-  background: var(--n-color);
-}
-.topic-trend-strip .topic-trend-title {
-  min-width: 90px;
-  min-height: 100%;
-  border-right: 1px solid var(--n-border-color);
-  border-bottom: 0;
 }
 .topic-trend-strip .topic-trend-list {
   grid-template-columns: repeat(var(--chigua-featured-columns, 4), minmax(0, 1fr));
   align-items: stretch;
-  padding: 7px;
+  gap: 8px;
+  padding: 0;
 }
 .chigua-topic :deep(.topic-lane) {
   padding: 10px 12px;
@@ -2132,6 +2084,7 @@ watch(locale, () => void loadTopic(false));
   box-sizing: border-box;
   height: 20px;
   padding-block: 0;
+  font-size: 11px;
   line-height: 1;
 }
 .event-lane-item {
@@ -2211,8 +2164,8 @@ watch(locale, () => void loadTopic(false));
   min-width: 0;
   margin-top: 1px;
   color: var(--n-text-color-3);
-  font-size: 10px;
-  line-height: 1.25;
+  font-size: 12px;
+  line-height: 1.3;
 }
 .event-lane-meta a {
   min-width: 0;
@@ -2369,55 +2322,55 @@ watch(locale, () => void loadTopic(false));
   padding: 2px 3px;
   border-radius: 5px;
   color: var(--n-text-color-3);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1;
 }
 .chigua-topic :deep(.topic-lane__header-action:hover) {
   background: var(--n-action-color);
   color: var(--n-text-color);
 }
-.event-lane-footer {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 20px;
-  font-size: 12px;
-}
-.event-lane-update-time {
-  min-width: 0;
-  padding: 0 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.event-lane-controls { flex: 0 0 auto; align-items: center; }
 .topic-lane__drag-handle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 22px;
-  border-radius: 999px;
-  color: var(--n-text-color-2);
-  background: rgba(127, 127, 127, 0.14);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--n-text-color-3);
   cursor: grab;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-3px);
   touch-action: none;
-  transition: color .2s ease, background-color .2s ease;
+  transition: opacity .16s ease, transform .16s ease, color .16s ease, background-color .16s ease;
+}
+.chigua-topic :deep(.topic-lane:hover) .topic-lane__drag-handle,
+.chigua-topic :deep(.topic-lane:focus-within) .topic-lane__drag-handle {
+  opacity: .72;
+  pointer-events: auto;
+  transform: translateX(0);
 }
 .topic-lane__drag-handle:hover {
   color: var(--n-text-color);
-  background: rgba(127, 127, 127, 0.2);
+  background: var(--n-action-color);
+  opacity: 1 !important;
 }
 .topic-lane__drag-handle:focus-visible {
+  opacity: 1 !important;
   outline: 2px solid var(--n-close-color-pressed);
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 .topic-lane__drag-handle:active { cursor: grabbing; }
+@media (hover: none) {
+  .topic-lane__drag-handle { opacity: .72; pointer-events: auto; transform: none; }
+}
 .event-rank {
   align-self: center;
   padding-top: 0;
   color: var(--n-text-color-3);
-  font-size: 10px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 .event-media {
@@ -2518,7 +2471,7 @@ watch(locale, () => void loadTopic(false));
   gap: 5px;
   min-width: 0;
   color: var(--n-text-color-3);
-  font-size: 10px;
+  font-size: 12px;
 }
 .event-source-line img {
   width: 14px;
@@ -2549,7 +2502,7 @@ watch(locale, () => void loadTopic(false));
   margin: 4px 0 0;
   overflow: hidden;
   color: var(--n-text-color-3);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
@@ -2562,12 +2515,12 @@ watch(locale, () => void loadTopic(false));
   margin-top: 5px;
   overflow: hidden;
   color: var(--n-text-color-3);
-  font-size: 10px;
+  font-size: 12px;
   white-space: nowrap;
 }
 .event-meta strong {
   color: var(--n-text-color);
-  font-size: 11px;
+  font-size: 12px;
 }
 .event-evidence-summary {
   display: inline-flex;
@@ -2582,7 +2535,7 @@ watch(locale, () => void loadTopic(false));
   background: transparent;
   color: var(--n-text-color-3);
   font: inherit;
-  font-size: 9px;
+  font-size: 12px;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -2598,7 +2551,7 @@ watch(locale, () => void loadTopic(false));
   max-width: 360px;
   padding: 2px;
 }
-.event-evidence-popover > strong { padding: 2px 5px 5px; color: var(--n-text-color-2); font-size: 10px; }
+.event-evidence-popover > strong { padding: 2px 5px 5px; color: var(--n-text-color-2); font-size: 12px; }
 .event-evidence-popover > a,
 .event-evidence-popover > .is-unlinked {
   display: grid;
@@ -2609,14 +2562,14 @@ watch(locale, () => void loadTopic(false));
   padding: 5px 7px;
   border-radius: 7px;
   color: inherit;
-  font-size: 10px;
+  font-size: 12px;
   text-decoration: none;
 }
 .event-evidence-popover > a:hover { background: var(--n-action-color); }
 .event-evidence-popover > a > span,
 .event-evidence-popover > .is-unlinked > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event-evidence-popover em { color: var(--n-text-color-2); font-style: normal; font-variant-numeric: tabular-nums; }
-.event-evidence-popover small { color: var(--n-text-color-3); font-size: 9px; }
+.event-evidence-popover small { color: var(--n-text-color-3); font-size: 10px; }
 .category-pill,
 .source-pill,
 .intelligence-pill,
@@ -2650,7 +2603,7 @@ watch(locale, () => void loadTopic(false));
   border: 1px solid var(--n-border-color);
   border-radius: 7px;
   color: var(--n-text-color);
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
   text-decoration: none;
   white-space: nowrap;
@@ -2670,7 +2623,7 @@ watch(locale, () => void loadTopic(false));
   padding: 12px 2px 2px;
   border-top: 1px solid var(--n-border-color);
   color: var(--n-text-color-3);
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 .topic-loading {
@@ -2725,7 +2678,7 @@ watch(locale, () => void loadTopic(false));
     display: -webkit-box;
     margin-top: 3px;
     overflow: hidden;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.4;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
@@ -2901,7 +2854,7 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-category-item em {
   color: color-mix(in srgb, var(--category-tone) 72%, var(--n-text-color-3));
-  font-size: 11px;
+  font-size: 12px;
   font-style: normal;
   font-variant-numeric: tabular-nums;
 }
@@ -2931,7 +2884,7 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-trend-title em {
   color: var(--n-text-color-3);
-  font-size: 11px;
+  font-size: 12px;
   font-style: normal;
   font-variant-numeric: tabular-nums;
 }
@@ -2947,21 +2900,15 @@ watch(locale, () => void loadTopic(false));
 }
 .topic-control-section {
   display: grid;
-  gap: 6px;
-  padding: 9px 10px;
+  gap: 0;
+  padding: 7px 10px;
   border-bottom: 1px solid var(--n-border-color);
-}
-.topic-control-section > span {
-  color: var(--n-text-color-3);
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: .02em;
 }
 .topic-control-section :deep(.compact-filter) {
   width: 100%;
   max-width: none;
 }
-.topic-controls-card :deep(.compact-filter__label) { font-size: 11px; }
+.topic-controls-card :deep(.compact-filter__label) { font-size: 12px; }
 .topic-controls-card :deep(.compact-filter__value) { font-size: 12px; }
 .topic-controls-card > .resonance-toggle,
 .topic-controls-card > .reset-filter,
@@ -3101,7 +3048,7 @@ watch(locale, () => void loadTopic(false));
   color: var(--trend-tone);
   font-weight: 700;
 }
-.trend-pill b { font-size: 11px; font-weight: 750; }
+.trend-pill b { font-size: 12px; font-weight: 750; }
 .trend-pill.is-breakthrough { --trend-tone: #e5484d; }
 .trend-pill.is-rising { --trend-tone: #d97706; }
 .trend-pill.is-reentry { --trend-tone: #7c5ce7; }
