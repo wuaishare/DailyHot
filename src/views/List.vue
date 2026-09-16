@@ -250,6 +250,7 @@
                       <img
                         class="cover"
                         :src="getCoverDisplaySrc(item.cover)"
+                        :referrerpolicy="COVER_REFERRER_POLICY"
                         :alt="item.title"
                         loading="lazy"
                         @error="coverErrorMap[item.cover] = true"
@@ -288,7 +289,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { formatTime } from "@/utils/getTime";
 import { getSharedRanking } from "@/utils/rankingCollection";
-import { getCoverDisplaySrc } from "@/utils/imageProxy";
+import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
 import { DATA_REFRESH_EVENT } from "@/utils/dataRefresh";
 import GlobalIndexControls from "@/components/GlobalIndexControls.vue";
 import GlobalIndexTable from "@/components/GlobalIndexTable.vue";

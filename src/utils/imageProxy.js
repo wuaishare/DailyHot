@@ -2,10 +2,10 @@ const PROXY_HOST_SUFFIXES = [
   "doubanio.com",
   "gtimg.com",
   "hdslb.com",
-  "thepaper.cn",
-  "geekpark.net",
   "ci.xiaohongshu.com",
 ];
+
+export const COVER_REFERRER_POLICY = "no-referrer";
 
 const shouldProxyCover = (cover = "") => {
   if (!import.meta.env.PROD || !cover) return false;

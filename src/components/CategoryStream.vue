@@ -136,7 +136,7 @@
                 :alt="coverPreviewLabel(entry)"
                 lazy
                 :object-fit="currentCoverObjectFit"
-                :img-props="{ tabindex: 0, role: 'button', 'data-cover-source': entry.cover, onKeydown: handleCoverPreviewKeydown, onLoad: handleCoverImageLoad, onError: (event) => hideBrokenMedia(event, entry.cover) }"
+                :img-props="{ tabindex: 0, role: 'button', referrerpolicy: COVER_REFERRER_POLICY, 'data-cover-source': entry.cover, onKeydown: handleCoverPreviewKeydown, onLoad: handleCoverImageLoad, onError: (event) => hideBrokenMedia(event, entry.cover) }"
                 @error="hideBrokenMedia($event, entry.cover)"
               />
             </div>
@@ -147,7 +147,7 @@
               :target="linkTarget"
               rel="noopener noreferrer nofollow"
             >
-              <img :src="coverSrc(entry.cover)" alt="" loading="lazy" @error="hideBrokenMedia($event, entry.cover)" />
+              <img :src="coverSrc(entry.cover)" :referrerpolicy="COVER_REFERRER_POLICY" alt="" loading="lazy" @error="hideBrokenMedia($event, entry.cover)" />
             </a>
 
             <div class="category-stream__content-wrap">
@@ -291,7 +291,7 @@ import {
   shouldUseReadableTitleTranslation,
 } from "@/utils/readableTitles";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
-import { getCoverDisplaySrc } from "@/utils/imageProxy";
+import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
 import { normalizeRankingBadges, resolveRankingBadgeIconUrl } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
 import { Comment, Fire, Like, PreviewOpen, Refresh, Star } from "@icon-park/vue-next";

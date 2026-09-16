@@ -157,6 +157,7 @@
               >
                 <img
                   :src="getCoverDisplaySrc(item.cover)"
+                  :referrerpolicy="COVER_REFERRER_POLICY"
                   :alt="item.displayTitle || item.originalTitle || ''"
                   loading="lazy"
                   @error="coverErrorMap[item.cover] = true"
@@ -409,6 +410,7 @@
           <img
             class="cover"
             :src="getCoverDisplaySrc(previewItem.cover)"
+            :referrerpolicy="COVER_REFERRER_POLICY"
             :alt="previewItem.displayTitle || previewItem.originalTitle || ''"
             loading="lazy"
             @error="handlePreviewCoverError(previewItem.cover)"
@@ -428,6 +430,7 @@
     :src="imagePreviewSrc"
     :preview-src="imagePreviewSrc"
     :show-toolbar="true"
+    :img-props="{ referrerpolicy: COVER_REFERRER_POLICY }"
   />
 </template>
 
@@ -435,7 +438,7 @@
 import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
 import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
-import { getCoverDisplaySrc } from "@/utils/imageProxy";
+import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
 import { resolveCoverPreviewLayout } from "@/utils/coverPreviewGeometry";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
@@ -1066,6 +1069,7 @@ const getPreviewMediaLayout = (cover) => {
       resolve(layout);
     };
     image.onerror = reject;
+    image.referrerPolicy = COVER_REFERRER_POLICY;
     image.src = getCoverDisplaySrc(cover);
   });
   previewMediaCache.set(cover, mediaPromise);
