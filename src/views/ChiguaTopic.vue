@@ -1246,6 +1246,7 @@ const buildFeaturedLane = (key, sourceData) => {
   );
   const limit = featuredLaneRenderLimits[key] || FEATURED_LANE_INITIAL_RENDER;
   const spotlightCandidates = allItems
+    .slice(0, limit)
     .map((item, index) => ({
       item,
       index,
@@ -1297,13 +1298,6 @@ const featuredGroups = computed(() => {
   return ordered.map((group) => {
     const stickyCandidates = group._spotlightCandidates
       .filter((candidate) => winnerByIdentity.get(spotlightIdentity(candidate.item))?.laneKey === group.key);
-    const furthestStickyIndex = stickyCandidates.reduce(
-      (maxIndex, candidate) => Math.max(maxIndex, candidate.index),
-      -1,
-    );
-    const effectiveLimit = furthestStickyIndex >= 0
-      ? Math.max(group._renderLimit, furthestStickyIndex + 1)
-      : group._renderLimit;
     return {
       key: group.key,
       label: group.label,
@@ -1311,8 +1305,8 @@ const featuredGroups = computed(() => {
       hideSubtitle: group.hideSubtitle,
       visibleCount: group.visibleCount,
       count: group.count,
-      items: group._allItems.slice(0, effectiveLimit),
-      hasMore: group._allItems.length > effectiveLimit,
+      items: group._allItems.slice(0, group._renderLimit),
+      hasMore: group._allItems.length > group._renderLimit,
       stickyCandidates,
       scrollable: group.scrollable,
       loadMoreLabel: group.loadMoreLabel,

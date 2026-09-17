@@ -370,6 +370,9 @@ assert.match(topicLaneGrid, /if \(atBottom\) \{[\s\S]{0,100}activeSticky\[lane\.
 assert.match(chigua, /const winnerByIdentity = new Map\(\)/);
 assert.match(chigua, /spotlightLaneAffinity/);
 assert.match(chigua, /stickyCandidates/);
+assert.match(chigua, /allItems\s*\.slice\(0, limit\)/);
+assert.match(chigua, /items: group\._allItems\.slice\(0, group\._renderLimit\)/);
+assert.doesNotMatch(chigua, /effectiveLimit/);
 
 assert.doesNotMatch(chigua, /showTrendAsFeaturedLane/);
 assert.doesNotMatch(chigua, /is-five-column/);
