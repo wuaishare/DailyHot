@@ -132,7 +132,13 @@
           </button>
           <div class="event-lane-copy">
             <div class="event-lane-title-row">
-              <a class="event-lane-title" :href="item.url" target="_blank" rel="noopener noreferrer">
+              <a
+                class="event-lane-title"
+                :href="item.url"
+                :title="item.title"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <span>{{ item.title }}</span>
               </a>
               <em
@@ -1107,7 +1113,10 @@ const effectiveWorkspaceColumns = computed(() =>
     compact: store.compactMode,
   }),
 );
-const featuredLaneColumns = computed(() => Math.min(4, effectiveWorkspaceColumns.value));
+const featuredLaneColumns = computed(() => {
+  const columns = Math.min(4, effectiveWorkspaceColumns.value);
+  return columns === 3 ? 2 : columns;
+});
 
 const categoryOptions = computed(() => [
   { value: "all", label: ui.value.all, count: data.value.length },
@@ -2192,7 +2201,7 @@ watch(locale, () => void loadTopic(false));
   padding: 0 2px 2px;
   border-radius: 8px;
   color: inherit;
-  transition: color .2s ease;
+  transition: background-color .18s ease, color .18s ease;
 }
 .event-lane-item.has-cover {
   grid-template-columns: auto var(--ranking-card-thumb-width) minmax(0, 1fr);
@@ -2221,18 +2230,6 @@ watch(locale, () => void loadTopic(false));
 .event-lane-copy {
   position: relative;
   min-width: 0;
-  transition: transform .2s ease;
-}
-.event-lane-copy::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -2px;
-  width: 0;
-  height: 2px;
-  border-radius: 999px;
-  background: var(--n-close-color-pressed);
-  transition: width .2s ease;
 }
 .event-lane-title-row {
   display: flex;
@@ -2343,12 +2340,29 @@ watch(locale, () => void loadTopic(false));
   grid-template-columns: auto var(--ranking-card-thumb-width) minmax(0, 1fr);
 }
 .event-lane-sticky .event-lane-copy { display: block; }
+.event-lane-sticky .event-lane-title { -webkit-line-clamp: 1; }
 .event-lane-sticky .event-lane-meta { margin-top: 1px; }
 .event-lane-sticky__cover { pointer-events: none; }
-.event-lane-sticky.is-serious { filter: grayscale(1); }
+.event-lane-sticky.is-serious {
+  filter: grayscale(1);
+  background: linear-gradient(90deg, color-mix(in srgb, #6b7280 18%, var(--n-color)) 0%, color-mix(in srgb, #6b7280 8%, var(--n-color)) 52%, var(--n-color) 100%);
+}
+.event-lane-sticky:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 72%, transparent);
+  outline-offset: 2px;
+}
+.chigua-topic :deep(.topic-lane__sticky) {
+  right: 12px;
+  bottom: 10px;
+  left: 12px;
+}
 @media (hover: hover) and (pointer: fine) {
-  .event-lane-item:hover .event-lane-copy { transform: translateX(4px); }
-  .event-lane-item:hover .event-lane-copy::after { width: 90%; }
+  .event-lane-item:hover {
+    background: color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 5%, transparent);
+  }
+}
+.event-lane-item:focus-within {
+  background: color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 6%, transparent);
 }
 .event-lane-cover {
   display: block;
@@ -2466,11 +2480,9 @@ watch(locale, () => void loadTopic(false));
   outline: none;
 }
 .event-lane-item.is-serious {
-  margin-inline: -4px;
   filter: grayscale(1);
-  padding-inline: 5px;
   border-radius: 6px;
-  background: linear-gradient(90deg, color-mix(in srgb, #6b7280 22%, transparent) 0%, color-mix(in srgb, #6b7280 10%, transparent) 48%, transparent 100%);
+  background: linear-gradient(90deg, color-mix(in srgb, #6b7280 18%, transparent) 0%, color-mix(in srgb, #6b7280 8%, transparent) 52%, transparent 100%);
 }
 .event-lane-item.is-serious .event-lane-cover img { filter: grayscale(.88) saturate(.18) contrast(.96); }
 .event-list {
@@ -3384,11 +3396,16 @@ watch(locale, () => void loadTopic(false));
   }
   .chigua-topic :deep(.topic-lane-grid) {
     display: flex;
-    margin-right: 0;
-    padding-right: 0;
+    margin-right: -12px;
+    padding-right: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
   }
+  .chigua-topic :deep(.topic-lane-grid::-webkit-scrollbar) { display: none; }
   .chigua-topic :deep(.topic-lane) {
-    flex-basis: min(82vw, 286px);
+    flex: 0 0 min(38vw, 286px);
+    scroll-snap-align: start;
   }
   .event-title-row {
     gap: 5px;
@@ -3396,6 +3413,12 @@ watch(locale, () => void loadTopic(false));
   }
   .event-title-row :deep(.ranking-badges) { margin-top: 0; }
   .trend-pill b { display: none; }
+}
+
+@media (max-width: 720px) {
+  .chigua-topic :deep(.topic-lane) {
+    flex-basis: min(82vw, 286px);
+  }
 }
 
 </style>
