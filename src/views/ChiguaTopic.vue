@@ -141,11 +141,26 @@
                 :class="`is-${laneTrendIndicator(lane, item).signal}`"
                 aria-hidden="true"
               >{{ laneTrendIndicator(lane, item).label }}</em>
+              <RankingBadgeGroup
+                v-else-if="visibleRankingBadges(item).length"
+                class="event-lane-title-badges"
+                :badges="visibleRankingBadges(item)"
+              />
               <span v-if="laneTrendIndicator(lane, item)" class="sr-only">{{ laneTrendIndicator(lane, item).ariaLabel }}</span>
             </div>
             <div class="event-lane-meta">
               <a :href="primaryRankPath(item)" @click.stop>{{ sourceLabel(item) }}</a>
-              <span v-if="effectiveResonanceSourceCount(item) > 1">
+              <RankingBadgeGroup
+                v-if="laneTrendIndicator(lane, item) && visibleRankingBadges(item).length"
+                class="event-lane-meta-badges"
+                :badges="visibleRankingBadges(item)"
+              />
+              <span
+                v-if="effectiveResonanceSourceCount(item) > 1"
+                class="event-lane-resonance"
+                :title="`${effectiveResonanceSourceCount(item)} ${ui.platformResonance}`"
+                :aria-label="`${effectiveResonanceSourceCount(item)} ${ui.platformResonance}`"
+              >
                 {{ effectiveResonanceSourceCount(item) }}{{ ui.platforms }}
               </span>
             </div>
@@ -185,8 +200,28 @@
                 :class="`is-${laneTrendIndicator(lane, item).signal}`"
                 aria-hidden="true"
               >{{ laneTrendIndicator(lane, item).label }}</em>
+              <RankingBadgeGroup
+                v-else-if="visibleRankingBadges(item).length"
+                class="event-lane-title-badges"
+                :badges="visibleRankingBadges(item)"
+              />
             </span>
-            <span class="event-lane-meta">{{ sourceLabel(item) }}</span>
+            <span class="event-lane-meta">
+              <span class="event-lane-source-text">{{ sourceLabel(item) }}</span>
+              <RankingBadgeGroup
+                v-if="laneTrendIndicator(lane, item) && visibleRankingBadges(item).length"
+                class="event-lane-meta-badges"
+                :badges="visibleRankingBadges(item)"
+              />
+              <span
+                v-if="effectiveResonanceSourceCount(item) > 1"
+                class="event-lane-resonance"
+                :title="`${effectiveResonanceSourceCount(item)} ${ui.platformResonance}`"
+                :aria-label="`${effectiveResonanceSourceCount(item)} ${ui.platformResonance}`"
+              >
+                {{ effectiveResonanceSourceCount(item) }}{{ ui.platforms }}
+              </span>
+            </span>
           </span>
         </a>
       </template>
@@ -1709,6 +1744,7 @@ const normalizeTopicFeed = (feed) => {
       variantLabel: source.variantLabel,
       role: source.role,
       rank: source.rank,
+      title: source.title,
       url: source.url,
     }));
     return {
@@ -2225,7 +2261,8 @@ watch(locale, () => void loadTopic(false));
 .event-lane-trend {
   display: inline-flex;
   align-items: center;
-  margin-left: 5px;
+  flex: 0 0 auto;
+  margin-left: auto;
   color: var(--n-text-color-3);
   font-size: 11px;
   font-style: normal;
@@ -2238,6 +2275,10 @@ watch(locale, () => void loadTopic(false));
 .event-lane-trend.is-falling { color: #60788f; }
 .event-lane-trend.is-new { color: #168a84; }
 .event-lane-trend.is-reentry { color: #705ac8; }
+.event-lane-title-badges {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
 .event-lane-meta {
   display: flex;
   align-items: center;
@@ -2258,7 +2299,33 @@ watch(locale, () => void loadTopic(false));
 }
 .event-lane-meta a:hover,
 .event-lane-meta a:focus-visible { color: var(--n-text-color-2); outline: none; }
-.event-lane-meta span { flex: 0 0 auto; font-weight: 650; }
+.event-lane-meta > span { flex: 0 0 auto; }
+.event-lane-meta-badges { flex: 0 0 auto; }
+.event-lane-meta :deep(.ranking-badges) { gap: 3px; }
+.event-lane-meta :deep(.ranking-badge),
+.event-lane-title-row :deep(.ranking-badge) {
+  min-width: 16px;
+  height: 16px;
+  padding-inline: 3px;
+  font-size: 10px;
+  line-height: 16px;
+}
+.event-lane-meta :deep(.ranking-badge-icon),
+.event-lane-title-row :deep(.ranking-badge-icon) {
+  max-width: 30px;
+  height: 16px;
+}
+.event-lane-source-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-lane-resonance {
+  color: var(--n-text-color-3);
+  font-weight: 600;
+  white-space: nowrap;
+}
 .event-lane-sticky {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
