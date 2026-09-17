@@ -156,7 +156,7 @@
                 @click.stop="openFullImagePreview(item.cover)"
               >
                 <img
-                  :src="getCoverDisplaySrc(item.cover)"
+                  :src="getCoverCompactSrc(item.cover)"
                   :referrerpolicy="COVER_REFERRER_POLICY"
                   :alt="item.displayTitle || item.originalTitle || ''"
                   loading="lazy"
@@ -438,7 +438,12 @@
 import { Drag, Fire, Refresh, More } from "@icon-park/vue-next";
 import { getSharedRanking } from "@/utils/rankingCollection";
 import { formatTime } from "@/utils/getTime";
-import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
+import {
+  COVER_REFERRER_POLICY,
+  getCoverCompactSrc,
+  getCoverDisplaySrc,
+  getCoverFullSrc,
+} from "@/utils/imageProxy";
 import { resolveCoverPreviewLayout } from "@/utils/coverPreviewGeometry";
 import {
   FLOATING_COVER_PREVIEW_CLOSE_DELAY,
@@ -1099,7 +1104,7 @@ const schedulePreviewClose = () => {
 const openFullImagePreview = (cover) => {
   if (!cover || !isClient) return;
   cancelPreviewClose();
-  imagePreviewSrc.value = getCoverDisplaySrc(cover);
+  imagePreviewSrc.value = getCoverFullSrc(cover);
   nextTick(() => imagePreviewRef.value?.click?.());
 };
 

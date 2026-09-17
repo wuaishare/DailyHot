@@ -82,6 +82,7 @@
           :lane="lane"
           :item="activeSticky[lane.key].item"
           :meta="activeSticky[lane.key].meta"
+          :index="activeSticky[lane.key].index"
         />
       </div>
 

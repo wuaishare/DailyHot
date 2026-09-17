@@ -131,8 +131,10 @@
             />
           </button>
           <div class="event-lane-copy">
-            <a class="event-lane-title" :href="item.url" target="_blank" rel="noopener noreferrer">
-              <span>{{ item.title }}</span>
+            <div class="event-lane-title-row">
+              <a class="event-lane-title" :href="item.url" target="_blank" rel="noopener noreferrer">
+                <span>{{ item.title }}</span>
+              </a>
               <em
                 v-if="laneTrendIndicator(lane, item)"
                 class="event-lane-trend"
@@ -140,7 +142,7 @@
                 aria-hidden="true"
               >{{ laneTrendIndicator(lane, item).label }}</em>
               <span v-if="laneTrendIndicator(lane, item)" class="sr-only">{{ laneTrendIndicator(lane, item).ariaLabel }}</span>
-            </a>
+            </div>
             <div class="event-lane-meta">
               <a :href="primaryRankPath(item)" @click.stop>{{ sourceLabel(item) }}</a>
               <span v-if="effectiveResonanceSourceCount(item) > 1">
@@ -150,7 +152,7 @@
           </div>
         </article>
       </template>
-      <template #sticky-item="{ item, meta }">
+      <template #sticky-item="{ lane, item, meta, index }">
         <a
           class="event-lane-sticky"
           :class="{ 'has-cover': hasUsableCover(item), 'is-serious': isSeriousEvent(item) }"
@@ -160,20 +162,32 @@
           :aria-label="meta?.ariaLabel || item.title"
           :title="meta?.ariaLabel || item.title"
         >
-          <img
-            v-if="hasUsableCover(item)"
-            :src="coverSrc(item.cover)"
-            :referrerpolicy="COVER_REFERRER_POLICY"
-            :alt="item.title"
-            loading="lazy"
-            @error="markCoverError(item.cover)"
-          />
-          <span class="event-lane-sticky__signal">{{ meta?.label }}</span>
-          <span class="event-lane-sticky__copy">
-            <strong>{{ item.title }}</strong>
-            <small>{{ sourceLabel(item) }}</small>
+          <span
+            class="event-lane-rank"
+            :class="{ one: index === 0, two: index === 1, three: index === 2 }"
+            aria-hidden="true"
+          >{{ index + 1 }}</span>
+          <span v-if="hasUsableCover(item)" class="event-lane-cover event-lane-sticky__cover">
+            <img
+              :src="coverSrc(item.cover)"
+              :referrerpolicy="COVER_REFERRER_POLICY"
+              :alt="item.title"
+              loading="lazy"
+              @error="markCoverError(item.cover)"
+            />
           </span>
-          <b v-if="meta?.metric">{{ meta.metric }}</b>
+          <span class="event-lane-copy">
+            <span class="event-lane-title-row">
+              <span class="event-lane-title"><span>{{ item.title }}</span></span>
+              <em
+                v-if="laneTrendIndicator(lane, item)"
+                class="event-lane-trend"
+                :class="`is-${laneTrendIndicator(lane, item).signal}`"
+                aria-hidden="true"
+              >{{ laneTrendIndicator(lane, item).label }}</em>
+            </span>
+            <span class="event-lane-meta">{{ sourceLabel(item) }}</span>
+          </span>
         </a>
       </template>
     </TopicLaneGrid>
@@ -201,7 +215,7 @@
             @click.stop="openLaneFullImagePreview(lanePreviewItem.cover)"
           >
             <img
-              :src="coverSrc(lanePreviewItem.cover)"
+              :src="coverPreviewSrc(lanePreviewItem.cover)"
               :referrerpolicy="COVER_REFERRER_POLICY"
               :alt="lanePreviewItem.title"
               @error="handleLanePreviewCoverError(lanePreviewItem.cover)"
@@ -294,8 +308,8 @@
               <div v-if="hasUsableCover(item)" class="event-media">
                 <n-image
                   class="event-cover"
-                  :src="coverSrc(item.cover)"
-                  :preview-src="coverSrc(item.cover)"
+                  :src="coverPreviewSrc(item.cover)"
+                  :preview-src="coverFullSrc(item.cover)"
                   :alt="item.title"
                   lazy
                   object-fit="cover"
@@ -313,6 +327,11 @@
                     />
                     <span>{{ sourceLabel(item) }}</span>
                   </a>
+                  <RankingBadgeGroup
+                    v-if="eventTrend(item) && visibleRankingBadges(item).length"
+                    class="event-source-badges"
+                    :badges="visibleRankingBadges(item)"
+                  />
                   <em
                     v-if="isResonanceItem(item)"
                     class="event-resonance"
@@ -330,16 +349,6 @@
                   >
                     <h3>{{ item.title }}</h3>
                   </a>
-                  <RankingBadgeGroup
-                    v-if="visibleRankingBadges(item).length"
-                    :badges="visibleRankingBadges(item)"
-                  />
-                </div>
-                <p v-if="item.desc" class="event-desc">{{ item.desc }}</p>
-                <div class="event-meta">
-                  <span class="category-pill" :class="`is-${eventCategory(item)}`">{{
-                    categoryLabel(eventCategory(item))
-                  }}</span>
                   <span
                     v-if="eventTrend(item)"
                     class="trend-pill"
@@ -350,6 +359,16 @@
                     <span aria-hidden="true">{{ trendVisualLabel(eventTrend(item)) }}</span>
                     <b v-if="trendSecondaryMetric(eventTrend(item))" aria-hidden="true">{{ trendSecondaryMetric(eventTrend(item)) }}</b>
                   </span>
+                  <RankingBadgeGroup
+                    v-else-if="visibleRankingBadges(item).length"
+                    :badges="visibleRankingBadges(item)"
+                  />
+                </div>
+                <p v-if="item.desc" class="event-desc">{{ item.desc }}</p>
+                <div class="event-meta">
+                  <span class="category-pill" :class="`is-${eventCategory(item)}`">{{
+                    categoryLabel(eventCategory(item))
+                  }}</span>
                   <strong v-if="item.hot">{{ formatHot(item.hot) }}</strong>
                   <time
                     v-if="item.timestamp"
@@ -491,7 +510,12 @@ import { getSourceLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
 import { isSeriousEvent } from "@/utils/seriousEvents";
-import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
+import {
+  COVER_REFERRER_POLICY,
+  getCoverCompactSrc,
+  getCoverDisplaySrc,
+  getCoverFullSrc,
+} from "@/utils/imageProxy";
 import { resolveCoverPreviewLayout } from "@/utils/coverPreviewGeometry";
 import { applyExpandableCoverGeometry } from "@/utils/expandableCoverGeometry";
 import { resolveResponsiveCardColumns } from "@/utils/responsiveColumns";
@@ -1389,7 +1413,9 @@ const formatFreshness = (value) => {
     day: "2-digit",
   }).format(new Date(Number(value)));
 };
-const coverSrc = (cover) => getCoverDisplaySrc(cover);
+const coverSrc = (cover) => getCoverCompactSrc(cover);
+const coverPreviewSrc = (cover) => getCoverDisplaySrc(cover);
+const coverFullSrc = (cover) => getCoverFullSrc(cover);
 const hasUsableCover = (item) => Boolean(item?.cover && !coverImageErrors[item.cover]);
 const markCoverError = (cover) => {
   if (!cover) return;
@@ -1414,7 +1440,7 @@ const getLanePreviewMediaLayout = (cover) => {
     };
     image.onerror = reject;
     image.referrerPolicy = COVER_REFERRER_POLICY;
-    image.src = coverSrc(cover);
+    image.src = coverPreviewSrc(cover);
   });
   lanePreviewMediaCache.set(cover, mediaPromise);
   return mediaPromise;
@@ -1434,7 +1460,7 @@ const scheduleLanePreviewClose = () => {
 const openLaneFullImagePreview = (cover) => {
   if (!cover) return;
   cancelLanePreviewClose();
-  laneImagePreviewSrc.value = coverSrc(cover);
+  laneImagePreviewSrc.value = coverFullSrc(cover);
   nextTick(() => laneImagePreviewRef.value?.click?.());
 };
 const bindLanePreviewViewportListeners = () => {
@@ -2172,9 +2198,16 @@ watch(locale, () => void loadTopic(false));
   background: var(--n-close-color-pressed);
   transition: width .2s ease;
 }
+.event-lane-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
 .event-lane-title {
   display: -webkit-box;
   min-width: 0;
+  flex: 1 1 auto;
   overflow: hidden;
   color: var(--n-text-color);
   font-size: var(--chigua-list-font-size, 16px);
@@ -2228,66 +2261,23 @@ watch(locale, () => void loadTopic(false));
 .event-lane-meta span { flex: 0 0 auto; font-weight: 650; }
 .event-lane-sticky {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 7px;
+  column-gap: var(--ranking-card-item-gap);
   min-width: 0;
-  min-height: 44px;
-  padding: 6px 8px;
-  border: 1px solid color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 24%, var(--n-border-color));
-  border-left: 3px solid var(--lane-tone, var(--n-primary-color));
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--n-color) 94%, var(--lane-tone, var(--n-primary-color)) 6%);
+  min-height: var(--ranking-card-item-min-height);
+  padding: 0 2px 2px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 8%, var(--n-color));
   color: inherit;
   text-decoration: none;
-  box-shadow: 0 -5px 18px rgba(0, 0, 0, .09);
-  backdrop-filter: blur(10px);
 }
-.event-lane-sticky.has-cover { grid-template-columns: 40px auto minmax(0, 1fr) auto; }
-.event-lane-sticky > img {
-  display: block;
-  width: 40px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: 6px;
+.event-lane-sticky.has-cover {
+  grid-template-columns: auto var(--ranking-card-thumb-width) minmax(0, 1fr);
 }
-.event-lane-sticky__signal {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 20px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 12%, transparent);
-  color: var(--lane-tone, var(--n-primary-color));
-  font-size: 10px;
-  font-weight: 750;
-  white-space: nowrap;
-}
-.event-lane-sticky__copy { display: grid; min-width: 0; gap: 1px; }
-.event-lane-sticky__copy strong {
-  overflow: hidden;
-  color: var(--n-text-color);
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.event-lane-sticky__copy small {
-  overflow: hidden;
-  color: var(--n-text-color-3);
-  font-size: 10px;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.event-lane-sticky > b {
-  color: var(--n-text-color-2);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
+.event-lane-sticky .event-lane-copy { display: block; }
+.event-lane-sticky .event-lane-meta { margin-top: 1px; }
+.event-lane-sticky__cover { pointer-events: none; }
 .event-lane-sticky.is-serious { filter: grayscale(1); }
 @media (hover: hover) and (pointer: fine) {
   .event-lane-item:hover .event-lane-copy { transform: translateX(4px); }
@@ -2338,6 +2328,13 @@ watch(locale, () => void loadTopic(false));
 .chigua-topic.is-compact .event-lane-cover {
   width: var(--ranking-card-compact-thumb-width);
   height: var(--ranking-card-compact-thumb-height);
+}
+.chigua-topic.is-compact .event-lane-sticky {
+  column-gap: var(--ranking-card-compact-item-gap);
+  min-height: var(--ranking-card-compact-item-min-height);
+}
+.chigua-topic.is-compact .event-lane-sticky.has-cover {
+  grid-template-columns: auto var(--ranking-card-compact-thumb-width) minmax(0, 1fr);
 }
 .chigua-topic.is-compact .event-lane-title {
   font-size: var(--chigua-list-font-size, 16px);
@@ -2589,6 +2586,9 @@ watch(locale, () => void loadTopic(false));
   height: 14px;
   border-radius: 3px;
   object-fit: contain;
+}
+.event-source-line :deep(.ranking-badges) {
+  flex: 0 0 auto;
 }
 .event-source-line em {
   padding: 1px 5px;
@@ -3126,6 +3126,11 @@ watch(locale, () => void loadTopic(false));
 }
 .event-title-row :deep(.ranking-badges) {
   margin-top: 2px;
+}
+.event-title-row > .trend-pill,
+.event-title-row > :deep(.ranking-badges) {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 .event-title h3 {
   margin-top: 0;

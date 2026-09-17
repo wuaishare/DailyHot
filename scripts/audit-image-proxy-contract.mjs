@@ -62,9 +62,24 @@ assert.equal(
 );
 
 const weiboCover = "https://wx3.sinaimg.cn/large/example.jpg";
+const weiboMediumCover = "https://wx3.sinaimg.cn/mw690/example.jpg";
+const weiboCompactCover = "https://wx3.sinaimg.cn/orj360/example.jpg";
 assert.equal(
   clientModule.getCoverDisplaySrc(weiboCover),
+  `/api/image-proxy?url=${encodeURIComponent(weiboMediumCover)}`,
+);
+assert.equal(
+  clientModule.getCoverCompactSrc(weiboCover),
+  `/api/image-proxy?url=${encodeURIComponent(weiboCompactCover)}`,
+);
+assert.equal(
+  clientModule.getCoverFullSrc(weiboCompactCover),
   `/api/image-proxy?url=${encodeURIComponent(weiboCover)}`,
+);
+assert.equal(
+  clientModule.getCoverDisplaySrc(weiboCompactCover),
+  `/api/image-proxy?url=${encodeURIComponent(weiboCompactCover)}`,
+  "medium display must never upscale an already smaller Sina rendition",
 );
 
 assert.equal(

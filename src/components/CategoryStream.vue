@@ -132,7 +132,7 @@
               <n-image
                 class="category-stream__preview-image"
                 :src="coverSrc(entry.cover)"
-                :preview-src="coverSrc(entry.cover)"
+                :preview-src="getCoverFullSrc(entry.cover)"
                 :alt="coverPreviewLabel(entry)"
                 lazy
                 :object-fit="currentCoverObjectFit"
@@ -291,7 +291,7 @@ import {
   shouldUseReadableTitleTranslation,
 } from "@/utils/readableTitles";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
-import { COVER_REFERRER_POLICY, getCoverDisplaySrc } from "@/utils/imageProxy";
+import { COVER_REFERRER_POLICY, getCoverDisplaySrc, getCoverFullSrc } from "@/utils/imageProxy";
 import { normalizeRankingBadges, resolveRankingBadgeIconUrl } from "@/utils/rankingBadges";
 import UiGlyph from "@/components/ui/UiGlyph.vue";
 import { Comment, Fire, Like, PreviewOpen, Refresh, Star } from "@icon-park/vue-next";
