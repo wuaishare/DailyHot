@@ -562,6 +562,7 @@ import { getSourceLabel } from "@/utils/sourceLabels";
 import { getSourceLogo, getSourceLogoFallback } from "@/utils/sourceLogos";
 import { normalizeRankingBadges } from "@/utils/rankingBadges";
 import { isSeriousEvent } from "@/utils/seriousEvents";
+import { pickTopicSummary } from "@/utils/topicSummary";
 import {
   COVER_REFERRER_POLICY,
   getCoverCompactSrc,
@@ -1753,16 +1754,7 @@ const normalizeTopicFeed = (feed) => {
     const sources = Array.isArray(event.sources) ? event.sources : [];
     const primary = sources[0] || {};
     const mediaSource = sources.find((source) => source?.cover) || primary;
-    const desc = [
-      event?.desc,
-      event?.summary,
-      primary?.summary,
-      primary?.desc,
-      primary?.description,
-      mediaSource?.summary,
-      mediaSource?.desc,
-      mediaSource?.description,
-    ].find((value) => typeof value === "string" && value.trim())?.trim() || "";
+    const desc = pickTopicSummary({ event, sources, primary, mediaSource });
     const sourceKeys = [...new Set(sources.map((source) => source.sourceKey).filter(Boolean))];
     const confirmations = sources.map((source) => ({
       source: source.sourceKey,
