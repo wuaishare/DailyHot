@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import assert from "node:assert/strict";
 import { resolveResponsiveCardColumns } from "../src/utils/responsiveColumns.js";
-import { isSeriousEventText } from "../src/utils/seriousEvents.js";
+import { isSeriousEvent, isSeriousEventText } from "../src/utils/seriousEvents.js";
+import { pickTopicSummary } from "../src/utils/topicSummary.js";
 
 const component = fs.readFileSync("src/components/CategoryStream.vue", "utf8");
 const app = fs.readFileSync("src/App.vue", "utf8");
@@ -408,9 +409,55 @@ assert.equal(isSeriousEventText("敬一丹遗体告别仪式举行"), true);
 assert.equal(isSeriousEventText("敬一丹遗体告别仪式挽联令人动容"), true);
 assert.equal(isSeriousEventText("敬一丹告别仪式现场曝光，数百人排队吊唁"), true);
 assert.equal(isSeriousEventText("赵露思新剧告别信正式官宣"), false);
-assert.equal(isSeriousEventText("李小萌长文痛悼敬一丹"), true);
+assert.equal(isSeriousEventText("李小萌长文痛悼敬一丹"), false);
+assert.equal(isSeriousEventText("倪萍撰文《给敬大姐的一封信》：这些年，我一直学着你的样子"), false);
+assert.equal(isSeriousEventText("康辉全黑打扮现身敬一丹告别仪式，心情沉重，朱军朱迅水均益都到场"), false);
+assert.equal(isSeriousEventText("敬一丹告别仪式，康辉朱军朱迅水均益到场送别"), true);
 assert.equal(isSeriousEventText("歌手告别巡演最终场"), false);
 assert.equal(isSeriousEventText("运动员退役告别仪式举行"), false);
+assert.equal(isSeriousEvent({
+  title: "倪萍撰文《给敬大姐的一封信》：这些年，我一直学着你的样子",
+  desc: "敬一丹逝世后，倪萍撰文悼念。",
+  extra: { hotEvent: { confirmations: [{ title: "敬一丹遗体告别仪式举行" }] } },
+}), false);
+
+const shortWeiboSummary = { sourceKey: "weibo", summary: "剧集领域 · 热度 60万" };
+const richWeiboSummary = {
+  sourceKey: "weibo",
+  variant: "hot",
+  summary: "郑合惠子在热播剧《兰香如故》中饰演的杜翠雀，因一场高光戏份刷屏全网，被观众评价为一个人演出了千军万马的气势。",
+};
+const otherPlatformSummary = {
+  sourceKey: "douyin",
+  summary: "这是另一个平台提供的很长解释，但不应该越过主平台去替换摘要。",
+};
+assert.equal(
+  pickTopicSummary({
+    event: {},
+    primary: shortWeiboSummary,
+    mediaSource: shortWeiboSummary,
+    sources: [shortWeiboSummary, richWeiboSummary, otherPlatformSummary],
+  }),
+  richWeiboSummary.summary,
+);
+assert.equal(
+  pickTopicSummary({
+    event: { summary: "事件级摘要优先保留。" },
+    primary: shortWeiboSummary,
+    mediaSource: shortWeiboSummary,
+    sources: [shortWeiboSummary, richWeiboSummary],
+  }),
+  "事件级摘要优先保留。",
+);
+assert.equal(
+  pickTopicSummary({
+    event: {},
+    primary: shortWeiboSummary,
+    mediaSource: shortWeiboSummary,
+    sources: [shortWeiboSummary, otherPlatformSummary],
+  }),
+  shortWeiboSummary.summary,
+);
 assert.match(chigua, /fresh: "新瓜速递"/);
 assert.match(chigua, /rising: "热度上升"/);
 assert.match(chigua, /resonance: "多平台上榜"/);
@@ -557,7 +604,7 @@ assert.match(topicLaneGrid, /name="title-actions"/);
 
 assert.match(chigua, /height: 252px;[\s\S]{0,40}max-height: 252px/);
 assert.match(chigua, /const mediaSource = sources\.find\(\(source\) => source\?\.cover\) \|\| primary/);
-assert.match(chigua, /primary\?\.summary[\s\S]{0,160}mediaSource\?\.summary/);
+assert.match(chigua, /pickTopicSummary\(\{ event, sources, primary, mediaSource \}\)/);
 assert.match(chigua, /filter: grayscale\(1\)/);
 assert.match(chigua, /currentWaveStartedAt/);
 assert.match(chigua, /const FRESH_WINDOW_MS = 2 \* 60 \* 60 \* 1000/);
