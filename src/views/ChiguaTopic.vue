@@ -141,26 +141,21 @@
               >
                 <span>{{ item.title }}</span>
               </a>
+              <RankingBadgeGroup
+                v-if="visibleRankingBadges(item).length"
+                class="event-lane-title-badges"
+                :badges="visibleRankingBadges(item)"
+              />
+            </div>
+            <div class="event-lane-meta">
+              <a :href="primaryRankPath(item)" @click.stop>{{ sourceLabel(item) }}</a>
               <em
                 v-if="laneTrendIndicator(lane, item)"
                 class="event-lane-trend"
                 :class="`is-${laneTrendIndicator(lane, item).signal}`"
-                aria-hidden="true"
+                :title="laneTrendIndicator(lane, item).ariaLabel"
+                :aria-label="laneTrendIndicator(lane, item).ariaLabel"
               >{{ laneTrendIndicator(lane, item).label }}</em>
-              <RankingBadgeGroup
-                v-else-if="visibleRankingBadges(item).length"
-                class="event-lane-title-badges"
-                :badges="visibleRankingBadges(item)"
-              />
-              <span v-if="laneTrendIndicator(lane, item)" class="sr-only">{{ laneTrendIndicator(lane, item).ariaLabel }}</span>
-            </div>
-            <div class="event-lane-meta">
-              <a :href="primaryRankPath(item)" @click.stop>{{ sourceLabel(item) }}</a>
-              <RankingBadgeGroup
-                v-if="laneTrendIndicator(lane, item) && visibleRankingBadges(item).length"
-                class="event-lane-meta-badges"
-                :badges="visibleRankingBadges(item)"
-              />
               <span
                 v-if="effectiveResonanceSourceCount(item) > 1"
                 class="event-lane-resonance"
@@ -174,21 +169,30 @@
         </article>
       </template>
       <template #sticky-item="{ lane, item, meta, index }">
-        <a
+        <article
           class="event-lane-sticky"
           :class="{ 'has-cover': hasUsableCover(item), 'is-serious': isSeriousEvent(item) }"
-          :href="item.url"
-          target="_blank"
-          rel="noopener noreferrer"
           :aria-label="meta?.ariaLabel || item.title"
-          :title="meta?.ariaLabel || item.title"
+          :aria-describedby="lanePreviewItem === item ? lanePreviewTooltipId : undefined"
+          @pointerenter="showLanePreview(item, $event)"
+          @pointerleave="scheduleLanePreviewClose"
+          @focusin="showLanePreview(item, $event)"
+          @focusout="scheduleLanePreviewClose"
+          @keydown.esc="hideLanePreview"
         >
           <span
             class="event-lane-rank"
             :class="{ one: index === 0, two: index === 1, three: index === 2 }"
             aria-hidden="true"
           >{{ index + 1 }}</span>
-          <span v-if="hasUsableCover(item)" class="event-lane-cover event-lane-sticky__cover">
+          <button
+            v-if="hasUsableCover(item)"
+            type="button"
+            class="event-lane-cover event-lane-sticky__cover"
+            :title="item.title"
+            :aria-label="item.title"
+            @click.stop="openLaneFullImagePreview(item.cover)"
+          >
             <img
               :src="coverSrc(item.cover)"
               :referrerpolicy="COVER_REFERRER_POLICY"
@@ -196,29 +200,31 @@
               loading="lazy"
               @error="markCoverError(item.cover)"
             />
-          </span>
-          <span class="event-lane-copy">
-            <span class="event-lane-title-row">
-              <span class="event-lane-title"><span>{{ item.title }}</span></span>
+          </button>
+          <div class="event-lane-copy">
+            <div class="event-lane-title-row">
+              <a
+                class="event-lane-title"
+                :href="item.url"
+                :title="item.title"
+                target="_blank"
+                rel="noopener noreferrer"
+              ><span>{{ item.title }}</span></a>
+              <RankingBadgeGroup
+                v-if="visibleRankingBadges(item).length"
+                class="event-lane-title-badges"
+                :badges="visibleRankingBadges(item)"
+              />
+            </div>
+            <div class="event-lane-meta">
+              <a :href="primaryRankPath(item)" @click.stop>{{ sourceLabel(item) }}</a>
               <em
                 v-if="laneTrendIndicator(lane, item)"
                 class="event-lane-trend"
                 :class="`is-${laneTrendIndicator(lane, item).signal}`"
-                aria-hidden="true"
+                :title="laneTrendIndicator(lane, item).ariaLabel"
+                :aria-label="laneTrendIndicator(lane, item).ariaLabel"
               >{{ laneTrendIndicator(lane, item).label }}</em>
-              <RankingBadgeGroup
-                v-else-if="visibleRankingBadges(item).length"
-                class="event-lane-title-badges"
-                :badges="visibleRankingBadges(item)"
-              />
-            </span>
-            <span class="event-lane-meta">
-              <span class="event-lane-source-text">{{ sourceLabel(item) }}</span>
-              <RankingBadgeGroup
-                v-if="laneTrendIndicator(lane, item) && visibleRankingBadges(item).length"
-                class="event-lane-meta-badges"
-                :badges="visibleRankingBadges(item)"
-              />
               <span
                 v-if="effectiveResonanceSourceCount(item) > 1"
                 class="event-lane-resonance"
@@ -227,9 +233,9 @@
               >
                 {{ effectiveResonanceSourceCount(item) }}{{ ui.platforms }}
               </span>
-            </span>
-          </span>
-        </a>
+            </div>
+          </div>
+        </article>
       </template>
     </TopicLaneGrid>
     </div>
@@ -262,6 +268,16 @@
               @error="handleLanePreviewCoverError(lanePreviewItem.cover)"
             />
           </button>
+          <div
+            v-if="lanePreviewItem.desc || lanePreviewItem.hot"
+            class="event-lane-floating-preview__info"
+          >
+            <p v-if="lanePreviewItem.desc">{{ lanePreviewItem.desc }}</p>
+            <div>
+              <span>{{ sourceLabel(lanePreviewItem) }}</span>
+              <strong v-if="lanePreviewItem.hot">{{ formatHot(lanePreviewItem.hot) }}</strong>
+            </div>
+          </div>
         </div>
       </Transition>
     </Teleport>
@@ -368,11 +384,16 @@
                     />
                     <span>{{ sourceLabel(item) }}</span>
                   </a>
-                  <RankingBadgeGroup
-                    v-if="eventTrend(item) && visibleRankingBadges(item).length"
-                    class="event-source-badges"
-                    :badges="visibleRankingBadges(item)"
-                  />
+                  <span
+                    v-if="userVisibleTrend(item)"
+                    class="trend-pill"
+                    :class="`is-${userVisibleTrend(item).signal}`"
+                    :aria-label="trendAccessibleLabel(userVisibleTrend(item))"
+                    :title="trendAccessibleLabel(userVisibleTrend(item))"
+                  >
+                    <span aria-hidden="true">{{ trendVisualLabel(userVisibleTrend(item)) }}</span>
+                    <b v-if="trendSecondaryMetric(userVisibleTrend(item))" aria-hidden="true">{{ trendSecondaryMetric(userVisibleTrend(item)) }}</b>
+                  </span>
                   <em
                     v-if="isResonanceItem(item)"
                     class="event-resonance"
@@ -390,18 +411,8 @@
                   >
                     <h3>{{ item.title }}</h3>
                   </a>
-                  <span
-                    v-if="eventTrend(item)"
-                    class="trend-pill"
-                    :class="`is-${eventTrend(item).signal}`"
-                    :aria-label="trendAccessibleLabel(eventTrend(item))"
-                    :title="trendAccessibleLabel(eventTrend(item))"
-                  >
-                    <span aria-hidden="true">{{ trendVisualLabel(eventTrend(item)) }}</span>
-                    <b v-if="trendSecondaryMetric(eventTrend(item))" aria-hidden="true">{{ trendSecondaryMetric(eventTrend(item)) }}</b>
-                  </span>
                   <RankingBadgeGroup
-                    v-else-if="visibleRankingBadges(item).length"
+                    v-if="visibleRankingBadges(item).length"
                     :badges="visibleRankingBadges(item)"
                   />
                 </div>
@@ -667,7 +678,7 @@ const UI_COPY = {
     },
     featuredSubtitles: {
       fresh: "优先看刚进入这一轮热议的新事件",
-      rising: "优先看热度正在上升、重新上榜或刚冲进前十的事件",
+      rising: "优先看热度正在上升或刚冲进前十的事件",
       resonance: "优先看同时出现在多个独立平台榜单里的事件",
       hot: "优先看已经进入任一核心榜单前十的热门事件",
     },
@@ -770,7 +781,7 @@ const UI_COPY = {
       resonance: "多平台上榜",
       hot: "熱榜前十",
     },
-    featuredSubtitles: { fresh: "優先看剛進入這一輪熱議的新事件", rising: "優先看熱度正在上升、重新上榜或剛衝進前十的事件", resonance: "優先看同時出現在多個獨立平台榜單裡的事件", hot: "優先看已經進入任一核心榜單前十的熱門事件" },
+    featuredSubtitles: { fresh: "優先看剛進入這一輪熱議的新事件", rising: "優先看熱度正在上升或剛衝進前十的事件", resonance: "優先看同時出現在多個獨立平台榜單裡的事件", hot: "優先看已經進入任一核心榜單前十的熱門事件" },
     trendSignals: { reentry: "重新上榜", breakthrough: "進入前十", rising: "榜位上升", falling: "榜位下降", new: "新上榜" },
     categories: {
       gossip: "明星八卦",
@@ -908,8 +919,12 @@ const eventScore = (item) => Number(eventMeta(item).score || 0);
 const eventSourceCount = (item) => Number(eventMeta(item).sourceCount || 1);
 const eventBestRank = (item) => Number(eventMeta(item).bestRank || 0);
 const eventTrend = (item) => eventMeta(item).trend || null;
+const userVisibleTrend = (item) => {
+  const trend = eventTrend(item);
+  return trend?.signal === "reentry" ? null : trend;
+};
 const FRESH_WINDOW_MS = 2 * 60 * 60 * 1000;
-const RISING_TREND_SIGNALS = new Set(["reentry", "breakthrough", "rising"]);
+const RISING_TREND_SIGNALS = new Set(["breakthrough", "rising"]);
 const eventWaveStartedAt = (item) => {
   const value = Date.parse(eventMeta(item).currentWaveStartedAt || "");
   return Number.isFinite(value) && value > 0 ? value : Number(item?.timestamp || 0);
@@ -982,7 +997,7 @@ const trendRankChange = (trend) => {
   return 0;
 };
 const trendVisualLabel = (trend) => {
-  if (["new", "reentry"].includes(trend?.signal)) return trendSignalLabel(trend.signal);
+  if (trend?.signal === "new") return trendSignalLabel(trend.signal);
   const change = trendRankChange(trend);
   if (change > 0) return `▲ ${change}`;
   if (change < 0) return `▼ ${Math.abs(change)}`;
@@ -993,7 +1008,7 @@ const trendAccessibleLabel = (trend) => {
   const signal = trendSignalLabel(trend.signal);
   const currentRank = Number(trend?.currentRank || 0);
   const baselineRank = Number(trend?.baselineRank || 0);
-  if (["new", "reentry"].includes(trend.signal)) {
+  if (trend.signal === "new") {
     return currentRank > 0 ? `${signal}，当前第 ${currentRank} 名` : signal;
   }
   const change = trendRankChange(trend);
@@ -1003,17 +1018,18 @@ const trendAccessibleLabel = (trend) => {
   return currentRank > 0 ? `${signal}，当前第 ${currentRank} 名` : signal;
 };
 const trendSecondaryMetric = (trend) => {
-  if (!["new", "reentry"].includes(trend?.signal)) return "";
+  if (trend?.signal !== "new") return "";
   const currentRank = Number(trend?.currentRank || 0);
   return currentRank > 0 ? `#${currentRank}` : "";
 };
 const laneTrendIndicator = (_lane, item) => {
-  const trend = eventTrend(item);
+  const trend = userVisibleTrend(item);
   if (!trend?.signal) return null;
   const label = trendVisualLabel(trend);
   return label ? { signal: trend.signal, label, ariaLabel: trendAccessibleLabel(trend) } : null;
 };
 
+const SPOTLIGHT_MIN_SCORE = 78;
 const SPOTLIGHT_BADGE_WEIGHTS = {
   explosive: 100,
   "first-release": 98,
@@ -1040,7 +1056,7 @@ const spotlightBadge = (item) => {
   return best;
 };
 const spotlightMeta = (item) => {
-  const trend = eventTrend(item);
+  const trend = userVisibleTrend(item);
   if (trend?.signal === "falling") return null;
 
   const badge = spotlightBadge(item);
@@ -1052,16 +1068,12 @@ const spotlightMeta = (item) => {
     trendCandidate = { score: 82 + Math.min(change, 30) / 10, label: "快速上升" };
   } else if (trend?.signal === "new") {
     trendCandidate = { score: 78, label: ui.value.trendSignals?.new || "新上榜" };
-  } else if (trend?.signal === "reentry") {
-    trendCandidate = { score: 58, label: ui.value.trendSignals?.reentry || "重新上榜" };
   }
 
   const candidate = Number(badge?.score || 0) >= Number(trendCandidate?.score || 0) ? badge : trendCandidate;
-  if (!candidate || candidate.score < 64) return null;
+  if (!candidate || candidate.score < SPOTLIGHT_MIN_SCORE) return null;
   const metric = trend?.signal
-    ? (["new", "reentry"].includes(trend.signal)
-      ? trendSecondaryMetric(trend)
-      : trendVisualLabel(trend))
+    ? (trend.signal === "new" ? trendSecondaryMetric(trend) : trendVisualLabel(trend))
     : "";
   const trendA11y = trendAccessibleLabel(trend);
   return {
@@ -1294,13 +1306,11 @@ const sortFeaturedLaneItems = (key, items) =>
       return eventBestRank(a) - eventBestRank(b) || eventScore(b) - eventScore(a);
     return eventScore(b) - eventScore(a);
   });
-const spotlightIdentity = (item) => item?.id || item?.url || item?.title || "";
 const spotlightLaneAffinity = (laneKey, item) => {
-  const signal = eventTrend(item)?.signal;
+  const signal = userVisibleTrend(item)?.signal;
   if (signal === "new" && laneKey === "fresh") return 40;
   if (["rising", "breakthrough"].includes(signal) && laneKey === "rising") return 40;
   if (signal === "breakthrough" && laneKey === "hot") return 32;
-  if (signal === "reentry" && laneKey === "resonance") return 28;
   if (laneKey === "hot") return 18;
   if (laneKey === "resonance") return 14;
   if (laneKey === "fresh") return 10;
@@ -1350,22 +1360,20 @@ const featuredGroups = computed(() => {
   const byKey = new Map(groups.map((group) => [group.key, group]));
   const ordered = featuredLaneOrder.value.map((key) => byKey.get(key)).filter(Boolean);
 
-  const winnerByIdentity = new Map();
-  for (const group of ordered) {
-    for (const candidate of group._spotlightCandidates) {
-      const identity = spotlightIdentity(candidate.item);
-      if (!identity) continue;
-      const weightedScore = candidate.meta.score + spotlightLaneAffinity(group.key, candidate.item);
-      const previous = winnerByIdentity.get(identity);
-      if (!previous || weightedScore > previous.weightedScore) {
-        winnerByIdentity.set(identity, { laneKey: group.key, weightedScore });
-      }
-    }
-  }
+  const globalSpotlight = ordered
+    .flatMap((group) => group._spotlightCandidates.map((candidate) => ({
+      ...candidate,
+      laneKey: group.key,
+      affinity: spotlightLaneAffinity(group.key, candidate.item),
+    })))
+    .sort((left, right) =>
+      right.meta.score - left.meta.score
+      || right.affinity - left.affinity
+      || eventScore(right.item) - eventScore(left.item)
+      || left.index - right.index)[0] || null;
 
   return ordered.map((group) => {
-    const stickyCandidates = group._spotlightCandidates
-      .filter((candidate) => winnerByIdentity.get(spotlightIdentity(candidate.item))?.laneKey === group.key);
+    const stickyCandidates = globalSpotlight?.laneKey === group.key ? [globalSpotlight] : [];
     return {
       key: group.key,
       label: group.label,
@@ -1745,6 +1753,16 @@ const normalizeTopicFeed = (feed) => {
     const sources = Array.isArray(event.sources) ? event.sources : [];
     const primary = sources[0] || {};
     const mediaSource = sources.find((source) => source?.cover) || primary;
+    const desc = [
+      event?.desc,
+      event?.summary,
+      primary?.summary,
+      primary?.desc,
+      primary?.description,
+      mediaSource?.summary,
+      mediaSource?.desc,
+      mediaSource?.description,
+    ].find((value) => typeof value === "string" && value.trim())?.trim() || "";
     const sourceKeys = [...new Set(sources.map((source) => source.sourceKey).filter(Boolean))];
     const confirmations = sources.map((source) => ({
       source: source.sourceKey,
@@ -1762,6 +1780,7 @@ const normalizeTopicFeed = (feed) => {
       url: primary.url || "#",
       mobileUrl: primary.mobileUrl || primary.url || "#",
       cover: mediaSource.cover || "",
+      desc,
       hot: primary.hot,
       timestamp: Date.parse(event.lastSeenAt || feed.generatedAt || "") || Date.now(),
       badges: primary.badges || [],
@@ -2259,7 +2278,7 @@ watch(locale, () => void loadTopic(false));
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
-  margin-left: auto;
+  margin-left: 0;
   color: var(--n-text-color-3);
   font-size: 11px;
   font-style: normal;
@@ -2297,7 +2316,6 @@ watch(locale, () => void loadTopic(false));
 .event-lane-meta a:hover,
 .event-lane-meta a:focus-visible { color: var(--n-text-color-2); outline: none; }
 .event-lane-meta > span { flex: 0 0 auto; }
-.event-lane-meta-badges { flex: 0 0 auto; }
 .event-lane-meta :deep(.ranking-badges) { gap: 3px; }
 .event-lane-meta :deep(.ranking-badge),
 .event-lane-title-row :deep(.ranking-badge) {
@@ -2342,12 +2360,12 @@ watch(locale, () => void loadTopic(false));
 .event-lane-sticky .event-lane-copy { display: block; }
 .event-lane-sticky .event-lane-title { -webkit-line-clamp: 1; }
 .event-lane-sticky .event-lane-meta { margin-top: 1px; }
-.event-lane-sticky__cover { pointer-events: none; }
+.event-lane-sticky__cover { pointer-events: auto; }
 .event-lane-sticky.is-serious {
   filter: grayscale(1);
   background: linear-gradient(90deg, color-mix(in srgb, #6b7280 18%, var(--n-color)) 0%, color-mix(in srgb, #6b7280 8%, var(--n-color)) 52%, var(--n-color) 100%);
 }
-.event-lane-sticky:focus-visible {
+.event-lane-sticky:focus-within {
   outline: 2px solid color-mix(in srgb, var(--lane-tone, var(--n-primary-color)) 72%, transparent);
   outline-offset: 2px;
 }
@@ -2449,6 +2467,44 @@ watch(locale, () => void loadTopic(false));
   object-fit: contain;
   object-position: center;
 }
+.event-lane-floating-preview__info {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  gap: 4px;
+  padding: 26px 10px 9px;
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, .72) 42%, rgba(0, 0, 0, .86) 100%);
+  color: #fff;
+  pointer-events: none;
+}
+.event-lane-floating-preview__info p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.event-lane-floating-preview__info div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  font-size: 11px;
+  opacity: .92;
+}
+.event-lane-floating-preview__info span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-lane-floating-preview__info strong { flex: 0 0 auto; }
 .event-lane-floating-preview.is-serious img { filter: grayscale(.88) saturate(.18) contrast(.96); }
 .event-lane-image-preview-trigger {
   position: fixed;

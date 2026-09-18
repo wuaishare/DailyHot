@@ -176,7 +176,10 @@ watch(
   { deep: true, immediate: true },
 );
 
-onMounted(() => window.addEventListener("resize", refreshStickyVisibility, { passive: true }));
+onMounted(() => {
+  window.addEventListener("resize", refreshStickyVisibility, { passive: true });
+  nextTick(refreshStickyVisibility);
+});
 onBeforeUnmount(() => {
   window.removeEventListener("resize", refreshStickyVisibility);
   if (stickyRefreshFrame) cancelAnimationFrame(stickyRefreshFrame);
