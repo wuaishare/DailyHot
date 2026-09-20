@@ -1,10 +1,14 @@
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
-const DEFAULT_CATALOG_URL = "https://api.wpbetter.cn/trends/public/v1/catalog";
+const DEFAULT_CATALOG_URL = "https://api.wpbetter.cn/trends/catalog.json";
 
 const fetchCatalog = async () => {
-  const url = String(process.env.TRENDS_PUBLIC_CATALOG_URL || DEFAULT_CATALOG_URL).trim();
+  const url = String(
+    process.env.TRENDS_CATALOG_URL ||
+      process.env.TRENDS_PUBLIC_CATALOG_URL ||
+      DEFAULT_CATALOG_URL,
+  ).trim();
   if (!url || process.env.TRENDS_CATALOG_BUILD_SYNC === "0") return null;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 2500);
@@ -25,7 +29,9 @@ const fetchCatalog = async () => {
 const projectSubtypeGroupsForBuild = async (staticGroups, label = "build") => {
   try {
     const catalog = await fetchCatalog();
-    if (!catalog) return { groups: staticGroups, defaults: new Map(), projected: 0 };
+    if (!catalog) {
+      return { groups: staticGroups, defaults: new Map(), sources: [], projected: 0 };
+    }
     const modulePath = path.resolve(__dirname, "../../src/utils/trendsCatalogProjection.mjs");
     const { mergeProjectedSubtypeGroups, projectTrendsCatalog } = await import(
       pathToFileURL(modulePath).href
@@ -37,11 +43,20 @@ const projectSubtypeGroupsForBuild = async (staticGroups, label = "build") => {
     return {
       groups: mergeProjectedSubtypeGroups(staticGroups, projection.groupsBySource),
       defaults: projection.defaultsBySource,
+      sources: catalog.sources
+        .map((source) => ({
+          key: String(source?.key || "").trim(),
+          name: String(source?.name || source?.key || "").trim(),
+          priorityTier: String(source?.priorityTier || "").trim(),
+          rankingLabel: String(source?.rankingLabel || "").trim(),
+          defaultVariant: String(source?.defaultVariant || "").trim(),
+        }))
+        .filter((source) => source.key),
       projected: projection.groupsBySource.size,
     };
   } catch (error) {
     console.warn(`[${label}] Trends catalog unavailable; using static subtype fallback: ${error.message}`);
-    return { groups: staticGroups, defaults: new Map(), projected: 0 };
+    return { groups: staticGroups, defaults: new Map(), sources: [], projected: 0 };
   }
 };
 

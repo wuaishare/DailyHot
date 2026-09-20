@@ -1191,6 +1191,55 @@ const SOURCE_LABEL_LOCALIZATIONS = {
 };
 
 const SOURCE_DISPLAY_LABEL_OVERRIDES = {
+  "bilibili-game-rankings": {
+    "zh-CN": "哔哩哔哩",
+    "zh-TW": "嗶哩嗶哩",
+    en: "Bilibili",
+    ja: "Bilibili",
+    ko: "Bilibili",
+  },
+  "autohome-sales": {
+    "zh-CN": "汽车之家",
+    "zh-TW": "汽車之家",
+    en: "Autohome",
+    ja: "Autohome",
+    ko: "Autohome",
+  },
+  "zol-phone-rankings": {
+    "zh-CN": "ZOL",
+    "zh-TW": "ZOL",
+    en: "ZOL",
+    ja: "ZOL",
+    ko: "ZOL",
+  },
+  "zol-tech-rankings": {
+    "zh-CN": "ZOL",
+    "zh-TW": "ZOL",
+    en: "ZOL",
+    ja: "ZOL",
+    ko: "ZOL",
+  },
+  "huya-video-rankings": {
+    "zh-CN": "虎牙",
+    "zh-TW": "虎牙",
+    en: "Huya",
+    ja: "Huya",
+    ko: "Huya",
+  },
+  "pconline-rankings": {
+    "zh-CN": "太平洋科技",
+    "zh-TW": "太平洋科技",
+    en: "PConline",
+    ja: "PConline",
+    ko: "PConline",
+  },
+  "ludashi-rankings": {
+    "zh-CN": "鲁大师",
+    "zh-TW": "魯大師",
+    en: "Ludashi",
+    ja: "Ludashi",
+    ko: "Ludashi",
+  },
   "google-trends": {
     "zh-CN": "Google 趋势",
     "zh-TW": "Google 趨勢",

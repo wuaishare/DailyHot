@@ -89,12 +89,19 @@ async function main() {
   const newsSection = newsSectionMatch?.[1] || "";
 
   const categorySlugs = BUILTIN_CATEGORIES.map((item) => item.slug).filter(Boolean);
-  const sourceNames = [...newsSection.matchAll(/name:\s*"([^"]+)"/g)].map((m) => m[1]);
+  const staticSourceNames = [...newsSection.matchAll(/name:\s*"([^"]+)"/g)].map((m) => m[1]);
   const staticSourceSubtypeGroups = parseConstant(subtypeSource, "SOURCE_SUBTYPE_GROUPS");
-  const { groups: sourceSubtypeGroups } = await projectSubtypeGroupsForBuild(
+  const {
+    groups: sourceSubtypeGroups,
+    sources: catalogSources,
+  } = await projectSubtypeGroupsForBuild(
     staticSourceSubtypeGroups,
     "seo",
   );
+  const catalogPrioritySourceNames = catalogSources
+    .filter((source) => source.priorityTier === "A" || source.priorityTier === "B")
+    .map((source) => source.key);
+  const sourceNames = [...new Set([...staticSourceNames, ...catalogPrioritySourceNames])];
   const aggregateSubtypeSources = new Set(
     parseConstant(subtypeSource, "AGGREGATE_SUBTYPE_SOURCES")
   );

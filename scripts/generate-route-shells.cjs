@@ -152,6 +152,28 @@ const normalizeTitleLabel = (value = "") =>
     .replace(/([\u4e00-\u9fff])\s+([\u4e00-\u9fff])/gu, "$1$2")
     .trim();
 
+const combineSourceAndSubtypeLabel = (sourceLabel = "", subtypeLabel = "") => {
+  const source = normalizeTitleLabel(sourceLabel).replace(/榜$/u, "");
+  const subtype = normalizeTitleLabel(subtypeLabel);
+  if (!source || !subtype) return normalizeTitleLabel(source || subtype);
+
+  const maxOverlap = Math.min(source.length, subtype.length);
+  for (let length = maxOverlap; length >= 1; length -= 1) {
+    if (source.slice(-length) === subtype.slice(0, length)) {
+      return normalizeTitleLabel(source + subtype.slice(length));
+    }
+  }
+
+  const maxPrefix = Math.min(source.length, subtype.length);
+  for (let length = maxPrefix; length >= 2; length -= 1) {
+    if (source.slice(0, length) === subtype.slice(0, length)) {
+      return normalizeTitleLabel(source + subtype.slice(length));
+    }
+  }
+
+  return normalizeTitleLabel(`${source} ${subtype}`);
+};
+
 const keywordTokensFrom = (value) =>
   Array.isArray(value)
     ? value.flatMap((item) => keywordTokensFrom(item))
@@ -673,6 +695,7 @@ async function main() {
   const {
     groups: sourceSubtypeGroups,
     defaults: catalogDefaultSubtypes,
+    sources: catalogSources,
   } = await projectSubtypeGroupsForBuild(staticSourceSubtypeGroups, "seo-shell");
   const aggregateSubtypeSources = new Set(
     parseConstant(subtypeSource, "AGGREGATE_SUBTYPE_SOURCES")
@@ -700,7 +723,18 @@ async function main() {
   const aiTopicMetadata = parseConstant(siteMetadataSource, "AI_TOPIC_METADATA");
   const gameDealsTopicMetadata = parseConstant(siteMetadataSource, "GAME_DEALS_TOPIC_METADATA");
   const chiguaTopicMetadata = parseConstant(siteMetadataSource, "CHIGUA_TOPIC_METADATA");
-  const sourceNames = getSourceNames(storeSource);
+  const catalogPrioritySources = catalogSources.filter(
+    (source) => source.priorityTier === "A" || source.priorityTier === "B",
+  );
+  const sourceNames = [
+    ...new Set([
+      ...getSourceNames(storeSource),
+      ...catalogPrioritySources.map((source) => source.key),
+    ]),
+  ];
+  const catalogSourceNames = new Map(
+    catalogPrioritySources.map((source) => [source.key, source.name]),
+  );
   const subtypeValues = getSubtypeValues(sourceSubtypeGroups);
   const defaultSubtypeValues = getDefaultSubtypeValues(subtypeValues);
   for (const [sourceName, defaultSubtype] of catalogDefaultSubtypes) {
@@ -932,7 +966,8 @@ async function main() {
 
   const buildRankMeta = (sourceName, subtypeValue, localeMeta, pathname) => {
     const locale = localeMeta.code;
-    const meta = listSeoMap[sourceName] || listSeoMap.default || {};
+    const sourceMeta = listSeoMap[sourceName] || null;
+    const meta = sourceMeta || listSeoMap.default || {};
     const shouldUseDefaultSubtype =
       !subtypeValue &&
       defaultSubtypeValues.has(sourceName) &&
@@ -956,13 +991,14 @@ async function main() {
           locale
         )
       : "";
+    const catalogSourceLabel = catalogSourceNames.get(sourceName) || "";
     const sourceLabel =
       locale === "zh-CN"
-        ? meta.label || prettifySlug(sourceName)
+        ? sourceMeta?.label || catalogSourceLabel || prettifySlug(sourceName)
         : getLocalizedSourceLabel(
             sourceLabelOverrides,
             sourceName,
-            meta.label,
+            sourceMeta?.label || catalogSourceLabel,
             locale
           );
     const sourceDisplayLabel =
@@ -975,7 +1011,7 @@ async function main() {
         locale
       ) || sourceLabel;
     const sourceSeoLabel =
-      locale === "zh-CN" && meta.label ? meta.label : sourceLabel;
+      locale === "zh-CN" && sourceMeta?.label ? sourceMeta.label : sourceLabel;
 
     if (locale !== "zh-CN") {
       const seoMessages = getSeoMessages(messages, locale);
@@ -1014,7 +1050,9 @@ async function main() {
       };
     }
 
-    const rawDescription = trimTerminalPunctuation(meta.description || "实时热榜与趋势榜");
+    const rawDescription = trimTerminalPunctuation(
+      sourceMeta?.description || "实时榜单与趋势数据",
+    );
     const baseIntent =
       normalizeZhIntent(
         stripLeadingPhrases(rawDescription, [sourceSeoLabel, sourceDisplayLabel])
@@ -1033,7 +1071,7 @@ async function main() {
     const titleLabel =
       zhRouteSeo?.titleLabel ||
       (subtypeLabel
-        ? normalizeTitleLabel(`${sourceDisplayLabel} ${subtypeLabel}`)
+        ? combineSourceAndSubtypeLabel(sourceDisplayLabel, subtypeLabel)
         : sourceSeoLabel);
     const intent =
       zhRouteSeo?.intent ||
@@ -1056,7 +1094,7 @@ async function main() {
       title,
       description,
       keywords: mergeKeywords(
-        meta.keywords,
+        sourceMeta?.keywords,
         sourceDisplayLabel,
         sourceLabel,
         subtypeLabel,

@@ -36,6 +36,10 @@
             >
               <img :src="getSourceLogo(source.name)" :alt="sourceLabelFor(source)" @error="handleLogoError" />
               <span>{{ sourceLabelFor(source) }}</span>
+              <small
+                v-if="source.catalogManaged && source.publicAvailable === false"
+                class="category-stream__catalog-pending"
+              >{{ copy.catalogPendingShort }}</small>
             </router-link>
           </nav>
         </div>
@@ -110,7 +114,13 @@
           <div v-for="index in 8" :key="index"></div>
         </div>
         <div v-else-if="!visibleEntries.length" class="category-stream__empty">
-          {{ queryText ? copy.noSearchResults : copy.noEntries }}
+          {{
+            currentSourceCatalogPending
+              ? copy.catalogPending
+              : queryText
+                ? copy.noSearchResults
+                : copy.noEntries
+          }}
         </div>
         <div v-else class="category-stream__list">
           <article
@@ -345,6 +355,8 @@ const COPY = {
     noSources: "当前筛选没有可用来源",
     noEntries: "当前名次区间没有条目",
     noSearchResults: "没有匹配当前搜索的条目",
+    catalogPending: "该榜单已完成 Trends 接入，Public Feed 正在等待开放。",
+    catalogPendingShort: "待开放",
     heat: "热度",
     refreshLatest: "刷新最新数据",
     previewImage: "查看完整图片",
@@ -371,6 +383,8 @@ const COPY = {
     noSources: "No sources in the current filter",
     noEntries: "No items in this rank range",
     noSearchResults: "No items match the current search",
+    catalogPending: "This Trends ranking is integrated and is awaiting Public Feed access.",
+    catalogPendingShort: "Pending",
     heat: "Heat",
     refreshLatest: "Refresh latest data",
     previewImage: "View full image",
@@ -397,6 +411,8 @@ const COPY = {
     noSources: "目前篩選沒有可用來源",
     noEntries: "目前名次區間沒有條目",
     noSearchResults: "沒有符合目前搜尋的條目",
+    catalogPending: "此榜單已完成 Trends 接入，Public Feed 正等待開放。",
+    catalogPendingShort: "待開放",
     heat: "熱度",
     refreshLatest: "重新整理最新資料",
     previewImage: "查看完整圖片",
@@ -423,6 +439,8 @@ const COPY = {
     noSources: "現在の条件に利用可能なソースがありません",
     noEntries: "この順位範囲に項目がありません",
     noSearchResults: "検索条件に一致する項目がありません",
+    catalogPending: "このランキングは Trends に接続済みで、Public Feed の公開待ちです。",
+    catalogPendingShort: "公開待ち",
     heat: "注目度",
     refreshLatest: "最新データを更新",
     previewImage: "画像を拡大表示",
@@ -449,6 +467,8 @@ const COPY = {
     noSources: "현재 필터에 사용 가능한 출처가 없습니다",
     noEntries: "현재 순위 범위에 항목이 없습니다",
     noSearchResults: "현재 검색과 일치하는 항목이 없습니다",
+    catalogPending: "이 랭킹은 Trends 연동이 완료되었으며 Public Feed 공개를 기다리고 있습니다.",
+    catalogPendingShort: "공개 대기",
     heat: "인기도",
     refreshLatest: "최신 데이터 새로고침",
     previewImage: "전체 이미지 보기",
@@ -768,6 +788,12 @@ const currentCoverObjectFit = computed(() => "contain");
 const currentSourceLoading = computed(() =>
   Boolean(currentPageSource.value && sourceStates[currentPageSource.value.name] === "loading"),
 );
+const currentSourceCatalogPending = computed(() =>
+  Boolean(
+    currentPageSource.value?.catalogManaged &&
+      currentPageSource.value?.publicAvailable === false,
+  ),
+);
 const currentUpdateTime = computed(() => {
   void store.timeData;
   const source = currentPageSource.value;
@@ -788,6 +814,11 @@ const sourcePathFor = (source) =>
 
 const loadSource = async (source, force = false) => {
   if (!force && sourceResults[source.name]) return;
+  if (source?.catalogManaged && source?.publicAvailable === false) {
+    sourceStates[source.name] = "catalog-pending";
+    store.markAvailable(source.name);
+    return;
+  }
   sourceStates[source.name] = "loading";
   const useApi2 =
     source?.useApi2 || source?.api === 2 || source?.api === "api2";
@@ -1049,6 +1080,7 @@ const pendingCount = computed(
 );
 
 const statusText = computed(() => {
+  if (currentSourceCatalogPending.value) return copy.value.catalogPendingShort;
   const template = pendingCount.value ? copy.value.loading : copy.value.loaded;
   return template
     .replace("{loaded}", String(loadedCount.value))
@@ -1584,7 +1616,7 @@ const hideBrokenMedia = (event, cover = "") => {
 
 .category-stream__toc-source-link {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) 14px;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   min-height: 36px;
@@ -1619,6 +1651,13 @@ const hideBrokenMedia = (event, cover = "") => {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-stream__catalog-pending {
+  color: var(--category-stream-text-3);
+  font-size: 10px;
+  font-weight: 560;
   white-space: nowrap;
 }
 
@@ -2075,7 +2114,7 @@ const hideBrokenMedia = (event, cover = "") => {
 }
 
 .category-stream.is-source-page .category-stream__toc-source-link {
-  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr) auto;
   min-height: 38px;
   padding: 6px 8px;
   border-radius: 8px;

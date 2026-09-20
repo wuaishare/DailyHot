@@ -979,6 +979,7 @@ export const applyTrendsSourceCatalog = (catalog = {}) => {
       priorityTier: String(source?.priorityTier || "").trim(),
       rankingLabel: String(source?.rankingLabel || "").trim(),
       defaultVariant: String(source?.defaultVariant || "").trim(),
+      publicAvailable: source?.publicAvailable !== false,
     }))
     .filter((source) => source.key)
     .sort((left, right) => left.key.localeCompare(right.key));
@@ -1026,7 +1027,17 @@ const normalizeValue = (value) => {
 
 export const getTrendsCatalogSources = () => [...REMOTE_SOURCE_CATALOG.values()].map((source) => ({ ...source }));
 
+export const getTrendsCatalogSource = (sourceName) => {
+  const source = REMOTE_SOURCE_CATALOG.get(String(sourceName || ""));
+  return source ? { ...source } : null;
+};
+
 export const hasTrendsCatalogSource = (sourceName) => REMOTE_SOURCE_CATALOG.has(String(sourceName || ""));
+
+export const hasTrendsPublicCatalogSource = (sourceName) => {
+  const source = REMOTE_SOURCE_CATALOG.get(String(sourceName || ""));
+  return Boolean(source && source.publicAvailable !== false);
+};
 
 export const getSourceSubtypeGroups = (sourceName) =>
   REMOTE_SOURCE_SUBTYPE_GROUPS.get(sourceName) || SOURCE_SUBTYPE_GROUPS[sourceName] || [];

@@ -63,7 +63,19 @@
     </template>
     <n-scrollbar class="news-list no-card-drag" ref="scrollbarRef" @scroll="hidePreview">
       <Transition name="fade" mode="out-in">
-        <div v-if="loadingError" class="error">
+        <div
+          v-if="hotData.catalogManaged && hotData.publicAvailable === false"
+          class="error catalog-pending"
+        >
+          <n-result
+            size="small"
+            status="info"
+            :title="t('hotList.catalogPendingTitle')"
+            :description="t('hotList.catalogPendingDescription')"
+            style="margin-top: 40px"
+          />
+        </div>
+        <div v-else-if="loadingError" class="error">
           <n-result
             size="small"
             status="500"
@@ -961,6 +973,12 @@ const getHotListsData = async (name, isNew = false, variant = activeSubType.valu
     store.newsArr.find((item) => item.name == name) ||
     store.defaultNewsArr.find((item) => item.name == name);
   if (!item) return;
+  if (item.catalogManaged && item.publicAvailable === false) {
+    loadingError.value = false;
+    listLoading.value = false;
+    store.markAvailable(item.name);
+    return;
+  }
   const requestId = ++hotListRequestId;
   const key = runtimeKey(variant);
   const useApi2 = item?.useApi2 || item?.api === 2 || item?.api === "api2";

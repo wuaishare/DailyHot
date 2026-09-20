@@ -4,7 +4,7 @@ import { getAdminToken } from "@/utils/adminAuth";
 import { getRankingItemTimestamp } from "@/utils/rankingItemMeta";
 import {
   canFallbackTrendsCatalogVariant,
-  hasTrendsCatalogSource,
+  hasTrendsPublicCatalogSource,
   resolveTrendsCatalogVariant,
 } from "@/utils/sourceSubtypes";
 
@@ -544,7 +544,7 @@ export const getHotListsWithFallback = async (
   params,
   options = {},
 ) => {
-  if (TRENDS_READ_SOURCES.has(type) || hasTrendsCatalogSource(type)) {
+  if (TRENDS_READ_SOURCES.has(type) || hasTrendsPublicCatalogSource(type)) {
     const startedAt = performance.now();
     try {
       const result = await requestTrendsRanking(type, params);

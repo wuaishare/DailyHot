@@ -8,11 +8,53 @@ import {
   getSourceSubtypeGroups,
   getTrendsCatalogSources,
   hasTrendsCatalogSource,
+  hasTrendsPublicCatalogSource,
   getSourceSubtypeControlGroups,
   getSourceVariantOption,
   resolveTrendsCatalogVariant,
   subscribeTrendsSourceCatalog,
 } from "../src/utils/sourceSubtypes.js";
+
+const recentTrendsFrontendSources = [
+  "apple-app-store",
+  "apple-podcasts",
+  "autohome-sales",
+  "antutu-rankings",
+  "zol-phone-rankings",
+  "zol-tech-rankings",
+  "bilibili-live",
+  "huya-video-rankings",
+  "bilibili-ai-arena",
+  "bilibili-game-rankings",
+  "bilibili-manga",
+  "china-film-boxoffice",
+  "chrome-web-store",
+  "greasy-fork",
+  "douyin-live",
+  "fanqie-books",
+  "hongguo-rank",
+  "iqiyi-rank",
+  "jjwxc-books",
+  "kuaikan-comics",
+  "kugou-music",
+  "kuwo-music",
+  "lanren-audio",
+  "ludashi-rankings",
+  "maoer-drama",
+  "netease-music",
+  "oppo-app-store",
+  "pconline-rankings",
+  "qidian-books",
+  "qimao-books",
+  "qingting-audio",
+  "qq-music",
+  "taptap-games",
+  "xiaomi-app-store",
+  "yingyongbao-store",
+  "youku-rank",
+  "lol-top-canyon",
+  "modeldial-radar",
+];
 
 const catalog = {
   sources: [
@@ -55,6 +97,18 @@ const catalog = {
       defaultVariant: "",
       variantSelectorEnabled: false,
       variantGroups: [],
+      publicAvailable: true,
+    },
+    {
+      key: "bilibili-ai-arena",
+      name: "B站 AI 无限竞技场",
+      category: "ai",
+      priorityTier: "A",
+      rankingLabel: "模型竞技榜",
+      defaultVariant: "",
+      variantSelectorEnabled: false,
+      variantGroups: [],
+      publicAvailable: false,
     },
     {
       key: "xiaohongshu",
@@ -84,8 +138,13 @@ assert.deepEqual(
     priorityTier: "B",
     rankingLabel: "AI Coding 模型实测榜",
     defaultVariant: "",
+    publicAvailable: true,
   },
 );
+assert.equal(hasTrendsPublicCatalogSource("modeldial-radar"), true);
+assert.equal(hasTrendsCatalogSource("bilibili-ai-arena"), true);
+assert.equal(hasTrendsPublicCatalogSource("bilibili-ai-arena"), false);
+assert.equal(hasTrendsPublicCatalogSource("not-in-catalog"), false);
 assert.deepEqual(
   getSourceSubtypeGroups("weibo").flatMap((group) => group.items.map((item) => item.value)),
   ["hot", "entertainment", "life", "social"],
@@ -232,8 +291,22 @@ const revisionComposable = fs.readFileSync(
 );
 assert.match(revisionComposable, /subscribeTrendsSourceCatalog/, "catalog revision composable must subscribe to remote catalog changes");
 const storeSource = fs.readFileSync(new URL("../src/store/index.js", import.meta.url).pathname, "utf8");
+const sourceLogosSource = fs.readFileSync(new URL("../src/utils/sourceLogos.js", import.meta.url).pathname, "utf8");
+for (const sourceKey of recentTrendsFrontendSources) {
+  assert.ok(
+    storeSource.includes(`"${sourceKey}"`),
+    `recent Trends source ${sourceKey} must have curated frontend presentation metadata`,
+  );
+  assert.ok(
+    sourceLogosSource.includes(`"${sourceKey}"`),
+    `recent Trends source ${sourceKey} must have an explicit frontend logo mapping`,
+  );
+}
 assert.match(storeSource, /syncTrendsCatalogSources\(\)/, "main store must merge newly admitted catalog sources");
 assert.match(storeSource, /priorityTier === ["']A["'] \|\| source\.priorityTier === ["']B["']/, "catalog auto-discovery must stay limited to Tier A/B sources");
 const apiSource = fs.readFileSync(new URL("../src/api/index.js", import.meta.url).pathname, "utf8");
-assert.match(apiSource, /TRENDS_READ_SOURCES\.has\(type\) \|\| hasTrendsCatalogSource\(type\)/, "Public Catalog sources must automatically use the Trends read path");
+assert.match(apiSource, /TRENDS_READ_SOURCES\.has\(type\) \|\| hasTrendsPublicCatalogSource\(type\)/, "only Public Catalog sources may automatically use the Trends anonymous read path");
+const catalogLoaderSource = fs.readFileSync(new URL("../src/api/trendsCatalog.js", import.meta.url).pathname, "utf8");
+assert.match(catalogLoaderSource, /DIRECTORY_API/, "frontend catalog loader must consume the full Trends directory");
+assert.match(catalogLoaderSource, /publicAvailable/, "frontend catalog loader must preserve Public admission separately from directory discovery");
 console.log(`[trends-catalog-contract] ${subtypeConsumers.length} runtime UI consumers use the reactive catalog revision contract`);

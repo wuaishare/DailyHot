@@ -12,6 +12,7 @@ import {
 import {
   getDefaultSourceSubtype,
   getSourceSubtypeOptions,
+  getTrendsCatalogSource,
   shouldCanonicalizeDefaultSubtype,
 } from "@/utils/sourceSubtypes";
 import {
@@ -574,6 +575,28 @@ const normalizeTitleLabel = (value = "") =>
     .replace(/\s+/g, " ")
     .replace(/([\u4e00-\u9fff])\s+([\u4e00-\u9fff])/gu, "$1$2")
     .trim();
+
+const combineSourceAndSubtypeLabel = (sourceLabel = "", subtypeLabel = "") => {
+  const source = normalizeTitleLabel(sourceLabel).replace(/榜$/u, "");
+  const subtype = normalizeTitleLabel(subtypeLabel);
+  if (!source || !subtype) return normalizeTitleLabel(source || subtype);
+
+  const maxOverlap = Math.min(source.length, subtype.length);
+  for (let length = maxOverlap; length >= 1; length -= 1) {
+    if (source.slice(-length) === subtype.slice(0, length)) {
+      return normalizeTitleLabel(source + subtype.slice(length));
+    }
+  }
+
+  const maxPrefix = Math.min(source.length, subtype.length);
+  for (let length = maxPrefix; length >= 2; length -= 1) {
+    if (source.slice(0, length) === subtype.slice(0, length)) {
+      return normalizeTitleLabel(source + subtype.slice(length));
+    }
+  }
+
+  return normalizeTitleLabel(`${source} ${subtype}`);
+};
 
 const keywordTokensFrom = (value) =>
   Array.isArray(value)
@@ -1417,7 +1440,8 @@ const prettifySlug = (value = "") =>
   );
 
 const getSourceLabel = (typeKey, locale = "zh-CN") => {
-  const fallbackLabel = LIST_SEO_MAP[typeKey]?.label || "";
+  const catalogLabel = getTrendsCatalogSource(typeKey)?.name || "";
+  const fallbackLabel = LIST_SEO_MAP[typeKey]?.label || catalogLabel;
   return getLocalizedSourceLabel(typeKey, locale, fallbackLabel);
 };
 
@@ -1652,12 +1676,13 @@ const getListSeo = (route, siteUrl, canonical) => {
     getSourceNameBySlug(route?.params?.sourceSlug);
   const typeKey = Array.isArray(typeParam) ? typeParam?.[0] : typeParam;
   const sourceKey = typeKey || "default";
-  const meta = LIST_SEO_MAP[sourceKey] || LIST_SEO_MAP.default;
+  const sourceMeta = LIST_SEO_MAP[sourceKey] || null;
+  const meta = sourceMeta || LIST_SEO_MAP.default;
   const sourceLabel = getSourceLabel(sourceKey, locale);
   const sourceDisplayLabel =
     getLocalizedSourceDisplayLabel(sourceKey, locale, sourceLabel) || sourceLabel;
   const sourceSeoLabel =
-    locale === "zh-CN" && meta?.label ? meta.label : sourceLabel;
+    locale === "zh-CN" && sourceMeta?.label ? sourceMeta.label : sourceLabel;
   const subtypeSlug = Array.isArray(route?.params?.subtypeSlug)
     ? route.params.subtypeSlug[0]
     : route?.params?.subtypeSlug;
@@ -1671,9 +1696,9 @@ const getListSeo = (route, siteUrl, canonical) => {
     ? `${sourceDisplayLabel} · ${subtypeLabel}`
     : sourceSeoLabel;
   const descriptionLabel = subtypeLabel ? sourceDisplayLabel : sourceSeoLabel;
-  const defaultTitleLabel = normalizeTitleLabel(
-    subtypeLabel ? `${sourceDisplayLabel} ${subtypeLabel}` : sourceSeoLabel
-  );
+  const defaultTitleLabel = subtypeLabel
+    ? combineSourceAndSubtypeLabel(sourceDisplayLabel, subtypeLabel)
+    : normalizeTitleLabel(sourceSeoLabel);
   const zhRouteSeo =
     locale === "zh-CN"
       ? getZhRouteSeo({ sourceKey, subtypeSlug: effectiveSubtypeSlug })
@@ -1699,8 +1724,8 @@ const getListSeo = (route, siteUrl, canonical) => {
           },
           { locale }
         )
-      : locale === "zh-CN" && meta.description
-        ? meta.description
+      : locale === "zh-CN" && sourceMeta?.description
+        ? sourceMeta.description
         : i18n.global.t("seo.sourceDescription", { label: descriptionLabel }, { locale });
   const keywords =
     subtypeLabel
@@ -1712,8 +1737,8 @@ const getListSeo = (route, siteUrl, canonical) => {
           },
           { locale }
         )
-      : locale === "zh-CN" && meta.keywords
-        ? meta.keywords
+      : locale === "zh-CN" && sourceMeta?.keywords
+        ? sourceMeta.keywords
         : i18n.global.t("seo.sourceKeywords", { label: descriptionLabel }, { locale });
   const localizedSiteName = i18n.global.t("common.siteName", {}, { locale });
   const zhIntent =
@@ -1721,7 +1746,7 @@ const getListSeo = (route, siteUrl, canonical) => {
     buildZhListIntent({
       sourceLabel: sourceSeoLabel,
       subtypeLabel,
-      meta,
+      meta: sourceMeta || { description: "实时榜单与趋势数据" },
     });
   const listName = locale === "zh-CN" ? titleLabel : label;
   const title =

@@ -98,6 +98,8 @@ export const messages = {
     hotList: {
       loadErrorTitle: "哎呀，加载失败了",
       loadErrorDescription: "生活总会遇到不如意的事情",
+      catalogPendingTitle: "榜单已接入",
+      catalogPendingDescription: "Trends 已完成该来源接入，Public Feed 正在等待开放。",
       retry: "重试",
       updateFailed: "获取失败",
       viewMore: "查看更多",
@@ -464,6 +466,8 @@ export const messages = {
     hotList: {
       loadErrorTitle: "Unable to load",
       loadErrorDescription: "Something went wrong while loading this ranking.",
+      catalogPendingTitle: "Ranking connected",
+      catalogPendingDescription: "This Trends source is integrated and is awaiting Public Feed access.",
       retry: "Retry",
       updateFailed: "Update unavailable",
       viewMore: "View more",
@@ -846,6 +850,8 @@ export const messages = {
     hotList: {
       loadErrorTitle: "哎呀，載入失敗了",
       loadErrorDescription: "生活偶爾也會遇到不順心的時刻",
+      catalogPendingTitle: "榜單已接入",
+      catalogPendingDescription: "Trends 已完成此來源接入，Public Feed 正等待開放。",
       retry: "重試",
       updateFailed: "讀取失敗",
       viewMore: "查看更多",
@@ -1211,6 +1217,8 @@ export const messages = {
     hotList: {
       loadErrorTitle: "読み込みに失敗しました",
       loadErrorDescription: "このランキングの取得中に問題が発生しました。",
+      catalogPendingTitle: "ランキングは接続済みです",
+      catalogPendingDescription: "Trends への接続は完了しており、Public Feed の公開待ちです。",
       retry: "再試行",
       updateFailed: "取得失敗",
       viewMore: "もっと見る",
@@ -1593,6 +1601,8 @@ export const messages = {
     hotList: {
       loadErrorTitle: "불러오지 못했습니다",
       loadErrorDescription: "이 랭킹을 불러오는 중 문제가 발생했습니다.",
+      catalogPendingTitle: "랭킹 연동 완료",
+      catalogPendingDescription: "Trends 연동은 완료되었으며 Public Feed 공개를 기다리고 있습니다.",
       retry: "다시 시도",
       updateFailed: "업데이트 실패",
       viewMore: "더 보기",

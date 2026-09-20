@@ -27,16 +27,60 @@ const TRENDS_CATEGORY_DEFAULTS = {
   finance: { category: "财经", categoryIds: ["finance"] },
 };
 
+const TRENDS_SOURCE_PRESENTATION = {
+  "douyin-live": { category: "综合", categoryIds: ["general"], order: 0.2 },
+  "autohome-sales": { category: "生活", categoryIds: ["life"], order: 10.5 },
+  "china-film-boxoffice": { category: "生活", categoryIds: ["life"], order: 16.1 },
+  "iqiyi-rank": { category: "生活", categoryIds: ["life"], order: 16.2 },
+  "youku-rank": { category: "生活", categoryIds: ["life"], order: 16.3 },
+  "hongguo-rank": { category: "生活", categoryIds: ["life"], order: 16.4 },
+  "bilibili-live": { category: "生活", categoryIds: ["life"], order: 16.5 },
+  "bilibili-manga": { category: "生活", categoryIds: ["life"], order: 16.6 },
+  "kuaikan-comics": { category: "生活", categoryIds: ["life"], order: 16.7 },
+  "qidian-books": { category: "生活", categoryIds: ["life"], order: 17.1 },
+  "fanqie-books": { category: "生活", categoryIds: ["life"], order: 17.2 },
+  "qimao-books": { category: "生活", categoryIds: ["life"], order: 17.3 },
+  "jjwxc-books": { category: "生活", categoryIds: ["life"], order: 17.4 },
+  "qq-music": { category: "生活", categoryIds: ["life"], order: 17.5 },
+  "netease-music": { category: "生活", categoryIds: ["life"], order: 17.6 },
+  "kugou-music": { category: "生活", categoryIds: ["life"], order: 17.7 },
+  "kuwo-music": { category: "生活", categoryIds: ["life"], order: 17.8 },
+  "apple-podcasts": { category: "生活", categoryIds: ["life"], order: 17.9 },
+  "qingting-audio": { category: "生活", categoryIds: ["life"], order: 17.91 },
+  "maoer-drama": { category: "生活", categoryIds: ["life"], order: 17.92 },
+  "lanren-audio": { category: "生活", categoryIds: ["life"], order: 17.93 },
+  "apple-app-store": { category: "科技", categoryIds: ["tech"], order: 22.1 },
+  "xiaomi-app-store": { category: "科技", categoryIds: ["tech"], order: 22.2 },
+  "yingyongbao-store": { category: "科技", categoryIds: ["tech"], order: 22.3 },
+  "oppo-app-store": { category: "科技", categoryIds: ["tech"], order: 22.4 },
+  "chrome-web-store": { category: "科技", categoryIds: ["tech"], order: 25.1 },
+  "vscode-marketplace": { category: "科技", categoryIds: ["tech"], order: 25.2 },
+  "greasy-fork": { category: "科技", categoryIds: ["tech"], order: 25.3 },
+  "taptap-games": { category: "游戏", categoryIds: ["games"], order: 25.5 },
+  "bilibili-game-rankings": { category: "游戏", categoryIds: ["games"], order: 25.6 },
+  "huya-video-rankings": { category: "游戏", categoryIds: ["games"], order: 25.7 },
+  "lol-top-canyon": { category: "游戏", categoryIds: ["games"], order: 32.1 },
+  "antutu-rankings": { category: "科技", categoryIds: ["tech"], order: 35.1 },
+  "zol-phone-rankings": { category: "科技", categoryIds: ["tech"], order: 35.2 },
+  "zol-tech-rankings": { category: "科技", categoryIds: ["tech"], order: 35.3 },
+  "pconline-rankings": { category: "科技", categoryIds: ["tech"], order: 35.4 },
+  "ludashi-rankings": { category: "科技", categoryIds: ["tech"], order: 35.5 },
+  "bilibili-ai-arena": { category: "AI", categoryIds: ["ai-models"], order: 62.1 },
+};
+
 const trendsCatalogSourceToNewsItem = (source, order) => {
   const defaults = TRENDS_CATEGORY_DEFAULTS[source?.category] || TRENDS_CATEGORY_DEFAULTS.general;
+  const presentation = TRENDS_SOURCE_PRESENTATION[source?.key] || {};
   return {
     label: source?.name || source?.key,
     name: source?.key,
     order,
     show: true,
     ...defaults,
+    ...presentation,
     ...(source?.rankingLabel ? { subtype: source.rankingLabel } : {}),
     catalogManaged: true,
+    publicAvailable: source?.publicAvailable !== false,
   };
 };
 
@@ -1485,6 +1529,10 @@ export const mainStore = defineStore("mainData", {
         }
         if (defaults.subtype) {
           merged.subtype = defaults.subtype;
+        }
+        if (defaults.catalogManaged) {
+          merged.catalogManaged = true;
+          merged.publicAvailable = defaults.publicAvailable !== false;
         }
         const categoryMigration = BUILTIN_CATEGORY_MIGRATIONS[item.name];
         if (
