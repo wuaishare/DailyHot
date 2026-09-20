@@ -1261,6 +1261,11 @@ const LIST_SEO_MAP = {
     keywords: "LLM Stats,大模型比较,AI 模型榜单",
     description: "LLM Stats 模型能力、速度与价格排行榜。",
   },
+  "modeldial-radar": {
+    label: "ModelDial Radar",
+    keywords: "ModelDial Radar,AI Coding模型榜,大模型编程评测,AI代码能力榜单,模型实测榜",
+    description: "AI Coding 模型综合实测排行榜",
+  },
   "skills-rank": {
     label: "Skills Rank 排行榜",
     keywords: "Skills Rank,Agent Skills,安装量榜单",
