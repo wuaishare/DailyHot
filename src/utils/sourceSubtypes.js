@@ -949,13 +949,15 @@ const SOURCE_SUBTYPE_GROUPS = {
 
 const AGGREGATE_SUBTYPE_SOURCES = ["clawhub"];
 const REMOTE_SOURCE_SUBTYPE_GROUPS = new Map();
+const REMOTE_SOURCE_CATALOG = new Map();
 const REMOTE_SOURCE_DEFAULT_SUBTYPES = new Map();
 const REMOTE_SOURCE_VARIANTS = new Map();
 const REMOTE_SOURCE_VARIANT_DIMENSIONS = new Map();
 const REMOTE_SOURCE_CATALOG_LISTENERS = new Set();
 let REMOTE_SOURCE_CATALOG_SIGNATURE = "";
 
-const projectionSignature = (projection) => JSON.stringify({
+const projectionSignature = (projection, sources = []) => JSON.stringify({
+  sources,
   groups: [...projection.groupsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
   defaults: [...projection.defaultsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
   variants: [...projection.variantsBySource.entries()].sort(([left], [right]) => left.localeCompare(right)),
@@ -969,13 +971,26 @@ export const subscribeTrendsSourceCatalog = (listener) => {
 };
 
 export const applyTrendsSourceCatalog = (catalog = {}) => {
+  const sourceEntries = (Array.isArray(catalog?.sources) ? catalog.sources : [])
+    .map((source) => ({
+      key: String(source?.key || "").trim(),
+      name: String(source?.name || source?.key || "").trim(),
+      category: String(source?.category || "general").trim(),
+      priorityTier: String(source?.priorityTier || "").trim(),
+      rankingLabel: String(source?.rankingLabel || "").trim(),
+      defaultVariant: String(source?.defaultVariant || "").trim(),
+    }))
+    .filter((source) => source.key)
+    .sort((left, right) => left.key.localeCompare(right.key));
   const projection = projectTrendsCatalog(catalog, SOURCE_SUBTYPE_GROUPS);
-  const nextSignature = projectionSignature(projection);
+  const nextSignature = projectionSignature(projection, sourceEntries);
   const changed = nextSignature !== REMOTE_SOURCE_CATALOG_SIGNATURE;
   REMOTE_SOURCE_SUBTYPE_GROUPS.clear();
+  REMOTE_SOURCE_CATALOG.clear();
   REMOTE_SOURCE_DEFAULT_SUBTYPES.clear();
   REMOTE_SOURCE_VARIANTS.clear();
   REMOTE_SOURCE_VARIANT_DIMENSIONS.clear();
+  for (const source of sourceEntries) REMOTE_SOURCE_CATALOG.set(source.key, source);
   for (const [sourceName, groups] of projection.groupsBySource) {
     REMOTE_SOURCE_SUBTYPE_GROUPS.set(sourceName, groups);
   }
@@ -1008,6 +1023,10 @@ const normalizeValue = (value) => {
   if (Array.isArray(value)) return value[0] || null;
   return value ?? null;
 };
+
+export const getTrendsCatalogSources = () => [...REMOTE_SOURCE_CATALOG.values()].map((source) => ({ ...source }));
+
+export const hasTrendsCatalogSource = (sourceName) => REMOTE_SOURCE_CATALOG.has(String(sourceName || ""));
 
 export const getSourceSubtypeGroups = (sourceName) =>
   REMOTE_SOURCE_SUBTYPE_GROUPS.get(sourceName) || SOURCE_SUBTYPE_GROUPS[sourceName] || [];

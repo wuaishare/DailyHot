@@ -9,6 +9,7 @@ import i18n from "@/i18n";
 import { ensureCacheVersion } from "@/utils/cache";
 import { resolveInitialLocale, savePreferredLocale, setDocumentLanguage } from "@/utils/locale";
 import { applyDynamicTranslation } from "@/utils/translateEngine";
+import { subscribeTrendsSourceCatalog } from "@/utils/sourceSubtypes";
 import { preloadTrendsSourceCatalog, startTrendsSourceCatalogRevalidation } from "@/api/trendsCatalog";
 
 // 全局样式
@@ -50,6 +51,9 @@ const registerAppServiceWorker = () => {
   // 预渲染/SSR 时需要默认榜单数据，避免首屏为空
   const store = mainStore();
   store.ensureNewsList();
+  subscribeTrendsSourceCatalog(() => {
+    if (store.syncTrendsCatalogSources() > 0) store.checkNewsUpdate();
+  });
 
   app.use(router);
 

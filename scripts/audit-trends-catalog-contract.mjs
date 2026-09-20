@@ -6,6 +6,8 @@ import {
   canFallbackTrendsCatalogVariant,
   getDefaultSourceSubtype,
   getSourceSubtypeGroups,
+  getTrendsCatalogSources,
+  hasTrendsCatalogSource,
   getSourceSubtypeControlGroups,
   getSourceVariantOption,
   resolveTrendsCatalogVariant,
@@ -45,6 +47,16 @@ const catalog = {
       ],
     },
     {
+      key: "modeldial-radar",
+      name: "ModelDial Radar",
+      category: "ai",
+      priorityTier: "B",
+      rankingLabel: "AI Coding 模型实测榜",
+      defaultVariant: "",
+      variantSelectorEnabled: false,
+      variantGroups: [],
+    },
+    {
       key: "xiaohongshu",
       defaultVariant: "hot",
       variantSelectorEnabled: false,
@@ -62,6 +74,18 @@ const catalog = {
 };
 
 assert.equal(applyTrendsSourceCatalog(catalog), 3);
+assert.equal(hasTrendsCatalogSource("modeldial-radar"), true);
+assert.deepEqual(
+  getTrendsCatalogSources().find((source) => source.key === "modeldial-radar"),
+  {
+    key: "modeldial-radar",
+    name: "ModelDial Radar",
+    category: "ai",
+    priorityTier: "B",
+    rankingLabel: "AI Coding 模型实测榜",
+    defaultVariant: "",
+  },
+);
 assert.deepEqual(
   getSourceSubtypeGroups("weibo").flatMap((group) => group.items.map((item) => item.value)),
   ["hot", "entertainment", "life", "social"],
@@ -207,4 +231,9 @@ const revisionComposable = fs.readFileSync(
   "utf8",
 );
 assert.match(revisionComposable, /subscribeTrendsSourceCatalog/, "catalog revision composable must subscribe to remote catalog changes");
+const storeSource = fs.readFileSync(new URL("../src/store/index.js", import.meta.url).pathname, "utf8");
+assert.match(storeSource, /syncTrendsCatalogSources\(\)/, "main store must merge newly admitted catalog sources");
+assert.match(storeSource, /priorityTier === ["']A["'] \|\| source\.priorityTier === ["']B["']/, "catalog auto-discovery must stay limited to Tier A/B sources");
+const apiSource = fs.readFileSync(new URL("../src/api/index.js", import.meta.url).pathname, "utf8");
+assert.match(apiSource, /TRENDS_READ_SOURCES\.has\(type\) \|\| hasTrendsCatalogSource\(type\)/, "Public Catalog sources must automatically use the Trends read path");
 console.log(`[trends-catalog-contract] ${subtypeConsumers.length} runtime UI consumers use the reactive catalog revision contract`);

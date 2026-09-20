@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { BUILTIN_CATEGORIES as SITE_BUILTIN_CATEGORIES } from "@/config/site-metadata.mjs";
 import { GAME_DEAL_SOURCE_IDS } from "@/config/topics";
+import { getTrendsCatalogSources } from "@/utils/sourceSubtypes";
 import {
   MAX_CATEGORY_DEPTH,
   canMoveCategory,
@@ -17,6 +18,27 @@ const BUILTIN_CATEGORIES = SITE_BUILTIN_CATEGORIES.map((item, order) => ({
   parentId: item.parentId || null,
   builtin: true,
 }));
+
+const TRENDS_CATEGORY_DEFAULTS = {
+  general: { category: "综合", categoryIds: ["general"] },
+  tech: { category: "科技", categoryIds: ["tech"] },
+  ai: { category: "AI", categoryIds: ["ai"] },
+  culture: { category: "生活", categoryIds: ["life"] },
+  finance: { category: "财经", categoryIds: ["finance"] },
+};
+
+const trendsCatalogSourceToNewsItem = (source, order) => {
+  const defaults = TRENDS_CATEGORY_DEFAULTS[source?.category] || TRENDS_CATEGORY_DEFAULTS.general;
+  return {
+    label: source?.name || source?.key,
+    name: source?.key,
+    order,
+    show: true,
+    ...defaults,
+    ...(source?.rankingLabel ? { subtype: source.rankingLabel } : {}),
+    catalogManaged: true,
+  };
+};
 
 const BUILTIN_CATEGORY_MIGRATIONS = {
   xueqiu: { from: "综合", to: "财经" },
@@ -48,6 +70,7 @@ const AI_TAXONOMY_SOURCE_IDS = [
   "arena-ai",
   "designarena",
   "llm-stats",
+  "modeldial-radar",
   "aicpb-rankings",
   "skills-rank",
   "clawhub",
@@ -793,6 +816,15 @@ export const mainStore = defineStore("mainData", {
           category: "AI",
           categoryIds: ["ai-models"],
           subtype: "模型性能 / 价格榜",
+        },
+        {
+          label: "ModelDial Radar",
+          name: "modeldial-radar",
+          order: 62.2,
+          show: true,
+          category: "AI",
+          categoryIds: ["ai-models"],
+          subtype: "AI Coding 模型实测榜",
         },
         {
           label: "Skills Rank",
@@ -1819,9 +1851,30 @@ export const mainStore = defineStore("mainData", {
         target.useApi2 = value;
       }
     },
+    syncTrendsCatalogSources() {
+      const candidates = getTrendsCatalogSources().filter((source) =>
+        source.priorityTier === "A" || source.priorityTier === "B",
+      );
+      if (!candidates.length) return 0;
+      const known = new Set(this.defaultNewsArr.map((item) => item?.name).filter(Boolean));
+      let nextOrder = this.defaultNewsArr.reduce(
+        (max, item) => Math.max(max, Number(item?.order) || 0),
+        0,
+      ) + 1;
+      let added = 0;
+      for (const source of candidates) {
+        if (!source?.key || known.has(source.key)) continue;
+        this.defaultNewsArr.push(trendsCatalogSourceToNewsItem(source, nextOrder));
+        nextOrder += 1;
+        known.add(source.key);
+        added += 1;
+      }
+      return added;
+    },
     // 初始化默认榜单（SSR/预渲染也能有基础数据）
     ensureNewsList() {
       this.ensureBuiltinCategories();
+      this.syncTrendsCatalogSources();
       this.defaultNewsArr = this.ensureCategoriesForNews(this.defaultNewsArr);
       if (!this.newsArr || this.newsArr.length === 0) {
         this.newsArr = this.defaultNewsArr;
@@ -1832,6 +1885,7 @@ export const mainStore = defineStore("mainData", {
     // 检查更新
     checkNewsUpdate() {
       this.ensureBuiltinCategories();
+      this.syncTrendsCatalogSources();
       this.defaultNewsArr = this.ensureCategoriesForNews(this.defaultNewsArr);
       this.newsArr = this.dedupeNewsList(this.newsArr);
       if (typeof localStorage === "undefined") {
