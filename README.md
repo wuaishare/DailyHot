@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **本仓库已于 2026-09-20 归档。** 吾爱热榜后续以独立开源品牌 **wuaihot** 持续开发，请前往 [wuaishare/wuaihot](https://github.com/wuaishare/wuaihot)。新品牌 Slogan：**一站看全网**。本仓库继续保留历史代码、Issue 与提交记录供追溯。
+
 <div align="center">
 <img alt="logo" height="120" src="./public/favicon.png" width="120"/>
 <h2>DailyHot 长期维护二次开发版 · 吾爱热榜</h2>
